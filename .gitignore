@@ -1,0 +1,26 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+dist/
+bin/
+coverage*
+
+# 本地运行数据
+data/*
+!data/.gitkeep
+attachments/*
+!attachments/.gitkeep
+reports/*
+!reports/.gitkeep
+
+# 环境与编辑器
+.env
+.env.*
+.idea/
+.vscode/

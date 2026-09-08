@@ -1,0 +1,14 @@
+# Project-level Codex MCP configuration.
+# Use this file for servers that should travel with ChenMeridian.
+
+[mcp_servers.shadcn]
+command = "npx"
+args = ["-y", "shadcn@latest", "mcp"]
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+[mcp_servers.radix]
+command = "npx"
+args = ["-y", "@gianpieropuleo/radix-mcp-server"]
