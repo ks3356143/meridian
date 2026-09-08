@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS idx_users_role;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS settings;

@@ -1,30 +1,57 @@
 package api
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	authservice "chenmeridian/internal/auth"
 	"chenmeridian/internal/database"
+	"chenmeridian/internal/modules/settings"
+	"chenmeridian/internal/modules/users"
+	"chenmeridian/migrations"
 )
 
-func TestHealthEndpoint(t *testing.T) {
+func newTestHandler(t *testing.T) http.Handler {
+	t.Helper()
+
 	db, err := database.Open(filepath.Join(t.TempDir(), "meridian.db"))
 	if err != nil {
 		t.Fatalf("打开测试数据库失败: %v", err)
 	}
-	defer func() {
+	t.Cleanup(func() {
 		if sqlDB, closeErr := db.DB(); closeErr == nil {
 			_ = sqlDB.Close()
 		}
-	}()
+	})
 
+	if err := database.Migrate(db, migrations.FS); err != nil {
+		t.Fatalf("执行迁移失败: %v", err)
+	}
+
+	userService := users.NewService(db)
+	if err := userService.EnsureAdmin(context.Background(), "admin", "admin123"); err != nil {
+		t.Fatalf("创建测试管理员失败: %v", err)
+	}
+
+	authService, err := authservice.NewService(db, userService, settings.NewService(db), time.Hour)
+	if err != nil {
+		t.Fatalf("初始化认证服务失败: %v", err)
+	}
+
+	return New(db, authService)
+}
+
+func TestHealthEndpoint(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
-	New(db).ServeHTTP(recorder, request)
+	newTestHandler(t).ServeHTTP(recorder, request)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("状态码应为 200，实际为 %d，响应: %s", recorder.Code, recorder.Body.String())
@@ -38,23 +65,13 @@ func TestHealthEndpoint(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
 		t.Fatalf("解析响应失败: %v", err)
 	}
-	if body.Status != "ok" || body.Version != version || body.SQLiteVersion == "" {
+	if body.Status != "ok" || body.Version != Version || body.SQLiteVersion == "" {
 		t.Fatalf("健康检查响应异常: %+v", body)
 	}
 }
 
 func TestOpenAPIAndDocs(t *testing.T) {
-	db, err := database.Open(filepath.Join(t.TempDir(), "meridian.db"))
-	if err != nil {
-		t.Fatalf("打开测试数据库失败: %v", err)
-	}
-	defer func() {
-		if sqlDB, closeErr := db.DB(); closeErr == nil {
-			_ = sqlDB.Close()
-		}
-	}()
-
-	handler := New(db)
+	handler := newTestHandler(t)
 
 	openAPIRecorder := httptest.NewRecorder()
 	openAPIRequest := httptest.NewRequest(http.MethodGet, "/openapi.json", nil)
@@ -62,8 +79,11 @@ func TestOpenAPIAndDocs(t *testing.T) {
 	if openAPIRecorder.Code != http.StatusOK {
 		t.Fatalf("OpenAPI 状态码应为 200，实际为 %d", openAPIRecorder.Code)
 	}
-	if !strings.Contains(openAPIRecorder.Body.String(), "/api/v1/health") {
-		t.Fatal("OpenAPI 中缺少 /api/v1/health 接口")
+	openAPIBody := openAPIRecorder.Body.String()
+	if !strings.Contains(openAPIBody, "/api/v1/health") ||
+		!strings.Contains(openAPIBody, "/api/v1/auth/login") ||
+		!strings.Contains(openAPIBody, "/api/v1/auth/me") {
+		t.Fatal("OpenAPI 中缺少认证接口")
 	}
 
 	docsRecorder := httptest.NewRecorder()
@@ -75,24 +95,90 @@ func TestOpenAPIAndDocs(t *testing.T) {
 }
 
 func TestRootRedirectsToDocs(t *testing.T) {
-	db, err := database.Open(filepath.Join(t.TempDir(), "meridian.db"))
-	if err != nil {
-		t.Fatalf("打开测试数据库失败: %v", err)
-	}
-	defer func() {
-		if sqlDB, closeErr := db.DB(); closeErr == nil {
-			_ = sqlDB.Close()
-		}
-	}()
-
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
-	New(db).ServeHTTP(recorder, request)
+	newTestHandler(t).ServeHTTP(recorder, request)
 
 	if recorder.Code != http.StatusTemporaryRedirect {
 		t.Fatalf("根路径状态码应为 307，实际为 %d", recorder.Code)
 	}
 	if location := recorder.Header().Get("Location"); location != "/docs" {
 		t.Fatalf("根路径应跳转到 /docs，实际为 %s", location)
+	}
+}
+
+func TestAuthFlow(t *testing.T) {
+	handler := newTestHandler(t)
+
+	loginBody, err := json.Marshal(map[string]string{
+		"username": "admin",
+		"password": "admin123",
+	})
+	if err != nil {
+		t.Fatalf("构造登录请求失败: %v", err)
+	}
+
+	loginRecorder := httptest.NewRecorder()
+	loginRequest := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader(loginBody))
+	loginRequest.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(loginRecorder, loginRequest)
+
+	if loginRecorder.Code != http.StatusOK {
+		t.Fatalf("登录状态码应为 200，实际为 %d，响应: %s", loginRecorder.Code, loginRecorder.Body.String())
+	}
+
+	var loginResponse struct {
+		AccessToken string `json:"accessToken"`
+		User        struct {
+			Username string `json:"username"`
+			Role     string `json:"role"`
+		} `json:"user"`
+	}
+	if err := json.Unmarshal(loginRecorder.Body.Bytes(), &loginResponse); err != nil {
+		t.Fatalf("解析登录响应失败: %v", err)
+	}
+	if loginResponse.AccessToken == "" || loginResponse.User.Username != "admin" || loginResponse.User.Role != "admin" {
+		t.Fatalf("登录响应异常: %+v", loginResponse)
+	}
+
+	unauthorizedRecorder := httptest.NewRecorder()
+	unauthorizedRequest := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	handler.ServeHTTP(unauthorizedRecorder, unauthorizedRequest)
+	if unauthorizedRecorder.Code != http.StatusUnauthorized {
+		t.Fatalf("未登录状态码应为 401，实际为 %d", unauthorizedRecorder.Code)
+	}
+
+	meRecorder := httptest.NewRecorder()
+	meRequest := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	meRequest.Header.Set("Authorization", "Bearer "+loginResponse.AccessToken)
+	handler.ServeHTTP(meRecorder, meRequest)
+
+	if meRecorder.Code != http.StatusOK {
+		t.Fatalf("当前用户状态码应为 200，实际为 %d，响应: %s", meRecorder.Code, meRecorder.Body.String())
+	}
+	var meResponse struct {
+		Username string `json:"username"`
+		Role     string `json:"role"`
+	}
+	if err := json.Unmarshal(meRecorder.Body.Bytes(), &meResponse); err != nil {
+		t.Fatalf("解析当前用户响应失败: %v", err)
+	}
+	if meResponse.Username != "admin" || meResponse.Role != "admin" {
+		t.Fatalf("当前用户响应异常: %+v", meResponse)
+	}
+}
+
+func TestLoginRejectsInvalidPassword(t *testing.T) {
+	requestBody, _ := json.Marshal(map[string]string{
+		"username": "admin",
+		"password": "wrong-password",
+	})
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader(requestBody))
+	request.Header.Set("Content-Type", "application/json")
+	newTestHandler(t).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("错误密码状态码应为 401，实际为 %d", recorder.Code)
 	}
 }

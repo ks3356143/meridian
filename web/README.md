@@ -1,21 +1,30 @@
-# React Router + shadcn/ui
+# ChenMeridian Web
 
-This is a template for a new React Router project with React, TypeScript, and shadcn/ui.
+前端使用 Vite + React Router 8 SPA Data Mode，开发时通过 Vite 代理访问本地 Go 服务。
 
-## Adding components
+## 命令
 
-To add components to your app, run the following command:
-
-```bash
-npx shadcn@latest add button
+```powershell
+npm run dev             # 启动开发服务
+npm run format          # oxfmt 格式化
+npm run format:check    # 格式检查
+npm run lint            # oxlint
+npm run typecheck       # TypeScript 检查
+npm run build           # 生产构建
+npm run preview         # 预览生产构建
+npm run check           # 全量前端检查
 ```
 
-This will place the ui components in the `components` directory.
+## 目录
 
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
-```
+- `src/api/`：HTTP 客户端与接口封装
+- `src/components/provider/`：全局 Provider
+- `src/components/router-util/`：路由通用状态
+- `src/components/ui/`：shadcn/ui 基础组件
+- `src/features/`：业务模块
+- `src/layouts/`：页面布局
+- `src/lib/`：通用工具
+- `src/pages/`：路由页面组件
+- `src/router/`：`createBrowserRouter` 路由定义
+- `src/stores/`：Zustand 状态
+- `src/styles/`：全局样式

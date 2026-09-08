@@ -20,6 +20,7 @@ reports/*
 !reports/.gitkeep
 
 # 环境与编辑器
+.codex/tmp/
 .env
 .env.*
 .idea/

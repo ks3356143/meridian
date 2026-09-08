@@ -1,66 +1,64 @@
 # AGENTS.md
 
-## 项目定位
+## 协作规则
 
-这是一个个人使用的测试管理工具，用于维护测试项、测试用例、测试执行记录、测试报告，并最终生成 Word 文档。
+1. 始终使用简体中文回复；README、架构设计、API 文档全部中文。
+2. 需求、模块边界和未确定事项先维护到 `srs/`，入口是 `srs/README.md`。
+3. 可复用坑位只记录到 `docs/项目记忆.md`，格式固定为“现象、原因、规避方式”。
+4. 每次准备截图前，先提示用户切换到支持图片输入的模型；确认后再生成和查看截图。
+5. 用户说“下班”时：先跑当前改动对应验证，再检查 `git status`，只提交本次相关文件，Commit 信息用中文，最后执行 `git push origin`；验证失败或无远端时说明原因并停止。
 
-核心目标是把测试准备、执行、问题记录和报告产出串成一条可反复使用的工作流。
+## 技术栈
 
-## 目录约定
+- 后端：Go + Huma v2 + GORM + SQLite。
+- SQLite 驱动：`github.com/glebarez/sqlite`，坚持 pure Go，不引入 CGO。
+- 认证授权：bcrypt + JWT + Casbin RBAC。
+- 数据主键：UUIDv7 字符串，由 Go 应用统一生成。
+- 数据库结构：显式 SQL migration，禁止长期依赖 AutoMigrate。
+- 前端：Vite + React 19 + React Router 8 SPA Data Mode + Tailwind CSS 4 + shadcn/ui/Radix。
+- 路由：使用 `createBrowserRouter` 和 `RouterProvider`；页面用 lazy route，目录使用传统 `web/src`。
+- 状态与数据：Zustand + TanStack Query + TanStack Table。
+- 动效：GSAP + `@gsap/react`，动画必须尊重 reduced motion。
+- 主题：默认浅色，支持深浅色切换。
+- 提示：统一使用 `sonner`。
+- 前端检查：`oxlint` + `oxfmt`，不使用 Prettier/ESLint。
+- Word：原始 DOCX 模板 + 结构化数据 + Go 渲染 OOXML。
 
-### `knowledge-base/`
+## 常用命令
 
-存放测试产品文档和参考资料。这里的文档主要来自实际交付物或参考项目，用于理解格式、术语、报告结构和生成要求。
+```powershell
+# 后端
+gofmt -w cmd internal migrations
+go test ./...
+go vet ./...
+go build -o bin/chenmeridian.exe ./cmd/chenmeridian
 
-### `srs/`
+# 前端，在 web/ 执行
+npm run check
+npm run dev
 
-存放本项目的需求记录，是理解功能范围和后续变更的第一入口。
-
-后续处理本项目时，应优先查看 `srs/` 中的最新内容；如果该目录为空，则以下达需求时的对话内容为准。
-
-## 技术路线
-
-### 总体形态
-
-应用采用本地绿色版形态，支持 Windows、麒麟 V10 等系统。后端启动本地服务并内嵌前端资源，由系统浏览器访问，不依赖 WebView 桌面壳。
-
-### 后端
-
-- 语言与框架：Go + Huma。
-- ORM 与数据库：GORM + SQLite。
-- SQLite 驱动优先使用 pure Go 路线（如 `glebarez/sqlite`），避免 CGO，便于 Windows 与麒麟交叉编译。
-- 数据库结构使用显式 migration 管理，避免长期依赖 AutoMigrate。
-- 数据库、附件、模板、报告等运行数据放在程序目录下，并使用相对路径，保证目录可整体携带。
-
-### 前端
-
-- 构建与框架：Vite + React + React Router。
-- 样式与 UI：Tailwind v4 + shadcn/ui + Radix UI。
-- 状态与数据：Zustand + TanStack Query。
-- 表格：TanStack Table。
-- 动效：GSAP + `@gsap/react`，统一使用 `useGSAP` 管理动画生命周期。
-- 辅助生态：`lucide-react`、`cmdk`。
-
-### 界面基调
-
-界面采用直角、细边框、高密度的工程驾驶舱风格，支持深浅色主题。动画以快速、克制、精致的微交互为主，重点用于页面转场、列表入场、状态反馈、统计数字滚动和报告生成进度，不影响录入效率。
-
-### Word 文档生成
-
-文档生成采用“原始 DOCX 模板 + 结构化数据 + Go 渲染 OOXML”的路线。以 `knowledge-base/` 中的真实交付文档为模板底座，保留封面、页眉页脚、字体和表格样式；业务数据存放在 SQLite 中，由受限的报告文档模型驱动 Go 渲染表格行、字段和章节内容。
-
-不采用通用 HTML 转 OOXML 作为主方案。HTML 可用于页面预览，但不是 Word 生成的中间格式。
-
-## 版本规划
-
-版本号从 `V0.0.1` 开始。
-
-在 `V1` 之前处于个人原型和快速迭代阶段，可以按实际开发节奏灵活拆分版本和功能，不需要过早固化完整版本计划。`V1` 的定位应形成一个能覆盖“测试项、用例、记录、报告、Word 生成”主流程的可用版本。
-
-版本变化记录在 `版本记录.md` 中维护。
+# 联调地址
+# 后端 API 文档：http://127.0.0.1:8787/docs
+# 前端登录页：http://localhost:5173/login
+```
 
 ## 验证铁律
 
-每次代码修改后，必须先完成可执行的验证（格式化、编译、测试、接口请求或页面检查，按改动范围选择），验证通过后才能汇报完成。汇报时必须附带一份明确的验证清单，说明已验证项、验证方法和剩余风险。
+每次代码修改后，先执行可运行验证，再汇报完成。汇报必须包含：
 
-项目记忆与坑位记录：`docs/项目记忆.md`。
+1. 已验证项。
+2. 验证方法。
+3. 剩余风险。
+
+前端页面改动至少执行类型检查、lint、格式检查和构建；涉及视觉时用本机 Edge 截图检查。接口改动必须用真实 HTTP 请求验证。数据库改动必须有迁移和集成测试。
+
+## 禁止操作
+
+1. 禁止为了省事把新接口堆进单个大文件；API 按业务域拆分。
+2. 禁止把 HTML 转 OOXML 作为 Word 生成主方案。
+3. Playwright 页面检查使用本机 Edge channel，不下载独立 Chromium。
+
+## 入口文档
+
+- 需求索引：[srs/README.md](srs/README.md)
+- 项目记忆：[docs/项目记忆.md](docs/项目记忆.md)

@@ -54,6 +54,60 @@
       "sourceType": "github",
       "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
       "computedHash": "3f1e66e08e3d1d3feaf2a3187705022812e0bece8ff5bee80fe7cf782f26fe8b"
+    },
+    "gsap-core": {
+      "skillPath": "skills/gsap-core/SKILL.md",
+      "source": "greensock/gsap-skills",
+      "computedHash": "3887b47e050ab5afbe2a9a820f23d39fa02ab785e06a343be44c6f91d84d12b3",
+      "sourceType": "github"
+    },
+    "gsap-frameworks": {
+      "skillPath": "skills/gsap-frameworks/SKILL.md",
+      "source": "greensock/gsap-skills",
+      "computedHash": "842d9d3659ec3ddc8abbdc524708f8facf81f468ac25d0577f48c759c4fa31e6",
+      "sourceType": "github"
+    },
+    "gsap-performance": {
+      "skillPath": "skills/gsap-performance/SKILL.md",
+      "source": "greensock/gsap-skills",
+      "computedHash": "cb5408d6fba707aabcbfe3320317a14c1f8fca6070074e5261047930f50d441e",
+      "sourceType": "github"
+    },
+    "gsap-plugins": {
+      "skillPath": "skills/gsap-plugins/SKILL.md",
+      "source": "greensock/gsap-skills",
+      "computedHash": "5838b856c74c07fbc9fa99b6dfd1eee34ea554c3e530c30e0d58014b707d70a4",
+      "sourceType": "github"
+    },
+    "gsap-react": {
+      "skillPath": "skills/gsap-react/SKILL.md",
+      "source": "greensock/gsap-skills",
+      "computedHash": "88e2a5312b45e8cc7b3c496637ff5bc9af2ae9c925b555c8b235b34cbc989d74",
+      "sourceType": "github"
+    },
+    "gsap-scrolltrigger": {
+      "skillPath": "skills/gsap-scrolltrigger/SKILL.md",
+      "source": "greensock/gsap-skills",
+      "computedHash": "9351b6666a4749c0740406ea363aaccb99a087ff45cc5e8b99a0f367facf3ef4",
+      "sourceType": "github"
+    },
+    "gsap-timeline": {
+      "skillPath": "skills/gsap-timeline/SKILL.md",
+      "source": "greensock/gsap-skills",
+      "computedHash": "1a8b0f39cc4be3ed3d834b89672e4ae2f151b901dc3450bebf10bbc45379fe02",
+      "sourceType": "github"
+    },
+    "gsap-utils": {
+      "skillPath": "skills/gsap-utils/SKILL.md",
+      "source": "greensock/gsap-skills",
+      "computedHash": "1927bcc4ea95b38203404ad5ea1d060b15c4a886c65ae53e885ff1793aabe0ba",
+      "sourceType": "github"
+    },
+    "web-artifacts-builder": {
+      "skillPath": "skills/web-artifacts-builder/SKILL.md",
+      "source": "anthropics/skills",
+      "computedHash": "81c5002c6643b0de7b8710b00e7a9038daa6fb9b68d59870ee6adb12da8d10f8",
+      "sourceType": "github"
     }
   }
 }

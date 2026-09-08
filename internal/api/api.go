@@ -6,20 +6,23 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"gorm.io/gorm"
+
+	"chenmeridian/internal/api/v1"
+	authservice "chenmeridian/internal/auth"
 )
 
-const version = "0.0.1"
+const Version = "0.0.1"
 
-func New(db *gorm.DB) http.Handler {
+func New(db *gorm.DB, authService *authservice.Service) http.Handler {
 	mux := http.NewServeMux()
-	api := humago.New(mux, huma.DefaultConfig("ChenMeridian API", version))
+	api := humago.New(mux, huma.DefaultConfig("ChenMeridian API", Version))
 
-	registerRoutes(api, db)
+	v1.Register(api, v1.Dependencies{
+		DB:         db,
+		Auth:       authService,
+		AppVersion: Version,
+	})
 
 	mux.Handle("/", http.RedirectHandler("/docs", http.StatusTemporaryRedirect))
-	return mux
-}
-
-func registerRoutes(api huma.API, db *gorm.DB) {
-	registerHealth(api, db)
+	return authService.Middleware(mux)
 }

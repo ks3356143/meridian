@@ -12,8 +12,12 @@ import (
 	"time"
 
 	"chenmeridian/internal/api"
+	authservice "chenmeridian/internal/auth"
 	"chenmeridian/internal/config"
 	"chenmeridian/internal/database"
+	"chenmeridian/internal/modules/settings"
+	"chenmeridian/internal/modules/users"
+	"chenmeridian/migrations"
 )
 
 func main() {
@@ -35,9 +39,24 @@ func run(cfg config.Config) error {
 		}
 	}()
 
+	if err := database.Migrate(db, migrations.FS); err != nil {
+		return fmt.Errorf("执行数据库迁移失败: %w", err)
+	}
+
+	userService := users.NewService(db)
+	settingService := settings.NewService(db)
+	if err := userService.EnsureAdmin(context.Background(), cfg.AdminUsername, cfg.AdminPassword); err != nil {
+		return fmt.Errorf("初始化管理员失败: %w", err)
+	}
+
+	authService, err := authservice.NewService(db, userService, settingService, cfg.TokenTTL)
+	if err != nil {
+		return fmt.Errorf("初始化认证服务失败: %w", err)
+	}
+
 	server := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           api.New(db),
+		Handler:           api.New(db, authService),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

@@ -1,44 +1,70 @@
 # ChenMeridian 测试管理工具
 
-这是一个个人使用的测试管理工具，目标是覆盖测试项、测试用例、测试执行记录、测试报告和 Word 文档生成的主流程。
+个人使用的本地测试管理工具，目标覆盖测试项、测试用例、执行记录、问题单、测试报告和 Word 文档生成。
 
-## 当前技术栈
+## 技术栈
 
-- 后端：Go + Huma + GORM + SQLite
+- 后端：Go + Huma v2 + GORM + SQLite
 - SQLite 驱动：pure Go 的 `github.com/glebarez/sqlite`
-- 前端：Vite + React + Tailwind + shadcn/ui
-- 文档生成：基于原始 DOCX 模板渲染 OOXML
-
-## 目录说明
-
-- `cmd/chenmeridian/`：程序入口
-- `internal/api/`：Huma 接口定义
-- `internal/config/`：本地配置
-- `internal/database/`：SQLite 连接与数据库基础能力
-- `migrations/`：数据库显式迁移脚本
-- `web/`：前端工程
-- `data/`：SQLite 数据库与本地运行数据
-- `attachments/`：测试附件
-- `reports/`：生成的报告
-- `templates/`：Word 模板
-- `knowledge-base/`：真实交付文档与参考资料
-- `srs/`：需求记录
+- 认证授权：bcrypt + JWT + Casbin RBAC
+- 前端：Vite + React + React Router 8 SPA Data Mode + Tailwind CSS + shadcn/ui/Radix
+- 状态与数据：Zustand + TanStack Query
+- 动效：GSAP + `@gsap/react`
+- 检查：OXC（`oxlint` + `oxfmt`）
 
 ## 本地运行
 
-```bash
+后端：
+
+```powershell
 go run ./cmd/chenmeridian
 ```
 
-默认地址：`http://127.0.0.1:8787`
+前端开发服务：
 
-可用地址：
+```powershell
+cd web
+npm run dev
+```
 
-- API 文档：`http://127.0.0.1:8787/docs`
-- OpenAPI：`http://127.0.0.1:8787/openapi.json`
+地址：
+
+- 后端 API 文档：`http://127.0.0.1:8787/docs`
 - 健康检查：`http://127.0.0.1:8787/api/v1/health`
+- 前端登录页：`http://localhost:5173/login`
 
-## 环境变量
+初始账号：
 
-- `CHENMERIDIAN_ADDR`：监听地址，默认 `127.0.0.1:8787`
-- `CHENMERIDIAN_DB_PATH`：SQLite 路径，默认 `data/meridian.db`
+- 用户名：`admin`
+- 密码：`admin123`
+
+可用环境变量覆盖初始账号、监听地址、数据库路径和令牌有效期。
+
+## 验证命令
+
+后端：
+
+```powershell
+gofmt -w cmd internal migrations
+go test ./...
+go vet ./...
+go build -o bin/chenmeridian.exe ./cmd/chenmeridian
+```
+
+前端：
+
+```powershell
+cd web
+npm run check
+```
+
+## 目录
+
+- `cmd/chenmeridian/`：后端入口
+- `internal/`：后端模块
+- `migrations/`：显式数据库迁移
+- `web/src/`：传统 Vite SPA 前端源码
+- `srs/`：需求和工程约定
+- `knowledge-base/`：真实交付文档和参考资料
+- `docs/`：项目记忆和开发资料
+- `data/`、`attachments/`、`templates/`、`reports/`：本地运行数据目录

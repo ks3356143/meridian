@@ -1,0 +1,269 @@
+@import "@fontsource-variable/geist";
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0rem;
+  --background: oklch(0.975 0.005 125);
+  --foreground: oklch(0.215 0.02 150);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.215 0.02 150);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.215 0.02 150);
+  --primary: oklch(0.545 0.15 153);
+  --primary-foreground: oklch(0.99 0.01 153);
+  --secondary: oklch(0.945 0.012 135);
+  --secondary-foreground: oklch(0.26 0.025 150);
+  --muted: oklch(0.952 0.008 135);
+  --muted-foreground: oklch(0.495 0.022 150);
+  --accent: oklch(0.925 0.055 155);
+  --accent-foreground: oklch(0.31 0.06 153);
+  --destructive: oklch(0.575 0.215 27);
+  --destructive-foreground: oklch(0.99 0.01 27);
+  --border: oklch(0.885 0.012 145);
+  --input: oklch(0.865 0.014 145);
+  --ring: oklch(0.67 0.12 152);
+  --chart-1: oklch(0.58 0.15 153);
+  --chart-2: oklch(0.62 0.11 205);
+  --chart-3: oklch(0.68 0.14 85);
+  --chart-4: oklch(0.6 0.18 17);
+  --chart-5: oklch(0.61 0.15 305);
+}
+
+.dark {
+  --background: oklch(0.165 0.012 150);
+  --foreground: oklch(0.955 0.005 140);
+  --card: oklch(0.205 0.015 150);
+  --card-foreground: oklch(0.955 0.005 140);
+  --popover: oklch(0.205 0.015 150);
+  --popover-foreground: oklch(0.955 0.005 140);
+  --primary: oklch(0.775 0.16 152);
+  --primary-foreground: oklch(0.175 0.03 152);
+  --secondary: oklch(0.27 0.018 150);
+  --secondary-foreground: oklch(0.95 0.005 140);
+  --muted: oklch(0.255 0.015 150);
+  --muted-foreground: oklch(0.72 0.015 145);
+  --accent: oklch(0.315 0.05 155);
+  --accent-foreground: oklch(0.93 0.03 155);
+  --destructive: oklch(0.68 0.19 25);
+  --destructive-foreground: oklch(0.15 0.02 25);
+  --border: oklch(0.345 0.015 150);
+  --input: oklch(0.315 0.015 150);
+  --ring: oklch(0.74 0.11 152);
+  --chart-1: oklch(0.775 0.16 152);
+  --chart-2: oklch(0.74 0.11 205);
+  --chart-3: oklch(0.79 0.13 85);
+  --chart-4: oklch(0.68 0.19 17);
+  --chart-5: oklch(0.7 0.16 305);
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", Consolas, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-xs: var(--radius);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+.meridian-beam {
+  position: relative;
+  background: linear-gradient(
+    to right,
+    transparent 38%,
+    color-mix(in oklch, var(--primary) 65%, transparent) 50%,
+    transparent 62%
+  );
+  will-change: transform;
+}
+
+.meridian-beam::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 46%, var(--primary) 50%, transparent 54%);
+}
+
+.visual-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 10%, transparent),
+    transparent 70%
+  );
+  will-change: transform, opacity;
+}
+
+.dark .visual-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 18%, transparent),
+    transparent 70%
+  );
+}
+
+.login-ambient {
+  top: 8%;
+  right: -12%;
+  width: min(36rem, 80vw);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 6%, transparent),
+    transparent 70%
+  );
+}
+
+.dark .login-ambient {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 10%, transparent),
+    transparent 70%
+  );
+}
+
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgb(255 255 255 / 0.22) 50%,
+    transparent 60%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.7s cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+}
+
+.btn-sheen:hover:not(:disabled)::after {
+  transform: translateX(130%);
+}
+
+.flow-step {
+  transition: color 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.flow-step.is-active {
+  color: var(--primary);
+}
+
+.flow-beam {
+  background: linear-gradient(
+    to right,
+    transparent 25%,
+    color-mix(in oklch, var(--primary) 90%, transparent) 50%,
+    transparent 75%
+  );
+  box-shadow: 0 0 6px 1px color-mix(in oklch, var(--primary) 35%, transparent);
+  will-change: transform;
+}
+
+:root {
+  --wordmark-gradient: linear-gradient(
+    92deg,
+    #0284c7,
+    #059669 30%,
+    #ca8a04 55%,
+    #dc2626 78%,
+    #9333ea
+  );
+}
+
+.dark {
+  --wordmark-gradient: linear-gradient(
+    92deg,
+    #38bdf8,
+    #34d399 30%,
+    #fbbf24 55%,
+    #fb7185 78%,
+    #c084fc
+  );
+}
+
+.wordmark-char {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.visual-wordmark {
+  animation: wordmark-hue 14s linear infinite;
+}
+
+@keyframes wordmark-hue {
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+
+.globe-wireframe {
+  animation: globe-spin 70s linear infinite;
+}
+
+@keyframes globe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visual-wordmark,
+  .globe-wireframe {
+    animation: none;
+  }
+}
