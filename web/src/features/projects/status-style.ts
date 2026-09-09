@@ -1,17 +1,27 @@
 import type { Project, ProjectStatus } from "./types";
 
-export const statusStyle: Record<ProjectStatus, string> = {
-  编制大纲中: "bg-secondary text-secondary-foreground",
-  大纲已评审: "bg-accent text-accent-foreground",
-  测试执行中: "bg-primary/12 text-primary",
-  回归验证中: "bg-chart-2/15 text-chart-2",
-  报告编制中: "bg-chart-3/20 text-chart-3",
-  已完成: "bg-muted text-muted-foreground",
+export type ProjectBadgeVariant =
+  | "secondary"
+  | "outline"
+  | "primary"
+  | "success"
+  | "info"
+  | "warning"
+  | "ghost"
+  | "danger";
+
+export const statusVariant: Record<ProjectStatus, ProjectBadgeVariant> = {
+  编制大纲中: "secondary",
+  大纲已评审: "info",
+  测试执行中: "primary",
+  回归验证中: "info",
+  报告编制中: "warning",
+  已完成: "success",
 };
 
-export const levelStyle: Record<Project["level"], string> = {
-  A: "text-destructive border-destructive/40",
-  B: "text-chart-4 border-chart-4/40",
-  C: "text-chart-2 border-chart-2/40",
-  D: "text-muted-foreground border-border",
+export const levelVariant: Record<Project["level"], ProjectBadgeVariant> = {
+  A: "danger",
+  B: "warning",
+  C: "info",
+  D: "outline",
 };

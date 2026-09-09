@@ -14,7 +14,7 @@ export function RouterErrorBoundary() {
 
   return (
     <main className="bg-background flex min-h-svh items-center justify-center p-6">
-      <section className="border-border bg-card text-card-foreground w-full max-w-md border p-6">
+      <section className="panel-surface border-border text-card-foreground w-full max-w-md rounded-sm border p-6">
         <div className="text-primary flex items-center gap-2">
           <AlertTriangle data-icon="inline-start" />
           <span className="font-mono text-xs tracking-normal uppercase">Route Error</span>

@@ -42,8 +42,8 @@ export default function BasicLayout() {
 
   return (
     <div className="bg-background flex min-h-svh flex-col lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="border-border hidden border-r lg:flex lg:flex-col">
-        <div className="border-border flex h-14 items-center gap-2 border-b px-4">
+      <aside className="border-border bg-card/45 hidden border-r lg:flex lg:flex-col">
+        <div className="border-border elevation-1 flex h-14 items-center gap-2 border-b px-4">
           <BrandLogo className="text-primary size-8 shrink-0" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">ChenMeridian</p>
@@ -54,15 +54,23 @@ export default function BasicLayout() {
           <NavLink
             to="/"
             end
-            className="border-primary/30 bg-primary/10 text-primary border px-3 py-2 text-sm font-medium"
+            className="border-border bg-card/70 text-foreground hover:border-primary/30 hover:bg-primary/6 hover:text-primary elevation-1 border px-3 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow] duration-200"
           >
             项目组合
           </NavLink>
+          {user.role === "admin" ? (
+            <NavLink
+              to="/settings/dictionaries"
+              className="border-border bg-card/70 text-foreground hover:border-primary/30 hover:bg-primary/6 hover:text-primary elevation-1 mt-2 border px-3 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow] duration-200"
+            >
+              字典配置
+            </NavLink>
+          ) : null}
         </nav>
       </aside>
 
       <div className="flex min-h-svh flex-col">
-        <header className="border-border bg-background/90 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-4 backdrop-blur">
+        <header className="border-border bg-background/90 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-4 shadow-[0_1px_10px_-8px_rgb(20_42_30_/_0.32)] backdrop-blur">
           <div className="flex min-w-0 items-center gap-3">
             <ShieldCheck className="text-primary" aria-hidden />
             <div className="min-w-0">

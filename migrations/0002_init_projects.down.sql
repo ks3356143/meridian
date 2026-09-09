@@ -1,0 +1,11 @@
+DROP INDEX IF EXISTS idx_project_members_user;
+DROP INDEX IF EXISTS idx_projects_owner;
+DROP INDEX IF EXISTS idx_projects_status;
+DROP TABLE IF EXISTS project_members;
+DROP TABLE IF EXISTS project_reference_standards;
+DROP TABLE IF EXISTS project_development_environments;
+DROP TABLE IF EXISTS project_runtime_environments;
+DROP TABLE IF EXISTS project_languages;
+DROP TABLE IF EXISTS reference_standards;
+DROP TABLE IF EXISTS dictionary_items;
+DROP TABLE IF EXISTS projects;

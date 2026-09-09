@@ -21,8 +21,16 @@ export const router = createBrowserRouter([
             lazy: () => import("@/pages/ProjectsPage"),
           },
           {
+            path: "projects/new",
+            lazy: () => import("@/pages/ProjectCreatePage"),
+          },
+          {
             path: "projects/:projectId",
             lazy: () => import("@/pages/ProjectWorkbenchPage"),
+          },
+          {
+            path: "settings/dictionaries",
+            lazy: () => import("@/pages/DictionaryManagementPage"),
           },
         ],
       },

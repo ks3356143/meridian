@@ -1,22 +1,31 @@
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { projectsApi } from "@/features/projects/api";
+import { levelVariant, statusVariant } from "@/features/projects/status-style";
+import type { Project } from "@/features/projects/types";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { mockProjects } from "@/features/projects/mock";
-import { levelStyle, statusStyle } from "@/features/projects/status-style";
 
 const TABS = ["概览", "测试项", "用例", "执行记录", "问题单", "文档产出"] as const;
 
 export function Component() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const project = mockProjects.find((p) => p.id === projectId);
+  const projectQuery = useQuery({
+    queryKey: ["projects", "detail", projectId],
+    queryFn: () => projectsApi.detail(projectId ?? ""),
+    enabled: Boolean(projectId),
+  });
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("概览");
   const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
+      if (!containerRef.current) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       gsap.from(".workbench-reveal", {
         opacity: 0,
@@ -29,10 +38,19 @@ export function Component() {
     { scope: containerRef },
   );
 
-  if (!project) {
+  if (projectQuery.isPending) {
+    return (
+      <div className="flex min-h-80 items-center justify-center">
+        <span className="text-muted-foreground text-sm">正在加载项目工作台</span>
+      </div>
+    );
+  }
+
+  if (projectQuery.isError || !projectQuery.data) {
     return <Navigate to="/" replace />;
   }
 
+  const project = projectQuery.data;
   const rate = Math.round((project.casesExecuted / Math.max(project.casesTotal, 1)) * 100);
 
   return (
@@ -52,20 +70,16 @@ export function Component() {
             <span className="text-muted-foreground mr-2 font-mono text-lg">{project.id}</span>
             {project.name}
           </h1>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 text-xs font-medium ${statusStyle[project.status]}`}
-          >
+          <Badge variant={statusVariant[project.status]}>
+            <span className="status-dot" aria-hidden />
             {project.status}
-          </span>
+          </Badge>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <Tag label="性质" value={project.nature} />
-          <Tag label="类型" value={project.testType} />
-          <span
-            className={`inline-flex items-center gap-1 border px-2 py-0.5 ${levelStyle[project.level]}`}
-          >
-            安全等级 {project.level}
-          </span>
+          <Tag label="软件" value={project.softwareType} />
+          <Tag label="密级" value={project.classification} />
+          <Badge variant={levelVariant[project.level]}>安全等级 {project.level}</Badge>
           <Tag label="平台" value={project.platform} />
           <Tag label="研制单位" value={project.organization} />
           <Tag label="负责人" value={project.owner} />
@@ -74,47 +88,46 @@ export function Component() {
         </div>
       </header>
 
-      <nav className="border-border bg-card flex border">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            data-active={activeTab === tab}
-            className="border-border text-muted-foreground hover:text-foreground data-[active=true]:text-primary data-[active=true]:border-primary relative border-r px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors last:border-r-0 data-[active=true]:bg-primary/5"
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </button>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as (typeof TABS)[number])}
+      >
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab} value={tab}>
+              {tab}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsContent value="概览">
+          <OverviewTab project={project} />
+        </TabsContent>
+        {TABS.filter((tab) => tab !== "概览").map((tab) => (
+          <TabsContent key={tab} value={tab}>
+            <div className="panel-surface border-border flex min-h-48 items-center justify-center rounded-sm border">
+              <p className="text-muted-foreground text-sm">「{tab}」模块将在项目流程推进后接入。</p>
+            </div>
+          </TabsContent>
         ))}
-      </nav>
-
-      {activeTab === "概览" ? (
-        <OverviewTab projectId={project.id} />
-      ) : (
-        <div className="border-border bg-card flex min-h-48 items-center justify-center border">
-          <p className="text-muted-foreground text-sm">
-            「{activeTab}」模块将在后续版本接入，当前版本聚焦项目组合与工作台骨架。
-          </p>
-        </div>
-      )}
+      </Tabs>
     </div>
   );
 }
 
 function Tag({ label, value }: { label: string; value: string }) {
   return (
-    <span className="border-border bg-card inline-flex items-center gap-1 border px-2 py-0.5">
+    <Badge variant="outline" className="bg-card/70">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
-    </span>
+    </Badge>
   );
 }
 
-function OverviewTab({ projectId }: { projectId: string }) {
+function OverviewTab({ project }: { project: Project }) {
   const modules = [
     { name: "测试项", value: "0" },
-    { name: "测试用例", value: "0" },
-    { name: "执行记录", value: "0" },
+    { name: "测试用例", value: String(project.casesTotal) },
+    { name: "执行记录", value: String(project.casesExecuted) },
     { name: "问题单", value: "0" },
     { name: "文档产出", value: "0" },
     { name: "回归轮次", value: "0" },
@@ -122,30 +135,72 @@ function OverviewTab({ projectId }: { projectId: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="border-border bg-card border p-4">
-        <h2 className="mb-3 text-sm font-semibold">被测对象信息</h2>
+      <section className="panel-surface border-border rounded-sm border p-4">
+        <h2 className="mb-3 text-sm font-semibold">项目基础信息</h2>
         <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-[13px] lg:grid-cols-4">
-          <InfoItem label="软件名称" value={`${projectId} 被测软件`} />
-          <InfoItem label="软件类型" value="新研" />
-          <InfoItem label="运行环境" value="VxWorks / Linux" />
-          <InfoItem label="编程语言" value="C" />
-          <InfoItem label="版本" value="1.00" />
-          <InfoItem label="代码规模" value="-- 行" />
-          <InfoItem label="接收日期" value="--" />
-          <InfoItem label="研制单位" value="--" />
+          <InfoItem label="项目标识" value={project.id} />
+          <InfoItem label="测评性质" value={project.nature} />
+          <InfoItem label="测试平台" value={project.platform} />
+          <InfoItem label="软件类型" value={project.softwareType} />
+          <InfoItem label="密级" value={project.classification} />
+          <InfoItem label="安全等级" value={project.level} />
+          <InfoItem label="研制单位" value={project.organization} />
+          <InfoItem label="项目负责人" value={project.owner} />
+          <InfoItem label="编程语言" value={project.languages.join("、") || "--"} />
+          <InfoItem label="运行环境" value={project.runtimeEnvironments.join("、") || "--"} />
+          <InfoItem label="开发环境" value={project.developmentEnvironments.join("、") || "--"} />
+          <InfoItem label="项目状态" value={project.status} />
         </dl>
       </section>
 
-      <section className="border-border bg-card grid grid-cols-2 gap-px border lg:grid-cols-3">
-        {modules.map((m) => (
-          <div
-            key={m.name}
-            className="bg-card hover:border-primary/50 flex min-h-20 flex-col justify-center gap-1 border p-4 transition-colors"
-          >
-            <span className="text-muted-foreground text-xs">{m.name}</span>
-            <span className="font-mono text-xl font-semibold">{m.value}</span>
-          </div>
-        ))}
+      <section className="grid gap-4 lg:grid-cols-[1fr_minmax(260px,360px)]">
+        <div className="panel-surface border-border grid grid-cols-2 gap-px rounded-sm border bg-border/60 lg:grid-cols-3">
+          {modules.map((m) => (
+            <div
+              key={m.name}
+              className="group bg-card hover:bg-primary/4 flex min-h-20 flex-col justify-center gap-1 p-4 transition-[background-color,box-shadow] duration-200 hover:shadow-[inset_2px_0_0_var(--primary)]"
+            >
+              <span className="text-muted-foreground text-xs">{m.name}</span>
+              <span className="font-mono text-xl font-semibold">{m.value}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <section className="panel-surface border-border rounded-sm border p-4">
+            <h2 className="mb-3 text-sm font-semibold">依据标准</h2>
+            {project.referenceStandards.length ? (
+              <ul className="flex flex-col gap-2 text-xs">
+                {project.referenceStandards.map((standard) => (
+                  <li key={standard.name} className="border-border border-l-2 pl-3">
+                    <span className="font-medium">{standard.name}</span>
+                    <span className="text-muted-foreground mt-0.5 block">
+                      {[standard.code, standard.publishedDate, standard.source]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-xs">未选择依据标准</p>
+            )}
+          </section>
+
+          <section className="panel-surface border-border rounded-sm border p-4">
+            <h2 className="mb-3 text-sm font-semibold">项目成员</h2>
+            <ul className="flex flex-wrap gap-2">
+              {project.members.map((member) => (
+                <li key={member.id}>
+                  <Badge variant={member.isOwner ? "primary" : "outline"}>
+                    {member.displayName}
+                    {member.isOwner ? " · 负责人" : ""}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
       </section>
     </div>
   );

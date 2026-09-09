@@ -8,7 +8,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <AppThemeProvider>
       <QueryProvider>
         {children}
-        <Toaster position="bottom-right" closeButton richColors />
+        <Toaster position="top-center" closeButton richColors />
       </QueryProvider>
     </AppThemeProvider>
   );

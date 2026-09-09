@@ -1,0 +1,48 @@
+.button-ripple {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.22;
+  transform: translate(-50%, -50%) scale(0);
+  animation: button-ripple-in 0.62s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes button-ripple-in {
+  0% {
+    opacity: 0.24;
+    transform: translate(-50%, -50%) scale(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.tabs-content[data-state="active"] {
+  animation: tab-content-in 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes tab-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-ripple,
+  .tabs-content[data-state="active"] {
+    animation: none;
+  }
+
+  .button-ripple {
+    opacity: 0;
+  }
+}

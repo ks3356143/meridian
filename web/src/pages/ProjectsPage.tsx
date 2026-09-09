@@ -1,19 +1,54 @@
 import { gsap, useGSAP } from "@/lib/gsap";
+import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, FilePlus2, FolderPlus } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
+import { projectsApi } from "@/features/projects/api";
 import { KpiBar } from "@/features/projects/components/kpi-bar";
+import { ProjectFilters } from "@/features/projects/components/project-filters";
+import {
+  emptyProjectFilters,
+  loadProjectFilters,
+  saveProjectFilters,
+  type ProjectFilterValues,
+} from "@/features/projects/components/project-filter-state";
 import { ProjectsTable } from "@/features/projects/components/projects-table";
+import { RiskActivityBar } from "@/features/projects/components/risk-activity-bar";
 import { TodoPanel } from "@/features/projects/components/todo-panel";
-import { mockProjects } from "@/features/projects/mock";
 
 const TITLE = "项目组合";
 
 export function Component() {
+  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [filters, setFilters] = useState<ProjectFilterValues>(loadProjectFilters);
+  const projectsQuery = useQuery({ queryKey: ["projects", "list"], queryFn: projectsApi.list });
+  const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
+
+  useEffect(() => {
+    saveProjectFilters(filters);
+  }, [filters]);
+
+  const filteredProjects = useMemo(() => {
+    const keyword = filters.keyword.trim().toLowerCase();
+    return projects.filter((project) => {
+      const keywordMatched =
+        keyword.length === 0 ||
+        [project.id, project.name, project.organization, project.owner].some((field) =>
+          field.toLowerCase().includes(keyword),
+        );
+      const statusMatched = filters.status.length === 0 || project.status === filters.status;
+      const levelMatched = filters.level.length === 0 || project.level === filters.level;
+      const platformMatched =
+        filters.platform.length === 0 || project.platform === filters.platform;
+      return keywordMatched && statusMatched && levelMatched && platformMatched;
+    });
+  }, [filters, projects]);
 
   useGSAP(
     () => {
+      if (!containerRef.current) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
       gsap.from(".dash-reveal", {
@@ -44,7 +79,6 @@ export function Component() {
         );
       });
 
-      // 匀速流光：起终点都在容器外，循环重置不可见。
       gsap.fromTo(
         ".dash-beam",
         { xPercent: -100 },
@@ -60,6 +94,25 @@ export function Component() {
     day: "numeric",
     weekday: "long",
   });
+
+  if (projectsQuery.isPending) {
+    return (
+      <div className="flex min-h-80 items-center justify-center">
+        <span className="text-muted-foreground text-sm">正在加载项目组合</span>
+      </div>
+    );
+  }
+
+  if (projectsQuery.isError) {
+    return (
+      <div className="flex min-h-80 flex-col items-center justify-center gap-3">
+        <p className="text-sm">项目列表加载失败</p>
+        <Button variant="outline" onClick={() => projectsQuery.refetch()}>
+          重新加载
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className="relative flex flex-col gap-4 overflow-hidden">
@@ -99,11 +152,11 @@ export function Component() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" type="button">
             <FilePlus2 data-icon="inline-start" />
             生成文档
           </Button>
-          <Button size="sm">
+          <Button size="sm" type="button" onClick={() => navigate("/projects/new")}>
             <FolderPlus data-icon="inline-start" />
             新建项目
           </Button>
@@ -115,15 +168,29 @@ export function Component() {
       </div>
 
       <div className="dash-reveal">
-        <KpiBar projects={mockProjects} />
+        <ProjectFilters
+          filters={filters}
+          resultCount={filteredProjects.length}
+          totalCount={projects.length}
+          onChange={setFilters}
+        />
       </div>
 
-      <div className="dash-reveal flex items-start gap-4">
+      <div className="dash-reveal">
+        <KpiBar projects={filteredProjects} />
+      </div>
+
+      <RiskActivityBar projects={filteredProjects} />
+
+      <div className="flex flex-col items-stretch gap-4 min-[1760px]:flex-row min-[1760px]:items-start">
         <div className="min-w-0 flex-1">
-          <ProjectsTable projects={mockProjects} />
+          <ProjectsTable
+            projects={filteredProjects}
+            onClearFilters={() => setFilters(emptyProjectFilters)}
+          />
         </div>
-        <div className="dash-reveal hidden xl:block">
-          <TodoPanel projects={mockProjects} />
+        <div className="dash-reveal hidden min-[1760px]:block">
+          <TodoPanel projects={filteredProjects} />
         </div>
       </div>
     </div>

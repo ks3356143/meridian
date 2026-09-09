@@ -3,10 +3,12 @@
 ## 协作规则
 
 1. 始终使用简体中文回复；README、架构设计、API 文档全部中文。
-2. 需求、模块边界和未确定事项先维护到 `srs/`，入口是 `srs/README.md`。
-3. 可复用坑位只记录到 `docs/项目记忆.md`，格式固定为“现象、原因、规避方式”。
-4. 每次准备截图前，先提示用户切换到支持图片输入的模型；确认后再生成和查看截图。
-5. 用户说“下班”时：先跑当前改动对应验证，再检查 `git status`，只提交本次相关文件，Commit 信息用中文，最后执行 `git push origin`；验证失败或无远端时说明原因并停止。
+2. 每次会话开工先读取 [srs/12-跨会话记忆.md](srs/12-跨会话记忆.md)，恢复上次会话的任务与偏好。
+3. 需求、模块边界和未确定事项先维护到 `srs/`，入口是 [srs/README.md](srs/README.md)。
+4. 可复用坑位只记录到 [docs/项目记忆.md](docs/项目记忆.md)，格式固定为“现象、原因、规避方式”。
+5. 每次准备截图前，先提示用户切换到支持图片输入的模型；确认后再生成和查看截图。
+6. 用户说“下班”时：先跑当前改动对应验证，再检查 `git status`，只提交本次相关文件，Commit 信息用中文，最后执行 `git push origin`；验证失败或无远端时说明原因并停止。
+7. ChenMeridian / Meridian 工具可以参考 [团队工具](http://47.108.230.220:8081/) 的理论、信息组织与交互思路；该条仅作为理念参考，不因此主动写代码或修改实现。
 
 ## 技术栈
 
@@ -16,6 +18,7 @@
 - 数据主键：UUIDv7 字符串，由 Go 应用统一生成。
 - 数据库结构：显式 SQL migration，禁止长期依赖 AutoMigrate。
 - 前端：Vite + React 19 + React Router 8 SPA Data Mode + Tailwind CSS 4 + shadcn/ui/Radix。
+- 组件库铁律：能使用成熟组件库的交互组件必须使用组件库。项目内优先 shadcn/ui 与 Radix UI；表格、路由、数据等场景使用 TanStack、React Router 等对应专业组件库。仅纯展示、布局或确无组件库能力时允许手写，且必须补齐无障碍、键盘操作和微动效。
 - 路由：使用 `createBrowserRouter` 和 `RouterProvider`；页面用 lazy route，目录使用传统 `web/src`。
 - 状态与数据：Zustand + TanStack Query + TanStack Table。
 - 动效：GSAP + `@gsap/react`，动画必须尊重 reduced motion。
@@ -61,4 +64,5 @@ npm run dev
 ## 入口文档
 
 - 需求索引：[srs/README.md](srs/README.md)
+- 跨会话记忆：[srs/12-跨会话记忆.md](srs/12-跨会话记忆.md)
 - 项目记忆：[docs/项目记忆.md](docs/项目记忆.md)
