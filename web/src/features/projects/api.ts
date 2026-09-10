@@ -6,6 +6,8 @@ import type {
   ProjectOptions,
   ReferenceStandard,
   SaveDictionaryPayload,
+  RelatedParty,
+  SaveRelatedPartyPayload,
   SaveReferenceStandardPayload,
 } from "./types";
 
@@ -25,4 +27,9 @@ export const projectsApi = {
     request<ReferenceStandard>("POST", "/api/v1/reference-standards", {}, payload),
   updateStandard: (id: string, payload: SaveReferenceStandardPayload) =>
     request<ReferenceStandard>("PUT", `/api/v1/reference-standards/${id}`, {}, payload),
+  listRelatedParties: () => request<RelatedParty[]>("GET", "/api/v1/related-parties"),
+  createRelatedParty: (payload: SaveRelatedPartyPayload) =>
+    request<RelatedParty>("POST", "/api/v1/related-parties", {}, payload),
+  updateRelatedParty: (id: string, payload: SaveRelatedPartyPayload) =>
+    request<RelatedParty>("PUT", `/api/v1/related-parties/${id}`, {}, payload),
 };

@@ -63,7 +63,7 @@ export function Component() {
           onClick={() => navigate("/")}
         >
           <ArrowLeft data-icon="inline-start" />
-          返回项目组合
+          返回项目列表
         </Button>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -81,7 +81,7 @@ export function Component() {
           <Tag label="密级" value={project.classification} />
           <Badge variant={levelVariant[project.level]}>安全等级 {project.level}</Badge>
           <Tag label="平台" value={project.platform} />
-          <Tag label="研制单位" value={project.organization} />
+          <Tag label="研制单位" value={project.organization || "未设置"} />
           <Tag label="负责人" value={project.owner} />
           <Tag label="用例" value={`${project.casesExecuted}/${project.casesTotal} · ${rate}%`} />
           <span className="text-muted-foreground font-mono">更新 {project.updatedAt}</span>
@@ -144,7 +144,7 @@ function OverviewTab({ project }: { project: Project }) {
           <InfoItem label="软件类型" value={project.softwareType} />
           <InfoItem label="密级" value={project.classification} />
           <InfoItem label="安全等级" value={project.level} />
-          <InfoItem label="研制单位" value={project.organization} />
+          <InfoItem label="研制单位" value={project.organization || "未设置"} />
           <InfoItem label="项目负责人" value={project.owner} />
           <InfoItem label="编程语言" value={project.languages.join("、") || "--"} />
           <InfoItem label="运行环境" value={project.runtimeEnvironments.join("、") || "--"} />

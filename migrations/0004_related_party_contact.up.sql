@@ -1,0 +1,3 @@
+ALTER TABLE related_parties ADD COLUMN contact TEXT NOT NULL DEFAULT '';
+ALTER TABLE related_parties ADD COLUMN phone TEXT NOT NULL DEFAULT '';
+ALTER TABLE related_parties ADD COLUMN address TEXT NOT NULL DEFAULT '';

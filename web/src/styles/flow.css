@@ -1,0 +1,124 @@
+.flow-rail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  height: 4.25rem;
+}
+
+.flow-track,
+.flow-progress {
+  position: absolute;
+  top: 23px;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+}
+
+.flow-track {
+  background: color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+.flow-progress {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--primary) 18%, transparent),
+    color-mix(in srgb, var(--primary) 88%, transparent)
+  );
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.flow-pulse {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 24px;
+  right: 24px;
+  opacity: 0;
+}
+
+.flow-pulse::before {
+  content: "";
+  position: absolute;
+  top: 21px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  background: var(--primary);
+  box-shadow: 0 0 8px 2px color-mix(in srgb, var(--primary) 34%, transparent);
+}
+
+.flow-step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--muted-foreground);
+}
+
+.flow-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  background: var(--card);
+  box-shadow: var(--elevation-1);
+  transition:
+    border-color 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+    color 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.flow-marker::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1px solid color-mix(in srgb, var(--primary) 38%, transparent);
+  opacity: 0;
+  transform: scale(0.88);
+  transition:
+    opacity 0.24s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.flow-step.is-active .flow-marker,
+.flow-step.is-complete .flow-marker {
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  color: var(--primary);
+}
+
+.flow-step.is-active .flow-marker {
+  box-shadow: 0 4px 14px -8px color-mix(in srgb, var(--primary) 54%, transparent);
+}
+
+.flow-step.is-active .flow-marker::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.flow-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.flow-step.is-active .flow-label {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-marker,
+  .flow-marker::after,
+  .flow-label {
+    transition: none;
+  }
+}

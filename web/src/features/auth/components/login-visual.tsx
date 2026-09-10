@@ -1,12 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Database, ShieldCheck } from "lucide-react";
-import { Fragment, useRef } from "react";
+import {
+  Activity,
+  Database,
+  FileText,
+  FlaskConical,
+  ListChecks,
+  Play,
+  ShieldCheck,
+} from "lucide-react";
+import { useRef } from "react";
 import { systemApi } from "@/api/system";
 import { BrandLogo } from "@/components/brand/logo";
 import { gsap, useGSAP } from "@/lib/gsap";
 
 const WORDMARK = "ChenMeridian";
-const FLOW_STEPS = ["测试项", "用例", "执行", "报告"];
+const FLOW_STEPS = [
+  { icon: ListChecks, label: "测试项" },
+  { icon: FlaskConical, label: "用例" },
+  { icon: Play, label: "执行" },
+  { icon: FileText, label: "报告" },
+];
 
 export function LoginVisual() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -18,7 +31,10 @@ export function LoginVisual() {
 
   useGSAP(
     () => {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        containerRef.current?.querySelector(".flow-step")?.classList.add("is-active");
+        return;
+      }
 
       gsap.from(".visual-reveal", {
         opacity: 0,
@@ -46,34 +62,34 @@ export function LoginVisual() {
 
       const root = containerRef.current;
       const flowNodes = Array.from(root?.querySelectorAll<HTMLElement>(".flow-step") ?? []);
-      const flowBeams = Array.from(root?.querySelectorAll<HTMLElement>(".flow-beam") ?? []);
-      if (flowNodes.length > 1 && flowBeams.length === flowNodes.length - 1) {
-        const stepDur = 0.45;
-        const flowTl = gsap.timeline({ repeat: -1, repeatDelay: 1.4 });
-        flowBeams.forEach((beam, i) => {
-          const at = i * stepDur;
-          flowTl.call(() => flowNodes[i]?.classList.add("is-active"), undefined, at);
-          // 光带起终点都在连接线外，重置时不可见。
-          flowTl.fromTo(
-            beam,
-            { xPercent: -100 },
-            { xPercent: 100, duration: stepDur, ease: "none" },
-            at,
-          );
-          // 信号传递：光带抵达后上一节点熄灭、下一节点点亮。
-          flowTl.call(
-            () => {
-              flowNodes[i]?.classList.remove("is-active");
-              flowNodes[i + 1]?.classList.add("is-active");
-            },
-            undefined,
-            at + stepDur,
-          );
-        });
-        flowTl.call(
-          () => flowNodes.forEach((node) => node.classList.remove("is-active")),
-          undefined,
-          flowBeams.length * stepDur + 1.1,
+      const flowProgress = root?.querySelector<HTMLElement>(".flow-progress");
+      const flowPulse = root?.querySelector<HTMLElement>(".flow-pulse");
+
+      if (flowNodes.length === FLOW_STEPS.length && flowProgress && flowPulse) {
+        const activateStep = (active: number) => {
+          flowNodes.forEach((node, index) => {
+            node.classList.toggle("is-active", index === active);
+            node.classList.toggle("is-complete", index < active);
+          });
+        };
+        const segmentDur = 0.72;
+        const travelDur = segmentDur * 3;
+        const flowTl = gsap.timeline({ repeat: -1, repeatDelay: 1.5 });
+
+        flowTl.call(() => activateStep(0), undefined, 0);
+        flowTl.set(flowProgress, { opacity: 1, scaleX: 0 }, 0);
+        flowTl.set(flowPulse, { opacity: 1, xPercent: 0 }, 0);
+        flowTl.to(flowProgress, { duration: travelDur, ease: "none", scaleX: 1 }, 0);
+        flowTl.to(flowPulse, { duration: travelDur, ease: "none", xPercent: 100 }, 0);
+
+        for (let index = 1; index < flowNodes.length; index += 1) {
+          flowTl.call(() => activateStep(index), undefined, index * segmentDur);
+        }
+
+        flowTl.to(
+          [flowProgress, flowPulse],
+          { duration: 0.24, ease: "power1.out", opacity: 0 },
+          travelDur + 0.24,
         );
       }
 
@@ -142,23 +158,25 @@ export function LoginVisual() {
           ))}
         </h2>
 
-        <div className="visual-reveal mt-5 flex items-center">
-          {FLOW_STEPS.map((step, index) => (
-            <Fragment key={step}>
-              {index > 0 ? (
-                <span className="bg-border relative mx-2.5 h-px flex-1">
-                  <span className="flow-beam absolute inset-y-0 left-0 w-full" aria-hidden />
-                </span>
-              ) : null}
-              <span className="flow-step text-muted-foreground flex items-center gap-1.5">
-                <span className="size-1.5 bg-current" aria-hidden />
-                <span className="text-sm font-medium whitespace-nowrap">{step}</span>
+        <div className="flow-rail visual-reveal relative mt-7" aria-hidden>
+          <div className="flow-track" />
+          <div className="flow-progress" />
+          <div className="flow-pulse" />
+          {FLOW_STEPS.map((step) => (
+            <div key={step.label} className="flow-step">
+              <span className="flow-marker">
+                <step.icon className="size-4" />
               </span>
-            </Fragment>
+              <span className="flow-label">{step.label}</span>
+            </div>
           ))}
         </div>
-        <p className="visual-reveal text-muted-foreground mt-3 max-w-xs text-sm leading-relaxed">
-          本地优先，从录入到交付一站完成。
+        <p className="visual-reveal mt-4 max-w-sm text-base leading-snug font-medium">
+          <span className="text-primary font-semibold">本地优先</span>
+          <span className="text-muted-foreground">，</span>
+          <span className="text-foreground">从录入到交付</span>
+          <span className="text-primary font-semibold">一站完成</span>
+          <span className="text-muted-foreground">。</span>
         </p>
 
         <div className="border-border/60 relative mt-10 h-px w-full">

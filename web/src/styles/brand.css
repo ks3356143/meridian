@@ -1,0 +1,115 @@
+.meridian-beam {
+  position: relative;
+  background: linear-gradient(
+    to right,
+    transparent 38%,
+    color-mix(in oklch, var(--primary) 65%, transparent) 50%,
+    transparent 62%
+  );
+  will-change: transform;
+}
+
+.meridian-beam::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 46%, var(--primary) 50%, transparent 54%);
+}
+
+.visual-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 10%, transparent),
+    transparent 70%
+  );
+  will-change: transform, opacity;
+}
+
+.dark .visual-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 18%, transparent),
+    transparent 70%
+  );
+}
+
+.login-ambient {
+  top: 8%;
+  right: -12%;
+  width: min(36rem, 80vw);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 6%, transparent),
+    transparent 70%
+  );
+}
+
+.dark .login-ambient {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 10%, transparent),
+    transparent 70%
+  );
+}
+
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgb(255 255 255 / 0.22) 50%,
+    transparent 60%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.7s cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+}
+
+.btn-sheen:hover:not(:disabled)::after {
+  transform: translateX(130%);
+}
+
+.wordmark-char {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.visual-wordmark {
+  animation: wordmark-hue 14s linear infinite;
+}
+
+@keyframes wordmark-hue {
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+
+.globe-wireframe {
+  animation: globe-spin 70s linear infinite;
+}
+
+@keyframes globe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visual-wordmark,
+  .globe-wireframe {
+    animation: none;
+  }
+
+  .btn-sheen::after {
+    transition: none;
+  }
+}

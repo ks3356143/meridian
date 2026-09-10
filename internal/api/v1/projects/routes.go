@@ -19,6 +19,7 @@ func Register(api huma.API, service *projectservice.Service) {
 
 	registerDictionaryManagement(api, handler)
 	registerStandardManagement(api, handler)
+	registerRelatedPartyManagement(api, handler)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-projects",
@@ -85,6 +86,8 @@ func Register(api huma.API, service *projectservice.Service) {
 				return nil, huma.Error400BadRequest("项目负责人或成员不存在")
 			case errors.Is(err, projectservice.ErrStandardNotFound):
 				return nil, huma.Error400BadRequest("依据标准不存在")
+			case errors.Is(err, projectservice.ErrProjectSelectionRequired):
+				return nil, huma.Error400BadRequest(err.Error())
 			default:
 				return nil, huma.Error500InternalServerError("创建项目失败")
 			}

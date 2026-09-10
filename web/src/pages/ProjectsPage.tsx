@@ -17,7 +17,7 @@ import { ProjectsTable } from "@/features/projects/components/projects-table";
 import { RiskActivityBar } from "@/features/projects/components/risk-activity-bar";
 import { TodoPanel } from "@/features/projects/components/todo-panel";
 
-const TITLE = "项目组合";
+const TITLE = "项目列表";
 
 export function Component() {
   const navigate = useNavigate();
@@ -98,7 +98,7 @@ export function Component() {
   if (projectsQuery.isPending) {
     return (
       <div className="flex min-h-80 items-center justify-center">
-        <span className="text-muted-foreground text-sm">正在加载项目组合</span>
+        <span className="text-muted-foreground text-sm">正在加载项目列表</span>
       </div>
     );
   }

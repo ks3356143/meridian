@@ -108,11 +108,33 @@ export interface CreateProjectPayload {
   softwareType: SoftwareType;
   classification: ProjectClassification;
   securityLevel: SecurityLevel;
-  organization: string;
+  organization?: string;
   ownerId: string;
   memberIds: string[];
   languages: string[];
   runtimeEnvironments: string[];
   developmentEnvironments: string[];
   referenceStandardIds: string[];
+}
+export type RelatedPartyCategory = "client" | "developer" | "test_center";
+
+export interface RelatedParty {
+  id: string;
+  category: RelatedPartyCategory;
+  name: string;
+  contact: string;
+  phone: string;
+  address: string;
+  sortOrder: number;
+  isEnabled: boolean;
+}
+
+export interface SaveRelatedPartyPayload {
+  category: RelatedPartyCategory;
+  name: string;
+  contact: string;
+  phone: string;
+  address: string;
+  sortOrder: number;
+  isEnabled: boolean;
 }

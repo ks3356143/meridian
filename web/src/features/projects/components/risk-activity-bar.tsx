@@ -83,7 +83,7 @@ export function RiskActivityBar({ projects }: RiskActivityBarProps) {
           );
         })}
         {items.length === 0 ? (
-          <div className="border-border bg-card text-muted-foreground flex min-h-20 items-center justify-center rounded-sm border text-xs">
+          <div className="border-border bg-card text-muted-foreground col-span-full flex min-h-20 w-full items-center justify-center rounded-sm border text-xs">
             当前筛选结果没有风险或待执行信号
           </div>
         ) : null}

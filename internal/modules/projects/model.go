@@ -95,3 +95,18 @@ type ProjectReferenceStandard struct {
 }
 
 func (ProjectReferenceStandard) TableName() string { return "project_reference_standards" }
+
+type RelatedParty struct {
+	ID        string    `gorm:"column:id;primaryKey" json:"id"`
+	Category  string    `gorm:"column:category" json:"category"`
+	Name      string    `gorm:"column:name" json:"name"`
+	Contact   string    `gorm:"column:contact" json:"contact"`
+	Phone     string    `gorm:"column:phone" json:"phone"`
+	Address   string    `gorm:"column:address" json:"address"`
+	SortOrder int       `gorm:"column:sort_order" json:"sortOrder"`
+	IsEnabled bool      `gorm:"column:is_enabled" json:"isEnabled"`
+	CreatedAt time.Time `gorm:"column:created_at" json:"createdAt"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"updatedAt"`
+}
+
+func (RelatedParty) TableName() string { return "related_parties" }

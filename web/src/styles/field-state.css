@@ -1,0 +1,183 @@
+/* 表单状态光晕：focus 用 2px 静态 ring；错误先淡入，再进入红色脉冲。 */
+/* 基础态、focus 和错误态保持相同层数的阴影结构，box-shadow 才能平滑插值。 */
+[data-slot="input"]:not([data-slot="composite-input"] [data-slot="input"]),
+[data-slot="select-trigger"],
+[data-slot="composite-input"] {
+  border-color: var(--input);
+  box-shadow:
+    inset 0 0 0 1px transparent,
+    0 0 0 0 transparent,
+    var(--elevation-input);
+  transition:
+    border-color 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-invalid-group] {
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow:
+    inset 0 0 0 1px transparent,
+    0 0 0 0 transparent,
+    0 0 0 0 transparent;
+  transition:
+    border-color 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-slot="composite-input"] [data-slot="input"] {
+  box-shadow: none !important;
+  transition: none;
+}
+
+[data-slot="input"]:focus-visible,
+[data-slot="select-trigger"]:focus-visible,
+[data-slot="composite-input"]:focus-within {
+  border-color: var(--ring) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--primary) 42%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--ring) 24%, transparent),
+    0 4px 14px -6px color-mix(in srgb, var(--ring) 46%, transparent) !important;
+}
+
+[data-slot="input"][aria-invalid="true"],
+[data-slot="select-trigger"][aria-invalid="true"],
+[data-slot="composite-input"][data-invalid="true"] {
+  border-color: var(--destructive) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--destructive) 46%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--destructive) 24%, transparent),
+    0 0 18px -6px color-mix(in srgb, var(--destructive) 42%, transparent) !important;
+  animation:
+    field-error-enter 0.28s cubic-bezier(0.32, 0.72, 0, 1) both,
+    field-error-pulse 1.5s ease-in-out 0.28s infinite;
+}
+
+[data-invalid-group="true"] {
+  border-color: var(--destructive) !important;
+  background-color: color-mix(in srgb, var(--destructive) 5%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--destructive) 46%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--destructive) 24%, transparent),
+    0 0 18px -6px color-mix(in srgb, var(--destructive) 42%, transparent) !important;
+  animation:
+    field-error-enter 0.28s cubic-bezier(0.32, 0.72, 0, 1) both,
+    field-error-pulse 1.5s ease-in-out 0.28s infinite;
+}
+
+[data-slot="input"][aria-invalid="true"]:focus-visible,
+[data-slot="select-trigger"][aria-invalid="true"]:focus-visible,
+[data-slot="composite-input"][data-invalid="true"]:focus-within {
+  border-color: var(--destructive) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--destructive) 55%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--destructive) 28%, transparent),
+    0 0 20px -5px color-mix(in srgb, var(--destructive) 52%, transparent) !important;
+  animation:
+    field-error-focus-enter 0.28s cubic-bezier(0.32, 0.72, 0, 1) both,
+    field-error-focus-pulse 1.2s ease-in-out 0.28s infinite;
+}
+
+[data-slot="composite-input"] [data-slot="input"]:focus-visible,
+[data-slot="composite-input"] [data-slot="input"][aria-invalid="true"] {
+  animation: none !important;
+  box-shadow: none !important;
+}
+
+@keyframes field-error-enter {
+  from {
+    box-shadow:
+      inset 0 0 0 1px transparent,
+      0 0 0 0 transparent,
+      0 0 0 0 transparent;
+  }
+
+  to {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 46%, transparent),
+      0 0 0 2px color-mix(in srgb, var(--destructive) 24%, transparent),
+      0 0 18px -6px color-mix(in srgb, var(--destructive) 42%, transparent);
+  }
+}
+
+@keyframes field-error-focus-enter {
+  from {
+    box-shadow:
+      inset 0 0 0 1px transparent,
+      0 0 0 0 transparent,
+      0 0 0 0 transparent;
+  }
+
+  to {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 55%, transparent),
+      0 0 0 2px color-mix(in srgb, var(--destructive) 28%, transparent),
+      0 0 20px -5px color-mix(in srgb, var(--destructive) 52%, transparent);
+  }
+}
+
+@keyframes field-error-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 46%, transparent),
+      0 0 0 2px color-mix(in srgb, var(--destructive) 24%, transparent),
+      0 0 16px -6px color-mix(in srgb, var(--destructive) 42%, transparent);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 55%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--destructive) 13%, transparent),
+      0 0 20px -5px color-mix(in srgb, var(--destructive) 50%, transparent);
+  }
+}
+
+@keyframes field-error-focus-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 55%, transparent),
+      0 0 0 2px color-mix(in srgb, var(--destructive) 28%, transparent),
+      0 0 18px -5px color-mix(in srgb, var(--destructive) 48%, transparent);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 65%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--destructive) 16%, transparent),
+      0 0 24px -4px color-mix(in srgb, var(--destructive) 58%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="input"]:not([data-slot="composite-input"] [data-slot="input"]),
+  [data-slot="select-trigger"],
+  [data-slot="composite-input"],
+  [data-invalid-group] {
+    transition: none;
+  }
+
+  [data-slot="input"][aria-invalid="true"],
+  [data-slot="select-trigger"][aria-invalid="true"],
+  [data-slot="composite-input"][data-invalid="true"],
+  [data-invalid-group="true"] {
+    animation: none;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 50%, transparent),
+      0 0 0 2px color-mix(in srgb, var(--destructive) 26%, transparent),
+      0 0 18px -5px color-mix(in srgb, var(--destructive) 46%, transparent) !important;
+  }
+
+  [data-slot="input"][aria-invalid="true"]:focus-visible,
+  [data-slot="select-trigger"][aria-invalid="true"]:focus-visible,
+  [data-slot="composite-input"][data-invalid="true"]:focus-within {
+    animation: none;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 55%, transparent),
+      0 0 0 2px color-mix(in srgb, var(--destructive) 28%, transparent),
+      0 0 20px -5px color-mix(in srgb, var(--destructive) 52%, transparent) !important;
+  }
+}

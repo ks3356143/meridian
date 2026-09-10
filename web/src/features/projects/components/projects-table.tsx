@@ -70,7 +70,10 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
           ),
         }),
         columnHelper.accessor("platform", { header: "平台" }),
-        columnHelper.accessor("organization", { header: "研制单位" }),
+        columnHelper.accessor("organization", {
+          header: "研制单位",
+          cell: (info) => info.getValue() || "未设置",
+        }),
         columnHelper.accessor("owner", { header: "负责人" }),
         columnHelper.accessor((row) => row.casesExecuted / Math.max(row.casesTotal, 1), {
           id: "cases",

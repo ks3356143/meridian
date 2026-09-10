@@ -151,3 +151,107 @@ func loginForProjectTest(t *testing.T, handler http.Handler) string {
 	}
 	return response.AccessToken
 }
+func TestProjectCreateRequiresAllBusinessSelections(t *testing.T) {
+	handler := newTestHandler(t)
+	token := loginForProjectTest(t, handler)
+
+	body, err := json.Marshal(map[string]any{
+		"identifierSuffix":        "2608",
+		"name":                    "XX04 探测单元鉴定测评",
+		"nature":                  "鉴定测评",
+		"platform":                "CPU/非嵌",
+		"softwareType":            "新研",
+		"classification":          "内部",
+		"securityLevel":           "C",
+		"organization":            "XX研究所",
+		"ownerId":                 "user-id",
+		"memberIds":               []string{},
+		"languages":               []string{" "},
+		"runtimeEnvironments":     []string{" "},
+		"developmentEnvironments": []string{" "},
+		"referenceStandardIds":    []string{" "},
+	})
+	if err != nil {
+		t.Fatalf("构造缺少选择的创建项目请求失败: %v", err)
+	}
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/projects", bytes.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code < http.StatusBadRequest {
+		t.Fatalf("缺少必选项目内容应返回 4xx，实际为 %d，响应: %s", recorder.Code, recorder.Body.String())
+	}
+}
+func TestProjectCreateSupportsFiveDigitIdentifier(t *testing.T) {
+	handler := newTestHandler(t)
+	token := loginForProjectTest(t, handler)
+
+	optionsRecorder := httptest.NewRecorder()
+	optionsRequest := httptest.NewRequest(http.MethodGet, "/api/v1/project-options", nil)
+	optionsRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(optionsRecorder, optionsRequest)
+	if optionsRecorder.Code != http.StatusOK {
+		t.Fatalf("项目选项状态码应为 200，实际为 %d", optionsRecorder.Code)
+	}
+
+	var options struct {
+		Users []struct {
+			ID string `json:"id"`
+		} `json:"users"`
+		Standards []struct {
+			ID string `json:"id"`
+		} `json:"standards"`
+	}
+	if err := json.Unmarshal(optionsRecorder.Body.Bytes(), &options); err != nil {
+		t.Fatalf("解析项目选项失败: %v", err)
+	}
+
+	body, err := json.Marshal(map[string]any{
+		"identifierSuffix":        "26107",
+		"name":                    "五位标识验证项目",
+		"nature":                  "鉴定测评",
+		"platform":                "CPU/非嵌",
+		"softwareType":            "新研",
+		"classification":          "内部",
+		"securityLevel":           "C",
+		"ownerId":                 options.Users[0].ID,
+		"memberIds":               []string{},
+		"languages":               []string{"C"},
+		"runtimeEnvironments":     []string{"Linux"},
+		"developmentEnvironments": []string{"Keil"},
+		"referenceStandardIds":    []string{options.Standards[0].ID},
+	})
+	if err != nil {
+		t.Fatalf("构造五位标识项目请求失败: %v", err)
+	}
+
+	createRecorder := httptest.NewRecorder()
+	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/projects", bytes.NewReader(body))
+	createRequest.Header.Set("Content-Type", "application/json")
+	createRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(createRecorder, createRequest)
+	if createRecorder.Code != http.StatusOK {
+		t.Fatalf("创建五位标识项目状态码应为 200，实际为 %d，响应: %s", createRecorder.Code, createRecorder.Body.String())
+	}
+
+	var project struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(createRecorder.Body.Bytes(), &project); err != nil {
+		t.Fatalf("解析创建项目响应失败: %v", err)
+	}
+	if project.ID != "R26107" {
+		t.Fatalf("项目标识应为 R26107，实际为 %s", project.ID)
+	}
+
+	detailRecorder := httptest.NewRecorder()
+	detailRequest := httptest.NewRequest(http.MethodGet, "/api/v1/projects/R26107", nil)
+	detailRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(detailRecorder, detailRequest)
+	if detailRecorder.Code != http.StatusOK {
+		t.Fatalf("查询五位标识项目详情状态码应为 200，实际为 %d，响应: %s", detailRecorder.Code, detailRecorder.Body.String())
+	}
+}

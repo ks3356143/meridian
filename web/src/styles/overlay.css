@@ -1,0 +1,49 @@
+[data-slot="dialog-overlay"][data-state],
+[data-slot="dialog-content"][data-state] {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-content"] {
+    animation: none;
+  }
+}
+
+/* Radix Dialog/Select 用 react-remove-scroll 锁背景；覆盖开闭动画周期，保持滚动条稳定。 */
+body:has([data-slot="dialog-content"][data-state]),
+body:has([data-slot="select-content"][data-state]) {
+  overflow: visible !important;
+  margin-right: 0 !important;
+}
+
+/* sonner：中性灰白背景，语义色只上图标与关闭按钮，深浅色跟随主题变量。 */
+[data-sonner-toast] [data-icon] {
+  flex-shrink: 0;
+}
+
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: var(--success);
+}
+
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: var(--destructive);
+}
+
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: var(--warning);
+}
+
+[data-sonner-toast][data-type="info"] [data-icon],
+[data-sonner-toast][data-type="normal"] [data-icon] {
+  color: var(--info);
+}
+
+[data-sonner-toast] [data-close-button] {
+  color: var(--muted-foreground);
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  color: var(--foreground);
+}
