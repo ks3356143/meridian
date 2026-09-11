@@ -12,6 +12,7 @@
 8. 用户说“开始工作”或要求打开前后端时：直接构建启动或确认服务可用即可，不主动跑测试或额外验证；由用户自行验证并反馈问题，收到问题再处理。
 9. 尽量使用最新工具链与环境：PowerShell 7（pwsh）+ Windows Terminal，命令示例优先 pwsh 语法；文本检索用 ripgrep（rg）。
 10. 必须看本文档的前端铁律，必须使用组件库。
+11. 能用 MCP 坚决用 MCP：浏览器自动化、页面验证、截图等任务开工先检查可用的 MCP 工具（如 Playwright MCP），能用就用；仅当当前会话确实没有对应 MCP 工具时才允许手写脚本兑底，且必须说明原因。
 
 ## 技术栈
 
@@ -62,7 +63,7 @@ npm run dev
 
 1. 禁止为了省事把新接口堆进单个大文件；API 按业务域拆分。
 2. 禁止把 HTML 转 OOXML 作为 Word 生成主方案。
-3. Playwright 页面检查使用本机 Edge channel，不下载独立 Chromium。
+3. 禁止在 MCP 浏览器工具（如 Playwright MCP）可用时手写自动化脚本；手写兑底仅限当前会话无对应 MCP 时，且必须使用本机 Edge channel，不下载独立 Chromium。
 
 ## 整理铁律
 
