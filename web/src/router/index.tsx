@@ -34,6 +34,10 @@ export const router = createBrowserRouter([
             path: "settings/dictionaries",
             lazy: () => import("@/pages/DictionaryManagementPage"),
           },
+          {
+            path: "settings/users",
+            lazy: () => import("@/pages/UserManagementPage"),
+          },
         ],
       },
     ],

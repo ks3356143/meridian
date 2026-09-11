@@ -83,7 +83,7 @@ function Button({
         size: rippleSize,
       },
     ]);
-    window.setTimeout(() => removeRipple(id), 650);
+    window.setTimeout(() => removeRipple(id), 520);
   };
 
   return (
@@ -96,9 +96,13 @@ function Button({
       {...props}
     >
       {asChild ? <Slot.Slottable>{children}</Slot.Slottable> : children}
-      {variant === "link"
-        ? null
-        : ripples.map((ripple) => (
+      {variant === "link" || ripples.length === 0 ? null : (
+        <span
+          className="button-ripple-clip"
+          style={{ viewTransitionName: "button-ripple" }}
+          aria-hidden
+        >
+          {ripples.map((ripple) => (
             <span
               key={ripple.id}
               className="button-ripple"
@@ -108,9 +112,10 @@ function Button({
                 width: ripple.size,
                 height: ripple.size,
               }}
-              aria-hidden
             />
           ))}
+        </span>
+      )}
     </Comp>
   );
 }

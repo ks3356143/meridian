@@ -403,3 +403,10 @@ func createDictionaryRelations(ctx context.Context, tx *gorm.DB, table string, p
 	}
 	return nil
 }
+func (s *Service) IsUserReferenced(ctx context.Context, userID string) (bool, error) {
+	count, err := s.repository.CountUserReferences(ctx, userID)
+	if err != nil {
+		return false, fmt.Errorf("查询用户引用失败: %w", err)
+	}
+	return count > 0, nil
+}

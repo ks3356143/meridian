@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/casbin/casbin/v2"
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/modules/settings"
@@ -25,7 +24,6 @@ type Service struct {
 	settings    *settings.Service
 	tokenTTL    time.Duration
 	secret      []byte
-	enforcer    *casbin.Enforcer
 }
 
 type LoginResult struct {
@@ -60,17 +58,11 @@ func NewService(
 		return nil, fmt.Errorf("JWT 密钥格式无效")
 	}
 
-	enforcer, err := newEnforcer()
-	if err != nil {
-		return nil, err
-	}
-
 	return &Service{
 		userService: userService,
 		settings:    settingsService,
 		tokenTTL:    tokenTTL,
 		secret:      secret,
-		enforcer:    enforcer,
 	}, nil
 }
 
@@ -84,7 +76,6 @@ func (s *Service) Login(ctx context.Context, username string, password string) (
 	token, expiresAt, err := s.issueToken(Claims{
 		UserID:   user.ID,
 		Username: user.Username,
-		Role:     user.Role,
 	}, now)
 	if err != nil {
 		return LoginResult{}, err
@@ -102,12 +93,4 @@ func (s *Service) CurrentUser(ctx context.Context) (users.User, error) {
 
 func (s *Service) ParseToken(token string) (Claims, error) {
 	return s.parseToken(token)
-}
-
-func (s *Service) Authorize(claims Claims, path string, method string) (bool, error) {
-	allowed, err := s.enforcer.Enforce(claims.Role, path, method)
-	if err != nil {
-		return false, fmt.Errorf("执行授权策略失败: %w", err)
-	}
-	return allowed, nil
 }

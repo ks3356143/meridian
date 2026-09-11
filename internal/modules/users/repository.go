@@ -38,6 +38,22 @@ func (r *Repository) FindByID(ctx context.Context, id string) (User, error) {
 	return user, nil
 }
 
+func (r *Repository) List(ctx context.Context) ([]User, error) {
+	var users []User
+	if err := r.db.WithContext(ctx).Order("created_at ASC").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (r *Repository) Create(ctx context.Context, user User) error {
 	return r.db.WithContext(ctx).Create(&user).Error
+}
+
+func (r *Repository) Update(ctx context.Context, user User) error {
+	return r.db.WithContext(ctx).Save(&user).Error
+}
+
+func (r *Repository) Delete(ctx context.Context, id string) error {
+	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&User{}).Error
 }

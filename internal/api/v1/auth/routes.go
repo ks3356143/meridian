@@ -69,7 +69,6 @@ func toUserResponse(user users.User) UserResponse {
 		ID:          user.ID,
 		Username:    user.Username,
 		DisplayName: user.DisplayName,
-		Role:        user.Role,
 		CreatedAt:   user.CreatedAt,
 	}
 }

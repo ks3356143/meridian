@@ -1,3 +1,11 @@
+.button-ripple-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 .button-ripple {
   position: absolute;
   pointer-events: none;
@@ -5,13 +13,17 @@
   background: currentColor;
   opacity: 0.22;
   transform: translate(-50%, -50%) scale(0);
-  animation: button-ripple-in 0.62s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  animation: button-ripple-in 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 @keyframes button-ripple-in {
   0% {
-    opacity: 0.24;
+    opacity: 0.26;
     transform: translate(-50%, -50%) scale(0);
+  }
+
+  30% {
+    opacity: 0.2;
   }
 
   100% {

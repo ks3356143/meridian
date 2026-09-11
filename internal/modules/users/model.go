@@ -7,7 +7,6 @@ type User struct {
 	Username     string    `gorm:"column:username;uniqueIndex" json:"username"`
 	DisplayName  string    `gorm:"column:display_name" json:"displayName"`
 	PasswordHash string    `gorm:"column:password_hash" json:"-"`
-	Role         string    `gorm:"column:role" json:"role"`
 	CreatedAt    time.Time `gorm:"column:created_at" json:"createdAt"`
 	UpdatedAt    time.Time `gorm:"column:updated_at" json:"updatedAt"`
 }

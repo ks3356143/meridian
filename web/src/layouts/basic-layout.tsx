@@ -1,11 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { FolderKanban, LogOut, MenuIcon, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import {
+  FolderKanban,
+  LogOut,
+  MenuIcon,
+  ShieldCheck,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, NavLink, Outlet, useMatch } from "react-router";
 import { cn } from "cn";
 import { BrandLogo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/provider/theme-toggle";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,21 +66,23 @@ export default function BasicLayout() {
       <SidebarLink to="/" end icon={FolderKanban} onClick={() => setMobileNavOpen(false)}>
         项目列表
       </SidebarLink>
-      {user.role === "admin" ? (
-        <SidebarLink
-          to="/settings/dictionaries"
-          icon={SlidersHorizontal}
-          onClick={() => setMobileNavOpen(false)}
-        >
-          字典配置
-        </SidebarLink>
-      ) : null}
+
+      <SidebarLink
+        to="/settings/dictionaries"
+        icon={SlidersHorizontal}
+        onClick={() => setMobileNavOpen(false)}
+      >
+        字典配置
+      </SidebarLink>
+      <SidebarLink to="/settings/users" icon={Users} onClick={() => setMobileNavOpen(false)}>
+        用户管理
+      </SidebarLink>
     </nav>
   );
 
   return (
     <div className="bg-background flex min-h-svh flex-col lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">
-      <aside className="border-border bg-card/50 sticky top-0 z-20 hidden h-svh flex-col overflow-hidden border-r lg:flex">
+      <aside className="border-border bg-card/50 sticky top-0 z-20 hidden h-svh flex-col overflow-hidden border-r lg:flex [view-transition-name:app-sidebar]">
         <div
           className="visual-glow pointer-events-none absolute -top-24 -right-20 size-80 opacity-35"
           aria-hidden
@@ -91,13 +99,12 @@ export default function BasicLayout() {
           <ShieldCheck className="text-primary size-4" aria-hidden />
           <div className="min-w-0">
             <p className="truncate text-xs font-medium">{user.displayName}</p>
-            <p className="text-muted-foreground font-mono text-[10px]">{user.role}</p>
           </div>
         </div>
       </aside>
 
       <div className="flex min-h-svh flex-col">
-        <header className="border-border bg-background/92 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-4 shadow-[0_1px_10px_-8px_rgb(20_42_30_/_0.32)] backdrop-blur">
+        <header className="border-border bg-background/92 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-4 [view-transition-name:app-header] shadow-[0_1px_10px_-8px_rgb(20_42_30_/_0.32)] backdrop-blur">
           <div className="flex min-w-0 items-center gap-3">
             <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
@@ -120,9 +127,6 @@ export default function BasicLayout() {
             </Sheet>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{user.displayName}</p>
-              <Badge variant="outline" className="h-4 px-1 text-[10px] uppercase">
-                {user.role}
-              </Badge>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -168,7 +172,7 @@ function SidebarLink({
           : "text-foreground hover:bg-primary/6 hover:text-primary",
       )}
     >
-      <NavLink to={to} end={end} onClick={onClick}>
+      <NavLink to={to} end={end} onClick={onClick} viewTransition>
         <Icon data-icon="inline-start" aria-hidden />
         {children}
       </NavLink>

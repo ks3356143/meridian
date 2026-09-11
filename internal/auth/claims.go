@@ -7,7 +7,6 @@ type contextKey struct{}
 type Claims struct {
 	UserID   string `json:"uid"`
 	Username string `json:"username"`
-	Role     string `json:"role"`
 }
 
 func WithClaims(ctx context.Context, claims Claims) context.Context {

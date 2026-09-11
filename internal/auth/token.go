@@ -10,7 +10,6 @@ import (
 type tokenClaims struct {
 	UserID   string `json:"uid"`
 	Username string `json:"username"`
-	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -19,7 +18,6 @@ func (s *Service) issueToken(userClaims Claims, now time.Time) (string, time.Tim
 	claims := tokenClaims{
 		UserID:   userClaims.UserID,
 		Username: userClaims.Username,
-		Role:     userClaims.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    issuer,
 			Subject:   userClaims.UserID,
@@ -52,5 +50,5 @@ func (s *Service) parseToken(token string) (Claims, error) {
 	if !ok || !parsed.Valid || claims.UserID == "" {
 		return Claims{}, fmt.Errorf("令牌声明无效")
 	}
-	return Claims{UserID: claims.UserID, Username: claims.Username, Role: claims.Role}, nil
+	return Claims{UserID: claims.UserID, Username: claims.Username}, nil
 }

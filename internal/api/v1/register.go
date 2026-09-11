@@ -9,7 +9,9 @@ import (
 	"chenmeridian/internal/api/v1/auth"
 	"chenmeridian/internal/api/v1/health"
 	projectapi "chenmeridian/internal/api/v1/projects"
+	userapi "chenmeridian/internal/api/v1/users"
 	projectservice "chenmeridian/internal/modules/projects"
+	userservice "chenmeridian/internal/modules/users"
 )
 
 type Dependencies struct {
@@ -22,4 +24,5 @@ func Register(api huma.API, deps Dependencies) {
 	health.Register(api, deps.DB, deps.AppVersion)
 	auth.Register(api, deps.Auth)
 	projectapi.Register(api, projectservice.NewService(deps.DB))
+	userapi.Register(api, userservice.NewService(deps.DB), projectservice.NewService(deps.DB), deps.Auth)
 }

@@ -179,3 +179,45 @@
     transition: none;
   }
 }
+
+/* View Transitions: sidebar and header stay static; main content crossfades without movement. */
+::view-transition-old(root) {
+  animation: vt-fade-out 160ms ease-out both;
+}
+
+::view-transition-new(root) {
+  animation: vt-fade-in 160ms ease-out both;
+}
+
+@keyframes vt-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Sidebar and header settle quickly so nav feedback is not frozen for the whole transition. */
+::view-transition-old(app-sidebar),
+::view-transition-new(app-sidebar),
+::view-transition-old(app-header),
+::view-transition-new(app-header) {
+  animation-duration: 90ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

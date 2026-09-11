@@ -170,3 +170,14 @@ func (r *Repository) ListProjectStandards(ctx context.Context, projectIDs []stri
 	}
 	return selections, nil
 }
+func (r *Repository) CountUserReferences(ctx context.Context, userID string) (int64, error) {
+	var memberCount int64
+	if err := r.db.WithContext(ctx).Model(&ProjectMember{}).Where("user_id = ?", userID).Count(&memberCount).Error; err != nil {
+		return 0, err
+	}
+	var ownerCount int64
+	if err := r.db.WithContext(ctx).Model(&Project{}).Where("owner_id = ?", userID).Count(&ownerCount).Error; err != nil {
+		return 0, err
+	}
+	return memberCount + ownerCount, nil
+}

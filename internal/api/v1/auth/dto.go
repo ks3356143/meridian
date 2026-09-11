@@ -6,13 +6,12 @@ type UserResponse struct {
 	ID          string    `json:"id" doc:"用户 ID"`
 	Username    string    `json:"username" doc:"用户名"`
 	DisplayName string    `json:"displayName" doc:"显示名称"`
-	Role        string    `json:"role" enum:"admin,tester,viewer" doc:"角色"`
 	CreatedAt   time.Time `json:"createdAt" doc:"创建时间"`
 }
 
 type LoginRequest struct {
-	Username string `json:"username" minLength:"1" maxLength:"64" doc:"用户名"`
-	Password string `json:"password" minLength:"1" maxLength:"128" doc:"密码"`
+	Username string `json:"username" doc:"用户名"`
+	Password string `json:"password" doc:"密码"`
 }
 
 type LoginResponse struct {

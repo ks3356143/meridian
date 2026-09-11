@@ -40,16 +40,6 @@ func (s *Service) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		allowed, err := s.Authorize(claims, r.URL.Path, r.Method)
-		if err != nil {
-			writeProblem(w, http.StatusInternalServerError, "授权检查失败", "服务器执行授权策略失败")
-			return
-		}
-		if !allowed {
-			writeProblem(w, http.StatusForbidden, "没有权限", "当前角色不能访问该接口")
-			return
-		}
-
 		next.ServeHTTP(w, r.WithContext(WithClaims(r.Context(), claims)))
 	})
 }

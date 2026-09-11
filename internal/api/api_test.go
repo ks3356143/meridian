@@ -131,13 +131,12 @@ func TestAuthFlow(t *testing.T) {
 		AccessToken string `json:"accessToken"`
 		User        struct {
 			Username string `json:"username"`
-			Role     string `json:"role"`
 		} `json:"user"`
 	}
 	if err := json.Unmarshal(loginRecorder.Body.Bytes(), &loginResponse); err != nil {
 		t.Fatalf("解析登录响应失败: %v", err)
 	}
-	if loginResponse.AccessToken == "" || loginResponse.User.Username != "admin" || loginResponse.User.Role != "admin" {
+	if loginResponse.AccessToken == "" || loginResponse.User.Username != "admin" {
 		t.Fatalf("登录响应异常: %+v", loginResponse)
 	}
 
@@ -158,12 +157,11 @@ func TestAuthFlow(t *testing.T) {
 	}
 	var meResponse struct {
 		Username string `json:"username"`
-		Role     string `json:"role"`
 	}
 	if err := json.Unmarshal(meRecorder.Body.Bytes(), &meResponse); err != nil {
 		t.Fatalf("解析当前用户响应失败: %v", err)
 	}
-	if meResponse.Username != "admin" || meResponse.Role != "admin" {
+	if meResponse.Username != "admin" {
 		t.Fatalf("当前用户响应异常: %+v", meResponse)
 	}
 }

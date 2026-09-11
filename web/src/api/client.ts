@@ -36,6 +36,8 @@ function fallbackMessage(status: number) {
       return "资源不存在";
     case 500:
       return "服务器内部错误";
+    case 422:
+      return "输入的参数不符合要求，请检查后重试";
     default:
       return `请求失败 (${status})`;
   }
@@ -79,7 +81,9 @@ export async function request<T>(
     }
 
     const detail =
-      problem.errors?.map((error) => error.message || "参数校验失败").join("；") ||
+      (response.status === 422
+        ? null
+        : problem.errors?.map((error) => error.message || "参数校验失败").join("；")) ||
       problem.detail ||
       problem.title ||
       fallbackMessage(response.status);
