@@ -1,5 +1,6 @@
 import { ArrowRight, CircleAlert, ListChecks, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
+import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { totalOpenIssues, type Project } from "../types";
@@ -7,6 +8,24 @@ import { totalOpenIssues, type Project } from "../types";
 interface RiskActivityBarProps {
   projects: Project[];
 }
+
+const toneStyles = {
+  danger: {
+    bar: "bg-destructive",
+    border: "hover:border-destructive/45",
+    icon: "text-destructive",
+  },
+  warning: {
+    bar: "bg-warning",
+    border: "hover:border-warning/50",
+    icon: "text-warning",
+  },
+  info: {
+    bar: "bg-info",
+    border: "hover:border-info/45",
+    icon: "text-info",
+  },
+} as const;
 
 export function RiskActivityBar({ projects }: RiskActivityBarProps) {
   const items = projects
@@ -43,26 +62,37 @@ export function RiskActivityBar({ projects }: RiskActivityBarProps) {
         {items.map(({ project, urgent, open, pending }) => {
           const reason =
             urgent > 0 ? `重大/严重 ${urgent}` : open > 0 ? `未闭环 ${open}` : `待执行 ${pending}`;
-          const variant = urgent > 0 ? "danger" : open > 0 ? "warning" : "info";
+          const tone = urgent > 0 ? "danger" : open > 0 ? "warning" : "info";
+          const toneStyle = toneStyles[tone];
+
           return (
             <Button
               key={project.id}
               asChild
-              className="panel-surface panel-interactive group border-border text-foreground hover:border-primary/35 h-auto min-h-20 w-full justify-between rounded-sm border p-3 text-left hover:translate-y-0"
+              variant="outline"
+              data-risk-card={tone}
+              className={cn(
+                "border-border bg-card text-foreground group relative h-auto min-h-24 w-full justify-between overflow-hidden rounded-sm border p-3 pl-4 text-left",
+                toneStyle.border,
+              )}
             >
               <Link to={`/projects/${project.id}`}>
+                <span
+                  className={cn("absolute inset-y-0 left-0 w-[4px]", toneStyle.bar)}
+                  aria-hidden
+                />
                 <span className="min-w-0">
-                  <span className="mb-1 flex items-center gap-2">
+                  <span className="mb-1.5 flex items-center gap-2">
                     <span className="text-muted-foreground font-mono text-[10px]">
                       {project.id}
                     </span>
-                    <Badge variant={variant}>{reason}</Badge>
+                    <Badge variant={tone}>{reason}</Badge>
                   </span>
                   <span className="block truncate text-[13px] font-medium">{project.name}</span>
                   <span className="text-muted-foreground mt-1 flex items-center gap-2 text-[11px]">
                     {pending > 0 ? (
                       <span className="inline-flex items-center gap-1">
-                        <ListChecks className="size-3" aria-hidden />
+                        <ListChecks className={cn("size-3", toneStyle.icon)} aria-hidden />
                         {pending}
                       </span>
                     ) : (
@@ -75,7 +105,7 @@ export function RiskActivityBar({ projects }: RiskActivityBarProps) {
                   </span>
                 </span>
                 <ArrowRight
-                  className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-all duration-200 group-hover:translate-x-0.5"
+                  className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-colors duration-200"
                   aria-hidden
                 />
               </Link>

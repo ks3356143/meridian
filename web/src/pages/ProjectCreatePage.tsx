@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/page-header";
+import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { projectsApi } from "@/features/projects/api";
 import { BasicFields } from "@/features/projects/components/project-create/basic-fields";
 import {
@@ -98,7 +100,6 @@ export function Component() {
   const errorMessages: Record<string, string> = {
     identifier: "请输入 4 到 5 位数字后缀",
     name: "请输入项目名称",
-
     language: "请选择编程语言",
     runtime_environment: "请选择运行环境",
     development_environment: "请选择开发环境",
@@ -155,63 +156,46 @@ export function Component() {
   };
 
   if (optionsQuery.isPending) {
-    return (
-      <div className="flex min-h-80 items-center justify-center">
-        <span className="text-muted-foreground flex items-center gap-2 text-sm">
-          <LoaderCircle className="size-4 animate-spin" aria-hidden />
-          正在加载项目创建选项
-        </span>
-      </div>
-    );
+    return <QueryLoading label="正在加载项目创建选项" rows={5} />;
   }
 
   if (optionsQuery.isError) {
     return (
-      <Card className="mx-auto w-full max-w-3xl">
-        <CardHeader>
-          <CardTitle>项目创建选项加载失败</CardTitle>
-          <CardDescription>请确认后端服务已启动，然后重新加载。</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={() => optionsQuery.refetch()}>重新加载</Button>
-        </CardContent>
-      </Card>
+      <QueryError
+        title="项目创建选项加载失败"
+        description="请确认后端服务已启动，然后重新加载。"
+        onRetry={() => optionsQuery.refetch()}
+      />
     );
   }
 
   const options = optionsQuery.data;
 
   return (
-    <div ref={containerRef} className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <header className="project-create-reveal flex flex-col gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-foreground -ml-2 w-fit"
-          onClick={() => navigate("/")}
-        >
-          <ArrowLeft data-icon="inline-start" />
-          返回项目列表
-        </Button>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-sm">
-            <FolderPlus className="size-5" aria-hidden />
-          </span>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">新建测评项目</h1>
-              <Badge variant="secondary" className="h-5 text-[11px]">
-                全部业务字段必填
-              </Badge>
-            </div>
-            <p className="text-muted-foreground mt-1 text-sm">
-              项目是测评大纲、测试项、执行记录和报告的流程基点。
-            </p>
-          </div>
-        </div>
-      </header>
+    <div ref={containerRef} className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-muted-foreground hover:text-foreground -ml-2 w-fit"
+        onClick={() => navigate("/")}
+      >
+        <ArrowLeft data-icon="inline-start" />
+        返回项目列表
+      </Button>
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 pb-4">
+      <PageHeader
+        className="project-create-reveal"
+        icon={FolderPlus}
+        title="新建测评项目"
+        description="项目是测评大纲、测试项、执行记录和报告的流程基点。"
+        badge={
+          <Badge variant="secondary" className="h-5 text-[11px]">
+            全部业务字段必填
+          </Badge>
+        }
+      />
+
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 pb-4">
         <Card className="project-create-reveal">
           <CardHeader>
             <CardTitle>基本信息</CardTitle>
@@ -284,7 +268,7 @@ export function Component() {
           </CardContent>
         </Card>
 
-        <div className="border-border bg-card/80 elevation-1 project-create-reveal sticky bottom-0 flex flex-wrap items-center justify-between gap-3 rounded-sm border p-3 backdrop-blur">
+        <div className="border-border bg-card/90 elevation-2 project-create-reveal sticky bottom-0 flex flex-wrap items-center justify-between gap-3 rounded-sm border p-3 backdrop-blur">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5" aria-live="polite">
             {missingGroups.length > 0 ? (
               missingGroups.map((group) => (

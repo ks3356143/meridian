@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TruncatedText } from "@/components/shared/truncated-text";
 import { projectsApi } from "@/features/projects/api";
 import { DictionaryEditor } from "./dictionary-editor";
 import { ManagementSection, ManagementTable } from "./management-table";
@@ -68,7 +69,7 @@ export function DictionaryManagementTab() {
         }),
         columnHelper.accessor("name", {
           header: "展示名",
-          cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+          cell: (info) => <TruncatedText value={info.getValue()} className="font-medium" />,
         }),
         columnHelper.accessor("sortOrder", {
           header: "排序",

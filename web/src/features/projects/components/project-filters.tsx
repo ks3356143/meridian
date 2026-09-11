@@ -1,4 +1,6 @@
-import { RotateCcw, Search } from "lucide-react";
+import { RotateCcw, Search, SlidersHorizontal } from "lucide-react";
+import { cn } from "cn";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,20 +42,30 @@ export function ProjectFilters({
   return (
     <section
       aria-label="项目筛选"
-      className="panel-surface border-border flex flex-col gap-2 rounded-sm border p-2 xl:flex-row xl:items-center"
+      className={cn(
+        "panel-surface border-border relative flex flex-col gap-3 overflow-hidden rounded-sm border p-3 pl-4 xl:flex-row xl:items-center",
+        active ? "border-primary/30" : "hover:border-primary/20",
+      )}
     >
-      <div className="relative min-w-0 flex-1">
-        <Search
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
-          aria-hidden
-        />
-        <Input
-          value={filters.keyword}
-          onChange={(event) => onChange({ ...filters, keyword: event.target.value })}
-          placeholder="搜索标识、名称、单位、负责人"
-          aria-label="搜索项目"
-          className="h-8 pl-8 text-xs"
-        />
+      <span className="bg-primary absolute inset-y-0 left-0 w-[4px]" aria-hidden />
+
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <span className="border-primary/35 bg-primary/12 text-primary flex size-8 shrink-0 items-center justify-center rounded-sm border">
+          <SlidersHorizontal className="size-4" aria-hidden />
+        </span>
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
+            aria-hidden
+          />
+          <Input
+            value={filters.keyword}
+            onChange={(event) => onChange({ ...filters, keyword: event.target.value })}
+            placeholder="搜索标识、名称、单位、负责人"
+            aria-label="搜索项目"
+            className="h-8 pl-8 text-xs"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:flex xl:w-auto">
@@ -134,9 +146,9 @@ export function ProjectFilters({
       </div>
 
       <div className="flex items-center justify-between gap-2 border-border xl:justify-end xl:border-l xl:pl-3">
-        <span className="text-muted-foreground font-mono text-xs">
+        <Badge variant={active ? "primary" : "outline"} className="font-mono">
           {resultCount}/{totalCount}
-        </span>
+        </Badge>
         <Button
           type="button"
           variant="ghost"

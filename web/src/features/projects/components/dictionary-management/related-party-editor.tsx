@@ -3,7 +3,6 @@ import { LoaderCircle, Save } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { projectsApi } from "@/features/projects/api";
 import { RequiredMark } from "@/features/projects/components/project-create/basic-fields";
 import type { RelatedParty, RelatedPartyCategory } from "@/features/projects/types";
@@ -80,9 +80,7 @@ export function RelatedPartyEditor({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextErrors: { name?: string; sortOrder?: string } = {};
-    if (!name.trim()) {
-      nextErrors.name = "请输入单位名称";
-    }
+    if (!name.trim()) nextErrors.name = "请输入单位名称";
     const sortValue = Number(sortOrder);
     if (!Number.isInteger(sortValue) || sortValue < 0 || sortValue > 9999) {
       nextErrors.sortOrder = "排序必须是 0 到 9999 的整数";
@@ -104,7 +102,7 @@ export function RelatedPartyEditor({
       }}
     >
       <DialogContent
-        className="max-w-md"
+        className="max-w-lg"
         onEscapeKeyDown={(event) => {
           if (mutation.isPending) event.preventDefault();
         }}
@@ -119,8 +117,8 @@ export function RelatedPartyEditor({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="related-party-category">相关方类别</Label>
+          <Field className="gap-2">
+            <FieldLabel htmlFor="related-party-category">相关方类别</FieldLabel>
             <Select
               value={category}
               onValueChange={(value) => setCategory(value as RelatedPartyCategory)}
@@ -136,11 +134,13 @@ export function RelatedPartyEditor({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="related-party-name">
-              单位名称 <RequiredMark />
-            </Label>
+          </Field>
+
+          <Field className="gap-2" data-invalid={errors.name ? true : undefined}>
+            <FieldLabel htmlFor="related-party-name">
+              单位名称
+              <RequiredMark />
+            </FieldLabel>
             <Input
               id="related-party-name"
               value={name}
@@ -149,46 +149,49 @@ export function RelatedPartyEditor({
                 setErrors((previous) => ({ ...previous, name: undefined }));
               }}
               placeholder="例：XX研究所"
+              aria-required="true"
               aria-invalid={Boolean(errors.name)}
               aria-describedby={errors.name ? "related-party-name-error" : undefined}
             />
             {errors.name ? (
-              <p id="related-party-name-error" className="text-destructive text-xs">
-                {errors.name}
-              </p>
+              <FieldError id="related-party-name-error">{errors.name}</FieldError>
             ) : null}
-          </div>
+          </Field>
+
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="related-party-contact">联系人</Label>
+            <Field className="gap-2">
+              <FieldLabel htmlFor="related-party-contact">联系人</FieldLabel>
               <Input
                 id="related-party-contact"
                 value={contact}
                 onChange={(event) => setContact(event.target.value)}
-                placeholder="例：张工"
+                placeholder="选填"
               />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="related-party-phone">联系电话</Label>
+            </Field>
+            <Field className="gap-2">
+              <FieldLabel htmlFor="related-party-phone">联系电话</FieldLabel>
               <Input
                 id="related-party-phone"
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
-                placeholder="例：13800000000"
+                placeholder="选填"
+                inputMode="tel"
               />
-            </div>
+            </Field>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="related-party-address">单位地址</Label>
+
+          <Field className="gap-2">
+            <FieldLabel htmlFor="related-party-address">单位地址</FieldLabel>
             <Input
               id="related-party-address"
               value={address}
               onChange={(event) => setAddress(event.target.value)}
-              placeholder="例：北京市海淀区XX路XX号"
+              placeholder="选填，供测评大纲文档引用"
             />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="related-party-sort">排序</Label>
+          </Field>
+
+          <Field className="gap-2" data-invalid={errors.sortOrder ? true : undefined}>
+            <FieldLabel htmlFor="related-party-sort">排序</FieldLabel>
             <Input
               id="related-party-sort"
               type="number"
@@ -202,23 +205,29 @@ export function RelatedPartyEditor({
               aria-invalid={Boolean(errors.sortOrder)}
               aria-describedby={errors.sortOrder ? "related-party-sort-error" : undefined}
             />
+            <FieldDescription>同类别的展示顺序。</FieldDescription>
             {errors.sortOrder ? (
-              <p id="related-party-sort-error" className="text-destructive text-xs">
-                {errors.sortOrder}
-              </p>
+              <FieldError id="related-party-sort-error">{errors.sortOrder}</FieldError>
             ) : null}
-          </div>
-          <label
-            htmlFor="related-party-enabled"
-            className="border-border bg-card/60 flex cursor-pointer items-center gap-3 rounded-sm border px-3 py-2"
-          >
-            <Checkbox
+          </Field>
+
+          <div className="border-border bg-muted/35 flex items-center justify-between gap-4 rounded-sm border p-3">
+            <div className="min-w-0">
+              <label htmlFor="related-party-enabled" className="text-sm font-semibold">
+                启用状态
+              </label>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {isEnabled ? "可被项目设置选择" : "仅保留历史项目引用"}
+              </p>
+            </div>
+            <Switch
               id="related-party-enabled"
               checked={isEnabled}
-              onCheckedChange={(checked) => setIsEnabled(checked === true)}
+              onCheckedChange={setIsEnabled}
+              aria-label="启用相关方"
             />
-            <span className="text-sm">启用</span>
-          </label>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onCancel}>
               取消

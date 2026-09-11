@@ -1,18 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { LogOut, MenuIcon, ShieldCheck } from "lucide-react";
+import { FolderKanban, LogOut, MenuIcon, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { Navigate, NavLink, Outlet } from "react-router";
+import { Navigate, NavLink, Outlet, useMatch } from "react-router";
 import { cn } from "cn";
 import { BrandLogo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/provider/theme-toggle";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authApi } from "@/features/auth/api";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -38,8 +34,19 @@ export default function BasicLayout() {
   }
   if (currentUserQuery.isPending) {
     return (
-      <main className="bg-background flex min-h-svh items-center justify-center">
-        <span className="text-muted-foreground text-sm">正在检查登录状态</span>
+      <main className="bg-background flex min-h-svh items-center justify-center p-6">
+        <div className="flex w-full max-w-sm flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-10" />
+            <div className="flex-1">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="mt-2 h-3 w-20" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-2/3" />
+        </div>
       </main>
     );
   }
@@ -48,34 +55,52 @@ export default function BasicLayout() {
   }
 
   const user = currentUserQuery.data;
+  const navigation = (
+    <nav className="flex flex-1 flex-col gap-2" aria-label="主导航">
+      <SidebarLink to="/" end icon={FolderKanban} onClick={() => setMobileNavOpen(false)}>
+        项目列表
+      </SidebarLink>
+      {user.role === "admin" ? (
+        <SidebarLink
+          to="/settings/dictionaries"
+          icon={SlidersHorizontal}
+          onClick={() => setMobileNavOpen(false)}
+        >
+          字典配置
+        </SidebarLink>
+      ) : null}
+    </nav>
+  );
 
   return (
-    <div className="bg-background flex min-h-svh flex-col lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="border-border bg-card/45 sticky top-0 z-20 hidden h-svh border-r lg:flex lg:flex-col">
-        <div className="border-border elevation-1 flex h-14 items-center gap-2 border-b px-4">
+    <div className="bg-background flex min-h-svh flex-col lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">
+      <aside className="border-border bg-card/50 sticky top-0 z-20 hidden h-svh flex-col overflow-hidden border-r lg:flex">
+        <div
+          className="visual-glow pointer-events-none absolute -top-24 -right-20 size-80 opacity-35"
+          aria-hidden
+        />
+        <div className="border-border relative flex h-14 items-center gap-2.5 border-b px-5">
           <BrandLogo className="text-primary size-8 shrink-0" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">ChenMeridian</p>
+            <p className="brand-wordmark truncate text-sm font-semibold">ChenMeridian</p>
             <p className="text-muted-foreground font-mono text-[10px]">V0.0.1</p>
           </div>
         </div>
-        <nav className="flex flex-1 flex-col p-3">
-          <SidebarLink to="/" end>
-            项目列表
-          </SidebarLink>
-          {user.role === "admin" ? (
-            <SidebarLink className="mt-2" to="/settings/dictionaries">
-              字典配置
-            </SidebarLink>
-          ) : null}
-        </nav>
+        <div className="relative flex flex-1 flex-col p-3">{navigation}</div>
+        <div className="border-border relative flex items-center gap-2 border-t px-5 py-3">
+          <ShieldCheck className="text-primary size-4" aria-hidden />
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium">{user.displayName}</p>
+            <p className="text-muted-foreground font-mono text-[10px]">{user.role}</p>
+          </div>
+        </div>
       </aside>
 
       <div className="flex min-h-svh flex-col">
-        <header className="border-border bg-background/90 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-4 shadow-[0_1px_10px_-8px_rgb(20_42_30_/_0.32)] backdrop-blur">
+        <header className="border-border bg-background/92 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-4 shadow-[0_1px_10px_-8px_rgb(20_42_30_/_0.32)] backdrop-blur">
           <div className="flex min-w-0 items-center gap-3">
-            <Dialog open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-              <DialogTrigger asChild>
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+              <SheetTrigger asChild>
                 <Button
                   variant="outline"
                   size="icon-sm"
@@ -84,33 +109,20 @@ export default function BasicLayout() {
                 >
                   <MenuIcon aria-hidden />
                 </Button>
-              </DialogTrigger>
-              <DialogContent
-                aria-describedby={undefined}
-                className="top-0 left-0 h-svh max-h-none w-72 max-w-[85vw] translate-x-0 translate-y-0 rounded-none border-r p-0 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left"
-              >
-                <DialogHeader className="border-border border-b p-4 pr-12">
-                  <DialogTitle>导航菜单</DialogTitle>
-                </DialogHeader>
-                <nav className="flex flex-1 flex-col gap-2 p-3">
-                  <SidebarLink to="/" end onClick={() => setMobileNavOpen(false)}>
-                    项目列表
-                  </SidebarLink>
-                  {user.role === "admin" ? (
-                    <SidebarLink
-                      to="/settings/dictionaries"
-                      onClick={() => setMobileNavOpen(false)}
-                    >
-                      字典配置
-                    </SidebarLink>
-                  ) : null}
-                </nav>
-              </DialogContent>
-            </Dialog>
-            <ShieldCheck className="text-primary" aria-hidden />
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80">
+                <SheetHeader className="items-center gap-2 pr-12">
+                  <BrandLogo className="text-primary size-8" aria-hidden />
+                  <SheetTitle className="brand-wordmark">ChenMeridian</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-1 flex-col p-3">{navigation}</div>
+              </SheetContent>
+            </Sheet>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{user.displayName}</p>
-              <p className="text-muted-foreground font-mono text-[10px] uppercase">{user.role}</p>
+              <Badge variant="outline" className="h-4 px-1 text-[10px] uppercase">
+                {user.role}
+              </Badge>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -121,7 +133,7 @@ export default function BasicLayout() {
             </Button>
           </div>
         </header>
-        <main className="flex-1 p-4 sm:p-6">
+        <main className="flex-1 p-5 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
@@ -132,32 +144,34 @@ export default function BasicLayout() {
 function SidebarLink({
   to,
   end,
+  icon: Icon,
   onClick,
-  className,
   children,
 }: {
   to: string;
   end?: boolean;
+  icon: typeof FolderKanban;
   onClick?: () => void;
-  className?: string;
   children: ReactNode;
 }) {
+  const match = useMatch({ path: to, end });
+  const active = Boolean(match);
+
   return (
-    <NavLink
-      to={to}
-      end={end}
-      onClick={onClick}
-      className={({ isActive }) =>
-        cn(
-          "elevation-1 border px-3 py-2 text-sm transition-[color,background-color,border-color,box-shadow] duration-200",
-          isActive
-            ? "border-primary bg-primary/12 font-semibold text-primary hover:bg-primary/10"
-            : "border-border bg-card/70 font-medium text-foreground hover:border-primary/30 hover:bg-primary/6 hover:text-primary",
-          className,
-        )
-      }
+    <Button
+      asChild
+      variant="ghost"
+      className={cn(
+        "h-auto w-full justify-start px-3 py-2.5 text-sm",
+        active
+          ? "border-primary/30 bg-primary/12 font-semibold text-primary hover:bg-primary/10"
+          : "text-foreground hover:bg-primary/6 hover:text-primary",
+      )}
     >
-      {children}
-    </NavLink>
+      <NavLink to={to} end={end} onClick={onClick}>
+        <Icon data-icon="inline-start" aria-hidden />
+        {children}
+      </NavLink>
+    </Button>
   );
 }

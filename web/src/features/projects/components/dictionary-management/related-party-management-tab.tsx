@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TruncatedText } from "@/components/shared/truncated-text";
 import { projectsApi } from "@/features/projects/api";
 import { ManagementSection, ManagementTable } from "./management-table";
 import { RelatedPartyEditor } from "./related-party-editor";
@@ -93,23 +94,27 @@ export function RelatedPartyManagementTab() {
         }),
         columnHelper.accessor("category", {
           header: "类别",
-          cell: (info) => <Badge variant="outline">{categoryLabels[info.getValue()]}</Badge>,
+          cell: (info) => (
+            <Badge variant="outline" className="justify-center">
+              {categoryLabels[info.getValue()]}
+            </Badge>
+          ),
         }),
         columnHelper.accessor("name", {
           header: "单位名称",
-          cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+          cell: (info) => <TruncatedText value={info.getValue()} className="font-medium" />,
         }),
         columnHelper.accessor("contact", {
           header: "联系人",
-          cell: (info) => info.getValue() || "--",
+          cell: (info) => <TruncatedText value={info.getValue()} />,
         }),
         columnHelper.accessor("phone", {
           header: "联系电话",
-          cell: (info) => <span className="font-mono text-xs">{info.getValue() || "--"}</span>,
+          cell: (info) => <TruncatedText value={info.getValue()} className="font-mono text-xs" />,
         }),
         columnHelper.accessor("address", {
           header: "单位地址",
-          cell: (info) => info.getValue() || "--",
+          cell: (info) => <TruncatedText value={info.getValue()} />,
         }),
         columnHelper.accessor("isEnabled", {
           header: "状态",
@@ -191,35 +196,43 @@ export function RelatedPartyManagementTab() {
           </Button>
         }
       >
-        <Tabs
-          value={categoryFilter}
-          onValueChange={(value) => setCategoryFilter(value as "all" | RelatedPartyCategory)}
-        >
-          <TabsList>
-            <TabsTrigger value="all">
-              <Layers aria-hidden />
-              全部
-              <span className="text-muted-foreground text-xs">
-                {partiesQuery.data?.length ?? 0}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger value="client">
-              <Building2 aria-hidden />
-              委托方
-              <span className="text-muted-foreground text-xs">{countByCategory.client}</span>
-            </TabsTrigger>
-            <TabsTrigger value="developer">
-              <Factory aria-hidden />
-              研制方
-              <span className="text-muted-foreground text-xs">{countByCategory.developer}</span>
-            </TabsTrigger>
-            <TabsTrigger value="test_center">
-              <FlaskConical aria-hidden />
-              测评中心
-              <span className="text-muted-foreground text-xs">{countByCategory.test_center}</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="border-border bg-muted/25 border-b px-4 py-2">
+          <Tabs
+            value={categoryFilter}
+            onValueChange={(value) => setCategoryFilter(value as "all" | RelatedPartyCategory)}
+          >
+            <TabsList variant="line" className="w-full">
+              <TabsTrigger value="all">
+                <Layers aria-hidden />
+                全部
+                <span className="text-muted-foreground font-mono text-xs">
+                  {partiesQuery.data?.length ?? 0}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="client">
+                <Building2 aria-hidden />
+                委托方
+                <span className="text-muted-foreground font-mono text-xs">
+                  {countByCategory.client}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="developer">
+                <Factory aria-hidden />
+                研制方
+                <span className="text-muted-foreground font-mono text-xs">
+                  {countByCategory.developer}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="test_center">
+                <FlaskConical aria-hidden />
+                测评中心
+                <span className="text-muted-foreground font-mono text-xs">
+                  {countByCategory.test_center}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
         <ManagementTable table={table} selectedId={selected?.id} leftAlignedColumns={[1]} />
       </ManagementSection>
 

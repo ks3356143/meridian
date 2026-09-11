@@ -1,18 +1,23 @@
 [data-slot="dialog-overlay"][data-state],
-[data-slot="dialog-content"][data-state] {
+[data-slot="dialog-content"][data-state],
+[data-slot="sheet-overlay"][data-state],
+[data-slot="sheet-content"][data-state] {
   animation-duration: 220ms;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
   [data-slot="dialog-overlay"],
-  [data-slot="dialog-content"] {
+  [data-slot="dialog-content"],
+  [data-slot="sheet-overlay"],
+  [data-slot="sheet-content"] {
     animation: none;
   }
 }
 
 /* Radix Dialog/Select 用 react-remove-scroll 锁背景；覆盖开闭动画周期，保持滚动条稳定。 */
 body:has([data-slot="dialog-content"][data-state]),
+body:has([data-slot="sheet-content"][data-state]),
 body:has([data-slot="select-content"][data-state]) {
   overflow: visible !important;
   margin-right: 0 !important;

@@ -10,6 +10,8 @@ import "@/styles/overlay.css";
 import "@/styles/material.css";
 import "@/styles/field-state.css";
 import "@/styles/interaction.css";
+import "@/styles/polish.css";
+import "@/styles/aesthetic.css";
 
 createRoot(document.getElementById("root")!).render(
   <AppProviders>

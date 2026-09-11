@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { BookMarked, Building2, FileCog, SlidersHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/shared/page-header";
 import { DictionaryManagementTab } from "./dictionary-management-tab";
 import { StandardManagementTab } from "./standard-management-tab";
 import { RelatedPartyManagementTab } from "./related-party-management-tab";
@@ -28,26 +29,28 @@ export function DictionaryManagementPage() {
   );
 
   return (
-    <div ref={containerRef} className="flex flex-col gap-4">
-      <header className="dictionary-reveal flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-sm">
-            <SlidersHorizontal className="size-5" aria-hidden />
-          </span>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">字典配置</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              维护项目创建选项、依据文件与相关方元数据，停用不会影响历史项目。
-            </p>
-          </div>
-        </div>
-      </header>
+    <div ref={containerRef} className="flex flex-col gap-6">
+      <PageHeader
+        className="dictionary-reveal"
+        icon={SlidersHorizontal}
+        title="字典配置"
+        description="维护项目创建选项、依据文件与相关方元数据；停用不会影响历史项目。"
+      />
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-        <TabsList className="dictionary-reveal grid w-full max-w-xl grid-cols-3">
-          <TabsTrigger value="dictionaries">技术字典</TabsTrigger>
-          <TabsTrigger value="standards">依据标准</TabsTrigger>
-          <TabsTrigger value="parties">相关方字典</TabsTrigger>
+        <TabsList variant="line" className="dictionary-reveal w-full max-w-3xl justify-start">
+          <TabsTrigger value="dictionaries">
+            <BookMarked aria-hidden />
+            技术字典
+          </TabsTrigger>
+          <TabsTrigger value="standards">
+            <FileCog aria-hidden />
+            依据标准
+          </TabsTrigger>
+          <TabsTrigger value="parties">
+            <Building2 aria-hidden />
+            相关方
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="dictionaries">
           <DictionaryManagementTab />

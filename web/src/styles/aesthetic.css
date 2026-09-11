@@ -1,0 +1,57 @@
+[data-slot="table"] thead tr {
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--card) 94%, var(--primary) 6%), var(--card)),
+    var(--card);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--border) 88%, transparent);
+}
+
+[data-slot="table"] tbody tr {
+  transition:
+    background-color 0.18s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.18s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-slot="table"] tbody tr:not(:last-child) {
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--border) 58%, transparent);
+}
+
+form > [data-slot="card"].project-create-reveal {
+  position: relative;
+}
+
+form > [data-slot="card"].project-create-reveal::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 4px;
+  background: var(--primary);
+}
+
+form > [data-slot="card"].project-create-reveal:nth-of-type(1)::before {
+  background: var(--info);
+}
+
+form > [data-slot="card"].project-create-reveal:nth-of-type(2)::before {
+  background: var(--primary);
+}
+
+form > [data-slot="card"].project-create-reveal:nth-of-type(3)::before {
+  background: var(--warning);
+}
+
+form > [data-slot="card"].project-create-reveal:nth-of-type(4)::before {
+  background: var(--chart-2);
+}
+
+form > [data-slot="card"].project-create-reveal > [data-slot="card-header"],
+form > [data-slot="card"].project-create-reveal > [data-slot="card-content"] {
+  padding-left: 1.25rem;
+}
+
+form > [data-slot="card"].project-create-reveal:hover {
+  box-shadow:
+    0 1px 2px rgb(20 42 30 / 0.04),
+    0 3px 8px rgb(20 42 30 / 0.04),
+    0 7px 14px -10px color-mix(in srgb, var(--primary) 28%, transparent);
+}

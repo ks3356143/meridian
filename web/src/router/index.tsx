@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { RouterErrorBoundary } from "@/components/router-util/error-boundary";
+import { RouteLoading } from "@/components/router-util/route-loading";
 import { RootRoute } from "@/components/router-util/root-route";
 import BasicLayout from "@/layouts/basic-layout";
 
@@ -7,6 +8,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <RootRoute />,
+    HydrateFallback: RouteLoading,
     errorElement: <RouterErrorBoundary />,
     children: [
       {

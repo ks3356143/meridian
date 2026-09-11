@@ -3,7 +3,6 @@ import { LoaderCircle, Save } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { projectsApi } from "@/features/projects/api";
 import { RequiredMark } from "@/features/projects/components/project-create/basic-fields";
 import type { DictionaryCategory, DictionaryOption } from "@/features/projects/types";
@@ -108,8 +108,8 @@ export function DictionaryEditor({
           <DialogDescription>停用后不再出现在新建项目选项中。</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="dictionary-category">字典类型</Label>
+          <Field className="gap-2">
+            <FieldLabel htmlFor="dictionary-category">字典类型</FieldLabel>
             <Select
               value={category}
               onValueChange={(value) => setCategory(value as DictionaryCategory)}
@@ -125,11 +125,13 @@ export function DictionaryEditor({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="dictionary-name">
-              展示名 <RequiredMark />
-            </Label>
+          </Field>
+
+          <Field className="gap-2" data-invalid={errors.name ? true : undefined}>
+            <FieldLabel htmlFor="dictionary-name">
+              展示名
+              <RequiredMark />
+            </FieldLabel>
             <Input
               id="dictionary-name"
               value={name}
@@ -138,17 +140,15 @@ export function DictionaryEditor({
                 setErrors((previous) => ({ ...previous, name: undefined }));
               }}
               placeholder="例：Rust"
+              aria-required="true"
               aria-invalid={Boolean(errors.name)}
               aria-describedby={errors.name ? "dictionary-name-error" : undefined}
             />
-            {errors.name ? (
-              <p id="dictionary-name-error" className="text-destructive text-xs">
-                {errors.name}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="dictionary-sort">排序</Label>
+            {errors.name ? <FieldError id="dictionary-name-error">{errors.name}</FieldError> : null}
+          </Field>
+
+          <Field className="gap-2" data-invalid={errors.sortOrder ? true : undefined}>
+            <FieldLabel htmlFor="dictionary-sort">排序</FieldLabel>
             <Input
               id="dictionary-sort"
               type="number"
@@ -162,23 +162,29 @@ export function DictionaryEditor({
               aria-invalid={Boolean(errors.sortOrder)}
               aria-describedby={errors.sortOrder ? "dictionary-sort-error" : undefined}
             />
+            <FieldDescription>数值越小越靠前。</FieldDescription>
             {errors.sortOrder ? (
-              <p id="dictionary-sort-error" className="text-destructive text-xs">
-                {errors.sortOrder}
-              </p>
+              <FieldError id="dictionary-sort-error">{errors.sortOrder}</FieldError>
             ) : null}
-          </div>
-          <label
-            htmlFor="dictionary-enabled"
-            className="border-border bg-card/60 flex cursor-pointer items-center gap-3 rounded-sm border px-3 py-2"
-          >
-            <Checkbox
+          </Field>
+
+          <div className="border-border bg-muted/35 flex items-center justify-between gap-4 rounded-sm border p-3">
+            <div className="min-w-0">
+              <label htmlFor="dictionary-enabled" className="text-sm font-semibold">
+                启用状态
+              </label>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {isEnabled ? "出现在新建项目选项" : "仅保留历史项目引用"}
+              </p>
+            </div>
+            <Switch
               id="dictionary-enabled"
               checked={isEnabled}
-              onCheckedChange={(checked) => setIsEnabled(checked === true)}
+              onCheckedChange={setIsEnabled}
+              aria-label="启用技术字典"
             />
-            <span className="text-sm">启用</span>
-          </label>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onCancel}>
               取消

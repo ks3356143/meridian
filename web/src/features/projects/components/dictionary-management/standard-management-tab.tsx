@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TruncatedText } from "@/components/shared/truncated-text";
 import { projectsApi } from "@/features/projects/api";
 import { ManagementSection, ManagementTable } from "./management-table";
 import { ErrorCard, LoadingCard } from "./status-cards";
@@ -58,18 +59,19 @@ export function StandardManagementTab() {
         }),
         columnHelper.accessor("name", {
           header: "文档名称",
-          cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+          cell: (info) => <TruncatedText value={info.getValue()} className="font-medium" />,
         }),
         columnHelper.accessor("code", {
           header: "标识/版本",
-          cell: (info) => <span className="font-mono text-xs">{info.getValue() || "--"}</span>,
+          cell: (info) => <TruncatedText value={info.getValue()} className="font-mono text-xs" />,
         }),
         columnHelper.accessor("publishedDate", {
           header: "发布日期",
-          cell: (info) => <span className="font-mono text-xs">{info.getValue() || "--"}</span>,
+          cell: (info) => <TruncatedText value={info.getValue()} className="font-mono text-xs" />,
         }),
         columnHelper.accessor("source", {
           header: "来源单位",
+          cell: (info) => <TruncatedText value={info.getValue()} />,
         }),
         columnHelper.accessor("isEnabled", {
           header: "状态",

@@ -1,3 +1,22 @@
+.brand-wordmark {
+  background-image: var(--wordmark-gradient);
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: brand-gradient-flow 12s linear infinite;
+}
+
+@keyframes brand-gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
 .meridian-beam {
   position: relative;
   background: linear-gradient(
@@ -104,9 +123,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .brand-wordmark,
   .visual-wordmark,
   .globe-wireframe {
     animation: none;
+  }
+
+  .brand-wordmark {
+    background-position: 0% 50%;
   }
 
   .btn-sheen::after {

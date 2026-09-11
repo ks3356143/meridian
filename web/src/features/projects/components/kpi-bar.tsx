@@ -6,21 +6,63 @@ import {
   FlaskConical,
   FolderKanban,
 } from "lucide-react";
+import { cn } from "cn";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { totalOpenIssues, type Project } from "../types";
+
+type KpiTone = "info" | "primary" | "warning" | "success" | "chart" | "danger";
 
 interface KpiItem {
   icon: typeof FolderKanban;
   label: string;
   value: string;
-  tone: "default" | "primary" | "success" | "danger";
+  tone: KpiTone;
   detail: string;
   progress?: number;
 }
-interface KpiBarProps {
-  projects: Project[];
-}
 
-export function KpiBar({ projects }: KpiBarProps) {
+const toneStyles: Record<KpiTone, { card: string; icon: string; value: string; progress: string }> =
+  {
+    info: {
+      card: "hover:bg-info/[0.045]",
+      icon: "border-info/35 bg-info/12 text-info",
+      value: "text-info",
+      progress: "[&_[data-slot=progress-indicator]]:bg-info",
+    },
+    primary: {
+      card: "hover:bg-primary/[0.045]",
+      icon: "border-primary/35 bg-primary/12 text-primary",
+      value: "text-primary",
+      progress: "[&_[data-slot=progress-indicator]]:bg-primary",
+    },
+    warning: {
+      card: "hover:bg-warning/[0.055]",
+      icon: "border-warning/40 bg-warning/14 text-warning",
+      value: "text-warning",
+      progress: "[&_[data-slot=progress-indicator]]:bg-warning",
+    },
+    success: {
+      card: "hover:bg-success/[0.045]",
+      icon: "border-success/35 bg-success/12 text-success",
+      value: "text-success",
+      progress: "[&_[data-slot=progress-indicator]]:bg-success",
+    },
+    chart: {
+      card: "hover:bg-chart-2/[0.045]",
+      icon: "border-chart-2/35 bg-chart-2/12 text-chart-2",
+      value: "text-chart-2",
+      progress: "[&_[data-slot=progress-indicator]]:bg-chart-2",
+    },
+    danger: {
+      card: "hover:bg-destructive/[0.045]",
+      icon: "border-destructive/35 bg-destructive/12 text-destructive",
+      value: "text-destructive",
+      progress: "[&_[data-slot=progress-indicator]]:bg-destructive",
+    },
+  };
+
+export function KpiBar({ projects }: { projects: Project[] }) {
   const totalCases = projects.reduce((sum, p) => sum + p.casesTotal, 0);
   const executedCases = projects.reduce((sum, p) => sum + p.casesExecuted, 0);
   const executionRate = totalCases === 0 ? 0 : Math.round((executedCases / totalCases) * 100);
@@ -41,7 +83,7 @@ export function KpiBar({ projects }: KpiBarProps) {
       icon: FolderKanban,
       label: "项目总数",
       value: String(projects.length),
-      tone: "default",
+      tone: "info",
       detail: `执行 ${executing} · 完成 ${completed}`,
       progress: projects.length === 0 ? 0 : (completed / projects.length) * 100,
     },
@@ -56,7 +98,7 @@ export function KpiBar({ projects }: KpiBarProps) {
       icon: FileEdit,
       label: "编制评审中",
       value: String(drafting),
-      tone: "default",
+      tone: "warning",
       detail: "大纲编制与已评审",
     },
     {
@@ -74,7 +116,7 @@ export function KpiBar({ projects }: KpiBarProps) {
       icon: Activity,
       label: "用例执行率",
       value: `${executionRate}%`,
-      tone: "primary",
+      tone: "chart",
       detail: `${executedCases}/${totalCases}`,
       progress: executionRate,
     },
@@ -82,73 +124,56 @@ export function KpiBar({ projects }: KpiBarProps) {
       icon: CircleAlert,
       label: "未闭环问题",
       value: String(openTotal),
-      tone: openCritical > 0 ? "danger" : "default",
+      tone: "danger",
       detail: `重 ${openCritical} · 一般 ${normal} · 建议 ${suggestion}`,
     },
-  ] as const;
+  ];
 
   return (
-    <div className="panel-surface border-border grid grid-cols-2 rounded-sm border sm:grid-cols-3 xl:grid-cols-6">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className={`dash-reveal group border-border relative flex min-h-24 flex-col justify-between gap-2 border-r border-b p-3 transition-[background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] last:border-r-0 hover:bg-primary/5 max-xl:[&:nth-child(3n)]:border-r-0 max-sm:[&:nth-child(2n)]:border-r-0 ${
-            item.tone === "danger" ? "bg-destructive/5 hover:bg-destructive/8" : ""
-          }`}
-        >
-          <div
-            className={`absolute inset-x-0 top-0 h-[2px] origin-left transition-transform duration-200 ${
-              item.tone === "danger"
-                ? "bg-destructive"
-                : item.tone === "primary" || item.tone === "success"
-                  ? "bg-primary"
-                  : "bg-muted-foreground/30"
-            }`}
-            style={{ transform: `scaleX(${(item.progress ?? 0) / 100})` }}
-            aria-hidden
-          />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground text-xs">{item.label}</span>
-            <item.icon
-              className={`size-3.5 transition-transform duration-200 group-hover:scale-110 ${
-                item.tone === "danger"
-                  ? "text-destructive"
-                  : item.tone === "primary" || item.tone === "success"
-                    ? "text-primary"
-                    : "text-muted-foreground"
-              }`}
-              aria-hidden
-            />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span
-              className={`font-mono text-2xl leading-none font-semibold ${
-                item.tone === "danger" ? "text-destructive" : ""
-              }`}
-            >
-              {/^[\d.]+%?$/.test(item.value) ? (
-                <span className="metric-count" data-value={item.value.replace(/[%.]/g, "")}>
-                  {item.value.replace(/[%.]/g, "")}
+    <div aria-label="项目统计" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+      {items.map((item) => {
+        const tone = toneStyles[item.tone];
+        return (
+          <Card
+            key={item.label}
+            size="sm"
+            data-tone={item.tone}
+            className={cn("dash-reveal group overflow-hidden", tone.card)}
+          >
+            <CardContent className="flex min-h-30 flex-col justify-between gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-muted-foreground text-xs font-medium">{item.label}</span>
+                <span
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-sm border",
+                    tone.icon,
+                  )}
+                >
+                  <item.icon className="size-4" aria-hidden />
                 </span>
-              ) : (
-                item.value
-              )}
-              {item.value.endsWith("%") ? "%" : null}
-            </span>
-          </div>
-          <div>
-            <span className="text-muted-foreground block truncate text-[10px]">{item.detail}</span>
-            <span className="bg-muted/70 mt-1.5 block h-1 w-full overflow-hidden">
-              <span
-                className={`block h-full origin-left transition-transform duration-500 ${
-                  item.tone === "danger" ? "bg-destructive" : "bg-primary"
-                }`}
-                style={{ transform: `scaleX(${(item.progress ?? 0) / 100})` }}
-              />
-            </span>
-          </div>
-        </div>
-      ))}
+              </div>
+
+              <div className="flex items-end justify-between gap-2">
+                <span className={cn("font-mono text-3xl leading-none font-semibold", tone.value)}>
+                  {/^[\d.]+%?$/.test(item.value) ? (
+                    <span className="metric-count" data-value={item.value.replace(/[%.]/g, "")}>
+                      {item.value.replace(/[%.]/g, "")}
+                    </span>
+                  ) : (
+                    item.value
+                  )}
+                  {item.value.endsWith("%") ? "%" : null}
+                </span>
+                <span className="text-muted-foreground max-w-24 text-right text-[10px] leading-tight">
+                  {item.detail}
+                </span>
+              </div>
+
+              <Progress value={item.progress ?? 0} className={cn("h-1", tone.progress)} />
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

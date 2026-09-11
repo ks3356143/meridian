@@ -71,24 +71,6 @@
     border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.panel-interactive:hover {
-  box-shadow: var(--elevation-2);
-}
-
-.filter-select {
-  appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
-    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
-  background-position:
-    calc(100% - 15px) calc(50% - 2px),
-    calc(100% - 10px) calc(50% - 2px);
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .button-elevated,
   .button-primary-elevated,

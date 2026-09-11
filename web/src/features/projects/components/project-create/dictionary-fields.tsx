@@ -3,9 +3,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import type { DictionaryCategory, DictionaryOption } from "@/features/projects/types";
 import { RequiredMark } from "./basic-fields";
 
@@ -104,12 +104,11 @@ function DictionaryField({
   return (
     <Field
       aria-label={`${label}（必选）`}
-      tabIndex={-1}
       aria-required="true"
       aria-invalid={Boolean(error)}
       aria-describedby={error ? `${category}-error` : undefined}
       data-invalid={error ? true : undefined}
-      className="gap-2"
+      className="gap-2.5"
     >
       <FieldTitle>
         {label}
@@ -118,40 +117,29 @@ function DictionaryField({
           {selected.length > 0 ? `已选 ${selected.length}` : "待选择"}
         </Badge>
       </FieldTitle>
-      <div
-        data-invalid-group={Boolean(error)}
-        className="grid grid-cols-2 gap-2 rounded-sm border border-transparent p-2"
-      >
-        {options.map((option) => {
-          const checked = selected.includes(option.name);
-          return (
-            <label
-              key={option.id}
-              className="border-border bg-card/60 has-data-[state=checked]:border-primary/35 has-data-[state=checked]:bg-primary/6 flex min-h-8 cursor-pointer items-center gap-2 rounded-sm border px-2.5 text-xs transition-[background-color,border-color,box-shadow] duration-200"
-            >
-              <Checkbox
-                checked={checked}
-                onCheckedChange={() =>
-                  onChange(
-                    checked
-                      ? selected.filter((value) => value !== option.name)
-                      : [...selected, option.name],
-                  )
-                }
-              />
-              {option.name}
-            </label>
-          );
-        })}
-      </div>
+      <MultiSelectCombobox
+        id={`${category}-select`}
+        ariaLabel={`${label}（必选）`}
+        options={options.map((option) => ({
+          value: option.name,
+          label: option.name,
+          keywords: [option.isPreset ? "预置" : "自定义"],
+        }))}
+        value={selected}
+        onChange={onChange}
+        placeholder={`选择${label}`}
+        searchPlaceholder={`搜索${label}`}
+        emptyText="没有匹配的字典项"
+        invalid={Boolean(error)}
+      />
       {error ? <FieldError id={`${category}-error`}>{error}</FieldError> : null}
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <Input
           value={customValue}
           onChange={(event) => setCustomValue(event.target.value)}
           placeholder="自定义选项"
           aria-label={`新增自定义${label}`}
-          className="h-7 text-xs"
+          className="h-8 text-xs"
         />
         <Button type="button" variant="outline" size="sm" onClick={addCustom}>
           <Plus data-icon="inline-start" />

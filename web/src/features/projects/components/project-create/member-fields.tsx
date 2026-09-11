@@ -1,7 +1,4 @@
-import { useMemo, useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Field, FieldDescription, FieldError, FieldLabel, FieldTitle } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -9,6 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
+import { Badge } from "@/components/ui/badge";
 import type { UserOption } from "@/features/projects/types";
 import { RequiredMark } from "./basic-fields";
 
@@ -27,18 +26,11 @@ export function MemberFields({
   onOwnerChange: (userId: string) => void;
   onMembersChange: (values: string[]) => void;
 }) {
-  const [keyword, setKeyword] = useState("");
-  const filteredUsers = useMemo(() => {
-    const query = keyword.trim().toLowerCase();
-    if (!query) return users;
-    return users.filter((user) =>
-      [user.displayName, user.username].some((field) => field.toLowerCase().includes(query)),
-    );
-  }, [keyword, users]);
+  const memberOptions = users.filter((user) => user.id !== selectedOwnerId);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(240px,320px)_1fr]">
-      <Field className="gap-2">
+    <div className="grid gap-5 lg:grid-cols-[minmax(260px,340px)_1fr]">
+      <Field className="gap-2.5" data-invalid={ownerError ? true : undefined}>
         <FieldLabel htmlFor="project-owner">
           项目负责人
           <RequiredMark />
@@ -60,52 +52,39 @@ export function MemberFields({
             ))}
           </SelectContent>
         </Select>
+        <FieldDescription>负责人保存后自动加入项目成员。</FieldDescription>
+        {ownerError ? <FieldError>{ownerError}</FieldError> : null}
       </Field>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-sm leading-none font-semibold">项目成员</span>
-          <Input
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder="搜索成员"
-            aria-label="搜索项目成员"
-            className="h-7 sm:w-48"
-          />
-        </div>
-        <div className="grid max-h-56 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
-          {filteredUsers
-            .filter((user) => user.id !== selectedOwnerId)
-            .map((user) => {
-              const checked = memberIds.includes(user.id);
-              return (
-                <label
-                  key={user.id}
-                  htmlFor={user.id}
-                  className="border-border bg-card/60 has-data-[state=checked]:border-primary/35 has-data-[state=checked]:bg-primary/6 flex cursor-pointer items-center gap-3 rounded-sm border px-3 py-2 transition-[background-color,border-color] duration-200"
-                >
-                  <Checkbox
-                    id={user.id}
-                    checked={checked}
-                    onCheckedChange={() =>
-                      onMembersChange(
-                        checked
-                          ? memberIds.filter((id) => id !== user.id)
-                          : [...memberIds, user.id],
-                      )
-                    }
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">{user.displayName}</span>
-                    <span className="text-muted-foreground block font-mono text-xs">
-                      {user.username}
-                    </span>
-                  </span>
-                </label>
-              );
-            })}
-        </div>
-      </div>
+      <Field className="gap-2.5">
+        <FieldTitle>
+          项目成员
+          <Badge
+            variant={memberIds.length > 0 ? "primary" : "secondary"}
+            className="h-5 text-[11px]"
+          >
+            {memberIds.length > 0 ? `已选 ${memberIds.length}` : "可选"}
+          </Badge>
+        </FieldTitle>
+        <MultiSelectCombobox
+          id="project-members"
+          ariaLabel="项目成员（可多选）"
+          options={memberOptions.map((user) => ({
+            value: user.id,
+            label: user.displayName,
+            description: user.username,
+            keywords: [user.username],
+          }))}
+          value={memberIds}
+          onChange={onMembersChange}
+          placeholder="按显示名或用户名搜索成员"
+          searchPlaceholder="搜索成员"
+          emptyText="没有匹配成员"
+        />
+        <FieldDescription>
+          支持显示名和用户名搜索，负责人不会重复出现在成员选项中。
+        </FieldDescription>
+      </Field>
     </div>
   );
 }
