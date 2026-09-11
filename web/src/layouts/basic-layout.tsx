@@ -7,7 +7,7 @@ import {
   SlidersHorizontal,
   Users,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { Navigate, NavLink, Outlet, useMatch } from "react-router";
 import { cn } from "cn";
 import { BrandLogo } from "@/components/brand/logo";
@@ -24,7 +24,7 @@ export default function BasicLayout() {
   const setUser = useAuthStore((state) => state.setUser);
   const clear = useAuthStore((state) => state.clear);
   const currentUserQuery = useQuery({
-    queryKey: ["auth", "me"],
+    queryKey: ["auth", "me", token],
     queryFn: authApi.me,
     enabled: Boolean(token),
   });
@@ -161,6 +161,13 @@ function SidebarLink({
   const match = useMatch({ path: to, end });
   const active = Boolean(match);
 
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (active) {
+      event.preventDefault();
+    }
+    onClick?.();
+  };
+
   return (
     <Button
       asChild
@@ -172,7 +179,7 @@ function SidebarLink({
           : "text-foreground hover:bg-primary/6 hover:text-primary",
       )}
     >
-      <NavLink to={to} end={end} onClick={onClick} viewTransition>
+      <NavLink to={to} end={end} onClick={handleClick} viewTransition>
         <Icon data-icon="inline-start" aria-hidden />
         {children}
       </NavLink>

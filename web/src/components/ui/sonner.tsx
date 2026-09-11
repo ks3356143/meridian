@@ -15,6 +15,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      richColors
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -27,18 +28,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
-          "--success-bg": "var(--popover)",
-          "--success-border": "var(--border)",
-          "--success-text": "var(--popover-foreground)",
-          "--info-bg": "var(--popover)",
-          "--info-border": "var(--border)",
-          "--info-text": "var(--popover-foreground)",
-          "--warning-bg": "var(--popover)",
-          "--warning-border": "var(--border)",
-          "--warning-text": "var(--popover-foreground)",
-          "--error-bg": "var(--popover)",
-          "--error-border": "var(--border)",
-          "--error-text": "var(--popover-foreground)",
           "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }

@@ -19,3 +19,16 @@ export interface UpdateUserPayload {
 export interface UserListResponse {
   users: ManagedUser[];
 }
+
+export type UserDialogMode =
+  | { kind: "closed" }
+  | { kind: "create" }
+  | { kind: "edit"; user: ManagedUser };
+
+export interface UserFormValues {
+  username: string;
+  displayName: string;
+  password: string;
+}
+
+export type UserFormErrors = Partial<Record<keyof UserFormValues, string>>;

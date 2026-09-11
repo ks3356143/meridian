@@ -36,7 +36,7 @@ func newTestHandler(t *testing.T) http.Handler {
 	}
 
 	userService := users.NewService(db)
-	if err := userService.EnsureAdmin(context.Background(), "admin", "admin123"); err != nil {
+	if err := userService.EnsureAdmin(context.Background()); err != nil {
 		t.Fatalf("创建测试管理员失败: %v", err)
 	}
 

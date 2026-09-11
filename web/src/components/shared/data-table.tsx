@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ManagementTableFeatures } from "./dictionary-management/table-features";
+import type { ManagementTableFeatures } from "./table-features";
 
 export type ResponsiveBreakpoint = "lg" | "xl" | "wide";
 
@@ -60,7 +60,7 @@ export function DataTable<TData extends RowData & { id: string }>({
                       sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none"
                     }
                     className={cn(
-                      "text-muted-foreground border-border h-auto max-w-0 border-r px-3 py-2.5 text-center text-xs last:border-r-0",
+                      "text-foreground border-border h-auto max-w-0 border-r px-3 py-2.5 text-center text-xs font-semibold last:border-r-0",
                       meta?.hiddenUntil && responsiveHiddenClasses[meta.hiddenUntil],
                     )}
                   >
@@ -69,7 +69,7 @@ export function DataTable<TData extends RowData & { id: string }>({
                         asChild
                         variant="ghost"
                         size="xs"
-                        className="hover:text-primary h-auto min-w-0 justify-center px-0 text-xs"
+                        className="hover:text-primary h-auto min-w-0 justify-center px-0 text-xs font-semibold"
                       >
                         <button
                           type="button"

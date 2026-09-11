@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { TruncatedText } from "@/components/shared/truncated-text";
-import { DataTable } from "./data-table";
-import { managementTableFeatures } from "./dictionary-management/table-features";
+import { DataTable } from "@/components/shared/data-table";
+import { managementTableFeatures } from "@/components/shared/table-features";
 import { levelVariant, statusVariant } from "../status-style";
 import { totalOpenIssues, type Project } from "../types";
 

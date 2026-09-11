@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,14 +12,8 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-export interface MultiSelectOption {
-  value: string;
-  label: string;
-  description?: string;
-  disabled?: boolean;
-  keywords?: string[];
-}
+import type { MultiSelectOption } from "./multi-select-types";
+import { useMultiSelectBadgeMotion } from "./use-multi-select-badge-motion";
 
 export function MultiSelectCombobox({
   id,
@@ -45,13 +39,19 @@ export function MultiSelectCombobox({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const selected = options.filter((option) => value.includes(option.value));
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const { visibleOptions, exitingSelected } = useMultiSelectBadgeMotion({
+    options,
+    value,
+    triggerRef,
+  });
   const popoverId = `${id}-popover`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          ref={triggerRef}
           type="button"
           id={id}
           variant="outline"
@@ -63,15 +63,21 @@ export function MultiSelectCombobox({
           data-slot="multi-select-trigger"
           className={cn(
             "input-elevated bg-card/80 h-auto min-h-10 w-full justify-between px-2.5 py-1.5 font-medium",
-            selected.length === 0 && "text-placeholder font-normal",
+            visibleOptions.length === 0 && "text-placeholder font-normal",
             className,
           )}
         >
           <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-            {selected.length === 0
+            {visibleOptions.length === 0
               ? placeholder
-              : selected.map((option) => (
-                  <Badge key={option.value} variant="primary" className="max-w-full">
+              : visibleOptions.map((option) => (
+                  <Badge
+                    key={option.value}
+                    variant="primary"
+                    className="max-w-full"
+                    data-selected-value={option.value}
+                    aria-hidden={exitingSelected.has(option.value) ? true : undefined}
+                  >
                     <span className="truncate">{option.label}</span>
                   </Badge>
                 ))}

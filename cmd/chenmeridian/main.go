@@ -45,7 +45,7 @@ func run(cfg config.Config) error {
 
 	userService := users.NewService(db)
 	settingService := settings.NewService(db)
-	if err := userService.EnsureAdmin(context.Background(), cfg.AdminUsername, cfg.AdminPassword); err != nil {
+	if err := userService.EnsureAdmin(context.Background()); err != nil {
 		return fmt.Errorf("初始化管理员失败: %w", err)
 	}
 

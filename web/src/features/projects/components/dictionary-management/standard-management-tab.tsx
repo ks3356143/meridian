@@ -10,7 +10,7 @@ import { projectsApi } from "@/features/projects/api";
 import { ManagementSection, ManagementTable } from "./management-table";
 import { ErrorCard, LoadingCard } from "./status-cards";
 import { StandardEditor } from "./standard-editor";
-import { managementTableFeatures } from "./table-features";
+import { managementTableFeatures } from "@/components/shared/table-features";
 import type { ReferenceStandard } from "@/features/projects/types";
 
 const features = managementTableFeatures;
@@ -82,7 +82,7 @@ export function StandardManagementTab() {
                 启用
               </Badge>
             ) : (
-              <Badge variant="outline" className="justify-center">
+              <Badge variant="danger" className="justify-center">
                 <CircleOff aria-hidden />
                 停用
               </Badge>
@@ -107,7 +107,7 @@ export function StandardManagementTab() {
                   编辑
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant={standard.isEnabled ? "destructive" : "ghost"}
                   size="xs"
                   disabled={toggleMutation.isPending}
                   onClick={() => toggleMutation.mutate(standard)}

@@ -19,7 +19,7 @@ import { projectsApi } from "@/features/projects/api";
 import { ManagementSection, ManagementTable } from "./management-table";
 import { RelatedPartyEditor } from "./related-party-editor";
 import { ErrorCard, LoadingCard } from "./status-cards";
-import { managementTableFeatures } from "./table-features";
+import { managementTableFeatures } from "@/components/shared/table-features";
 import type { RelatedParty, RelatedPartyCategory } from "@/features/projects/types";
 
 const features = managementTableFeatures;
@@ -125,7 +125,7 @@ export function RelatedPartyManagementTab() {
                 启用
               </Badge>
             ) : (
-              <Badge variant="outline" className="justify-center">
+              <Badge variant="danger" className="justify-center">
                 <CircleOff aria-hidden />
                 停用
               </Badge>
@@ -150,7 +150,7 @@ export function RelatedPartyManagementTab() {
                   编辑
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant={party.isEnabled ? "destructive" : "ghost"}
                   size="xs"
                   disabled={toggleMutation.isPending}
                   onClick={() => toggleMutation.mutate(party)}

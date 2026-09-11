@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import type { RowData } from "@tanstack/table-core";
 import type { ReactTable } from "@tanstack/react-table";
 import { cn } from "cn";
-import { DataTable } from "../data-table";
-import type { ManagementTableFeatures } from "./table-features";
+import { DataTable } from "@/components/shared/data-table";
+import type { ManagementTableFeatures } from "@/components/shared/table-features";
 
 export type ManagementTone = "primary" | "warning" | "info";
 

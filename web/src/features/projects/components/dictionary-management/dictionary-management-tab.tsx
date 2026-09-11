@@ -10,7 +10,7 @@ import { projectsApi } from "@/features/projects/api";
 import { DictionaryEditor } from "./dictionary-editor";
 import { ManagementSection, ManagementTable } from "./management-table";
 import { ErrorCard, LoadingCard } from "./status-cards";
-import { managementTableFeatures } from "./table-features";
+import { managementTableFeatures } from "@/components/shared/table-features";
 import type { DictionaryCategory, DictionaryOption } from "@/features/projects/types";
 
 const features = managementTableFeatures;
@@ -84,7 +84,7 @@ export function DictionaryManagementTab() {
                 启用
               </Badge>
             ) : (
-              <Badge variant="outline" className="justify-center">
+              <Badge variant="danger" className="justify-center">
                 <CircleOff aria-hidden />
                 停用
               </Badge>
@@ -117,7 +117,7 @@ export function DictionaryManagementTab() {
                   编辑
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant={item.isEnabled ? "destructive" : "ghost"}
                   size="xs"
                   disabled={toggleMutation.isPending}
                   onClick={() => toggleMutation.mutate(item)}

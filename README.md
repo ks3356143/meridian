@@ -4,7 +4,7 @@
 
 ## 技术栈
 
-- 后端：Go、Huma v2、GORM、pure Go SQLite、JWT + Casbin
+- 后端：Go、Huma v2、GORM、pure Go SQLite、JWT
 - 前端：Vite、React、React Router 8 SPA Data Mode、Tailwind CSS 4、shadcn/ui + Radix、TanStack Query/Table、GSAP
 - 存储：SQLite；结构由显式 SQL migration 管理
 

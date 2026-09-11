@@ -95,6 +95,9 @@ func (h *Handler) update(ctx context.Context, input *UpdateUserInput) (*UpdateUs
 		if errors.Is(err, users.ErrUserNotFound) {
 			return nil, huma.Error404NotFound("用户不存在")
 		}
+		if errors.Is(err, users.ErrAdminPasswordFixed) {
+			return nil, huma.Error400BadRequest("系统管理员密码固定，不允许修改")
+		}
 		return nil, huma.Error400BadRequest(err.Error())
 	}
 	return &UpdateUserOutput{Body: toResponse(user)}, nil
@@ -104,6 +107,17 @@ func (h *Handler) delete(ctx context.Context, input *DeleteUserInput) (*struct{}
 	claims, ok := authservice.ClaimsFromContext(ctx)
 	if !ok {
 		return nil, huma.Error401Unauthorized("未登录")
+	}
+
+	isProtectedAdmin, err := h.userService.IsProtectedAdmin(ctx, input.ID)
+	if err != nil {
+		if errors.Is(err, users.ErrUserNotFound) {
+			return nil, huma.Error404NotFound("用户不存在")
+		}
+		return nil, huma.Error500InternalServerError("查询用户失败")
+	}
+	if isProtectedAdmin {
+		return nil, huma.Error400BadRequest("系统管理员账号不允许删除")
 	}
 
 	// 检查用户是否被项目引用
@@ -118,6 +132,9 @@ func (h *Handler) delete(ctx context.Context, input *DeleteUserInput) (*struct{}
 	if err := h.userService.Delete(ctx, input.ID, claims.UserID); err != nil {
 		if errors.Is(err, users.ErrSelfDelete) {
 			return nil, huma.Error400BadRequest("不能删除当前登录用户")
+		}
+		if errors.Is(err, users.ErrAdminDelete) {
+			return nil, huma.Error400BadRequest("系统管理员账号不允许删除")
 		}
 		if errors.Is(err, users.ErrLastUser) {
 			return nil, huma.Error400BadRequest("不能删除最后一个用户")

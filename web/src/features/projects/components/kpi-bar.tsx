@@ -142,7 +142,7 @@ export function KpiBar({ projects }: { projects: Project[] }) {
           >
             <CardContent className="flex min-h-30 flex-col justify-between gap-3">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground text-xs font-medium">{item.label}</span>
+                <span className="text-muted-foreground text-xs font-semibold">{item.label}</span>
                 <span
                   className={cn(
                     "flex size-8 items-center justify-center rounded-sm border",
@@ -154,7 +154,12 @@ export function KpiBar({ projects }: { projects: Project[] }) {
               </div>
 
               <div className="flex items-end justify-between gap-2">
-                <span className={cn("font-mono text-3xl leading-none font-semibold", tone.value)}>
+                <span
+                  className={cn(
+                    "font-mono text-4xl leading-none font-bold tabular-nums",
+                    tone.value,
+                  )}
+                >
                   {/^[\d.]+%?$/.test(item.value) ? (
                     <span className="metric-count" data-value={item.value.replace(/[%.]/g, "")}>
                       {item.value.replace(/[%.]/g, "")}

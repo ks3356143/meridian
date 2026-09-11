@@ -23,7 +23,19 @@ body:has([data-slot="select-content"][data-state]) {
   margin-right: 0 !important;
 }
 
-/* sonner：中性灰白背景，语义色只上图标与关闭按钮，深浅色跟随主题变量。 */
+/* sonner：背景保持主题弹层色，语义只体现在边框与图标。 */
+html:root .toaster[data-sonner-toaster] {
+  --success-bg: var(--popover);
+  --success-border: var(--success);
+  --success-text: var(--popover-foreground);
+  --warning-bg: var(--popover);
+  --warning-border: var(--warning);
+  --warning-text: var(--popover-foreground);
+  --error-bg: var(--popover);
+  --error-border: var(--destructive);
+  --error-text: var(--popover-foreground);
+}
+
 [data-sonner-toast] [data-icon] {
   flex-shrink: 0;
 }

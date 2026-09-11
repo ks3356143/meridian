@@ -13,6 +13,11 @@ import (
 	"chenmeridian/internal/id"
 )
 
+const (
+	AdminUsername = "admin"
+	AdminPassword = "admin123"
+)
+
 var (
 	ErrInvalidCredentials = errors.New("用户名或密码错误")
 	ErrUserNotFound       = errors.New("用户不存在")
@@ -20,6 +25,8 @@ var (
 	ErrLastUser           = errors.New("不能删除最后一个用户")
 	ErrSelfDelete         = errors.New("不能删除当前登录用户")
 	ErrUserInUse          = errors.New("该用户已被项目引用，请先从项目中移除")
+	ErrAdminDelete        = errors.New("系统管理员账号不允许删除")
+	ErrAdminPasswordFixed = errors.New("系统管理员密码固定，不允许修改")
 )
 
 type Service struct {
@@ -30,42 +37,50 @@ func NewService(db *gorm.DB) *Service {
 	return &Service{repository: NewRepository(db)}
 }
 
-// EnsureAdmin 只在用户表为空时创建初始管理员，不在每次启动时覆盖密码。
-func (s *Service) EnsureAdmin(ctx context.Context, username string, password string) error {
-	username = strings.TrimSpace(username)
-	if username == "" {
-		return fmt.Errorf("初始管理员用户名不能为空")
-	}
-	if len(password) < 8 {
-		return fmt.Errorf("初始管理员密码至少需要 8 位")
+// EnsureAdmin 保证固定管理员存在，并在启动时将密码校正为 admin123。
+func (s *Service) EnsureAdmin(ctx context.Context) error {
+	passwordHash, err := HashPassword(AdminPassword)
+	if err != nil {
+		return err
 	}
 
-	count, err := s.repository.Count(ctx)
-	if err != nil {
-		return fmt.Errorf("查询用户数量失败: %w", err)
-	}
-	if count > 0 {
+	user, err := s.repository.FindByUsername(ctx, AdminUsername)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		newID, err := id.New()
+		if err != nil {
+			return err
+		}
+		now := time.Now()
+		if err := s.repository.Create(ctx, User{
+			ID:           newID,
+			Username:     AdminUsername,
+			DisplayName:  "系统管理员",
+			PasswordHash: passwordHash,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}); err != nil {
+			return fmt.Errorf("创建初始管理员失败: %w", err)
+		}
 		return nil
 	}
+	if err != nil {
+		return fmt.Errorf("查询初始管理员失败: %w", err)
+	}
 
-	passwordHash, err := HashPassword(password)
-	if err != nil {
-		return err
+	needsUpdate := false
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(AdminPassword)) != nil {
+		user.PasswordHash = passwordHash
+		needsUpdate = true
 	}
-	newID, err := id.New()
-	if err != nil {
-		return err
+	if strings.TrimSpace(user.DisplayName) == "" {
+		user.DisplayName = "系统管理员"
+		needsUpdate = true
 	}
-	now := time.Now()
-	if err := s.repository.Create(ctx, User{
-		ID:           newID,
-		Username:     username,
-		DisplayName:  "系统管理员",
-		PasswordHash: passwordHash,
-		CreatedAt:    now,
-		UpdatedAt:    now,
-	}); err != nil {
-		return fmt.Errorf("创建初始管理员失败: %w", err)
+	if needsUpdate {
+		user.UpdatedAt = time.Now()
+		if err := s.repository.Update(ctx, user); err != nil {
+			return fmt.Errorf("校正初始管理员失败: %w", err)
+		}
 	}
 	return nil
 }
@@ -102,6 +117,17 @@ func (s *Service) List(ctx context.Context) ([]User, error) {
 		return nil, fmt.Errorf("查询用户列表失败: %w", err)
 	}
 	return users, nil
+}
+
+func (s *Service) IsProtectedAdmin(ctx context.Context, userID string) (bool, error) {
+	user, err := s.repository.FindByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, ErrUserNotFound
+		}
+		return false, fmt.Errorf("查询用户失败: %w", err)
+	}
+	return user.Username == AdminUsername, nil
 }
 
 type CreateInput struct {
@@ -176,6 +202,9 @@ func (s *Service) Update(ctx context.Context, userID string, input UpdateInput) 
 		}
 		return User{}, fmt.Errorf("查询用户失败: %w", err)
 	}
+	if user.Username == AdminUsername && input.Password != "" {
+		return User{}, ErrAdminPasswordFixed
+	}
 
 	input.DisplayName = strings.TrimSpace(input.DisplayName)
 	if input.DisplayName != "" {
@@ -210,20 +239,23 @@ func (s *Service) Delete(ctx context.Context, userID string, currentClaimsUserID
 		return ErrSelfDelete
 	}
 
+	user, err := s.repository.FindByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrUserNotFound
+		}
+		return fmt.Errorf("查询用户失败: %w", err)
+	}
+	if user.Username == AdminUsername {
+		return ErrAdminDelete
+	}
+
 	count, err := s.repository.Count(ctx)
 	if err != nil {
 		return fmt.Errorf("查询用户数量失败: %w", err)
 	}
 	if count <= 1 {
 		return ErrLastUser
-	}
-
-	_, err = s.repository.FindByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrUserNotFound
-		}
-		return fmt.Errorf("查询用户失败: %w", err)
 	}
 
 	if err := s.repository.Delete(ctx, userID); err != nil {
