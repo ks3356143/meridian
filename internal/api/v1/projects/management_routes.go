@@ -81,7 +81,7 @@ func registerStandardManagement(api huma.API, handler *Handler) {
 		Description: "新增测评大纲可引用的标准或管理文件。",
 		Tags:        []string{"字典配置"},
 	}, func(ctx context.Context, input *CreateReferenceStandardInput) (*ReferenceStandardOutput, error) {
-		item, err := handler.service.CreateStandard(ctx, toSaveStandardInput(input.Body))
+		item, err := handler.service.CreateStandard(ctx, toCreateStandardInput(input.Body))
 		if err != nil {
 			return nil, standardError(err, "新增依据标准失败")
 		}
@@ -93,10 +93,10 @@ func registerStandardManagement(api huma.API, handler *Handler) {
 		Method:      http.MethodPut,
 		Path:        "/api/v1/reference-standards/{id}",
 		Summary:     "编辑依据标准",
-		Description: "编辑依据标准名称、标识、发布日期、来源、排序和启用状态。",
+		Description: "编辑依据标准名称、标识、发布日期、来源、排序、默认和启用状态。",
 		Tags:        []string{"字典配置"},
 	}, func(ctx context.Context, input *UpdateReferenceStandardInput) (*ReferenceStandardOutput, error) {
-		item, err := handler.service.UpdateStandard(ctx, input.ID, toSaveStandardInput(input.Body))
+		item, err := handler.service.UpdateStandard(ctx, input.ID, toUpdateStandardInput(input.Body))
 		if err != nil {
 			return nil, standardError(err, "保存依据标准失败")
 		}
@@ -113,7 +113,7 @@ func toSaveDictionaryInput(request SaveDictionaryRequest) projectservice.SaveDic
 	}
 }
 
-func toSaveStandardInput(request SaveReferenceStandardRequest) projectservice.SaveReferenceStandardInput {
+func toCreateStandardInput(request CreateReferenceStandardRequest) projectservice.SaveReferenceStandardInput {
 	return projectservice.SaveReferenceStandardInput{
 		Name:          request.Name,
 		Code:          request.Code,
@@ -121,6 +121,19 @@ func toSaveStandardInput(request SaveReferenceStandardRequest) projectservice.Sa
 		Source:        request.Source,
 		SortOrder:     request.SortOrder,
 		IsEnabled:     request.IsEnabled,
+		IsDefault:     request.IsDefault,
+	}
+}
+
+func toUpdateStandardInput(request UpdateReferenceStandardRequest) projectservice.SaveReferenceStandardInput {
+	return projectservice.SaveReferenceStandardInput{
+		Name:          request.Name,
+		Code:          request.Code,
+		PublishedDate: request.PublishedDate,
+		Source:        request.Source,
+		SortOrder:     request.SortOrder,
+		IsEnabled:     request.IsEnabled,
+		IsDefault:     request.IsDefault,
 	}
 }
 

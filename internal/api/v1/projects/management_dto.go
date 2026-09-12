@@ -26,13 +26,24 @@ type UpdateDictionaryInput struct {
 	Body SaveDictionaryRequest
 }
 
-type SaveReferenceStandardRequest struct {
+type CreateReferenceStandardRequest struct {
 	Name          string `json:"name" minLength:"1" maxLength:"160" doc:"文档名称"`
 	Code          string `json:"code" minLength:"1" maxLength:"160" doc:"标识或版本"`
 	PublishedDate string `json:"publishedDate" maxLength:"40" pattern:"^[0-9]{4}-[0-9]{2}-[0-9]{2}$" doc:"发布日期"`
 	Source        string `json:"source" minLength:"1" maxLength:"160" doc:"来源单位"`
 	SortOrder     int    `json:"sortOrder" minimum:"0" maximum:"9999" doc:"排序值"`
 	IsEnabled     bool   `json:"isEnabled" doc:"是否启用"`
+	IsDefault     bool   `json:"isDefault" doc:"是否作为新建项目默认依据标准"`
+}
+
+type UpdateReferenceStandardRequest struct {
+	Name          string `json:"name" minLength:"1" maxLength:"160" doc:"文档名称"`
+	Code          string `json:"code" minLength:"1" maxLength:"160" doc:"标识或版本"`
+	PublishedDate string `json:"publishedDate,omitempty" maxLength:"40" pattern:"^$|^[0-9]{4}-[0-9]{2}-[0-9]{2}$" doc:"发布日期；为空时保留原值"`
+	Source        string `json:"source" minLength:"1" maxLength:"160" doc:"来源单位"`
+	SortOrder     int    `json:"sortOrder" minimum:"0" maximum:"9999" doc:"排序值"`
+	IsEnabled     bool   `json:"isEnabled" doc:"是否启用"`
+	IsDefault     bool   `json:"isDefault" doc:"是否作为新建项目默认依据标准"`
 }
 
 type ReferenceStandardOutput struct {
@@ -44,12 +55,12 @@ type ReferenceStandardListOutput struct {
 }
 
 type CreateReferenceStandardInput struct {
-	Body SaveReferenceStandardRequest
+	Body CreateReferenceStandardRequest
 }
 
 type UpdateReferenceStandardInput struct {
 	ID   string `path:"id" minLength:"36" maxLength:"36" doc:"依据标准 ID"`
-	Body SaveReferenceStandardRequest
+	Body UpdateReferenceStandardRequest
 }
 type SaveRelatedPartyRequest struct {
 	Category  string `json:"category" enum:"client,developer,test_center" doc:"相关方类别"`

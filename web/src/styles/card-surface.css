@@ -1,0 +1,28 @@
+[data-slot="card"]:not([data-tone]) {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 5%, var(--card)),
+    color-mix(in srgb, var(--info) 3%, var(--card)) 58%,
+    var(--card)
+  );
+  position: relative;
+}
+
+[data-slot="card"]:not([data-tone]):before {
+  content: "";
+  inset-block: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--info),
+    var(--primary) 48%,
+    color-mix(in srgb, var(--primary) 72%, var(--warning))
+  );
+  width: 3px;
+  position: absolute;
+  left: 0;
+}
+
+[data-slot="card"]:not([data-tone]) > [data-slot="card-header"],
+[data-slot="card"]:not([data-tone]) > [data-slot="card-content"] {
+  padding-left: 1.125rem;
+}

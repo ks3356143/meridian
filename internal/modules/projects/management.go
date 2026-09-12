@@ -49,6 +49,7 @@ type SaveReferenceStandardInput struct {
 	Source        string
 	SortOrder     int
 	IsEnabled     bool
+	IsDefault     bool
 }
 
 func (s *Service) ListDictionaryManagement(ctx context.Context) ([]DictionaryItemResponse, error) {
@@ -205,7 +206,7 @@ func (s *Service) saveStandard(
 	if code == "" {
 		return ReferenceStandard{}, fmt.Errorf("依据标准标识不能为空")
 	}
-	if publishedDate == "" {
+	if standardID == "" && publishedDate == "" {
 		return ReferenceStandard{}, fmt.Errorf("依据标准发布日期不能为空")
 	}
 	if source == "" {
@@ -219,6 +220,7 @@ func (s *Service) saveStandard(
 		Source:        source,
 		SortOrder:     input.SortOrder,
 		IsEnabled:     input.IsEnabled,
+		IsDefault:     input.IsDefault,
 	}
 
 	if standardID == "" {
@@ -256,6 +258,9 @@ func (s *Service) saveStandard(
 
 	standard.ID = existing.ID
 	standard.CreatedAt = existing.CreatedAt
+	if standard.PublishedDate == "" {
+		standard.PublishedDate = existing.PublishedDate
+	}
 	standard.UpdatedAt = time.Now()
 	if err := s.repository.UpdateReferenceStandard(ctx, standardID, standardUpdates(standard)); err != nil {
 		return ReferenceStandard{}, fmt.Errorf("保存依据标准失败: %w", err)

@@ -33,6 +33,7 @@ export interface ReferenceStandard {
   source: string;
   sortOrder: number;
   isEnabled: boolean;
+  isDefault: boolean;
 }
 
 export interface Project {
@@ -98,6 +99,7 @@ export interface SaveReferenceStandardPayload {
   source: string;
   sortOrder: number;
   isEnabled: boolean;
+  isDefault: boolean;
 }
 
 export interface CreateProjectPayload {

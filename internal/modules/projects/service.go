@@ -71,6 +71,7 @@ type ReferenceStandardResponse struct {
 	Source        string `json:"source"`
 	SortOrder     int    `json:"sortOrder"`
 	IsEnabled     bool   `json:"isEnabled"`
+	IsDefault     bool   `json:"isDefault"`
 }
 
 type ProjectResponse struct {

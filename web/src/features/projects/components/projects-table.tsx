@@ -1,5 +1,5 @@
 import { createColumnHelper, useTable, type SortingState } from "@tanstack/react-table";
-import { SearchX } from "lucide-react";
+import { ArrowRight, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
@@ -124,8 +124,26 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
           meta: { hiddenUntil: "xl" },
           cell: (info) => <TruncatedText value={info.getValue()} className="font-mono text-xs" />,
         }),
+        columnHelper.display({
+          id: "action",
+          header: "操作",
+          cell: (info) => (
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={(event) => {
+                event.stopPropagation();
+                navigate(`/projects/${info.row.original.id}`);
+              }}
+            >
+              详情
+              <ArrowRight data-icon="inline-end" aria-hidden />
+            </Button>
+          ),
+        }),
       ]),
-    [],
+    [navigate],
   );
 
   const table = useTable({

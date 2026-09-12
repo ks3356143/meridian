@@ -18,14 +18,16 @@
 - `users`：用户
 - `systems`：被测系统
 - `projects`：测试项目与版本
+- `contents`：内容块与受限富文本校验
+- `attachments`：附件元数据与文件读写
+- `test-rounds`：测试轮次、范围切片和轮次内容
 - `test-items`：测试项
 - `test-cases`：测试用例
 - `test-tasks`：测试任务
 - `executions`：执行记录
 - `issues`：问题单
-- `attachments`：附件
 - `templates`：模板管理
-- `reports`：报告生成
+- `documents`：文档实例、生成预检和 OOXML 渲染
 - `imports`：导入
 - `settings`：配置
 - `dashboard`：工作台统计
@@ -39,3 +41,5 @@
 - `repository.go` 只处理数据库访问。
 - 单个文件超过约 300 行或 8 到 10 个接口时拆分。
 - 每个 Huma Tag 对应一个业务域。
+
+`documents` 内部再按装配、预检、版本和导出拆分；OOXML 渲染器保持纯函数风格，不访问数据库。

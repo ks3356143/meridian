@@ -69,6 +69,7 @@ func (s *Service) buildResponses(ctx context.Context, allProjects []Project) ([]
 			Source:        standard.Source,
 			SortOrder:     standard.SortOrder,
 			IsEnabled:     standard.IsEnabled,
+			IsDefault:     standard.IsDefault,
 		})
 	}
 
@@ -128,6 +129,7 @@ func toStandardResponse(standard ReferenceStandard) ReferenceStandardResponse {
 		Source:        standard.Source,
 		SortOrder:     standard.SortOrder,
 		IsEnabled:     standard.IsEnabled,
+		IsDefault:     standard.IsDefault,
 	}
 }
 

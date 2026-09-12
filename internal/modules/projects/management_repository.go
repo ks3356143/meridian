@@ -117,6 +117,7 @@ func standardUpdates(standard ReferenceStandard) map[string]any {
 		"source":         standard.Source,
 		"sort_order":     standard.SortOrder,
 		"is_enabled":     standard.IsEnabled,
+		"is_default":     standard.IsDefault,
 		"updated_at":     time.Now().UTC(),
 	}
 }

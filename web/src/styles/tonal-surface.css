@@ -1,0 +1,71 @@
+[data-tonal-panel] {
+  --panel-tone: var(--primary);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--panel-tone) 9%, var(--card)),
+    color-mix(in srgb, var(--panel-tone) 3%, var(--card)) 62%,
+    var(--card)
+  );
+  box-shadow:
+    0 1px 2px #142a1e0a,
+    0 5px 12px -10px color-mix(in srgb, var(--panel-tone) 46%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--panel-tone) 22%, transparent);
+  outline-offset: -1px;
+  transition:
+    box-shadow 0.22s cubic-bezier(0.32, 0.72, 0, 1),
+    outline-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    filter 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  position: relative;
+}
+
+[data-tonal-panel]:before {
+  content: "";
+  inset-block: 0;
+  background: var(--panel-tone);
+  width: 3px;
+  position: absolute;
+  left: 0;
+}
+
+[data-tonal-panel]:hover {
+  box-shadow:
+    0 1px 2px #142a1e0b,
+    0 7px 14px -10px color-mix(in srgb, var(--panel-tone) 58%, transparent);
+  outline-color: color-mix(in srgb, var(--panel-tone) 40%, transparent);
+}
+
+[data-tonal-panel="info"] {
+  --panel-tone: var(--info);
+}
+
+[data-tonal-panel="primary"] {
+  --panel-tone: var(--primary);
+}
+
+[data-tonal-panel="success"] {
+  --panel-tone: var(--success);
+}
+
+[data-tonal-panel="warning"] {
+  --panel-tone: var(--warning);
+}
+
+[data-tonal-panel="danger"] {
+  --panel-tone: var(--destructive);
+}
+
+[data-tonal-panel="chart"] {
+  --panel-tone: var(--chart-2);
+}
+
+.dark [data-tonal-panel] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--panel-tone) 13%, var(--card)),
+    color-mix(in srgb, var(--panel-tone) 4%, var(--card)) 62%,
+    var(--card)
+  );
+  box-shadow:
+    0 1px 2px #0000003d,
+    0 6px 14px -10px color-mix(in srgb, var(--panel-tone) 38%, transparent);
+}

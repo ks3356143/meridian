@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { projectsApi } from "@/features/projects/api";
 import { ManagementSection, ManagementTable } from "./management-table";
@@ -41,12 +42,32 @@ export function StandardManagementTab() {
         source: standard.source,
         sortOrder: standard.sortOrder,
         isEnabled: !standard.isEnabled,
+        isDefault: standard.isDefault,
       }),
     onSuccess: async (standard) => {
       await invalidate();
       setSelected(standard);
       if (standard.isEnabled) toast.success("依据标准已启用");
       else toast.warning("依据标准已停用");
+    },
+  });
+
+  const defaultToggleMutation = useMutation({
+    mutationFn: (standard: ReferenceStandard) =>
+      projectsApi.updateStandard(standard.id, {
+        name: standard.name,
+        code: standard.code,
+        publishedDate: standard.publishedDate,
+        source: standard.source,
+        sortOrder: standard.sortOrder,
+        isEnabled: standard.isEnabled,
+        isDefault: !standard.isDefault,
+      }),
+    onSuccess: async (standard) => {
+      await invalidate();
+      setSelected(standard);
+      if (standard.isDefault) toast.success("已设为默认标准");
+      else toast.info("已取消默认标准");
     },
   });
 
@@ -88,6 +109,21 @@ export function StandardManagementTab() {
               </Badge>
             ),
         }),
+        columnHelper.accessor("isDefault", {
+          header: "默认",
+          cell: (info) => {
+            const standard = info.row.original;
+            return (
+              <Switch
+                checked={info.getValue()}
+                disabled={defaultToggleMutation.isPending}
+                onCheckedChange={() => defaultToggleMutation.mutate(standard)}
+                aria-label={`${standard.isDefault ? "取消" : "设置"} ${standard.name} 默认标准`}
+                className="mx-auto"
+              />
+            );
+          },
+        }),
         columnHelper.display({
           id: "actions",
           header: "操作",
@@ -119,7 +155,7 @@ export function StandardManagementTab() {
           },
         }),
       ]),
-    [toggleMutation],
+    [defaultToggleMutation, toggleMutation],
   );
 
   const table = useTable({
@@ -160,6 +196,7 @@ export function StandardManagementTab() {
         key={editorSession}
         open={editorMode !== "idle"}
         item={selected}
+        allStandards={standardsQuery.data}
         onCancel={() => setEditorMode("idle")}
         onSaved={async (standard) => {
           await invalidate();

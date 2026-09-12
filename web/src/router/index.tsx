@@ -27,8 +27,8 @@ export const router = createBrowserRouter([
             lazy: () => import("@/pages/ProjectCreatePage"),
           },
           {
-            path: "projects/:projectId",
-            lazy: () => import("@/pages/ProjectWorkbenchPage"),
+            path: "projects/:code",
+            lazy: () => import("@/pages/ProjectDetailPage"),
           },
           {
             path: "settings/dictionaries",
@@ -37,6 +37,52 @@ export const router = createBrowserRouter([
           {
             path: "settings/users",
             lazy: () => import("@/pages/UserManagementPage"),
+          },
+        ],
+      },
+      {
+        path: "projects/:code/workspace",
+        lazy: () => import("@/pages/ProjectWorkspacePage"),
+        children: [
+          {
+            index: true,
+            lazy: () => import("@/pages/ProjectWorkspaceEntryPage"),
+          },
+          {
+            path: "outline",
+            lazy: () => import("@/pages/ProjectOutlinePage"),
+          },
+          {
+            path: "overview",
+            lazy: () => import("@/pages/ProjectWorkspaceOverviewPage"),
+          },
+          {
+            path: "profile",
+            lazy: () => import("@/pages/ProjectProfilePage"),
+          },
+          {
+            path: "dut",
+            lazy: () => import("@/pages/ProjectDutPage"),
+          },
+          {
+            path: "requirements",
+            lazy: () => import("@/pages/ProjectRequirementsPage"),
+          },
+          {
+            path: "test-items",
+            lazy: () => import("@/pages/ProjectTestItemsPage"),
+          },
+          {
+            path: "rounds/:roundId",
+            lazy: () => import("@/pages/ProjectTestRoundPage"),
+          },
+          {
+            path: "issues",
+            lazy: () => import("@/pages/ProjectIssuesPage"),
+          },
+          {
+            path: "documents",
+            lazy: () => import("@/pages/ProjectDocumentsPage"),
           },
         ],
       },

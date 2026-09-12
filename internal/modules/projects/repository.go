@@ -151,6 +151,7 @@ type StandardSelection struct {
 	ID            string
 	SortOrder     int
 	IsEnabled     bool
+	IsDefault     bool
 }
 
 func (r *Repository) ListProjectStandards(ctx context.Context, projectIDs []string) ([]StandardSelection, error) {
@@ -160,7 +161,7 @@ func (r *Repository) ListProjectStandards(ctx context.Context, projectIDs []stri
 	var selections []StandardSelection
 	err := r.db.WithContext(ctx).
 		Table("project_reference_standards AS prs").
-		Select("prs.project_id", "rs.id", "rs.name", "rs.code", "rs.published_date", "rs.source", "rs.sort_order", "rs.is_enabled").
+		Select("prs.project_id", "rs.id", "rs.name", "rs.code", "rs.published_date", "rs.source", "rs.sort_order", "rs.is_enabled", "rs.is_default").
 		Joins("JOIN reference_standards AS rs ON rs.id = prs.reference_standard_id").
 		Where("prs.project_id IN ?", projectIDs).
 		Order("rs.sort_order ASC, rs.name ASC").

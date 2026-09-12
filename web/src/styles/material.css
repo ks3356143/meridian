@@ -62,7 +62,14 @@
 }
 
 .panel-surface {
-  background: var(--card);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 4%, transparent),
+      transparent 42%,
+      color-mix(in srgb, var(--info) 3%, transparent)
+    ),
+    var(--card);
   box-shadow: var(--elevation-1);
   transition:
     filter 0.2s cubic-bezier(0.32, 0.72, 0, 1),

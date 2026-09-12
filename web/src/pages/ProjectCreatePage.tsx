@@ -43,7 +43,7 @@ export function Component() {
 
   const [basic, setBasic] = useState<BasicProjectValues>(initialBasicValues);
   const [dictionarySelections, setDictionarySelections] = useState(initialDictionarySelections);
-  const [referenceStandardIds, setReferenceStandardIds] = useState<string[]>([]);
+  const [selectedStandardIds, setSelectedStandardIds] = useState<string[] | null>(null);
   const [customDictionaries, setCustomDictionaries] = useState<DictionaryOption[]>([]);
   const [ownerId, setOwnerId] = useState("");
   const [memberIds, setMemberIds] = useState<string[]>([]);
@@ -51,6 +51,14 @@ export function Component() {
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
   const selectedOwnerId = ownerId || optionsQuery.data?.users[0]?.id || "";
+  const defaultReferenceStandardIds = useMemo(
+    () =>
+      (optionsQuery.data?.standards ?? [])
+        .filter((standard) => standard.isEnabled && standard.isDefault)
+        .map((standard) => standard.id),
+    [optionsQuery.data],
+  );
+  const referenceStandardIds = selectedStandardIds ?? defaultReferenceStandardIds;
 
   useGSAP(
     () => {
@@ -246,7 +254,7 @@ export function Component() {
               standards={options.standards}
               selectedIds={referenceStandardIds}
               error={errors.reference_standard}
-              onChange={setReferenceStandardIds}
+              onChange={setSelectedStandardIds}
             />
           </CardContent>
         </Card>

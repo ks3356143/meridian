@@ -47,6 +47,7 @@ type ReferenceStandard struct {
 	Source        string    `gorm:"column:source" json:"source"`
 	SortOrder     int       `gorm:"column:sort_order" json:"sortOrder"`
 	IsEnabled     bool      `gorm:"column:is_enabled" json:"isEnabled"`
+	IsDefault     bool      `gorm:"column:is_default" json:"isDefault"`
 	CreatedAt     time.Time `gorm:"column:created_at" json:"createdAt"`
 	UpdatedAt     time.Time `gorm:"column:updated_at" json:"updatedAt"`
 }

@@ -1,0 +1,242 @@
+.project-detail-hero {
+  isolation: isolate;
+  background: linear-gradient(
+    118deg,
+    color-mix(in srgb, var(--primary) 14%, var(--card)),
+    color-mix(in srgb, var(--info) 8%, var(--card)) 42%,
+    color-mix(in srgb, var(--warning) 6%, var(--card)) 72%,
+    var(--card)
+  );
+  position: relative;
+}
+
+@keyframes detail-gradient-flow {
+  0% {
+    background-position: 0%;
+  }
+
+  to {
+    background-position: 200%;
+  }
+}
+
+@keyframes detail-soft-sheen {
+  0% {
+    opacity: 0;
+    transform: translate(-110%);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  72% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(110%);
+  }
+}
+
+.project-detail-hero:after {
+  content: "";
+  z-index: -1;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--foreground) 7%, transparent) 0 1px,
+      transparent 1px 34px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--foreground) 5%, transparent) 0 1px,
+      transparent 1px 34px
+    );
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(105deg, #000 0%, #0000 72%);
+  mask-image: linear-gradient(105deg, #000 0%, #0000 72%);
+}
+
+.dark .project-detail-hero {
+  background: linear-gradient(
+    118deg,
+    color-mix(in srgb, var(--primary) 20%, var(--card)),
+    color-mix(in srgb, var(--info) 10%, var(--card)) 44%,
+    color-mix(in srgb, var(--warning) 7%, var(--card)) 74%,
+    var(--card)
+  );
+}
+
+.detail-stage-strip {
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  background:
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--primary) 5%, var(--card)),
+      color-mix(in srgb, var(--info) 4%, var(--card))
+    ),
+    var(--card);
+  min-width: 0;
+  box-shadow:
+    0 1px 2px #142a1e0a,
+    0 6px 14px -12px color-mix(in srgb, var(--primary) 42%, transparent);
+  gap: 0.5rem;
+  padding: 0.6rem;
+  display: flex;
+  overflow-x: auto;
+}
+
+.detail-stage-item {
+  min-width: 9rem;
+  color: var(--muted-foreground);
+  border: 1px solid #0000;
+  flex: 1;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.75rem;
+  display: flex;
+  position: relative;
+  overflow: clip;
+}
+
+.detail-stage-index {
+  font-family: var(--font-mono);
+  opacity: 0.72;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.detail-stage-done {
+  border-color: color-mix(in srgb, var(--success) 28%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, var(--card));
+  color: color-mix(in srgb, var(--success) 78%, var(--foreground));
+}
+
+.detail-stage-upcoming {
+  border-color: color-mix(in srgb, var(--border) 78%, transparent);
+  background: color-mix(in srgb, var(--muted) 32%, var(--card));
+}
+
+.detail-stage-active {
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--primary) 16%, var(--card)),
+    color-mix(in srgb, var(--info) 12%, var(--card)),
+    color-mix(in srgb, var(--primary) 20%, var(--card))
+  );
+  background-size: 220% 100%;
+  font-weight: 650;
+  animation: 3.4s linear infinite detail-gradient-flow;
+}
+
+.detail-stage-active:after {
+  content: "";
+  background: linear-gradient(
+    100deg,
+    transparent 12%,
+    color-mix(in srgb, var(--card) 58%, transparent) 46%,
+    transparent 82%
+  );
+  pointer-events: none;
+  animation: 2.8s cubic-bezier(0.32, 0.72, 0, 1) infinite detail-soft-sheen;
+  position: absolute;
+  inset: 0;
+  transform: translate(-120%);
+}
+
+.detail-module-card > div:first-child > div:first-child > svg {
+  color: var(--panel-tone);
+}
+
+.detail-module-card[data-module-state="partial"]:after {
+  content: "";
+  background: linear-gradient(
+    108deg,
+    transparent 18%,
+    color-mix(in srgb, var(--panel-tone) 12%, transparent) 48%,
+    transparent 78%
+  );
+  pointer-events: none;
+  animation: 3.2s cubic-bezier(0.32, 0.72, 0, 1) infinite detail-soft-sheen;
+  position: absolute;
+  inset: 0;
+  transform: translate(-110%);
+}
+
+.detail-module-card[data-module-focus="true"] {
+  border-color: color-mix(in srgb, var(--panel-tone) 42%, transparent);
+  background: linear-gradient(
+    112deg,
+    color-mix(in srgb, var(--panel-tone) 13%, var(--card)),
+    color-mix(in srgb, var(--primary) 8%, var(--card)),
+    color-mix(in srgb, var(--panel-tone) 17%, var(--card))
+  );
+  background-size: 220% 100%;
+  animation: 3.4s linear infinite detail-gradient-flow;
+}
+
+.detail-module-card[data-module-focus="true"]:after {
+  content: "";
+  background: linear-gradient(
+    104deg,
+    transparent 16%,
+    color-mix(in srgb, var(--card) 54%, transparent) 48%,
+    transparent 80%
+  );
+  pointer-events: none;
+  animation: 3.1s cubic-bezier(0.32, 0.72, 0, 1) infinite detail-soft-sheen;
+  position: absolute;
+  inset: 0;
+  transform: translate(-115%);
+}
+
+.detail-module-card[data-module-state="partial"]
+  .detail-status-progress[data-slot="progress"]
+  [data-slot="progress-indicator"] {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--panel-tone) 72%, var(--foreground)),
+    var(--panel-tone),
+    color-mix(in srgb, var(--panel-tone) 68%, var(--card))
+  );
+  background-size: 180% 100%;
+  animation: 3.2s linear infinite detail-gradient-flow;
+}
+
+.detail-checklist {
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+  background:
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--primary) 4%, var(--card)),
+      color-mix(in srgb, var(--info) 3%, var(--card))
+    ),
+    var(--card);
+  box-shadow:
+    0 1px 2px #142a1e09,
+    0 5px 12px -11px color-mix(in srgb, var(--primary) 38%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-stage-active,
+  .detail-stage-active:after,
+  .detail-module-card[data-module-focus="true"],
+  .detail-module-card[data-module-focus="true"]:after,
+  .detail-module-card[data-module-state="partial"]:after,
+  .detail-module-card[data-module-state="partial"]
+    .detail-status-progress[data-slot="progress"]
+    [data-slot="progress-indicator"] {
+    animation: none;
+  }
+
+  .detail-stage-active,
+  .detail-module-card[data-module-focus="true"] {
+    background-position: 0%;
+  }
+}

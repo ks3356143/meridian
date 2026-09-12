@@ -36,6 +36,24 @@
   animation: tab-content-in 0.24s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+.workspace-route {
+  animation: workspace-route-in 0.18s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.project-detail-tab {
+  animation: project-detail-tab-in 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes workspace-route-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes tab-content-in {
   from {
     opacity: 0;
@@ -48,8 +66,22 @@
   }
 }
 
+@keyframes project-detail-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .button-ripple,
+  .workspace-route,
+  .project-detail-tab,
   .tabs-content[data-state="active"] {
     animation: none;
   }

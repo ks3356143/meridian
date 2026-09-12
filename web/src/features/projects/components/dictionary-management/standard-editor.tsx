@@ -3,6 +3,7 @@ import { CalendarIcon, LoaderCircle, Save } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { YearMonthCalendar } from "@/components/ui/calendar";
 import {
   Dialog,
@@ -42,11 +43,17 @@ interface StandardEditorErrors {
 export function StandardEditor({
   open,
   item,
+  allStandards = [],
+  defaultSortOrder = 1,
+  fixedEnabled = false,
   onSaved,
   onCancel,
 }: {
   open: boolean;
   item: ReferenceStandard | null;
+  allStandards?: ReferenceStandard[];
+  defaultSortOrder?: number;
+  fixedEnabled?: boolean;
   onSaved: (standard: ReferenceStandard) => Promise<void> | void;
   onCancel: () => void;
 }) {
@@ -54,8 +61,9 @@ export function StandardEditor({
   const [code, setCode] = useState(item?.code ?? "");
   const [publishedDate, setPublishedDate] = useState(item?.publishedDate ?? "");
   const [source, setSource] = useState(item?.source ?? "");
-  const [sortOrder, setSortOrder] = useState(String(item?.sortOrder ?? 1));
+  const [sortOrder, setSortOrder] = useState(String(item?.sortOrder ?? defaultSortOrder));
   const [isEnabled, setIsEnabled] = useState(item?.isEnabled ?? true);
+  const [isDefault, setIsDefault] = useState(item?.isDefault ?? false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [errors, setErrors] = useState<StandardEditorErrors>({});
   const selectedDate = publishedDate ? fromDateKey(publishedDate) : undefined;
@@ -69,6 +77,7 @@ export function StandardEditor({
             source: source.trim(),
             sortOrder: Number(sortOrder) || 0,
             isEnabled,
+            isDefault,
           })
         : projectsApi.createStandard({
             name: name.trim(),
@@ -77,6 +86,7 @@ export function StandardEditor({
             source: source.trim(),
             sortOrder: Number(sortOrder) || 0,
             isEnabled,
+            isDefault,
           }),
     onSuccess: async (standard) => {
       await onSaved(standard);
@@ -90,10 +100,24 @@ export function StandardEditor({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextErrors: StandardEditorErrors = {};
-    if (!name.trim()) nextErrors.name = "请输入文档名称";
-    if (!code.trim()) nextErrors.code = "请输入标识/版本";
+    const trimmedName = name.trim();
+    const trimmedCode = code.trim();
+    const trimmedSource = source.trim();
+    if (!trimmedName) nextErrors.name = "请输入文档名称";
+    if (trimmedName.length > 160) nextErrors.name = "文档名称不能超过 160 个字符";
+    const duplicate = allStandards.some(
+      (standard) =>
+        standard.id !== item?.id &&
+        standard.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+    );
+    if (duplicate) {
+      nextErrors.name = "该依据标准已存在";
+    }
+    if (!trimmedCode) nextErrors.code = "请输入标识/版本";
+    if (trimmedCode.length > 160) nextErrors.code = "标识/版本不能超过 160 个字符";
     if (!publishedDate) nextErrors.publishedDate = "请选择发布日期";
-    if (!source.trim()) nextErrors.source = "请输入来源单位";
+    if (!trimmedSource) nextErrors.source = "请输入来源单位";
+    if (trimmedSource.length > 160) nextErrors.source = "来源单位不能超过 160 个字符";
     const sortValue = Number(sortOrder);
     if (!Number.isInteger(sortValue) || sortValue < 0 || sortValue > 9999) {
       nextErrors.sortOrder = "排序必须是 0 到 9999 的整数";
@@ -252,21 +276,47 @@ export function StandardEditor({
             ) : null}
           </Field>
 
-          <div className="border-border bg-muted/35 flex items-center justify-between gap-4 rounded-sm border p-3">
-            <div className="min-w-0">
-              <label htmlFor="standard-enabled" className="text-sm font-semibold">
-                启用状态
-              </label>
-              <p className="text-muted-foreground mt-0.5 text-xs">
-                {isEnabled ? "可被新建项目选择" : "仅保留历史项目引用"}
-              </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="border-border bg-muted/35 flex items-center justify-between gap-4 rounded-sm border p-3">
+              <div className="min-w-0">
+                <label htmlFor="standard-default" className="text-sm font-semibold">
+                  默认标准
+                </label>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  {isDefault ? "新建项目自动勾选" : "新建项目不自动勾选"}
+                </p>
+              </div>
+              <Switch
+                id="standard-default"
+                checked={isDefault}
+                onCheckedChange={setIsDefault}
+                aria-label="设为默认依据标准"
+              />
             </div>
-            <Switch
-              id="standard-enabled"
-              checked={isEnabled}
-              onCheckedChange={setIsEnabled}
-              aria-label="启用依据标准"
-            />
+
+            <div className="border-border bg-muted/35 flex items-center justify-between gap-4 rounded-sm border p-3">
+              <div className="min-w-0">
+                <label
+                  htmlFor={fixedEnabled ? undefined : "standard-enabled"}
+                  className="text-sm font-semibold"
+                >
+                  启用状态
+                </label>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  {isEnabled ? "可被新建项目选择" : "仅保留历史项目引用"}
+                </p>
+              </div>
+              {fixedEnabled ? (
+                <Badge variant="success">启用</Badge>
+              ) : (
+                <Switch
+                  id="standard-enabled"
+                  checked={isEnabled}
+                  onCheckedChange={setIsEnabled}
+                  aria-label="启用依据标准"
+                />
+              )}
+            </div>
           </div>
 
           <DialogFooter>
