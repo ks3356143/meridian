@@ -116,6 +116,10 @@
   animation: globe-spin 70s linear infinite;
 }
 
+.orbit-spin {
+  animation: globe-spin 9s linear infinite;
+}
+
 @keyframes globe-spin {
   to {
     transform: rotate(360deg);
@@ -125,7 +129,8 @@
 @media (prefers-reduced-motion: reduce) {
   .brand-wordmark,
   .visual-wordmark,
-  .globe-wireframe {
+  .globe-wireframe,
+  .orbit-spin {
     animation: none;
   }
 

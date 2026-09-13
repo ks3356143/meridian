@@ -7,9 +7,199 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <title>ChenMeridian</title>
+    <script>
+      try {
+        var storedTheme = localStorage.getItem("theme");
+        var dark =
+          storedTheme === "dark" ||
+          (storedTheme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+      } catch (error) {}
+    </script>
+    <style>
+      /* 预挂载首屏：零 JS 依赖，React createRoot 接管 #root 后自动移除。 */
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        background: oklch(0.975 0.005 125);
+        color: oklch(0.545 0.15 153);
+        overflow: hidden;
+      }
+
+      .dark #boot-splash {
+        background: oklch(0.165 0.012 150);
+        color: oklch(0.775 0.16 152);
+      }
+
+      #boot-splash::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: min(34rem, 90vmin);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          color-mix(in oklch, currentColor 8%, transparent),
+          transparent 70%
+        );
+      }
+
+      #boot-splash > * {
+        position: relative;
+      }
+
+      .boot-globe {
+        position: relative;
+        width: clamp(48px, 12vw, 64px);
+        aspect-ratio: 1;
+      }
+
+      .boot-globe > svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .boot-orbit {
+        position: absolute;
+        inset: -16px;
+        animation: boot-spin 9s linear infinite;
+      }
+
+      .boot-wordmark {
+        font-size: clamp(1.5rem, 6vw, 2rem);
+        font-weight: 700;
+        background-image: linear-gradient(
+          92deg,
+          #0284c7,
+          #059669 30%,
+          #ca8a04 55%,
+          #dc2626 78%,
+          #9333ea
+        );
+        background-size: 300% 100%;
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        animation: boot-flow 12s linear infinite;
+      }
+
+      .boot-beam {
+        position: relative;
+        width: min(15rem, 60vw);
+        height: 2px;
+        border-radius: 999px;
+        background: color-mix(in oklch, currentColor 24%, transparent);
+        overflow: hidden;
+      }
+
+      .boot-beam span {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 34%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, transparent, currentColor, transparent);
+        animation: boot-slide 5.2s linear infinite;
+      }
+
+      .boot-status {
+        font-size: 0.8125rem;
+        --boot-status-base: oklch(0.495 0.022 150);
+        --boot-status-shine: oklch(0.545 0.15 153);
+        background-image: linear-gradient(
+          120deg,
+          var(--boot-status-base) 40%,
+          var(--boot-status-shine) 50%,
+          var(--boot-status-base) 60%
+        );
+        background-size: 200% 100%;
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        animation: boot-shine 2.4s linear infinite;
+      }
+
+      .dark .boot-status {
+        --boot-status-base: oklch(0.72 0.02 150);
+        --boot-status-shine: oklch(0.775 0.16 152);
+      }
+
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes boot-flow {
+        0% {
+          background-position: 0% 50%;
+        }
+
+        100% {
+          background-position: 300% 50%;
+        }
+      }
+
+      @keyframes boot-slide {
+        0% {
+          transform: translateX(-130%);
+        }
+
+        100% {
+          transform: translateX(400%);
+        }
+      }
+
+      @keyframes boot-shine {
+        0% {
+          background-position: 100%;
+        }
+
+        100% {
+          background-position: -100%;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #boot-splash *,
+        #boot-splash::before {
+          animation: none !important;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-splash" aria-hidden="true">
+        <div class="boot-globe">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor">
+            <circle cx="16" cy="16" r="11" stroke-width="2" />
+            <ellipse cx="16" cy="16" rx="5" ry="11" stroke-width="1.5" />
+            <line x1="5" y1="16" x2="27" y2="16" stroke-width="1.5" />
+            <line x1="16" y1="1" x2="16" y2="5" stroke-width="2" />
+            <line x1="16" y1="27" x2="16" y2="31" stroke-width="2" />
+            <line x1="1" y1="16" x2="5" y2="16" stroke-width="2" />
+            <line x1="27" y1="16" x2="31" y2="16" stroke-width="2" />
+            <rect x="14.5" y="14.5" width="3" height="3" fill="currentColor" stroke="none" />
+          </svg>
+          <svg class="boot-orbit" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1">
+            <ellipse cx="16" cy="16" rx="14.5" ry="6.5" />
+          </svg>
+        </div>
+        <div class="boot-wordmark">ChenMeridian</div>
+        <div class="boot-beam"><span></span></div>
+        <div class="boot-status">正在校准经线</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

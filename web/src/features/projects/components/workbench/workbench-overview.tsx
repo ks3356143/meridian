@@ -84,10 +84,10 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
           >
             <CardContent className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-muted-foreground text-xs">{module.name}</p>
+                <p className="text-muted-foreground text-xs font-medium">{module.name}</p>
                 <p
                   className={cn(
-                    "mt-1 font-mono text-2xl leading-none font-semibold",
+                    "mt-1 font-mono text-2xl leading-none font-semibold tabular-nums",
                     toneText[module.tone],
                   )}
                 >

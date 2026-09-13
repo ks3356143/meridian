@@ -6,7 +6,10 @@
 
 - `src/api/`：HTTP 客户端和跨模块系统接口。
 - `src/components/ui/`：shadcn/ui 与 Radix 基础组件。
+- `src/components/brand/`：品牌标识组件（BrandLogo）。
+- `src/components/shared/`：跨业务页面的组合组件。
 - `src/components/provider/`、`src/components/router-util/`：全局 Provider 和路由通用状态。
+- `src/lib/`：GSAP 封装等通用能力。
 - `src/features/<模块>/api.ts`：业务接口封装。
 - `src/features/<模块>/components/`：业务组件；复杂页面继续按功能子目录拆分。
 - `src/pages/`：路由页面壳，负责路由参数、页面级编排和 `Component` 导出。
@@ -17,4 +20,5 @@
 
 - 业务状态放 `features`，路由页不承载可复用业务组件。
 - 交互组件优先使用 shadcn/ui 和 Radix；动画尊重 `prefers-reduced-motion`。
+- 炫酷交互组件优先从 React Bits registry（`@react-bits`）安装，落位 `src/components/ui/`。
 - 接口类型与 API 封装保存在对应模块内，不在页面里直接拼写请求。

@@ -174,6 +174,49 @@
   color: var(--topbar-danger);
 }
 
+/* 安全等级徽标：实心语义色，顶栏里最醒目的身份标签（A 红 / B 橙 / C 蓝）。 */
+.workspace-topbar-level {
+  height: 1.75rem;
+  padding-inline: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.workspace-topbar-level[data-variant="warning"] {
+  border-color: color-mix(in srgb, var(--warning) 70%, #7a2e0e);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--warning) 86%, white),
+    var(--warning)
+  );
+  color: var(--warning-foreground);
+  box-shadow:
+    inset 0 1px 0 #ffffff66,
+    0 3px 10px -6px color-mix(in srgb, var(--warning) 60%, transparent);
+}
+
+.workspace-topbar-level[data-variant="danger"] {
+  border-color: color-mix(in srgb, var(--destructive) 72%, #450a0a);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--destructive) 88%, white),
+    var(--destructive)
+  );
+  color: var(--destructive-foreground);
+  box-shadow:
+    inset 0 1px 0 #ffffff40,
+    0 3px 10px -6px color-mix(in srgb, var(--destructive) 55%, transparent);
+}
+
+.workspace-topbar-level[data-variant="info"] {
+  border-color: color-mix(in srgb, var(--info) 70%, #1e3a8a);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--info) 86%, white), var(--info));
+  color: var(--info-foreground);
+  box-shadow:
+    inset 0 1px 0 #ffffff4d,
+    0 3px 10px -6px color-mix(in srgb, var(--info) 50%, transparent);
+}
+
 .workspace-topbar button,
 .workspace-topbar [data-slot="select-trigger"] {
   color: var(--topbar-foreground);
@@ -212,6 +255,35 @@
   background: var(--topbar-chip-open);
 }
 
+/* 全局轮次切换器：下拉按钮质感，与指标胶囊明确区分。 */
+.workspace-topbar .workspace-topbar-round[data-slot="select-trigger"] {
+  height: 2rem;
+  min-width: 10.5rem;
+  justify-content: flex-start;
+  border-color: color-mix(in srgb, var(--primary) 38%, var(--topbar-border));
+  background: var(--card);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--topbar-highlight),
+    0 3px 10px -6px color-mix(in srgb, var(--primary) 48%, transparent);
+}
+
+.workspace-topbar .workspace-topbar-round[data-slot="select-trigger"]:hover {
+  border-color: color-mix(in srgb, var(--primary) 56%, var(--topbar-border));
+  background: var(--topbar-chip-hover);
+}
+
+.workspace-topbar .workspace-topbar-round[data-slot="select-trigger"][data-state="open"] {
+  border-color: color-mix(in srgb, var(--primary) 64%, var(--topbar-border));
+  background: var(--topbar-chip-open);
+}
+
+.workspace-topbar .workspace-topbar-round[data-slot="select-trigger"] svg:last-of-type {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--topbar-strong);
+}
+
 .workspace-topbar-metric,
 .workspace-topbar-user {
   border: 1px solid var(--topbar-chip-border);
@@ -230,7 +302,7 @@
   display: inline-flex;
 }
 
-.workspace-topbar [data-slot="badge"] {
+.workspace-topbar [data-slot="badge"]:not(.workspace-topbar-level) {
   color: var(--topbar-foreground);
   border-color: var(--topbar-chip-border);
   background: var(--topbar-chip-background);
@@ -292,6 +364,7 @@
 
 [data-workspace-module] {
   --module-tone: var(--primary);
+  isolation: isolate;
   background:
     linear-gradient(
       90deg,
@@ -339,6 +412,32 @@
   --module-tone: var(--success);
 }
 
+/* 模块色光晕：静态径向光，浅色 ≤10%、暗色 ≤14% 透明度。 */
+[data-workspace-module]::after {
+  content: "";
+  position: absolute;
+  top: -72px;
+  right: -56px;
+  width: 300px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--module-tone) 9%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.dark [data-workspace-module]::after {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--module-tone) 14%, transparent),
+    transparent 70%
+  );
+}
+
 [data-workspace-module]:hover {
   box-shadow:
     0 1px 2px #142a1e0b,
@@ -369,20 +468,15 @@
   border-color: color-mix(in srgb, var(--module-tone) 34%, transparent);
   background: color-mix(in srgb, var(--module-tone) 11%, var(--card));
   color: var(--module-tone);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--module-tone) 16%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--module-tone) 16%, transparent),
+    0 3px 10px -6px color-mix(in srgb, var(--module-tone) 40%, transparent);
 }
 
-[data-module-chip] {
-  border: 1px solid color-mix(in srgb, var(--module-tone) 28%, transparent);
-  background: color-mix(in srgb, var(--module-tone) 10%, var(--card));
-  height: 1.375rem;
-  color: color-mix(in srgb, var(--module-tone) 82%, var(--foreground));
-  align-items: center;
-  padding: 0 0.5rem;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  display: inline-flex;
+/* 侧栏激活项：模块色左导轨 + 浅色底。 */
+[data-workspace-module] nav button[aria-current="true"] {
+  background: color-mix(in srgb, var(--module-tone) 8%, var(--card));
+  box-shadow: inset 2px 0 0 var(--module-tone);
 }
 
 [data-module-card] {

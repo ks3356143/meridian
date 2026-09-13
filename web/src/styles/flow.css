@@ -1,6 +1,7 @@
 .flow-rail {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: repeat(4, auto);
+  justify-content: space-between;
   height: 4.25rem;
 }
 

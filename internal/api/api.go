@@ -11,7 +11,7 @@ import (
 	authservice "chenmeridian/internal/auth"
 )
 
-const Version = "0.0.1"
+const Version = "0.0.2"
 
 func New(db *gorm.DB, authService *authservice.Service) http.Handler {
 	mux := http.NewServeMux()

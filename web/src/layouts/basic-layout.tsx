@@ -91,7 +91,7 @@ export default function BasicLayout() {
           <BrandLogo className="text-primary size-8 shrink-0" />
           <div className="min-w-0">
             <p className="brand-wordmark truncate text-sm font-semibold">ChenMeridian</p>
-            <p className="text-muted-foreground font-mono text-[10px]">V0.0.1</p>
+            <p className="text-muted-foreground font-mono text-[10px]">V0.0.2</p>
           </div>
         </div>
         <div className="relative flex flex-1 flex-col p-3">{navigation}</div>

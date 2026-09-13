@@ -31,28 +31,23 @@ export function WorkspaceModulePlaceholder({
   return (
     <section
       data-workspace-module={tone}
-      className="grid min-h-[calc(100svh-166px)] gap-4 rounded-sm border p-4 pl-5 xl:grid-cols-[268px_minmax(0,1fr)]"
+      className="grid min-h-[480px] gap-4 rounded-sm border p-4 pl-5 xl:grid-cols-[268px_minmax(0,1fr)]"
       aria-labelledby="workspace-module-title"
     >
       <aside className="flex min-w-0 flex-col gap-3">
-        <header className="flex min-w-0 flex-col gap-3">
-          <span
-            data-module-icon
-            className="flex size-10 items-center justify-center rounded-sm border"
-          >
-            <Icon className="size-4" aria-hidden />
-          </span>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 id="workspace-module-title" className="text-lg leading-snug font-semibold">
-                {title}
-              </h2>
-              <Badge variant="outline" data-module-chip>
-                二级导航
-              </Badge>
-            </div>
-            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">{description}</p>
+        <header className="flex min-w-0 flex-col gap-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span
+              data-module-icon
+              className="flex size-9 shrink-0 items-center justify-center rounded-sm border"
+            >
+              <Icon className="size-4" aria-hidden />
+            </span>
+            <h2 id="workspace-module-title" className="text-lg leading-snug font-semibold">
+              {title}
+            </h2>
           </div>
+          <p className="text-muted-foreground text-xs leading-relaxed">{description}</p>
         </header>
 
         <nav aria-label={`${title}二级导航`} className="flex flex-col gap-1.5">
@@ -65,7 +60,7 @@ export function WorkspaceModulePlaceholder({
                 variant="ghost"
                 className={cn(
                   "h-auto justify-start px-2.5 py-2.5 text-left",
-                  active && "bg-card/72 font-semibold",
+                  active && "font-semibold",
                 )}
                 aria-current={active ? "true" : undefined}
                 onClick={() => setActiveBlock(block.label)}

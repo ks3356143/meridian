@@ -48,7 +48,11 @@ export function WorkspaceTopbar({
             <span className="status-dot" aria-hidden />
             {project.status}
           </Badge>
-          <Badge variant={levelVariant[project.level]} className="hidden xl:inline-flex">
+          <Badge
+            variant={levelVariant[project.level]}
+            className="workspace-topbar-level hidden xl:inline-flex"
+          >
+            <ShieldCheck data-icon="inline-start" aria-hidden />
             安全 {project.level}
           </Badge>
         </div>

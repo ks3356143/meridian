@@ -5,6 +5,8 @@
 
 :root {
   --radius: 0rem;
+  /* 顶部 toast 安全偏移：基础布局顶栏 h-14（3.5rem）+ 12px 间距。 */
+  --toast-safe-top: calc(3.5rem + 0.75rem);
   --background: oklch(0.975 0.005 125);
   --foreground: oklch(0.215 0.02 150);
   --card: oklch(1 0 0);

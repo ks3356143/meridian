@@ -8,7 +8,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <AppThemeProvider>
       <QueryProvider>
         {children}
-        <Toaster position="top-center" closeButton />
+        <Toaster
+          position="top-center"
+          closeButton
+          offset={{ top: "var(--toast-safe-top)" }}
+          mobileOffset={{ top: "var(--toast-safe-top)" }}
+        />
       </QueryProvider>
     </AppThemeProvider>
   );
