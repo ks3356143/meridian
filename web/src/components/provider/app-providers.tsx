@@ -2,11 +2,13 @@ import type { ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AppThemeProvider } from "./theme-provider";
 import { QueryProvider } from "./query-provider";
+import { SelectionDragGuard } from "./selection-drag-guard";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <AppThemeProvider>
       <QueryProvider>
+        <SelectionDragGuard />
         {children}
         <Toaster
           position="top-center"

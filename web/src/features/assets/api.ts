@@ -1,4 +1,4 @@
-import { request } from "@/api/client";
+import { request, type UploadProgress, uploadRequest } from "@/api/client";
 import type {
   ReceiveMode,
   ReceivedAssetDefaults,
@@ -47,12 +47,15 @@ function toFormData(payload: UploadWorkObjectsPayload): FormData {
 export const workObjectsApi = {
   list: (projectId: string) =>
     request<ReceivedWorkObject[]>("GET", `/api/v1/projects/${projectId}/work-objects`),
-  upload: (projectId: string, payload: UploadWorkObjectsPayload) =>
-    request<ReceivedWorkObject[]>(
-      "POST",
+  upload: (
+    projectId: string,
+    payload: UploadWorkObjectsPayload,
+    onUploadProgress?: (progress: UploadProgress) => void,
+  ) =>
+    uploadRequest<ReceivedWorkObject[]>(
       `/api/v1/projects/${projectId}/work-objects/upload`,
-      {},
       toFormData(payload),
+      onUploadProgress,
     ),
   createManual: (projectId: string, payload: SaveWorkObjectPayload & { platform: string }) =>
     request<ReceivedWorkObject>(

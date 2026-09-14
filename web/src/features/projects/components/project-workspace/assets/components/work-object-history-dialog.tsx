@@ -39,7 +39,7 @@ export function WorkObjectHistoryDialog({
             生命周期记录
           </DialogTitle>
           <DialogDescription>
-            {asset.objectName} V{asset.version} 的确认、替代、撤回、恢复和作废审计。
+            {asset.objectName} {asset.version} 的确认、替代、撤回、恢复和作废审计。
           </DialogDescription>
         </DialogHeader>
 

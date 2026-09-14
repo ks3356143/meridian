@@ -12,6 +12,8 @@ bin/
 coverage*
 
 # 本地运行数据
+logs/
+tmp/
 data/*
 !data/.gitkeep
 attachments/*

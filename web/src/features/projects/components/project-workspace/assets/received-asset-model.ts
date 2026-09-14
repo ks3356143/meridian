@@ -4,6 +4,7 @@ export const workObjectKindOptions = [
   { value: "development_requirement", label: "研制总要求" },
   { value: "task_book", label: "软件研制任务书" },
   { value: "technical_requirement", label: "技术要求" },
+  { value: "user_manual", label: "用户手册" },
   { value: "code_package", label: "代码包" },
   { value: "other_reference", label: "其他依据资料" },
 ] as const;
@@ -100,6 +101,7 @@ export function getParseState(asset: ReceivedWorkObject): {
   if (asset.objectKind === "code_package" || codePackageExtensions.has(extension)) {
     return { label: "版本登记", tone: "code" };
   }
+  if (asset.objectKind === "user_manual") return { label: "仅登记", tone: "register" };
   if (extension === "docx" || extension === "pdf") return { label: "可解析", tone: "ready" };
   if (extension === "doc") return { label: "需转DOCX", tone: "convert" };
   if (tableExtensions.has(extension)) return { label: "表格解析", tone: "table" };
@@ -110,5 +112,6 @@ export function formatFileSize(size: number, hasFile: boolean): string {
   if (!hasFile) return "手工登记";
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }

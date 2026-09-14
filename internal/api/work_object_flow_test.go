@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -204,10 +205,31 @@ func TestManualWorkObjectCreateAndDelete(t *testing.T) {
 	token := loginForProjectTest(t, handler)
 	projectCode := createWorkObjectTestProject(t, handler, token)
 
+	invalidBody, err := json.Marshal(map[string]string{
+		"objectKind":  "task_book",
+		"objectName":  "BCD星软件研制任务书",
+		"version":     "draft",
+		"platform":    "cpu",
+		"source":      "研制方",
+		"receivedAt":  "2026-09-14",
+		"receiveMode": "onsite",
+	})
+	if err != nil {
+		t.Fatalf("构造非法版本请求失败: %v", err)
+	}
+	invalidRecorder := httptest.NewRecorder()
+	invalidRequest := httptest.NewRequest(http.MethodPost, "/api/v1/projects/"+projectCode+"/work-objects/manual", bytes.NewReader(invalidBody))
+	invalidRequest.Header.Set("Content-Type", "application/json")
+	invalidRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(invalidRecorder, invalidRequest)
+	if invalidRecorder.Code != http.StatusBadRequest {
+		t.Fatalf("非法版本状态码应为 400，实际 %d，响应: %s", invalidRecorder.Code, invalidRecorder.Body.String())
+	}
+
 	body, err := json.Marshal(map[string]string{
 		"objectKind":  "task_book",
 		"objectName":  "BCD星软件研制任务书",
-		"version":     "V1.00",
+		"version":     "1.00",
 		"platform":    "cpu",
 		"source":      "研制方",
 		"receivedAt":  "2026-09-14",
@@ -232,6 +254,36 @@ func TestManualWorkObjectCreateAndDelete(t *testing.T) {
 	if created.ObjectKind != "task_book" || created.HasLocalFile || created.Status != "draft" {
 		t.Fatalf("手工登记响应异常: %+v", created)
 	}
+	if created.Version != "V1.00" {
+		t.Fatalf("手工登记版本应规范化为 V1.00，实际 %s", created.Version)
+	}
+
+	updateBody, err := json.Marshal(map[string]string{
+		"objectKind":  "task_book",
+		"objectName":  "BCD星软件研制任务书",
+		"version":     "1.01",
+		"platform":    "cpu",
+		"source":      "研制方",
+		"receivedAt":  "2026-09-14",
+		"receiveMode": "onsite",
+	})
+	if err != nil {
+		t.Fatalf("构造手工登记更新请求失败: %v", err)
+	}
+	updateRecorder := httptest.NewRecorder()
+	updateRequest := httptest.NewRequest(http.MethodPut, "/api/v1/work-object-versions/"+created.ID, bytes.NewReader(updateBody))
+	updateRequest.Header.Set("Content-Type", "application/json")
+	updateRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(updateRecorder, updateRequest)
+	if updateRecorder.Code != http.StatusOK {
+		t.Fatalf("更新手工登记状态码应为 200，实际 %d，响应: %s", updateRecorder.Code, updateRecorder.Body.String())
+	}
+	if err := json.Unmarshal(updateRecorder.Body.Bytes(), &created); err != nil {
+		t.Fatalf("解析手工登记更新响应失败: %v", err)
+	}
+	if created.Version != "V1.01" {
+		t.Fatalf("更新版本应规范化为 V1.01，实际 %s", created.Version)
+	}
 
 	items := listWorkObjects(t, handler, token, projectCode)
 	if len(items) != 1 || items[0].ID != created.ID {
@@ -247,6 +299,109 @@ func TestManualWorkObjectCreateAndDelete(t *testing.T) {
 	}
 	if items := listWorkObjects(t, handler, token, projectCode); len(items) != 0 {
 		t.Fatalf("删除后列表应为空: %+v", items)
+	}
+}
+
+func TestUploadUserManualAndSameVersionConflict(t *testing.T) {
+	handler := newTestHandlerWithAssetRoot(t, filepath.Join(t.TempDir(), "file-assets"))
+	token := loginForProjectTest(t, handler)
+	projectCode := createWorkObjectTestProject(t, handler, token)
+
+	created := uploadWorkObjectTestFile(
+		t,
+		handler,
+		token,
+		projectCode,
+		"BCD星指令生成与发控软件用户手册V1.00.docx",
+		"user manual",
+	)
+	if created.ObjectKind != "user_manual" || created.Version != "V1.00" {
+		t.Fatalf("用户手册识别错误: %+v", created)
+	}
+
+	duplicateRecorder := uploadWorkObjectTestRecorder(
+		t,
+		handler,
+		token,
+		projectCode,
+		"BCD星指令生成与发控软件用户手册V1.00.pdf",
+		"different content",
+	)
+	if duplicateRecorder.Code != http.StatusConflict {
+		t.Fatalf("同版本不同文件应返回 409，实际 %d，响应: %s", duplicateRecorder.Code, duplicateRecorder.Body.String())
+	}
+	if !strings.Contains(duplicateRecorder.Body.String(), "同版本已存在") {
+		t.Fatalf("同版本冲突提示不明确: %s", duplicateRecorder.Body.String())
+	}
+
+	deleteRecorder := httptest.NewRecorder()
+	deleteRequest := httptest.NewRequest(http.MethodDelete, "/api/v1/work-object-versions/"+created.ID, nil)
+	deleteRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(deleteRecorder, deleteRequest)
+	if deleteRecorder.Code != http.StatusNoContent {
+		t.Fatalf("删除用户手册草稿状态码应为 204，实际 %d，响应: %s", deleteRecorder.Code, deleteRecorder.Body.String())
+	}
+}
+
+func TestUploadBatchConflictCleansSavedFiles(t *testing.T) {
+	assetRoot := filepath.Join(t.TempDir(), "file-assets")
+	handler := newTestHandlerWithAssetRoot(t, assetRoot)
+	token := loginForProjectTest(t, handler)
+	projectCode := createWorkObjectTestProject(t, handler, token)
+
+	uploadWorkObjectTestFile(
+		t,
+		handler,
+		token,
+		projectCode,
+		"全流程验证需求规格说明V1.00.docx",
+		"existing version",
+	)
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	for _, item := range []struct {
+		name    string
+		content string
+	}{
+		{name: "全流程验证需求规格说明V2.00.docx", content: "new version"},
+		{name: "全流程验证需求规格说明V1.00.docx", content: "duplicate version"},
+	} {
+		file, err := writer.CreateFormFile("files", item.name)
+		if err != nil {
+			t.Fatalf("构造批量上传文件失败: %v", err)
+		}
+		if _, err := io.WriteString(file, item.content); err != nil {
+			t.Fatalf("写入批量上传文件失败: %v", err)
+		}
+	}
+	for key, value := range map[string]string{
+		"source":      "客户提供",
+		"receivedAt":  "2026-09-14",
+		"receiveMode": "email",
+	} {
+		if err := writer.WriteField(key, value); err != nil {
+			t.Fatalf("构造批量上传字段失败: %v", err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("关闭批量上传请求失败: %v", err)
+	}
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/projects/"+projectCode+"/work-objects/upload", &body)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	request.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("批量上传同版本冲突应返回 409，实际 %d，响应: %s", recorder.Code, recorder.Body.String())
+	}
+
+	if files, err := filepath.Glob(filepath.Join(assetRoot, "projects", projectCode, "*", "*", "*.original.docx")); err != nil || len(files) != 1 {
+		t.Fatalf("冲突后应只保留既有版本文件，实际 %d 个: %v, err=%v", len(files), files, err)
+	}
+	if items := listWorkObjects(t, handler, token, projectCode); len(items) != 1 || items[0].Version != "V1.00" {
+		t.Fatalf("冲突后不应保存新版本记录: %+v", items)
 	}
 }
 

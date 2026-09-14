@@ -218,7 +218,7 @@ func toAPIError(err error, fallback string) error {
 	case errors.Is(err, assetservice.ErrVersionNotFound):
 		return huma.Error404NotFound("工作对象版本不存在")
 	case errors.Is(err, assetservice.ErrVersionExists):
-		return huma.Error409Conflict("同名工作对象版本已存在")
+		return huma.Error409Conflict("同名工作对象同版本已存在，不会覆盖；请提升版本号，或先删除待确认版本")
 	case errors.Is(err, assetservice.ErrObjectExists):
 		return huma.Error409Conflict("目标工作对象已存在")
 	case errors.Is(err, assetservice.ErrVersionNotDraft):
@@ -229,6 +229,8 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("操作原因不能为空")
 	case errors.Is(err, assetservice.ErrVersionNotDeletable):
 		return huma.Error409Conflict("只有待确认版本允许删除")
+	case errors.Is(err, assetservice.ErrInvalidVersion):
+		return huma.Error400BadRequest("版本号格式应为 V1.00")
 	default:
 		return huma.Error500InternalServerError(fallback)
 	}

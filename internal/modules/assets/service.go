@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -29,15 +28,10 @@ var (
 	ErrVersionNotCurrent   = errors.New("只有当前已确认版本允许执行此操作")
 	ErrReasonRequired      = errors.New("操作原因不能为空")
 	ErrVersionNotDeletable = errors.New("只有待确认版本允许删除")
+	ErrInvalidVersion      = errors.New("版本号格式不正确")
 )
 
 const maxFileSize = 2 << 30
-
-var (
-	versionPattern       = regexp.MustCompile(`[Vv]\d{1,2}(?:\.\d{1,2}){1,2}`)
-	trailingVersion      = regexp.MustCompile(`[\s_-]*[Vv]\d{1,2}(?:\.\d{1,2}){1,2}[\s_-]*$`)
-	fileExtensionPattern = regexp.MustCompile(`^[A-Za-z0-9]{1,12}$`)
-)
 
 type Service struct {
 	db   *gorm.DB
@@ -141,7 +135,7 @@ func (s *Service) List(ctx context.Context, projectCode string) ([]WorkObjectRes
 	return toResponses(rows), nil
 }
 
-func (s *Service) Upload(ctx context.Context, input UploadInput) ([]WorkObjectResponse, error) {
+func (s *Service) Upload(ctx context.Context, input UploadInput) (result []WorkObjectResponse, err error) {
 	if len(input.Files) == 0 {
 		return nil, fmt.Errorf("上传文件不能为空")
 	}
@@ -166,6 +160,12 @@ func (s *Service) Upload(ctx context.Context, input UploadInput) ([]WorkObjectRe
 	objects := make(map[string]plannedObject)
 	versions := make(map[string]plannedVersion)
 	savedFiles := make([]string, 0)
+	databaseSaved := false
+	defer func() {
+		if err != nil && !databaseSaved {
+			s.removeFiles(savedFiles)
+		}
+	}()
 
 	for _, file := range input.Files {
 		originalName := sanitizeOriginalName(file.OriginalName)
@@ -187,7 +187,7 @@ func (s *Service) Upload(ctx context.Context, input UploadInput) ([]WorkObjectRe
 		if !ok {
 			var existing WorkObject
 			err := s.db.WithContext(ctx).
-				Where("project_id = ? AND object_kind = ? AND name = ?", project.ID, objectKind, objectName).
+				Where("project_id = ? AND object_kind = ? AND LOWER(name) = LOWER(?)", project.ID, objectKind, objectName).
 				First(&existing).Error
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				objectID, newErr := id.New()
@@ -301,9 +301,9 @@ func (s *Service) Upload(ctx context.Context, input UploadInput) ([]WorkObjectRe
 		return nil
 	})
 	if err != nil {
-		s.removeFiles(savedFiles)
 		return nil, err
 	}
+	databaseSaved = true
 
 	rows, err := s.listRows(ctx, project.ID)
 	if err != nil {
@@ -313,7 +313,7 @@ func (s *Service) Upload(ctx context.Context, input UploadInput) ([]WorkObjectRe
 	for _, versionPlan := range versions {
 		versionIDs[versionPlan.version.ID] = true
 	}
-	result := make([]WorkObjectResponse, 0, len(versionIDs))
+	result = make([]WorkObjectResponse, 0, len(versionIDs))
 	for _, row := range rows {
 		if versionIDs[row.ID] {
 			result = append(result, toResponse(row))
@@ -329,8 +329,9 @@ func (s *Service) CreateManual(ctx context.Context, input ManualInput) (WorkObje
 	if err := validateReceiveInfo(input.Source, input.ReceivedAt, input.ReceiveMode); err != nil {
 		return WorkObjectResponse{}, err
 	}
-	if strings.TrimSpace(input.Version) == "" {
-		return WorkObjectResponse{}, fmt.Errorf("版本不能为空")
+	versionValue, err := normalizeVersion(input.Version)
+	if err != nil {
+		return WorkObjectResponse{}, err
 	}
 
 	project, err := s.findProject(ctx, input.ProjectCode)
@@ -340,7 +341,7 @@ func (s *Service) CreateManual(ctx context.Context, input ManualInput) (WorkObje
 
 	var object WorkObject
 	err = s.db.WithContext(ctx).
-		Where("project_id = ? AND object_kind = ? AND name = ?", project.ID, input.ObjectKind, input.ObjectName).
+		Where("project_id = ? AND object_kind = ? AND LOWER(name) = LOWER(?)", project.ID, input.ObjectKind, input.ObjectName).
 		First(&object).Error
 	createdVersionID := ""
 
@@ -364,7 +365,7 @@ func (s *Service) CreateManual(ctx context.Context, input ManualInput) (WorkObje
 
 		var count int64
 		if countErr := tx.Model(&WorkObjectVersion{}).
-			Where("work_object_id = ? AND version = ?", object.ID, input.Version).
+			Where("work_object_id = ? AND version = ?", object.ID, versionValue).
 			Count(&count).Error; countErr != nil {
 			return fmt.Errorf("查询工作对象版本失败: %w", countErr)
 		}
@@ -379,7 +380,7 @@ func (s *Service) CreateManual(ctx context.Context, input ManualInput) (WorkObje
 		createdVersionID = versionID
 		version := WorkObjectVersion{
 			ID: versionID, ProjectID: project.ID, WorkObjectID: object.ID,
-			Version: strings.TrimSpace(input.Version), Platform: normalizePlatform(input.Platform),
+			Version: versionValue, Platform: normalizePlatform(input.Platform),
 			Status: "draft", Source: strings.TrimSpace(input.Source), ReceivedAt: input.ReceivedAt,
 			ReceiveMode: input.ReceiveMode, CreatedBy: input.CreatedBy, CreatedAt: now, UpdatedAt: now,
 		}
@@ -398,8 +399,9 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) (WorkObjectResp
 	if err := validateReceiveInfo(input.Source, input.ReceivedAt, input.ReceiveMode); err != nil {
 		return WorkObjectResponse{}, err
 	}
-	if strings.TrimSpace(input.Version) == "" {
-		return WorkObjectResponse{}, fmt.Errorf("版本不能为空")
+	versionValue, err := normalizeVersion(input.Version)
+	if err != nil {
+		return WorkObjectResponse{}, err
 	}
 
 	var current WorkObjectVersion
@@ -413,11 +415,11 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) (WorkObjectResp
 		return WorkObjectResponse{}, ErrVersionNotDraft
 	}
 
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var conflictCount int64
 		if err := tx.Model(&WorkObject{}).
 			Where(
-				"project_id = ? AND object_kind = ? AND name = ? AND id <> ?",
+				"project_id = ? AND object_kind = ? AND LOWER(name) = LOWER(?) AND id <> ?",
 				current.ProjectID, input.ObjectKind, input.ObjectName, current.WorkObjectID,
 			).Count(&conflictCount).Error; err != nil {
 			return fmt.Errorf("检查工作对象冲突失败: %w", err)
@@ -437,7 +439,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) (WorkObjectResp
 
 		var versionCount int64
 		if err := tx.Model(&WorkObjectVersion{}).
-			Where("work_object_id = ? AND version = ? AND id <> ?", current.WorkObjectID, input.Version, current.ID).
+			Where("work_object_id = ? AND version = ? AND id <> ?", current.WorkObjectID, versionValue, current.ID).
 			Count(&versionCount).Error; err != nil {
 			return fmt.Errorf("检查版本冲突失败: %w", err)
 		}
@@ -446,7 +448,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) (WorkObjectResp
 		}
 
 		return tx.Model(&WorkObjectVersion{}).Where("id = ?", current.ID).Updates(map[string]any{
-			"version":      strings.TrimSpace(input.Version),
+			"version":      versionValue,
 			"platform":     normalizePlatform(input.Platform),
 			"source":       strings.TrimSpace(input.Source),
 			"received_at":  input.ReceivedAt,
@@ -825,111 +827,6 @@ func (s *Service) removeFiles(relativePaths []string) {
 		_ = os.Remove(filepath.Dir(filepath.Dir(absolutePath)))
 		_ = os.Remove(filepath.Dir(filepath.Dir(filepath.Dir(absolutePath))))
 	}
-}
-
-func sanitizeOriginalName(value string) string {
-	normalized := strings.ReplaceAll(strings.TrimSpace(value), `\`, "/")
-	return path.Base(normalized)
-}
-
-func inferObjectKind(fileName string) string {
-	name := strings.ToLower(fileName)
-	switch {
-	case strings.Contains(name, ".zip"), strings.Contains(name, ".rar"), strings.Contains(name, ".7z"),
-		strings.Contains(name, ".tar"), strings.Contains(name, ".gz"):
-		return "code_package"
-	case strings.Contains(name, "需求规格说明"), strings.Contains(name, "软件需求"):
-		return "srs"
-	case strings.Contains(name, "系统规格"):
-		return "system_spec"
-	case strings.Contains(name, "研制总要求"):
-		return "development_requirement"
-	case strings.Contains(name, "研制任务书"), strings.Contains(name, "任务书"):
-		return "task_book"
-	case strings.Contains(name, "技术要求"):
-		return "technical_requirement"
-	default:
-		return "other_reference"
-	}
-}
-
-func inferObjectName(fileName string) string {
-	name := strings.TrimSuffix(strings.TrimSpace(fileName), path.Ext(fileName))
-	name = trailingVersion.ReplaceAllString(name, "")
-	return strings.NewReplacer("_", " ", "-", " ").Replace(strings.TrimSpace(name))
-}
-
-func inferVersion(fileName string) string {
-	match := versionPattern.FindString(fileName)
-	if match == "" {
-		return "V1.00"
-	}
-	return "V" + match[1:]
-}
-
-func inferPlatform(fileName string) string {
-	name := strings.ToLower(fileName)
-	if strings.Contains(name, "fpga") {
-		return "fpga"
-	}
-	if strings.Contains(name, "cpu") {
-		return "cpu"
-	}
-	return "common"
-}
-
-func fileExtension(fileName string) string {
-	extension := strings.ToLower(strings.TrimPrefix(path.Ext(fileName), "."))
-	if !fileExtensionPattern.MatchString(extension) {
-		return "bin"
-	}
-	return extension
-}
-
-func normalizePlatform(value string) string {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "cpu":
-		return "cpu"
-	case "fpga":
-		return "fpga"
-	default:
-		return "common"
-	}
-}
-
-func validateObject(objectKind string, objectName string) error {
-	switch objectKind {
-	case "srs", "system_spec", "development_requirement", "task_book", "technical_requirement",
-		"code_package", "other_reference":
-	default:
-		return fmt.Errorf("工作对象类型不支持")
-	}
-	if strings.TrimSpace(objectName) == "" {
-		return fmt.Errorf("对象名称不能为空")
-	}
-	return nil
-}
-
-func validateReceiveInfo(source string, receivedAt string, receiveMode string) error {
-	if strings.TrimSpace(source) == "" {
-		return fmt.Errorf("提供方不能为空")
-	}
-	if _, err := time.Parse("2006-01-02", receivedAt); err != nil {
-		return fmt.Errorf("接收日期格式应为 YYYY-MM-DD")
-	}
-	switch receiveMode {
-	case "email", "onsite", "platform", "other":
-	default:
-		return fmt.Errorf("接收方式不支持")
-	}
-	return nil
-}
-
-func validateReason(reason string) error {
-	if len([]rune(reason)) > 2000 {
-		return fmt.Errorf("操作原因不能超过 2000 字")
-	}
-	return nil
 }
 
 func dereference(value *string) string {

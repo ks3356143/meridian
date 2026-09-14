@@ -15,6 +15,7 @@ import "@/styles/card-surface.css";
 import "@/styles/tonal-surface.css";
 import "@/styles/project-detail.css";
 import "@/styles/project-workspace.css";
+import "@/styles/upload-progress.css";
 import "@/styles/polish.css";
 import "@/styles/aesthetic.css";
 
