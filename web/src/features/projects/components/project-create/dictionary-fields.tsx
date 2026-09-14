@@ -80,7 +80,7 @@ function DictionaryField({
   const addCustom = () => {
     const value = customValue.trim();
     if (!value) return;
-    if (options.some((option) => option.name.toLowerCase() === value.toLowerCase())) {
+    if (options.some((option) => String(option.name ?? "").toLowerCase() === value.toLowerCase())) {
       toast.info("该选项已在字典中");
       setCustomValue("");
       return;

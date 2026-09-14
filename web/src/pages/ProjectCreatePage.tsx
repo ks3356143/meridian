@@ -77,9 +77,17 @@ export function Component() {
 
   const dictionaryOptions = useMemo(() => {
     const existing = optionsQuery.data?.dictionaries ?? [];
-    const seen = new Set(existing.map((item) => item.name.trim().toLowerCase()));
+    const seen = new Set(
+      existing.map((item) =>
+        String(item.name ?? "")
+          .trim()
+          .toLowerCase(),
+      ),
+    );
     const custom = customDictionaries.filter((item) => {
-      const key = item.name.trim().toLowerCase();
+      const key = String(item.name ?? "")
+        .trim()
+        .toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;

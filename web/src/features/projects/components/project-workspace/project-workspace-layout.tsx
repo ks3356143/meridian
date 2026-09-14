@@ -1,14 +1,4 @@
-import {
-  BookOpen,
-  Boxes,
-  ClipboardList,
-  FileText,
-  GitBranch,
-  History,
-  ListChecks,
-  Settings2,
-  ShieldAlert,
-} from "lucide-react";
+import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRef, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
@@ -24,31 +14,19 @@ export interface ProjectWorkspaceOutletContext {
   openIssues: number;
 }
 
-type WorkspaceSection =
-  | "outline"
-  | "overview"
-  | "profile"
-  | "dut"
-  | "requirements"
-  | "test-items"
-  | "rounds"
-  | "issues"
-  | "documents";
+type WorkspaceSection = "tasks" | "assets" | "requirements" | "execution" | "delivery";
 
 const NAV_SECTIONS: Array<{
   value: WorkspaceSection;
   label: string;
   icon: LucideIcon;
+  path: string;
 }> = [
-  { value: "outline", label: "大纲编制", icon: BookOpen },
-  { value: "overview", label: "执行总览", icon: ClipboardList },
-  { value: "profile", label: "项目资料", icon: Settings2 },
-  { value: "dut", label: "被测对象", icon: Boxes },
-  { value: "requirements", label: "需求追溯", icon: GitBranch },
-  { value: "test-items", label: "测试设计", icon: ListChecks },
-  { value: "rounds", label: "轮次工作区", icon: History },
-  { value: "issues", label: "问题单", icon: ShieldAlert },
-  { value: "documents", label: "文档产出", icon: FileText },
+  { value: "tasks", label: "作业台", icon: CircleCheck, path: "" },
+  { value: "assets", label: "资料与对象", icon: Boxes, path: "profile" },
+  { value: "requirements", label: "需求与追踪", icon: GitBranch, path: "requirements" },
+  { value: "execution", label: "测试与执行", icon: ListChecks, path: "test-items" },
+  { value: "delivery", label: "交付与文档", icon: FileText, path: "documents" },
 ];
 
 export function ProjectWorkspaceLayout({
@@ -96,10 +74,7 @@ export function ProjectWorkspaceLayout({
   const handleSectionChange = (value: string) => {
     const section = NAV_SECTIONS.find((item) => item.value === value);
     if (!section) return;
-    const target =
-      section.value === "rounds"
-        ? `/projects/${project.id}/workspace/rounds/round-1`
-        : `/projects/${project.id}/workspace/${section.value}`;
+    const target = `/projects/${project.id}/workspace${section.path ? `/${section.path}` : ""}`;
     navigate(target);
   };
 
@@ -112,7 +87,7 @@ export function ProjectWorkspaceLayout({
           <Tabs value={activeSection} onValueChange={handleSectionChange}>
             <TabsList variant="line" className="w-full overflow-x-auto">
               {NAV_SECTIONS.map((section) => (
-                <TabsTrigger key={section.value} value={section.value} className="min-w-24 px-3">
+                <TabsTrigger key={section.value} value={section.value} className="min-w-28 px-3">
                   <section.icon aria-hidden />
                   {section.label}
                 </TabsTrigger>
@@ -131,8 +106,19 @@ export function ProjectWorkspaceLayout({
 
 function getActiveSection(pathname: string, projectCode: string): WorkspaceSection {
   const prefix = `/projects/${projectCode}/workspace/`;
-  if (!pathname.startsWith(prefix)) return "outline";
+  if (!pathname.startsWith(prefix)) return "tasks";
   const segment = pathname.slice(prefix.length).split("/")[0];
-  const matched = NAV_SECTIONS.find((section) => section.value === segment);
-  return matched?.value ?? "overview";
+  if (!segment) return "tasks";
+  if (segment === "profile" || segment === "dut") return "assets";
+  if (
+    segment === "test-items" ||
+    segment === "rounds" ||
+    segment === "issues" ||
+    segment === "overview"
+  ) {
+    return "execution";
+  }
+  if (segment === "documents") return "delivery";
+  if (segment === "requirements") return "requirements";
+  return "tasks";
 }

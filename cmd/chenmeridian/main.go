@@ -56,7 +56,7 @@ func run(cfg config.Config) error {
 
 	server := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           api.New(db, authService),
+		Handler:           api.NewWithAssetRoot(db, authService, cfg.AssetRoot),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

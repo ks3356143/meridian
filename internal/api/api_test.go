@@ -19,6 +19,10 @@ import (
 )
 
 func newTestHandler(t *testing.T) http.Handler {
+	return newTestHandlerWithAssetRoot(t, filepath.Join(t.TempDir(), "file-assets"))
+}
+
+func newTestHandlerWithAssetRoot(t *testing.T, assetRoot string) http.Handler {
 	t.Helper()
 
 	db, err := database.Open(filepath.Join(t.TempDir(), "meridian.db"))
@@ -45,7 +49,7 @@ func newTestHandler(t *testing.T) http.Handler {
 		t.Fatalf("初始化认证服务失败: %v", err)
 	}
 
-	return New(db, authService)
+	return NewWithAssetRoot(db, authService, assetRoot)
 }
 
 func TestHealthEndpoint(t *testing.T) {

@@ -108,7 +108,9 @@ export function StandardEditor({
     const duplicate = allStandards.some(
       (standard) =>
         standard.id !== item?.id &&
-        standard.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+        String(standard.name ?? "")
+          .trim()
+          .toLowerCase() === trimmedName.toLowerCase(),
     );
     if (duplicate) {
       nextErrors.name = "该依据标准已存在";

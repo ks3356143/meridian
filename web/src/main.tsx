@@ -5,6 +5,7 @@ import { AppProviders } from "@/components/provider/app-providers";
 import { router } from "@/router";
 import "@/styles/app.css";
 import "@/styles/brand.css";
+import "@/styles/route-status.css";
 import "@/styles/flow.css";
 import "@/styles/overlay.css";
 import "@/styles/material.css";

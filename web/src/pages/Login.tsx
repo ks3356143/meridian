@@ -1,4 +1,4 @@
-import { Navigate } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { LoginVisual } from "@/features/auth/components/login-visual";
 import { ThemeToggle } from "@/components/provider/theme-toggle";
@@ -7,8 +7,11 @@ import { useAuthStore } from "@/stores/auth-store";
 
 export function Component() {
   const token = useAuthStore((state) => state.token);
+  const [searchParams] = useSearchParams();
+  const redirectTo = getSafeRedirect(searchParams.get("redirect"));
+
   if (token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   return (
@@ -25,10 +28,15 @@ export function Component() {
               className="from-primary via-info to-warning absolute inset-y-0 left-0 w-[4px] bg-gradient-to-b"
               aria-hidden
             />
-            <LoginForm />
+            <LoginForm redirectTo={redirectTo} />
           </Card>
         </div>
       </section>
     </main>
   );
+}
+
+function getSafeRedirect(value: string | null): string {
+  if (!value?.startsWith("/") || value.startsWith("//")) return "/";
+  return value;
 }

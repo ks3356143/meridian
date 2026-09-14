@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
 import { levelVariant, statusVariant } from "../../status-style";
 import type { Project } from "../../types";
-import { RoundSwitcher } from "./round-switcher";
 
 export function WorkspaceTopbar({
   project,
@@ -58,7 +57,6 @@ export function WorkspaceTopbar({
         </div>
 
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <RoundSwitcher projectCode={project.id} compact />
           <TopMetric label="执行" value={`${executionRate}%`} />
           <TopMetric
             label="未闭环"

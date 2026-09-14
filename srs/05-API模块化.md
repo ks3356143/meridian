@@ -18,6 +18,7 @@
 - `users`：用户
 - `systems`：被测系统
 - `projects`：测试项目与版本
+- `assets`：工作对象、接收资产与文件存储
 - `contents`：内容块与受限富文本校验
 - `attachments`：附件元数据与文件读写
 - `test-rounds`：测试轮次、范围切片和轮次内容

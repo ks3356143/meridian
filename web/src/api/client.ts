@@ -56,7 +56,9 @@ export async function request<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
   if (body !== undefined) {
-    headers.set("Content-Type", "application/json");
+    if (!(body instanceof FormData)) {
+      headers.set("Content-Type", "application/json");
+    }
   }
 
   let response: Response;
@@ -64,7 +66,7 @@ export async function request<T>(
     response = await fetch(path, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
     const error = new ApiError(0, "网络错误", "无法连接本地服务");

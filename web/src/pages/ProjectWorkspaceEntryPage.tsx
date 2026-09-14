@@ -1,8 +1,9 @@
-import { Navigate, useOutletContext } from "react-router";
+import { useOutletContext } from "react-router";
 import type { ProjectWorkspaceOutletContext } from "@/features/projects/components/project-workspace/project-workspace-layout";
+import { WorkspaceHome } from "@/features/projects/components/project-workspace/architecture/workspace-home";
 
 export function Component() {
-  const { project } = useOutletContext<ProjectWorkspaceOutletContext>();
+  useOutletContext<ProjectWorkspaceOutletContext>();
 
-  return <Navigate to={project.status === "编制大纲中" ? "outline" : "overview"} replace />;
+  return <WorkspaceHome />;
 }

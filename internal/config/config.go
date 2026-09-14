@@ -9,20 +9,24 @@ import (
 const (
 	defaultAddr     = "127.0.0.1:8787"
 	defaultDBName   = "meridian.db"
+	defaultAssetDir = "file-assets"
 	defaultTokenTTL = 8 * time.Hour
 )
 
 type Config struct {
-	Addr     string
-	DBPath   string
-	TokenTTL time.Duration
+	Addr      string
+	DBPath    string
+	AssetRoot string
+	TokenTTL  time.Duration
 }
 
 func Load() Config {
+	dbPath := envOr("CHENMERIDIAN_DB_PATH", filepath.Join("data", defaultDBName))
 	return Config{
-		Addr:     envOr("CHENMERIDIAN_ADDR", defaultAddr),
-		DBPath:   envOr("CHENMERIDIAN_DB_PATH", filepath.Join("data", defaultDBName)),
-		TokenTTL: durationEnvOr("CHENMERIDIAN_TOKEN_TTL", defaultTokenTTL),
+		Addr:      envOr("CHENMERIDIAN_ADDR", defaultAddr),
+		DBPath:    dbPath,
+		AssetRoot: envOr("CHENMERIDIAN_ASSET_ROOT", filepath.Join(filepath.Dir(dbPath), defaultAssetDir)),
+		TokenTTL:  durationEnvOr("CHENMERIDIAN_TOKEN_TTL", defaultTokenTTL),
 	}
 }
 

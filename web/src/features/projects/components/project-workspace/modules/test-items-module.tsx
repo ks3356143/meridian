@@ -6,19 +6,23 @@ export function TestItemsModule() {
     <WorkspaceModulePlaceholder
       icon={ListChecks}
       title="测试设计"
-      description="测试项逻辑树、测试方法、子项与用例设计。"
+      description="测试项组织树、静态流程、子项与用例设计。"
       blocks={[
         {
           label: "类型字典",
           content: "静态与动态测试类型的顺序、标识与适用平台。",
           status: "待建模",
         },
-        { label: "文件夹树", content: "测试项与文件夹的同容器混合排序。", status: "待建模" },
+        {
+          label: "组织树",
+          content: "分系统、配置项、功能域等文件夹由用户自建。",
+          status: "待建模",
+        },
         { label: "测试项", content: "追踪关系、方法、充分性要求与通过准则。", status: "待录入" },
         { label: "测试子项", content: "方法项、描述、操作与预期要点。", status: "待录入" },
         {
           label: "测试用例",
-          content: "初始化、前提、步骤、终止条件与设计人员。",
+          content: "默认由子项生成，可合并、拆分和手工创建。",
           status: "待录入",
         },
       ]}

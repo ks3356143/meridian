@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
@@ -14,12 +15,17 @@ import (
 const Version = "0.0.2"
 
 func New(db *gorm.DB, authService *authservice.Service) http.Handler {
+	return NewWithAssetRoot(db, authService, filepath.Join("data", "file-assets"))
+}
+
+func NewWithAssetRoot(db *gorm.DB, authService *authservice.Service, assetRoot string) http.Handler {
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("ChenMeridian API", Version))
 
 	v1.Register(api, v1.Dependencies{
 		DB:         db,
 		Auth:       authService,
+		AssetRoot:  assetRoot,
 		AppVersion: Version,
 	})
 

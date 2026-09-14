@@ -15,7 +15,7 @@ interface FormValues {
   password: string;
 }
 
-export function LoginForm() {
+export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
   const containerRef = useRef<HTMLFormElement>(null);
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -74,7 +74,7 @@ export function LoginForm() {
       });
       setAuth(result.accessToken, result.expiresAt, result.user);
       toast.success("登录成功");
-      navigate("/", { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "登录失败");
     } finally {

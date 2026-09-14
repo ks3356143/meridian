@@ -6,7 +6,7 @@
 
 - 后端：Go、Huma v2、GORM、pure Go SQLite、JWT
 - 前端：Vite、React、React Router 8 SPA Data Mode、Tailwind CSS 4、shadcn/ui + Radix、TanStack Query/Table、GSAP
-- 存储：SQLite；结构由显式 SQL migration 管理
+- 存储：SQLite 保存业务数据；`data/file-assets/` 保存接收文件；结构由显式 SQL migration 管理
 
 ## 本地运行
 
@@ -30,6 +30,11 @@ npm run dev
 - 前端登录页：`http://localhost:5173/login`
 
 初始账号：`admin / admin123`。
+
+常用环境变量：
+
+- `CHENMERIDIAN_DB_PATH`：SQLite 数据库路径，默认 `data/meridian.db`。
+- `CHENMERIDIAN_ASSET_ROOT`：接收文件存储根目录，默认与数据库同目录下的 `file-assets`。
 
 ## 验证
 

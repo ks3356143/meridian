@@ -37,7 +37,9 @@ export function Component() {
       const keywordMatched =
         keyword.length === 0 ||
         [project.id, project.name, project.organization, project.owner].some((field) =>
-          field.toLowerCase().includes(keyword),
+          String(field ?? "")
+            .toLowerCase()
+            .includes(keyword),
         );
       const statusMatched = filters.status.length === 0 || project.status === filters.status;
       const levelMatched = filters.level.length === 0 || project.level === filters.level;
