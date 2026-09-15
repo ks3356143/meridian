@@ -18,6 +18,7 @@ export function TruncatedText({
   return (
     <Tooltip
       open={open}
+      delayDuration={150}
       onOpenChange={(nextOpen) => {
         const element = textRef.current;
         setOpen(nextOpen && Boolean(element && element.scrollWidth > element.clientWidth));

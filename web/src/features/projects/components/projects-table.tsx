@@ -80,9 +80,10 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
             const rate = Math.round((row.casesExecuted / Math.max(row.casesTotal, 1)) * 100);
             return (
               <div className="flex w-full min-w-0 flex-col gap-1.5">
-                <span className="block truncate font-mono text-xs">
-                  {row.casesExecuted}/{row.casesTotal} · {rate}%
-                </span>
+                <TruncatedText
+                  value={`${row.casesExecuted}/${row.casesTotal} · ${rate}%`}
+                  className="font-mono text-xs"
+                />
                 <Progress value={rate} className="h-1" />
               </div>
             );
@@ -96,17 +97,16 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
             const urgent = row.openIssues.critical + row.openIssues.serious;
             const total = totalOpenIssues(row.openIssues);
             return (
-              <span
-                className={`block truncate font-mono text-sm font-semibold ${
+              <TruncatedText
+                value={String(total)}
+                className={`font-mono text-sm font-semibold ${
                   urgent > 0
                     ? "text-destructive"
                     : total > 0
                       ? "text-foreground"
                       : "text-muted-foreground"
                 }`}
-              >
-                {total}
-              </span>
+              />
             );
           },
         }),
@@ -115,7 +115,7 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
           cell: (info) => (
             <Badge variant={statusVariant[info.getValue()]} className="max-w-full">
               <span className="status-dot" aria-hidden />
-              <span className="truncate">{info.getValue()}</span>
+              <TruncatedText value={info.getValue()} />
             </Badge>
           ),
         }),

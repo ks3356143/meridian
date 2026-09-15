@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { ThemeToggle } from "@/components/provider/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useLogout } from "@/features/auth/use-logout";
 import { useAuthStore } from "@/stores/auth-store";
 import { levelVariant, statusVariant } from "../../status-style";
 import type { Project } from "../../types";
@@ -18,7 +19,7 @@ export function WorkspaceTopbar({
 }) {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const clear = useAuthStore((state) => state.clear);
+  const logout = useLogout();
 
   return (
     <header className="workspace-topbar sticky top-0 z-30">
@@ -74,7 +75,7 @@ export function WorkspaceTopbar({
             size="icon-sm"
             className="workspace-topbar-icon"
             aria-label="退出登录"
-            onClick={clear}
+            onClick={logout}
           >
             <LogOut aria-hidden />
           </Button>

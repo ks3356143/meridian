@@ -17,6 +17,7 @@ const actionLabels = {
   withdraw: "撤回确认",
   restore: "恢复有效",
   revoke: "作废",
+  correct: "登记纠错",
 } as const;
 
 export function WorkObjectHistoryDialog({
@@ -39,7 +40,7 @@ export function WorkObjectHistoryDialog({
             生命周期记录
           </DialogTitle>
           <DialogDescription>
-            {asset.objectName} {asset.version} 的确认、替代、撤回、恢复和作废审计。
+            {asset.objectName} {asset.version} 的确认、替代、撤回、恢复、作废和登记纠错审计。
           </DialogDescription>
         </DialogHeader>
 

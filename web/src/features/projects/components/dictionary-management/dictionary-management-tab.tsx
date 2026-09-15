@@ -117,7 +117,7 @@ export function DictionaryManagementTab() {
                   编辑
                 </Button>
                 <Button
-                  variant={item.isEnabled ? "destructive" : "ghost"}
+                  variant={item.isEnabled ? "destructive" : "outline"}
                   size="xs"
                   disabled={toggleMutation.isPending}
                   onClick={() => toggleMutation.mutate(item)}

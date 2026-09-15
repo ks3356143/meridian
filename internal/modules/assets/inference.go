@@ -57,15 +57,11 @@ func inferVersion(fileName string) string {
 	return "V" + match[1:]
 }
 
-func inferPlatform(fileName string) string {
-	name := strings.ToLower(fileName)
-	if strings.Contains(name, "fpga") {
+func projectPlatform(projectPlatform string) string {
+	if strings.EqualFold(strings.TrimSpace(projectPlatform), "FPGA") {
 		return "fpga"
 	}
-	if strings.Contains(name, "cpu") {
-		return "cpu"
-	}
-	return "common"
+	return "cpu"
 }
 
 func fileExtension(fileName string) string {
@@ -74,17 +70,6 @@ func fileExtension(fileName string) string {
 		return "bin"
 	}
 	return extension
-}
-
-func normalizePlatform(value string) string {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "cpu":
-		return "cpu"
-	case "fpga":
-		return "fpga"
-	default:
-		return "common"
-	}
 }
 
 func normalizeVersion(value string) (string, error) {

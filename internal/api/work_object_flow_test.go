@@ -27,6 +27,9 @@ func TestWorkObjectUploadConfirmAndVersionFlow(t *testing.T) {
 	if firstBody.ID == "" || firstBody.ObjectKind != "srs" || firstBody.Version != "V1.00" {
 		t.Fatalf("上传后工作对象识别错误: %+v", firstBody)
 	}
+	if firstBody.Platform != "cpu" {
+		t.Fatalf("工作对象平台应继承项目平台 CPU/非嵌: %+v", firstBody)
+	}
 	if firstBody.ObjectName != "BCD星指令生成与发控软件需求规格说明" {
 		t.Fatalf("对象名称识别错误: %s", firstBody.ObjectName)
 	}
@@ -58,7 +61,6 @@ func TestWorkObjectUploadConfirmAndVersionFlow(t *testing.T) {
 		"objectKind":  "srs",
 		"objectName":  "BCD星指令生成与发控软件需求规格说明",
 		"version":     "V1.00",
-		"platform":    "cpu",
 		"source":      "研制方",
 		"receivedAt":  "2026-09-14",
 		"receiveMode": "email",
@@ -93,11 +95,51 @@ func TestWorkObjectUploadConfirmAndVersionFlow(t *testing.T) {
 	updateConfirmedRequest.Header.Set("Content-Type", "application/json")
 	updateConfirmedRequest.Header.Set("Authorization", "Bearer "+token)
 	handler.ServeHTTP(updateConfirmedRecorder, updateConfirmedRequest)
-	if updateConfirmedRecorder.Code != http.StatusConflict {
-		t.Fatalf("修改已确认版本应返回 409，实际 %d", updateConfirmedRecorder.Code)
+	if updateConfirmedRecorder.Code != http.StatusBadRequest {
+		t.Fatalf("无原因修改已确认版本应返回 400，实际 %d", updateConfirmedRecorder.Code)
 	}
 
-	secondBody := uploadWorkObjectTestFile(t, handler, token, projectCode, "BCD星指令生成与发控软件需求规格说明V1.01.docx", "SRS V1.01")
+	correctedName := "BCD星指令生成与发控软件系统规格说明书"
+	correctionBody, err := json.Marshal(map[string]string{
+		"objectKind":       "system_spec",
+		"objectName":       correctedName,
+		"version":          "V1.00",
+		"source":           "研制方档案室",
+		"receivedAt":       "2026-09-14",
+		"receiveMode":      "email",
+		"correctionReason": "文件名识别时对象名称少录一个书字",
+	})
+	if err != nil {
+		t.Fatalf("构造登记纠错请求失败: %v", err)
+	}
+	correctionRecorder := httptest.NewRecorder()
+	correctionRequest := httptest.NewRequest(http.MethodPut, "/api/v1/work-object-versions/"+firstBody.ID, bytes.NewReader(correctionBody))
+	correctionRequest.Header.Set("Content-Type", "application/json")
+	correctionRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(correctionRecorder, correctionRequest)
+	if correctionRecorder.Code != http.StatusOK {
+		t.Fatalf("登记纠错状态码应为 200，实际 %d，响应: %s", correctionRecorder.Code, correctionRecorder.Body.String())
+	}
+	var corrected workObjectTestResponse
+	if err := json.Unmarshal(correctionRecorder.Body.Bytes(), &corrected); err != nil {
+		t.Fatalf("解析登记纠错响应失败: %v", err)
+	}
+	if corrected.ObjectKind != "system_spec" || corrected.ObjectName != correctedName ||
+		corrected.Platform != "cpu" || corrected.Source != "研制方档案室" ||
+		corrected.Status != "confirmed" || corrected.SHA256 != firstBody.SHA256 {
+		t.Fatalf("登记纠错不应改变状态和文件哈希: %+v", corrected)
+	}
+
+	noopCorrectionRecorder := httptest.NewRecorder()
+	noopCorrectionRequest := httptest.NewRequest(http.MethodPut, "/api/v1/work-object-versions/"+firstBody.ID, bytes.NewReader(correctionBody))
+	noopCorrectionRequest.Header.Set("Content-Type", "application/json")
+	noopCorrectionRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(noopCorrectionRecorder, noopCorrectionRequest)
+	if noopCorrectionRecorder.Code != http.StatusBadRequest {
+		t.Fatalf("无变化登记纠错应返回 400，实际 %d", noopCorrectionRecorder.Code)
+	}
+
+	secondBody := uploadWorkObjectTestFile(t, handler, token, projectCode, correctedName+"V1.01.docx", "SRS V1.01")
 	if secondBody.WorkObjectID != firstBody.WorkObjectID || secondBody.Version != "V1.01" {
 		t.Fatalf("V1.01 应挂在同一个工作对象下: first=%+v second=%+v", firstBody, secondBody)
 	}
@@ -121,8 +163,18 @@ func TestWorkObjectUploadConfirmAndVersionFlow(t *testing.T) {
 		t.Fatalf("确认新版本后替代关系错误: %+v", listAfterSecondConfirm)
 	}
 
+	versionConflictCorrectionRecorder := httptest.NewRecorder()
+	versionConflictCorrectionRequest := httptest.NewRequest(http.MethodPut, "/api/v1/work-object-versions/"+secondBody.ID, bytes.NewReader(correctionBody))
+	versionConflictCorrectionRequest.Header.Set("Content-Type", "application/json")
+	versionConflictCorrectionRequest.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(versionConflictCorrectionRecorder, versionConflictCorrectionRequest)
+	if versionConflictCorrectionRecorder.Code != http.StatusConflict {
+		t.Fatalf("登记纠错撞同对象已有版本应返回 409，实际 %d", versionConflictCorrectionRecorder.Code)
+	}
+
 	firstLifecycle := listWorkObjectLifecycle(t, handler, token, firstBody.ID)
-	if len(firstLifecycle) < 2 || firstLifecycle[0].Action != "supersede" || firstLifecycle[1].Action != "confirm" {
+	if len(firstLifecycle) < 3 || firstLifecycle[0].Action != "supersede" ||
+		firstLifecycle[1].Action != "correct" || firstLifecycle[2].Action != "confirm" {
 		t.Fatalf("V1.00 生命周期记录错误: %+v", firstLifecycle)
 	}
 
@@ -194,7 +246,7 @@ func TestWorkObjectUploadConfirmAndVersionFlow(t *testing.T) {
 		t.Fatalf("删除已确认版本应返回 409，实际 %d", deleteConfirmedRecorder.Code)
 	}
 
-	duplicateRecorder := uploadWorkObjectTestRecorder(t, handler, token, projectCode, "BCD星指令生成与发控软件需求规格说明V1.01.docx", "duplicate")
+	duplicateRecorder := uploadWorkObjectTestRecorder(t, handler, token, projectCode, correctedName+"V1.01.docx", "duplicate")
 	if duplicateRecorder.Code != http.StatusConflict {
 		t.Fatalf("重复版本应返回 409，实际 %d，响应: %s", duplicateRecorder.Code, duplicateRecorder.Body.String())
 	}
@@ -209,7 +261,6 @@ func TestManualWorkObjectCreateAndDelete(t *testing.T) {
 		"objectKind":  "task_book",
 		"objectName":  "BCD星软件研制任务书",
 		"version":     "draft",
-		"platform":    "cpu",
 		"source":      "研制方",
 		"receivedAt":  "2026-09-14",
 		"receiveMode": "onsite",
@@ -230,7 +281,6 @@ func TestManualWorkObjectCreateAndDelete(t *testing.T) {
 		"objectKind":  "task_book",
 		"objectName":  "BCD星软件研制任务书",
 		"version":     "1.00",
-		"platform":    "cpu",
 		"source":      "研制方",
 		"receivedAt":  "2026-09-14",
 		"receiveMode": "onsite",
@@ -262,7 +312,6 @@ func TestManualWorkObjectCreateAndDelete(t *testing.T) {
 		"objectKind":  "task_book",
 		"objectName":  "BCD星软件研制任务书",
 		"version":     "1.01",
-		"platform":    "cpu",
 		"source":      "研制方",
 		"receivedAt":  "2026-09-14",
 		"receiveMode": "onsite",
@@ -412,6 +461,7 @@ type workObjectTestResponse struct {
 	ObjectName   string `json:"objectName"`
 	Version      string `json:"version"`
 	Platform     string `json:"platform"`
+	Source       string `json:"source"`
 	Status       string `json:"status"`
 	SupersededBy string `json:"supersededBy"`
 	SHA256       string `json:"sha256"`

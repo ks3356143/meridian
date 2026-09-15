@@ -39,7 +39,6 @@ type ManualWorkObjectRequest struct {
 	ObjectKind  string `json:"objectKind" required:"true"`
 	ObjectName  string `json:"objectName" required:"true"`
 	Version     string `json:"version" required:"true"`
-	Platform    string `json:"platform" required:"true"`
 	Source      string `json:"source" required:"true"`
 	ReceivedAt  string `json:"receivedAt" required:"true"`
 	ReceiveMode string `json:"receiveMode" required:"true"`
@@ -55,13 +54,13 @@ type UpdateWorkObjectInput struct {
 }
 
 type UpdateWorkObjectRequest struct {
-	ObjectKind  string `json:"objectKind" required:"true"`
-	ObjectName  string `json:"objectName" required:"true"`
-	Version     string `json:"version" required:"true"`
-	Platform    string `json:"platform" required:"true"`
-	Source      string `json:"source" required:"true"`
-	ReceivedAt  string `json:"receivedAt" required:"true"`
-	ReceiveMode string `json:"receiveMode" required:"true"`
+	ObjectKind       string `json:"objectKind" required:"true"`
+	ObjectName       string `json:"objectName" required:"true"`
+	Version          string `json:"version" required:"true"`
+	Source           string `json:"source" required:"true"`
+	ReceivedAt       string `json:"receivedAt" required:"true"`
+	ReceiveMode      string `json:"receiveMode" required:"true"`
+	CorrectionReason string `json:"correctionReason,omitempty"`
 }
 
 type VersionIDInput struct {

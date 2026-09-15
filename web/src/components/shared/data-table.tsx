@@ -4,6 +4,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import type { RowData } from "@tanstack/table-core";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
+import { TruncatedText } from "@/components/shared/truncated-text";
 import {
   Table,
   TableBody,
@@ -66,27 +67,25 @@ export function DataTable<TData extends RowData & { id: string }>({
                   >
                     {header.column.getCanSort() ? (
                       <Button
-                        asChild
-                        variant="ghost"
+                        type="button"
+                        variant="outline"
                         size="xs"
-                        className="hover:text-primary h-auto min-w-0 justify-center px-0 text-xs font-semibold"
+                        className="h-6 w-full min-w-0 justify-center px-1 text-xs font-semibold"
+                        onClick={header.column.getToggleSortingHandler()}
                       >
-                        <button
-                          type="button"
-                          className="flex w-full min-w-0 items-center justify-center gap-1"
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
-                          <span className="truncate">
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                          </span>
-                          {sorted === "asc" ? (
-                            <ArrowUp className="size-3 shrink-0" aria-hidden />
-                          ) : sorted === "desc" ? (
-                            <ArrowDown className="size-3 shrink-0" aria-hidden />
-                          ) : (
-                            <ChevronsUpDown className="size-3 shrink-0 opacity-45" aria-hidden />
+                        <TruncatedText
+                          value={String(
+                            flexRender(header.column.columnDef.header, header.getContext()),
                           )}
-                        </button>
+                          className="text-left text-xs"
+                        />
+                        {sorted === "asc" ? (
+                          <ArrowUp className="size-3 shrink-0" aria-hidden />
+                        ) : sorted === "desc" ? (
+                          <ArrowDown className="size-3 shrink-0" aria-hidden />
+                        ) : (
+                          <ChevronsUpDown className="size-3 shrink-0 opacity-45" aria-hidden />
+                        )}
                       </Button>
                     ) : (
                       flexRender(header.column.columnDef.header, header.getContext())

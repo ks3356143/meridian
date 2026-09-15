@@ -25,6 +25,8 @@ var (
 	ErrVersionExists       = errors.New("同名工作对象版本已存在")
 	ErrObjectExists        = errors.New("目标工作对象已存在")
 	ErrVersionNotDraft     = errors.New("只有待确认版本允许执行此操作")
+	ErrVersionNotEditable  = errors.New("只有待确认或当前已确认版本允许修改")
+	ErrCorrectionNoChanges = errors.New("没有需要修正的登记信息")
 	ErrVersionNotCurrent   = errors.New("只有当前已确认版本允许执行此操作")
 	ErrReasonRequired      = errors.New("操作原因不能为空")
 	ErrVersionNotDeletable = errors.New("只有待确认版本允许删除")
@@ -63,7 +65,6 @@ type ManualInput struct {
 	ObjectKind  string
 	ObjectName  string
 	Version     string
-	Platform    string
 	Source      string
 	ReceivedAt  string
 	ReceiveMode string
@@ -71,14 +72,15 @@ type ManualInput struct {
 }
 
 type UpdateInput struct {
-	ID          string
-	ObjectKind  string
-	ObjectName  string
-	Version     string
-	Platform    string
-	Source      string
-	ReceivedAt  string
-	ReceiveMode string
+	ID               string
+	ObjectKind       string
+	ObjectName       string
+	Version          string
+	Source           string
+	ReceivedAt       string
+	ReceiveMode      string
+	CorrectionReason string
+	OperatedBy       string
 }
 
 type LifecycleInput struct {
@@ -249,7 +251,7 @@ func (s *Service) Upload(ctx context.Context, input UploadInput) (result []WorkO
 				ProjectID:    project.ID,
 				WorkObjectID: objectPlan.object.ID,
 				Version:      versionValue,
-				Platform:     inferPlatform(originalName),
+				Platform:     projectPlatform(project.Platform),
 				Status:       "draft",
 				Source:       strings.TrimSpace(input.Source),
 				ReceivedAt:   input.ReceivedAt,
@@ -346,6 +348,7 @@ func (s *Service) CreateManual(ctx context.Context, input ManualInput) (WorkObje
 	createdVersionID := ""
 
 	now := time.Now()
+	platformValue := projectPlatform(project.Platform)
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			objectID, idErr := id.New()
@@ -380,7 +383,7 @@ func (s *Service) CreateManual(ctx context.Context, input ManualInput) (WorkObje
 		createdVersionID = versionID
 		version := WorkObjectVersion{
 			ID: versionID, ProjectID: project.ID, WorkObjectID: object.ID,
-			Version: versionValue, Platform: normalizePlatform(input.Platform),
+			Version: versionValue, Platform: platformValue,
 			Status: "draft", Source: strings.TrimSpace(input.Source), ReceivedAt: input.ReceivedAt,
 			ReceiveMode: input.ReceiveMode, CreatedBy: input.CreatedBy, CreatedAt: now, UpdatedAt: now,
 		}
@@ -403,7 +406,6 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) (WorkObjectResp
 	if err != nil {
 		return WorkObjectResponse{}, err
 	}
-
 	var current WorkObjectVersion
 	if err := s.db.WithContext(ctx).Where("id = ?", input.ID).First(&current).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -411,11 +413,30 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) (WorkObjectResp
 		}
 		return WorkObjectResponse{}, fmt.Errorf("查询工作对象版本失败: %w", err)
 	}
-	if current.Status != "draft" {
-		return WorkObjectResponse{}, ErrVersionNotDraft
+	platformValue := current.Platform
+	if current.Status != "draft" && current.Status != "confirmed" {
+		return WorkObjectResponse{}, ErrVersionNotEditable
+	}
+	correctionReason := strings.TrimSpace(input.CorrectionReason)
+	if current.Status == "confirmed" {
+		if correctionReason == "" {
+			return WorkObjectResponse{}, ErrReasonRequired
+		}
+		if err := validateReason(correctionReason); err != nil {
+			return WorkObjectResponse{}, err
+		}
 	}
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var object WorkObject
+		if err := tx.Where("id = ?", current.WorkObjectID).First(&object).Error; err != nil {
+			return fmt.Errorf("查询工作对象失败: %w", err)
+		}
+		changes := correctionChanges(object, current, input, versionValue)
+		if current.Status == "confirmed" && len(changes) == 0 {
+			return ErrCorrectionNoChanges
+		}
+
 		var conflictCount int64
 		if err := tx.Model(&WorkObject{}).
 			Where(
@@ -429,7 +450,7 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) (WorkObjectResp
 		}
 
 		now := time.Now()
-		if err := tx.Model(&WorkObject{}).Where("id = ?", current.WorkObjectID).Updates(map[string]any{
+		if err := tx.Model(&WorkObject{}).Where("id = ?", object.ID).Updates(map[string]any{
 			"object_kind": input.ObjectKind,
 			"name":        strings.TrimSpace(input.ObjectName),
 			"updated_at":  now,
@@ -447,19 +468,55 @@ func (s *Service) Update(ctx context.Context, input UpdateInput) (WorkObjectResp
 			return ErrVersionExists
 		}
 
-		return tx.Model(&WorkObjectVersion{}).Where("id = ?", current.ID).Updates(map[string]any{
+		if err := tx.Model(&WorkObjectVersion{}).Where("id = ?", current.ID).Updates(map[string]any{
 			"version":      versionValue,
-			"platform":     normalizePlatform(input.Platform),
+			"platform":     platformValue,
 			"source":       strings.TrimSpace(input.Source),
 			"received_at":  input.ReceivedAt,
 			"receive_mode": input.ReceiveMode,
 			"updated_at":   now,
-		}).Error
+		}).Error; err != nil {
+			return fmt.Errorf("更新工作对象版本失败: %w", err)
+		}
+
+		if current.Status != "confirmed" {
+			return nil
+		}
+		return createLifecycleEvent(
+			tx, current.ProjectID, current.ID, "correct", current.Status, current.Status,
+			"", correctionAuditReason(changes, correctionReason),
+			input.OperatedBy, now,
+		)
 	})
 	if err != nil {
 		return WorkObjectResponse{}, err
 	}
 	return s.findResponseByVersionID(ctx, current.ID)
+}
+
+func correctionChanges(
+	object WorkObject,
+	current WorkObjectVersion,
+	input UpdateInput,
+	nextVersion string,
+) []string {
+	changes := make([]string, 0, 7)
+	appendChange := func(label, oldValue, newValue string) {
+		if oldValue != newValue {
+			changes = append(changes, label+" "+oldValue+" -> "+newValue)
+		}
+	}
+	appendChange("对象类型", object.ObjectKind, input.ObjectKind)
+	appendChange("名称", object.Name, strings.TrimSpace(input.ObjectName))
+	appendChange("版本", current.Version, nextVersion)
+	appendChange("提供方", current.Source, strings.TrimSpace(input.Source))
+	appendChange("接收日期", current.ReceivedAt, input.ReceivedAt)
+	appendChange("接收方式", current.ReceiveMode, input.ReceiveMode)
+	return changes
+}
+
+func correctionAuditReason(changes []string, reason string) string {
+	return "登记纠错：" + strings.Join(changes, "；") + "。原因：" + reason
 }
 
 func (s *Service) Confirm(

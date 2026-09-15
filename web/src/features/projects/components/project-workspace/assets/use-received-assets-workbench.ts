@@ -11,6 +11,7 @@ import {
   type WorkObjectStatus,
 } from "./received-asset-model";
 import type { UploadLoadingPhase, UploadLoadingState } from "./components/upload-progress-overlay";
+import type { WorkObjectCorrectionValues } from "./components/work-object-correction-dialog";
 import type { WorkObjectLifecycleAction } from "./components/work-object-reason-dialog";
 
 type QueueFilter = WorkObjectStatus | "all";
@@ -19,6 +20,8 @@ type PendingLifecycle = {
   action: WorkObjectLifecycleAction;
   asset: ReceivedWorkObject;
 };
+
+type PendingCorrection = WorkObjectCorrectionValues & { asset: ReceivedWorkObject };
 
 function removeIdenticalDraftPatch(
   previous: Record<string, Partial<ReceivedWorkObject>>,
@@ -48,6 +51,7 @@ export function useReceivedAssetsWorkbench(project: Project) {
   const [manualOpen, setManualOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<ReceivedWorkObject | null>(null);
   const [pendingLifecycle, setPendingLifecycle] = useState<PendingLifecycle | null>(null);
+  const [pendingCorrection, setPendingCorrection] = useState<PendingCorrection | null>(null);
   const [historyID, setHistoryID] = useState("");
   const [uploadLoading, setUploadLoading] = useState<UploadLoadingState | null>(null);
   const assetsRef = useRef<ReceivedWorkObject[]>([]);
@@ -98,7 +102,6 @@ export function useReceivedAssetsWorkbench(project: Project) {
         objectKind: next.objectKind,
         objectName: next.objectName,
         version: next.version,
-        platform: next.platform,
         source: next.source,
         receivedAt: next.receivedAt,
         receiveMode: next.receiveMode,
@@ -110,6 +113,31 @@ export function useReceivedAssetsWorkbench(project: Project) {
     },
     onError: (_error, { id, patch }) => {
       setDraftPatches((previous) => removeIdenticalDraftPatch(previous, id, patch));
+    },
+  });
+
+  const correctionMutation = useMutation({
+    mutationFn: ({
+      asset,
+      objectKind,
+      objectName,
+      version,
+      source,
+      reason,
+    }: PendingCorrection & { reason: string }) =>
+      workObjectsApi.update(asset.id, {
+        objectKind,
+        objectName,
+        version,
+        source,
+        receivedAt: asset.receivedAt,
+        receiveMode: asset.receiveMode,
+        correctionReason: reason,
+      }),
+    onSuccess: () => {
+      setPendingCorrection(null);
+      toast.success("已保存登记纠错");
+      return invalidateWorkObjects();
     },
   });
 
@@ -325,7 +353,6 @@ export function useReceivedAssetsWorkbench(project: Project) {
             objectKind: asset.objectKind,
             objectName: asset.objectName,
             version: asset.version,
-            platform: asset.platform,
             source: defaults.source,
             receivedAt: defaults.receivedAt,
             receiveMode: defaults.receiveMode,
@@ -354,6 +381,18 @@ export function useReceivedAssetsWorkbench(project: Project) {
 
   const revokeAsset = useCallback((id: string) => openLifecycle(id, "revoke"), [openLifecycle]);
 
+  const openCorrection = useCallback((id: string) => {
+    const asset = assetsRef.current.find((item) => item.id === id);
+    if (!asset) return;
+    setPendingCorrection({
+      asset,
+      objectKind: asset.objectKind,
+      objectName: asset.objectName,
+      version: asset.version,
+      source: asset.source,
+    });
+  }, []);
+
   const openHistory = useCallback((id: string) => setHistoryID(id), []);
 
   const submitLifecycle = useCallback(
@@ -366,6 +405,13 @@ export function useReceivedAssetsWorkbench(project: Project) {
       }
     },
     [pendingLifecycle, revokeMutation, withdrawMutation],
+  );
+
+  const submitCorrection = useCallback(
+    (reason: string) => {
+      if (pendingCorrection) correctionMutation.mutate({ ...pendingCorrection, reason });
+    },
+    [correctionMutation, pendingCorrection],
   );
 
   const submitManual = useCallback(
@@ -415,6 +461,8 @@ export function useReceivedAssetsWorkbench(project: Project) {
     setPendingDelete,
     pendingLifecycle,
     setPendingLifecycle,
+    pendingCorrection,
+    setPendingCorrection,
     historyID,
     setHistoryID,
     uploadLoading,
@@ -429,8 +477,10 @@ export function useReceivedAssetsWorkbench(project: Project) {
     removeAsset,
     withdrawAsset,
     revokeAsset,
+    openCorrection,
     openHistory,
     submitLifecycle,
+    submitCorrection,
     submitManual,
     submitDelete,
     isApplyingDefaults: updateMutation.isPending,
@@ -439,5 +489,6 @@ export function useReceivedAssetsWorkbench(project: Project) {
     isDeleting: deleteMutation.isPending,
     isWithdrawing: withdrawMutation.isPending,
     isRevoking: revokeMutation.isPending,
+    isCorrecting: correctionMutation.isPending,
   };
 }

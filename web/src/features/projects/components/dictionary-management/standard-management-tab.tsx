@@ -143,7 +143,7 @@ export function StandardManagementTab() {
                   编辑
                 </Button>
                 <Button
-                  variant={standard.isEnabled ? "destructive" : "ghost"}
+                  variant={standard.isEnabled ? "destructive" : "outline"}
                   size="xs"
                   disabled={toggleMutation.isPending}
                   onClick={() => toggleMutation.mutate(standard)}

@@ -20,10 +20,8 @@ import {
 } from "@/components/ui/select";
 import type { SaveWorkObjectPayload } from "@/features/assets/api";
 import {
-  assetPlatformOptions,
   receiveModeOptions,
   workObjectKindOptions,
-  type AssetPlatform,
   type ReceiveMode,
   type ReceivedAssetDefaults,
   type WorkObjectKind,
@@ -33,7 +31,6 @@ interface ManualWorkObjectValues {
   objectKind: WorkObjectKind;
   objectName: string;
   version: string;
-  platform: AssetPlatform;
   source: string;
   receivedAt: string;
   receiveMode: ReceiveMode;
@@ -56,7 +53,6 @@ export function ManualWorkObjectDialog({
     objectKind: "other_reference",
     objectName: "",
     version: "V1.00",
-    platform: "common",
     source: defaults.source,
     receivedAt: defaults.receivedAt,
     receiveMode: defaults.receiveMode,
@@ -104,39 +100,17 @@ export function ManualWorkObjectDialog({
               }
             />
           </Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="manual-object-version">版本</FieldLabel>
-              <Input
-                id="manual-object-version"
-                className="font-mono"
-                value={values.version}
-                onChange={(event) =>
-                  setValues((previous) => ({ ...previous, version: event.target.value }))
-                }
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="manual-object-platform">平台</FieldLabel>
-              <Select
-                value={values.platform}
-                onValueChange={(value) =>
-                  setValues((previous) => ({ ...previous, platform: value as AssetPlatform }))
-                }
-              >
-                <SelectTrigger id="manual-object-platform" size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {assetPlatformOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
+          <Field>
+            <FieldLabel htmlFor="manual-object-version">版本</FieldLabel>
+            <Input
+              id="manual-object-version"
+              className="font-mono"
+              value={values.version}
+              onChange={(event) =>
+                setValues((previous) => ({ ...previous, version: event.target.value }))
+              }
+            />
+          </Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="manual-object-source">提供方</FieldLabel>
@@ -189,7 +163,7 @@ export function ManualWorkObjectDialog({
           <Button
             type="button"
             disabled={!valid || submitting}
-            onClick={() => onSubmit(values as SaveWorkObjectPayload & { platform: AssetPlatform })}
+            onClick={() => onSubmit(values as SaveWorkObjectPayload)}
           >
             <FilePlus2 data-icon="inline-start" aria-hidden />
             保存登记

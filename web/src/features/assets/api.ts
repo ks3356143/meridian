@@ -10,7 +10,7 @@ import type {
 export interface WorkObjectLifecycleEvent {
   id: string;
   workObjectVersionId: string;
-  action: "confirm" | "supersede" | "withdraw" | "restore" | "revoke";
+  action: "confirm" | "supersede" | "withdraw" | "restore" | "revoke" | "correct";
   fromStatus: WorkObjectStatus;
   toStatus: WorkObjectStatus;
   replacementVersionId: string;
@@ -30,7 +30,7 @@ export interface SaveWorkObjectPayload {
   source: string;
   receivedAt: string;
   receiveMode: ReceiveMode;
-  platform?: string;
+  correctionReason?: string;
 }
 
 function toFormData(payload: UploadWorkObjectsPayload): FormData {
@@ -57,7 +57,7 @@ export const workObjectsApi = {
       toFormData(payload),
       onUploadProgress,
     ),
-  createManual: (projectId: string, payload: SaveWorkObjectPayload & { platform: string }) =>
+  createManual: (projectId: string, payload: SaveWorkObjectPayload) =>
     request<ReceivedWorkObject>(
       "POST",
       `/api/v1/projects/${projectId}/work-objects/manual`,

@@ -1,5 +1,7 @@
 import { ArrowRight, Boxes, CircleCheck, FilePlus2, Loader2, ShieldCheck } from "lucide-react";
+import { useRef } from "react";
 import { useNavigate } from "react-router";
+import { gsap, useGSAP } from "@/lib/gsap";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -31,17 +33,35 @@ import { ManualWorkObjectDialog } from "./components/manual-work-object-dialog";
 import { UploadProgressOverlay } from "./components/upload-progress-overlay";
 import { WorkObjectReasonDialog } from "./components/work-object-reason-dialog";
 import { WorkObjectHistoryDialog } from "./components/work-object-history-dialog";
+import { WorkObjectCorrectionDialog } from "./components/work-object-correction-dialog";
 
 export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
   const navigate = useNavigate();
   const workbench = useReceivedAssetsWorkbench(project);
+  const pendingCorrection = workbench.pendingCorrection;
+  const containerRef = useRef<HTMLElement>(null);
+
+  useGSAP(
+    () => {
+      if (!containerRef.current) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+      gsap.fromTo(
+        "[data-assets-panel]",
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.32, ease: "power3.out", stagger: 0.05 },
+      );
+    },
+    { scope: containerRef },
+  );
 
   return (
     <section
+      ref={containerRef}
       className="workspace-route received-assets-workbench"
       aria-labelledby="received-assets-title"
     >
-      <header className="received-header">
+      <header className="received-header" data-assets-panel>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="h-6 px-2">
@@ -74,7 +94,11 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
         <div className="received-assets-sidebar">
           <ReceivedAssetDropzone onFiles={workbench.addFiles} />
 
-          <section className="received-panel" aria-labelledby="received-batch-title">
+          <section
+            className="received-panel"
+            aria-labelledby="received-batch-title"
+            data-assets-panel
+          >
             <header className="received-panel-header">
               <span className="received-panel-icon">
                 <ShieldCheck aria-hidden />
@@ -170,6 +194,7 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
 
         <section
           className="received-panel received-table-panel"
+          data-assets-panel
           aria-labelledby="received-queue-title"
         >
           <div className="received-table-toolbar">
@@ -243,6 +268,7 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
               onEdit={workbench.editAsset}
               onUpdate={workbench.updateAsset}
               onConfirm={(id) => workbench.confirmAssets([id])}
+              onCorrect={workbench.openCorrection}
               onWithdraw={workbench.withdrawAsset}
               onRevoke={workbench.revokeAsset}
               onHistory={workbench.openHistory}
@@ -323,6 +349,23 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
             if (!open) workbench.setPendingLifecycle(null);
           }}
           onSubmit={workbench.submitLifecycle}
+        />
+      ) : null}
+
+      {pendingCorrection ? (
+        <WorkObjectCorrectionDialog
+          asset={pendingCorrection.asset}
+          values={pendingCorrection}
+          submitting={workbench.isCorrecting}
+          onOpenChange={(open) => {
+            if (!open) workbench.setPendingCorrection(null);
+          }}
+          onChange={(values) =>
+            workbench.setPendingCorrection((previous) =>
+              previous ? { ...previous, ...values } : previous,
+            )
+          }
+          onSubmit={workbench.submitCorrection}
         />
       ) : null}
 

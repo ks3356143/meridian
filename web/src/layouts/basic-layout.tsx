@@ -16,13 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authApi } from "@/features/auth/api";
+import { useLogout } from "@/features/auth/use-logout";
 import { useAuthStore } from "@/stores/auth-store";
 
 export default function BasicLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const token = useAuthStore((state) => state.token);
   const setUser = useAuthStore((state) => state.setUser);
-  const clear = useAuthStore((state) => state.clear);
+  const logout = useLogout();
   const currentUserQuery = useQuery({
     queryKey: ["auth", "me", token],
     queryFn: authApi.me,
@@ -131,7 +132,7 @@ export default function BasicLayout() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="outline" size="sm" onClick={clear}>
+            <Button variant="outline" size="sm" onClick={logout}>
               <LogOut data-icon="inline-start" />
               退出
             </Button>

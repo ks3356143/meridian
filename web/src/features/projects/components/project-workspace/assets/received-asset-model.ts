@@ -9,12 +9,6 @@ export const workObjectKindOptions = [
   { value: "other_reference", label: "其他依据资料" },
 ] as const;
 
-export const assetPlatformOptions = [
-  { value: "common", label: "公共" },
-  { value: "cpu", label: "CPU/其他" },
-  { value: "fpga", label: "FPGA" },
-] as const;
-
 export const receiveModeOptions = [
   { value: "email", label: "电子邮件" },
   { value: "onsite", label: "现场拷贝" },
@@ -23,7 +17,7 @@ export const receiveModeOptions = [
 ] as const;
 
 export type WorkObjectKind = (typeof workObjectKindOptions)[number]["value"];
-export type AssetPlatform = (typeof assetPlatformOptions)[number]["value"];
+export type AssetPlatform = "common" | "cpu" | "fpga";
 export type ReceiveMode = (typeof receiveModeOptions)[number]["value"];
 export type WorkObjectStatus = "draft" | "confirmed" | "superseded" | "revoked";
 

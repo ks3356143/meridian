@@ -15,6 +15,7 @@ export function ReceivedAssetDropzone({ onFiles }: { onFiles: (files: File[]) =>
     <section
       data-dragging={dragging}
       className="received-dropzone"
+      data-assets-panel
       onDragOver={(event) => {
         event.preventDefault();
         setDragging(true);

@@ -84,7 +84,6 @@ func Register(api huma.API, service *assetservice.Service) {
 			ObjectKind:  input.Body.ObjectKind,
 			ObjectName:  input.Body.ObjectName,
 			Version:     input.Body.Version,
-			Platform:    input.Body.Platform,
 			Source:      input.Body.Source,
 			ReceivedAt:  input.Body.ReceivedAt,
 			ReceiveMode: input.Body.ReceiveMode,
@@ -101,18 +100,19 @@ func Register(api huma.API, service *assetservice.Service) {
 		Method:      http.MethodPut,
 		Path:        "/api/v1/work-object-versions/{id}",
 		Summary:     "修改工作对象版本",
-		Description: "修改对象类型、名称、版本、平台和接收信息；原始文件信息保持不变。",
+		Description: "修改对象类型、名称、版本和接收信息；已确认版本必须填写纠错原因，原始文件信息保持不变。",
 		Tags:        []string{"资料与对象"},
 	}, func(ctx context.Context, input *UpdateWorkObjectInput) (*WorkObjectOutput, error) {
 		item, err := handler.service.Update(ctx, assetservice.UpdateInput{
-			ID:          input.ID,
-			ObjectKind:  input.Body.ObjectKind,
-			ObjectName:  input.Body.ObjectName,
-			Version:     input.Body.Version,
-			Platform:    input.Body.Platform,
-			Source:      input.Body.Source,
-			ReceivedAt:  input.Body.ReceivedAt,
-			ReceiveMode: input.Body.ReceiveMode,
+			ID:               input.ID,
+			ObjectKind:       input.Body.ObjectKind,
+			ObjectName:       input.Body.ObjectName,
+			Version:          input.Body.Version,
+			Source:           input.Body.Source,
+			ReceivedAt:       input.Body.ReceivedAt,
+			ReceiveMode:      input.Body.ReceiveMode,
+			CorrectionReason: input.Body.CorrectionReason,
+			OperatedBy:       currentUserID(ctx),
 		})
 		if err != nil {
 			return nil, toAPIError(err, "修改工作对象失败")
@@ -223,10 +223,14 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error409Conflict("目标工作对象已存在")
 	case errors.Is(err, assetservice.ErrVersionNotDraft):
 		return huma.Error409Conflict("只有待确认版本允许执行此操作")
+	case errors.Is(err, assetservice.ErrVersionNotEditable):
+		return huma.Error409Conflict("只有待确认或当前已确认版本允许修改")
 	case errors.Is(err, assetservice.ErrVersionNotCurrent):
 		return huma.Error409Conflict("只有当前已确认版本允许执行此操作")
 	case errors.Is(err, assetservice.ErrReasonRequired):
 		return huma.Error400BadRequest("操作原因不能为空")
+	case errors.Is(err, assetservice.ErrCorrectionNoChanges):
+		return huma.Error400BadRequest("没有需要修正的登记信息")
 	case errors.Is(err, assetservice.ErrVersionNotDeletable):
 		return huma.Error409Conflict("只有待确认版本允许删除")
 	case errors.Is(err, assetservice.ErrInvalidVersion):
