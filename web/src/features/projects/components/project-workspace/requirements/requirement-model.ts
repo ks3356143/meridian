@@ -156,16 +156,23 @@ export function countRequirements(
 
 export function suggestChapterNumber(
   sections: RequirementSection[],
+  requirements: SoftwareRequirement[],
   parentChapter: string,
 ): string {
+  if (!parentChapter) return "";
+
   const prefix = parentChapter ? `${parentChapter}.` : "";
   let max = 0;
-  for (const section of sections) {
-    if (!section.chapterNumber.startsWith(prefix)) continue;
-    const suffix = Number(section.chapterNumber.slice(prefix.length).split(".")[0]);
+  const chapters = [
+    ...sections.map((section) => section.chapterNumber),
+    ...requirements.map((requirement) => requirement.chapterNumber),
+  ];
+  for (const chapter of chapters) {
+    if (!chapter.startsWith(prefix)) continue;
+    const suffix = Number(chapter.slice(prefix.length).split(".")[0]);
     if (Number.isFinite(suffix) && suffix > max) max = suffix;
   }
-  return `${prefix}${max + 1}`;
+  return max > 0 ? `${prefix}${max + 1}` : "";
 }
 
 export function parseBulkLines(content: string): Array<{

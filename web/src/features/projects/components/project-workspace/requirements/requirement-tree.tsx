@@ -58,7 +58,7 @@ export function RequirementTree({
         aria-label="软件需求章节树"
         height={height}
         width="100%"
-        rowHeight={27}
+        rowHeight={30}
         indent={14}
         overscanCount={12}
         openByDefault={false}
@@ -75,6 +75,11 @@ export function RequirementTree({
       >
         {ArboristRow}
       </Tree>
+      {nodes.length <= 1 ? (
+        <div className="requirement-tree-empty-hint" aria-hidden>
+          <p>在右侧录入需求后，会出现在对应章节下</p>
+        </div>
+      ) : null}
     </div>
   );
 }

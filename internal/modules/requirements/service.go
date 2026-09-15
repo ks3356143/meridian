@@ -709,37 +709,6 @@ func (s *Service) findSource(ctx context.Context, projectCode string, sourceVers
 	return SourceRow{}, ErrSourceNotFound
 }
 
-func ensureParentChain(tx *gorm.DB, source SourceRow, chapter string, origin string, operatedBy string) (*string, error) {
-	parentChapterNum := parentChapter(chapter)
-	if parentChapterNum == "" {
-		return nil, nil
-	}
-
-	parts := strings.Split(parentChapterNum, ".")
-	chain := make([]string, 0, len(parts))
-	for i := range parts {
-		chain = append(chain, strings.Join(parts[:i+1], "."))
-	}
-
-	var parentID *string
-	for _, chainChapter := range chain {
-		section, err := findSectionByChapter(tx, source.ID, chainChapter)
-		if err == nil {
-			parentID = &section.ID
-			continue
-		}
-		if !errors.Is(err, ErrParentMissing) {
-			return nil, err
-		}
-		created, createErr := createSectionInTx(tx, source.ProjectID, source.ID, parentID, chainChapter, chainChapter, origin, "", operatedBy)
-		if createErr != nil {
-			return nil, createErr
-		}
-		parentID = &created.ID
-	}
-	return parentID, nil
-}
-
 func resolveParentID(tx *gorm.DB, source SourceRow, parentID string, chapter string) (*string, error) {
 	expectedParentChapter := parentChapter(chapter)
 	if expectedParentChapter == "" {
@@ -756,7 +725,19 @@ func resolveParentID(tx *gorm.DB, source SourceRow, parentID string, chapter str
 		}
 		return &parent.ID, nil
 	}
-	return ensureParentChain(tx, source, chapter, OriginManual, "system")
+
+	return findOptionalParentID(tx, source.ID, expectedParentChapter)
+}
+
+func findOptionalParentID(tx *gorm.DB, sourceVersionID string, chapter string) (*string, error) {
+	parent, err := findSectionByChapter(tx, sourceVersionID, chapter)
+	if errors.Is(err, ErrParentMissing) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &parent.ID, nil
 }
 
 func findSectionByChapter(tx *gorm.DB, sourceVersionID string, chapter string) (Section, error) {
@@ -895,9 +876,9 @@ func resolveOrCreateRequirementSection(
 		}
 		parentID = &requested.ID
 	} else if expectedParent != "" {
-		parent, err := ensureParentChain(tx, source, chapter, origin, operatedBy)
-		if err != nil {
-			return Section{}, err
+		parent, parentErr := findOptionalParentID(tx, source.ID, expectedParent)
+		if parentErr != nil {
+			return Section{}, parentErr
 		}
 		parentID = parent
 	}

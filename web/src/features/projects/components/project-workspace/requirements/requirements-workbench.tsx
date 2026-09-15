@@ -48,7 +48,9 @@ import {
   type RequirementTreeNode,
 } from "./requirement-model";
 import { RequirementTree, type RequirementTreeControls } from "./requirement-tree";
+import { RequirementsLayout } from "./requirements-layout";
 import { useRequirementsWorkbench } from "./use-requirements-workbench";
+import { useResizableRequirementsLayout } from "./use-requirements-layout";
 
 export function RequirementsWorkbench({ project }: { project: Project }) {
   const workbench = useRequirementsWorkbench(project);
@@ -61,6 +63,7 @@ export function RequirementsWorkbench({ project }: { project: Project }) {
   const [copySource, setCopySource] = useState<SoftwareRequirement | null>(null);
   const [batchOpen, setBatchOpen] = useState(false);
   const [excludeOpen, setExcludeOpen] = useState(false);
+  const resizableLayout = useResizableRequirementsLayout();
 
   useGSAP(
     () => {
@@ -165,15 +168,11 @@ export function RequirementsWorkbench({ project }: { project: Project }) {
     );
   }
 
-  return (
-    <section
-      ref={containerRef}
-      className="requirements-workbench"
-      aria-labelledby="requirements-title"
-    >
-      <header className="requirements-header" data-requirements-panel>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+  const header = (
+    <header className="requirements-header" data-requirements-panel>
+      <div className="requirements-header-main">
+        <div className="requirements-header-copy">
+          <div className="requirements-header-badges">
             <Badge variant="secondary" className="h-6 px-2">
               <GitBranch data-icon="inline-start" aria-hidden />
               需求与追踪
@@ -185,12 +184,20 @@ export function RequirementsWorkbench({ project }: { project: Project }) {
           <h2 id="requirements-title">软件需求基线</h2>
           <p>手动树状录入与 SRS 解析汇入同一个需求池；正式需求默认记录测试项待创建契约。</p>
         </div>
-        <div className="requirements-header-actions">
+        <dl className="requirements-summary">
+          <SummaryTile label="章节" value={sectionCount} />
+          <SummaryTile label="正式需求" value={officialCount} tone="primary" />
+          <SummaryTile label="候选需求" value={candidateCount} tone="warning" />
+          <SummaryTile label="待建测试项" value={pendingTestItemCount} tone="info" />
+        </dl>
+      </div>
+      <div className="requirements-header-actions">
+        <div className="requirements-header-source">
           <Select value={workbench.sourceVersionId} onValueChange={workbench.setSourceVersionId}>
-            <SelectTrigger size="sm" aria-label="选择主 SRS 版本" className="min-w-64">
+            <SelectTrigger size="sm" aria-label="选择主 SRS 版本">
               <SelectValue placeholder="选择已确认 SRS" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent collisionPadding={12} className="max-w-[calc(100vw-1.5rem)]">
               {workbench.sources.map((source) => (
                 <SelectItem key={source.id} value={source.id}>
                   {source.objectName} {source.version}
@@ -198,6 +205,8 @@ export function RequirementsWorkbench({ project }: { project: Project }) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="requirements-header-commands">
           <Button
             type="button"
             disabled={!workbench.activeSource || workbench.parseMutation.isPending}
@@ -221,192 +230,196 @@ export function RequirementsWorkbench({ project }: { project: Project }) {
             批量粘贴
           </Button>
         </div>
-        <dl className="requirements-summary">
-          <SummaryTile label="章节" value={sectionCount} />
-          <SummaryTile label="正式需求" value={officialCount} tone="primary" />
-          <SummaryTile label="候选需求" value={candidateCount} tone="warning" />
-          <SummaryTile label="待建测试项" value={pendingTestItemCount} tone="info" />
-        </dl>
-      </header>
+      </div>
+    </header>
+  );
 
-      {!workbench.sources.length ? (
-        <div className="requirements-empty">
-          <FileSearch aria-hidden />
-          <h3>还没有可用的主 SRS 基线</h3>
-          <p>先在资料与对象中确认软件需求规格说明版本，再回到这里解析或手动建立需求树。</p>
-        </div>
-      ) : (
-        <div className="requirements-grid">
-          <aside className="requirements-tree-panel" data-requirements-panel>
-            <div className="requirements-tree-toolbar">
-              <Input
-                ref={searchRef}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="搜索章节号、名称、描述"
-                aria-label="搜索需求树"
-                className="h-7 text-xs"
-              />
-              <Tabs
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+  const tree = (
+    <aside className="requirements-tree-panel" data-requirements-panel>
+      <div className="requirements-tree-toolbar">
+        <Input
+          ref={searchRef}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="搜索章节号、名称、描述"
+          aria-label="搜索需求树"
+          className="h-7 text-xs"
+        />
+        <Tabs
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+        >
+          <TabsList className="w-full">
+            <TabsTrigger value="active" className="px-2 text-[11px]">
+              有效
+            </TabsTrigger>
+            <TabsTrigger value="candidate" className="px-2 text-[11px]">
+              候选
+            </TabsTrigger>
+            <TabsTrigger value="all" className="px-2 text-[11px]">
+              全部
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="requirements-tree-quick-tools">
+          <Select
+            value={kindFilter}
+            onValueChange={(value) => setKindFilter(value as typeof kindFilter)}
+          >
+            <SelectTrigger size="sm" aria-label="筛选主需求性质" className="h-7 flex-1 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部性质</SelectItem>
+              {primaryKindOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                aria-label="展开全部章节"
+                onClick={() => treeControlsRef.current?.expandAll()}
               >
-                <TabsList className="w-full">
-                  <TabsTrigger value="active" className="px-2 text-[11px]">
-                    有效
-                  </TabsTrigger>
-                  <TabsTrigger value="candidate" className="px-2 text-[11px]">
-                    候选
-                  </TabsTrigger>
-                  <TabsTrigger value="all" className="px-2 text-[11px]">
-                    全部
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <div className="requirements-tree-quick-tools">
-                <Select
-                  value={kindFilter}
-                  onValueChange={(value) => setKindFilter(value as typeof kindFilter)}
-                >
-                  <SelectTrigger
-                    size="sm"
-                    aria-label="筛选主需求性质"
-                    className="h-7 flex-1 text-[11px]"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部性质</SelectItem>
-                    {primaryKindOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-xs"
-                      aria-label="展开全部章节"
-                      onClick={() => treeControlsRef.current?.expandAll()}
-                    >
-                      <ChevronDown aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>展开全部</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-xs"
-                      aria-label="收起全部章节"
-                      onClick={() => treeControlsRef.current?.collapseAll()}
-                    >
-                      <ChevronUp aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>收起全部</TooltipContent>
-                </Tooltip>
-              </div>
-              <p className="requirements-tree-hotkeys" aria-hidden>
-                <kbd>/</kbd>搜索
-                <kbd>↑↓</kbd>移动
-                <kbd>←→</kbd>收展
-              </p>
-            </div>
-            <RequirementTree
-              nodes={visibleTree}
-              selectedKey={selectedNode?.key ?? ""}
-              onSelect={selectNode}
-              controlsRef={treeControlsRef}
-            />
-          </aside>
+                <ChevronDown aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>展开全部</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                aria-label="收起全部章节"
+                onClick={() => treeControlsRef.current?.collapseAll()}
+              >
+                <ChevronUp aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>收起全部</TooltipContent>
+          </Tooltip>
+        </div>
+        <p className="requirements-tree-hotkeys" aria-hidden>
+          <kbd>/</kbd>搜索
+          <kbd>↑↓</kbd>移动
+          <kbd>←→</kbd>收展
+        </p>
+      </div>
+      <RequirementTree
+        nodes={visibleTree}
+        selectedKey={selectedNode?.key ?? ""}
+        onSelect={selectNode}
+        controlsRef={treeControlsRef}
+      />
+    </aside>
+  );
 
-          <div className="requirements-main" data-requirements-panel>
-            <RequirementEditor
-              key={`${selectedNode?.key ?? "root"}:${selectedNode?.requirement?.updatedAt ?? ""}:${
-                copySource?.id ?? ""
-              }`}
-              source={workbench.activeSource}
-              sections={workbench.workbench.sections}
-              selectedNode={selectedNode}
-              copySource={copySource}
-              creatingSection={workbench.createSectionMutation.isPending}
-              creatingRequirement={workbench.createRequirementMutation.isPending}
-              updatingRequirement={workbench.updateRequirementMutation.isPending}
-              onCreateSection={handleCreateSection}
-              onCreateRequirement={handleCreateRequirement}
-              onUpdateRequirement={handleUpdateRequirement}
-              onCopyRequirement={handleCopyRequirement}
-              onDiscardCopy={handleDiscardCopy}
-            />
+  const main = (
+    <div className="requirements-main" data-requirements-panel>
+      <RequirementEditor
+        key={`${selectedNode?.key ?? "root"}:${selectedNode?.requirement?.updatedAt ?? ""}:${
+          copySource?.id ?? ""
+        }`}
+        source={workbench.activeSource}
+        sections={workbench.workbench.sections}
+        requirements={workbench.workbench.requirements}
+        selectedNode={selectedNode}
+        copySource={copySource}
+        creatingSection={workbench.createSectionMutation.isPending}
+        creatingRequirement={workbench.createRequirementMutation.isPending}
+        updatingRequirement={workbench.updateRequirementMutation.isPending}
+        onCreateSection={handleCreateSection}
+        onCreateRequirement={handleCreateRequirement}
+        onUpdateRequirement={handleUpdateRequirement}
+        onCopyRequirement={handleCopyRequirement}
+        onDiscardCopy={handleDiscardCopy}
+      />
 
-            <section
-              className="requirements-candidates"
-              aria-labelledby="candidate-title"
-              data-requirements-panel
+      <section
+        className="requirements-candidates"
+        aria-labelledby="candidate-title"
+        data-requirements-panel
+      >
+        <header>
+          <div className="min-w-0">
+            <h3 id="candidate-title">候选需求确认</h3>
+            <p>解析结果先进入候选区，确认后才进入正式基线。</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={!candidateIds.length || workbench.changeStatusMutation.isPending}
+              onClick={() =>
+                workbench.changeStatusMutation.mutate(
+                  { ids: candidateIds, action: "confirm" },
+                  { onSuccess: () => setCandidateIds([]) },
+                )
+              }
             >
-              <header>
-                <div className="min-w-0">
-                  <h3 id="candidate-title">候选需求确认</h3>
-                  <p>解析结果先进入候选区，确认后才进入正式基线。</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={!candidateIds.length || workbench.changeStatusMutation.isPending}
-                    onClick={() =>
-                      workbench.changeStatusMutation.mutate(
-                        { ids: candidateIds, action: "confirm" },
-                        { onSuccess: () => setCandidateIds([]) },
-                      )
-                    }
-                  >
-                    确认选中
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={!candidateIds.length || workbench.changeStatusMutation.isPending}
-                    onClick={() => {
-                      setExcludeReason("");
-                      setExcludeOpen(true);
-                    }}
-                  >
-                    <XCircle data-icon="inline-start" aria-hidden />
-                    排除选中
-                  </Button>
-                </div>
-              </header>
-              <CandidateReviewTable
-                requirements={candidates}
-                selectedIds={candidateIds}
-                onToggle={(id, checked) =>
-                  setCandidateIds((previous) =>
-                    checked
-                      ? [...new Set([...previous, id])]
-                      : previous.filter((item) => item !== id),
-                  )
-                }
-                onToggleAll={(checked) =>
-                  setCandidateIds(checked ? candidates.map((item) => item.id) : [])
-                }
-                onActivate={(requirement) => setSelectedKey(`requirement:${requirement.id}`)}
-                onConfirm={(ids) =>
-                  workbench.changeStatusMutation.mutate(
-                    { ids, action: "confirm" },
-                    { onSuccess: () => setCandidateIds([]) },
-                  )
-                }
-              />
-            </section>
+              确认选中
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!candidateIds.length || workbench.changeStatusMutation.isPending}
+              onClick={() => {
+                setExcludeReason("");
+                setExcludeOpen(true);
+              }}
+            >
+              <XCircle data-icon="inline-start" aria-hidden />
+              排除选中
+            </Button>
+          </div>
+        </header>
+        <CandidateReviewTable
+          requirements={candidates}
+          selectedIds={candidateIds}
+          onToggle={(id, checked) =>
+            setCandidateIds((previous) =>
+              checked ? [...new Set([...previous, id])] : previous.filter((item) => item !== id),
+            )
+          }
+          onToggleAll={(checked) =>
+            setCandidateIds(checked ? candidates.map((item) => item.id) : [])
+          }
+          onActivate={(requirement) => setSelectedKey(`requirement:${requirement.id}`)}
+          onConfirm={(ids) =>
+            workbench.changeStatusMutation.mutate(
+              { ids, action: "confirm" },
+              { onSuccess: () => setCandidateIds([]) },
+            )
+          }
+        />
+      </section>
+    </div>
+  );
+
+  return (
+    <section
+      ref={containerRef}
+      className="requirements-workbench"
+      aria-labelledby="requirements-title"
+    >
+      {workbench.sources.length ? (
+        <RequirementsLayout header={header} tree={tree} detail={main} resizable={resizableLayout} />
+      ) : (
+        <div className="requirements-empty-layout">
+          {header}
+          <div className="requirements-empty">
+            <FileSearch aria-hidden />
+            <h3>还没有可用的主 SRS 基线</h3>
+            <p>先在资料与对象中确认软件需求规格说明版本，再回到这里解析或手动建立需求树。</p>
           </div>
         </div>
       )}

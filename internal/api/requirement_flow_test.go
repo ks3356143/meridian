@@ -73,6 +73,16 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 		manualRequirement.PrimaryKind != "functional" {
 		t.Fatalf("手动需求应直接保存为正式需求并记录测试项契约: %+v", manualRequirement)
 	}
+	focusedRequirement := postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "7.2.1",
+		Name:            "指令发送",
+		Description:     "系统应按指令序列发送控制指令。",
+		Kind:            "functional",
+	}, http.StatusOK)
+	if focusedRequirement.SectionID == "" {
+		t.Fatalf("需求章节应保存并关联: %+v", focusedRequirement)
+	}
 
 	bulkBody := map[string]any{
 		"sourceVersionId": source.ID,
@@ -96,8 +106,20 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	}
 
 	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
-	if len(workbench.Sections) != 9 {
+	if len(workbench.Sections) != 10 {
 		t.Fatalf("章节树数量错误: %+v", workbench.Sections)
+	}
+	sectionParents := make(map[string]string, len(workbench.Sections))
+	for _, section := range workbench.Sections {
+		sectionParents[section.ChapterNumber] = section.ParentID
+	}
+	for _, chapter := range []string{"7", "7.2"} {
+		if _, exists := sectionParents[chapter]; exists {
+			t.Fatalf("根节点录入需求不应自动创建父章节 %s: %+v", chapter, workbench.Sections)
+		}
+	}
+	if sectionParents["7.2.1"] != "" {
+		t.Fatalf("缺失父章节时需求章节应保持根节点: %+v", workbench.Sections)
 	}
 	candidates := make([]string, 0, 2)
 	for _, requirement := range workbench.Requirements {

@@ -61,6 +61,7 @@ type FormValues = {
 export function RequirementEditor({
   source,
   sections,
+  requirements,
   selectedNode,
   copySource,
   creatingSection,
@@ -74,6 +75,7 @@ export function RequirementEditor({
 }: {
   source: RequirementSource;
   sections: RequirementSection[];
+  requirements: SoftwareRequirement[];
   selectedNode: RequirementTreeNode | null;
   copySource: SoftwareRequirement | null;
   creatingSection: boolean;
@@ -115,8 +117,8 @@ export function RequirementEditor({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<EditorMode>("requirement");
   const suggestedChapter = useMemo(
-    () => suggestChapterNumber(sections, selectedNode?.section?.chapterNumber ?? ""),
-    [sections, selectedNode?.section?.chapterNumber],
+    () => suggestChapterNumber(sections, requirements, selectedNode?.section?.chapterNumber ?? ""),
+    [sections, requirements, selectedNode?.section?.chapterNumber],
   );
   const [sectionValues, setSectionValues] = useState({
     chapterNumber: suggestedChapter,
@@ -241,6 +243,7 @@ export function RequirementEditor({
       {requirement ? (
         <form
           className="requirement-form"
+          autoComplete="off"
           onSubmit={(event) => {
             event.preventDefault();
             void saveUpdate();
@@ -261,6 +264,7 @@ export function RequirementEditor({
       ) : mode === "section" ? (
         <form
           className="requirement-form"
+          autoComplete="off"
           onSubmit={(event) => {
             event.preventDefault();
             void saveSection();
@@ -271,6 +275,7 @@ export function RequirementEditor({
               <FieldLabel htmlFor="requirement-section-chapter">章节号</FieldLabel>
               <Input
                 id="requirement-section-chapter"
+                autoComplete="off"
                 value={sectionValues.chapterNumber}
                 onChange={(event) =>
                   setSectionValues((previous) => ({
@@ -280,12 +285,13 @@ export function RequirementEditor({
                 }
                 required
               />
-              <FieldDescription>必须与 SRS 实际章节号一致。</FieldDescription>
+              <FieldDescription className="whitespace-nowrap">与 SRS 章节号一致</FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="requirement-section-title">章节标题</FieldLabel>
               <Input
                 id="requirement-section-title"
+                autoComplete="off"
                 value={sectionValues.title}
                 onChange={(event) =>
                   setSectionValues((previous) => ({ ...previous, title: event.target.value }))
@@ -308,6 +314,7 @@ export function RequirementEditor({
       ) : (
         <form
           className="requirement-form"
+          autoComplete="off"
           onSubmit={(event) => {
             event.preventDefault();
             void saveRequirement();
@@ -363,21 +370,24 @@ function RequirementFields({
 
   return (
     <FieldGroup className="gap-3">
-      <div className="grid gap-3 md:grid-cols-[8rem_minmax(0,1fr)_11rem]">
+      <div className="grid gap-3 md:grid-cols-[9rem_minmax(0,1fr)_11rem]">
         <Field>
           <FieldLabel htmlFor="requirement-chapter">章节号</FieldLabel>
           <Input
             id="requirement-chapter"
+            autoComplete="off"
             onKeyDown={submitOnCtrlEnter}
             value={values.chapterNumber}
             onChange={(event) => onChange({ ...values, chapterNumber: event.target.value })}
             required
           />
+          <FieldDescription className="whitespace-nowrap">与 SRS 章节号一致</FieldDescription>
         </Field>
         <Field>
           <FieldLabel htmlFor="requirement-name">需求名称</FieldLabel>
           <Input
             id="requirement-name"
+            autoComplete="off"
             ref={nameInputRef}
             onKeyDown={submitOnCtrlEnter}
             value={values.name}
@@ -389,6 +399,7 @@ function RequirementFields({
           <FieldLabel htmlFor="requirement-external-id">外部标识</FieldLabel>
           <Input
             id="requirement-external-id"
+            autoComplete="off"
             onKeyDown={submitOnCtrlEnter}
             value={values.externalIdentifier}
             onChange={(event) => onChange({ ...values, externalIdentifier: event.target.value })}
@@ -429,10 +440,11 @@ function RequirementFields({
           />
         </Field>
       </div>
-      <Field>
+      <Field className="requirement-editor-description-group">
         <FieldLabel htmlFor="requirement-description">需求描述</FieldLabel>
         <Textarea
           id="requirement-description"
+          autoComplete="off"
           onKeyDown={submitOnCtrlEnter}
           value={values.description}
           onChange={(event) => onChange({ ...values, description: event.target.value })}
