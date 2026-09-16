@@ -153,9 +153,7 @@ export function RelatedPartyEditor({
               aria-invalid={Boolean(errors.name)}
               aria-describedby={errors.name ? "related-party-name-error" : undefined}
             />
-            {errors.name ? (
-              <FieldError id="related-party-name-error">{errors.name}</FieldError>
-            ) : null}
+            <FieldError id="related-party-name-error">{errors.name}</FieldError>
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -206,9 +204,7 @@ export function RelatedPartyEditor({
               aria-describedby={errors.sortOrder ? "related-party-sort-error" : undefined}
             />
             <FieldDescription>同类别的展示顺序。</FieldDescription>
-            {errors.sortOrder ? (
-              <FieldError id="related-party-sort-error">{errors.sortOrder}</FieldError>
-            ) : null}
+            <FieldError id="related-party-sort-error">{errors.sortOrder}</FieldError>
           </Field>
 
           <div className="border-border bg-muted/35 flex items-center justify-between gap-4 rounded-sm border p-3">

@@ -65,7 +65,8 @@ func Register(api huma.API, service *requirementsservice.Service) {
 			SectionID: input.Body.SectionID, ChapterNumber: input.Body.ChapterNumber,
 			ExternalIdentifier: input.Body.ExternalIdentifier, Name: input.Body.Name,
 			Description: input.Body.Description, PrimaryKind: input.Body.PrimaryKind,
-			Tags: input.Body.Tags, OperatedBy: currentUserID(ctx),
+			SecondaryKinds: input.Body.SecondaryKinds,
+			Tags:           input.Body.Tags, OperatedBy: currentUserID(ctx),
 		})
 		if err != nil {
 			return nil, toAPIError(err, "新增软件需求失败")
@@ -119,7 +120,8 @@ func Register(api huma.API, service *requirementsservice.Service) {
 			ChapterNumber:      input.Body.ChapterNumber,
 			ExternalIdentifier: input.Body.ExternalIdentifier, Name: input.Body.Name,
 			Description: input.Body.Description, PrimaryKind: input.Body.PrimaryKind,
-			Tags: input.Body.Tags, OperatedBy: currentUserID(ctx),
+			SecondaryKinds: input.Body.SecondaryKinds,
+			Tags:           input.Body.Tags, OperatedBy: currentUserID(ctx),
 		})
 		if err != nil {
 			return nil, toAPIError(err, "修改软件需求失败")
@@ -192,6 +194,10 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("排除需求必须填写原因")
 	case errors.Is(err, requirementsservice.ErrInvalidKind):
 		return huma.Error400BadRequest("主需求性质不正确")
+	case errors.Is(err, requirementsservice.ErrInvalidSecondaryKind):
+		return huma.Error400BadRequest("副需求类型不正确")
+	case errors.Is(err, requirementsservice.ErrSecondaryKindRepeat):
+		return huma.Error400BadRequest("副需求类型不能与主需求类型相同")
 	default:
 		return huma.Error500InternalServerError(fallback)
 	}

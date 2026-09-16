@@ -53,7 +53,7 @@ export function MemberFields({
           </SelectContent>
         </Select>
         <FieldDescription>负责人保存后自动加入项目成员。</FieldDescription>
-        {ownerError ? <FieldError>{ownerError}</FieldError> : null}
+        <FieldError>{ownerError}</FieldError>
       </Field>
 
       <Field className="gap-2.5">

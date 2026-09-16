@@ -77,7 +77,7 @@ export function UserFormDialog({
               placeholder="如 zhangsan"
               autoComplete="off"
             />
-            {errors.username ? <FieldError>{errors.username}</FieldError> : null}
+            <FieldError>{errors.username}</FieldError>
           </Field>
 
           <Field data-invalid={errors.displayName ? true : undefined}>
@@ -92,7 +92,7 @@ export function UserFormDialog({
               aria-invalid={Boolean(errors.displayName)}
               placeholder="如 张三"
             />
-            {errors.displayName ? <FieldError>{errors.displayName}</FieldError> : null}
+            <FieldError>{errors.displayName}</FieldError>
           </Field>
 
           <Field data-invalid={errors.password ? true : undefined}>
@@ -116,7 +116,7 @@ export function UserFormDialog({
               autoComplete="new-password"
               disabled={editingProtectedAdmin}
             />
-            {errors.password ? <FieldError>{errors.password}</FieldError> : null}
+            <FieldError>{errors.password}</FieldError>
           </Field>
 
           <DialogFooter>

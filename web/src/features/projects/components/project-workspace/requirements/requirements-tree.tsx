@@ -1,11 +1,13 @@
-import { BookOpen, ChevronRight, FileText, Plus } from "lucide-react";
+import { BookOpen, ChevronRight, FileText, Keyboard, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { RequirementRecord, RequirementSource } from "@/features/requirements/types";
+import { RequirementShortcutsDialog } from "./requirement-shortcuts-dialog";
 
 type ConfirmedRequirementNode = {
   key: string;
@@ -30,6 +32,7 @@ export function RequirementsTree({
   onCreate: () => void;
 }) {
   const nodes = buildConfirmedTree(sources, requirements);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   return (
     <aside className="requirements-tree-shell" aria-label="需求目录容器">
@@ -40,15 +43,35 @@ export function RequirementsTree({
               已确认需求
             </TabsTrigger>
           </TabsList>
-          <Button type="button" size="sm" className="h-7" onClick={onCreate}>
-            <Plus data-icon="inline-start" aria-hidden />
-            新增确认需求
-          </Button>
+          <div className="requirements-tree-actions">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  className="requirements-shortcut-trigger"
+                  aria-label="快捷键与功能说明"
+                  onClick={() => setShortcutsOpen(true)}
+                >
+                  <Keyboard aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="requirements-shortcut-tooltip">
+                快捷键与功能说明
+              </TooltipContent>
+            </Tooltip>
+            <Button type="button" size="sm" className="h-7" onClick={onCreate}>
+              <Plus data-icon="inline-start" aria-hidden />
+              新增确认需求
+            </Button>
+          </div>
         </div>
         <TabsContent value="confirmed" className="requirements-tree-content">
           <ConfirmedTree nodes={nodes} selectedId={selectedId} onSelect={onSelect} />
         </TabsContent>
       </Tabs>
+      <RequirementShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </aside>
   );
 }

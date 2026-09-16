@@ -28,6 +28,7 @@ type Requirement struct {
 	Name               string    `gorm:"column:name" json:"name"`
 	Description        string    `gorm:"column:description" json:"description"`
 	PrimaryKind        string    `gorm:"column:primary_kind" json:"primaryKind"`
+	SecondaryKinds     string    `gorm:"column:secondary_kinds" json:"secondaryKinds"`
 	Tags               string    `gorm:"column:tags" json:"tags"`
 	Origin             string    `gorm:"column:origin" json:"origin"`
 	SourceAnchor       string    `gorm:"column:source_anchor" json:"sourceAnchor"`

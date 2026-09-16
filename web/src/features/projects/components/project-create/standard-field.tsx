@@ -75,7 +75,7 @@ export function StandardField({
           快捷录入
         </Button>
       </div>
-      {error ? <FieldError id="reference-standard-error">{error}</FieldError> : null}
+      <FieldError id="reference-standard-error">{error}</FieldError>
       <StandardEditor
         key={editorSession}
         open={quickEntryOpen}

@@ -1,5 +1,6 @@
 import { CheckCircle2, CloudUpload, FileText, Link2, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Badge } from "@/components/ui/badge";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import type {
 } from "@/features/requirements/types";
 import {
   getRequirementDraftErrors,
+  getRequirementSecondaryKindOptions,
   isRequirementDraftValid,
   requirementKindOptions,
   requirementSourceLabel,
@@ -44,6 +46,9 @@ export function RequirementDetail({
   const kindLabel = requirementKindOptions.find(
     (option) => option.value === draft.primaryKind,
   )?.label;
+  const secondaryKindLabels = draft.secondaryKinds.map(
+    (kind) => requirementKindOptions.find((option) => option.value === kind)?.label ?? kind,
+  );
   const errors = getRequirementDraftErrors(draft);
   const status = dirty ? saveState : "saved";
   const saveDraft = useCallback(async () => {
@@ -58,6 +63,7 @@ export function RequirementDetail({
           name: draft.name.trim(),
           description: draft.description.trim(),
           primaryKind: draft.primaryKind,
+          secondaryKinds: draft.secondaryKinds,
           tags: requirement.tags,
         }),
         new Promise((resolve) => window.setTimeout(resolve, 500)),
@@ -87,6 +93,9 @@ export function RequirementDetail({
         <div className="requirement-detail-status">
           <Badge variant="primary">已确认</Badge>
           <Badge variant="outline">{kindLabel ?? "其他"}</Badge>
+          {secondaryKindLabels.length ? (
+            <Badge variant="outline">副类型：{secondaryKindLabels.join(" / ")}</Badge>
+          ) : null}
           <span data-save-state={status} aria-live="polite">
             {status === "saving" ? (
               <>
@@ -128,9 +137,7 @@ export function RequirementDetail({
               aria-describedby={errors.chapterNumber ? "detail-chapter-error" : undefined}
               onChange={(event) => update("chapterNumber", event.target.value)}
             />
-            {errors.chapterNumber ? (
-              <FieldError id="detail-chapter-error">{errors.chapterNumber}</FieldError>
-            ) : null}
+            <FieldError id="detail-chapter-error">{errors.chapterNumber}</FieldError>
           </Field>
           <Field>
             <FieldLabel htmlFor="detail-code">标识</FieldLabel>
@@ -157,7 +164,7 @@ export function RequirementDetail({
               aria-describedby={errors.name ? "detail-name-error" : undefined}
               onChange={(event) => update("name", event.target.value)}
             />
-            {errors.name ? <FieldError id="detail-name-error">{errors.name}</FieldError> : null}
+            <FieldError id="detail-name-error">{errors.name}</FieldError>
           </Field>
           <Field data-invalid={errors.primaryKind ? true : undefined}>
             <FieldLabel htmlFor="detail-kind">
@@ -168,7 +175,15 @@ export function RequirementDetail({
             </FieldLabel>
             <Select
               value={draft.primaryKind}
-              onValueChange={(value) => update("primaryKind", value as RequirementPrimaryKind)}
+              onValueChange={(value) => {
+                const primaryKind = value as RequirementPrimaryKind;
+                setDraft((previous) => ({
+                  ...previous,
+                  primaryKind,
+                  secondaryKinds: previous.secondaryKinds.filter((kind) => kind !== primaryKind),
+                }));
+                setSaveState("editing");
+              }}
             >
               <SelectTrigger
                 id="detail-kind"
@@ -187,9 +202,28 @@ export function RequirementDetail({
                 ))}
               </SelectContent>
             </Select>
-            {errors.primaryKind ? (
-              <FieldError id="detail-kind-error">{errors.primaryKind}</FieldError>
-            ) : null}
+            <FieldError id="detail-kind-error">{errors.primaryKind}</FieldError>
+          </Field>
+
+          <Field className="requirement-detail-secondary">
+            <FieldLabel htmlFor="detail-secondary-kind">副类型</FieldLabel>
+            <MultiSelectCombobox
+              id="detail-secondary-kind"
+              ariaLabel="编辑副类型"
+              options={getRequirementSecondaryKindOptions(draft.primaryKind)}
+              value={draft.secondaryKinds}
+              onChange={(secondaryKinds) =>
+                update(
+                  "secondaryKinds",
+                  secondaryKinds as ReturnType<typeof toDraft>["secondaryKinds"],
+                )
+              }
+              placeholder="可选，多选"
+              searchPlaceholder="搜索副类型"
+              emptyText="没有匹配的副类型"
+              className="requirements-secondary-select"
+            />
+            <FieldError id="detail-secondary-kind-error">{errors.secondaryKinds}</FieldError>
           </Field>
         </div>
 
@@ -209,9 +243,7 @@ export function RequirementDetail({
             aria-describedby={errors.description ? "detail-description-error" : undefined}
             onChange={(event) => update("description", event.target.value)}
           />
-          {errors.description ? (
-            <FieldError id="detail-description-error">{errors.description}</FieldError>
-          ) : null}
+          <FieldError id="detail-description-error">{errors.description}</FieldError>
           <p className="requirement-detail-hint">支持多行段落；表格与图片先保留原文占位。</p>
         </Field>
 
@@ -250,5 +282,6 @@ function toDraft(requirement: RequirementRecord) {
     name: requirement.name,
     description: requirement.description,
     primaryKind: requirement.primaryKind,
+    secondaryKinds: requirement.secondaryKinds,
   };
 }

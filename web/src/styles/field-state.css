@@ -16,13 +16,28 @@
   display: grid;
   grid-template-rows: 1fr;
   overflow: hidden;
+}
+
+[data-slot="field-error"][data-state="enter"] {
   animation: field-error-container-enter 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+[data-slot="field-error"][data-state="exit"] {
+  animation: field-error-container-exit 0.18s cubic-bezier(0.32, 0.72, 0, 1) both;
+  pointer-events: none;
 }
 
 [data-slot="field-error-content"] {
   min-height: 0;
   overflow: hidden;
+}
+
+[data-slot="field-error"][data-state="enter"] [data-slot="field-error-content"] {
   animation: field-error-message-enter 0.18s cubic-bezier(0.32, 0.72, 0, 1) 0.035s both;
+}
+
+[data-slot="field-error"][data-state="exit"] [data-slot="field-error-content"] {
+  animation: field-error-message-exit 0.16s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
 [data-slot="input"]:not([data-slot="composite-input"] [data-slot="input"]),
@@ -148,6 +163,30 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes field-error-container-exit {
+  from {
+    grid-template-rows: 1fr;
+    margin-block-start: 0;
+  }
+
+  to {
+    grid-template-rows: 0fr;
+    margin-block-start: calc(-1 * var(--field-gap, 0.5rem));
+  }
+}
+
+@keyframes field-error-message-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-0.12rem);
   }
 }
 

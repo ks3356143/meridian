@@ -354,7 +354,7 @@ export function ReceivedAssetTable({
                 onCheckedChange={(checked) => onToggleAll(checked === true)}
               />
             </TableHead>
-            <TableHead className="w-[19rem] min-w-[16rem] text-left">工作对象 / 原始文件</TableHead>
+            <TableHead className="w-[19rem] min-w-[16rem]">工作对象 / 原始文件</TableHead>
             <TableHead className="w-[10.5rem]">对象类型</TableHead>
             <TableHead className="w-[6.5rem]">版本</TableHead>
             <TableHead className="w-[8.5rem]">提供方</TableHead>

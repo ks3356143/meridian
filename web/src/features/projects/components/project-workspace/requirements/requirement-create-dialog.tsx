@@ -1,5 +1,6 @@
-import { Info, Loader2, Save } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { Info, Loader2, Plus, Save } from "lucide-react";
+import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +29,7 @@ import type {
 } from "@/features/requirements/types";
 import {
   getRequirementDraftErrors,
+  getRequirementSecondaryKindOptions,
   requirementKindOptions,
   requirementSourceLabel,
   type RequirementDraft,
@@ -38,7 +40,7 @@ type CreateRequirementValues = RequirementDraft & {
 };
 
 type TouchedRequirementFields = Record<
-  "sourceId" | "chapterNumber" | "name" | "description" | "primaryKind",
+  "sourceId" | "chapterNumber" | "name" | "description" | "primaryKind" | "secondaryKinds",
   boolean
 >;
 
@@ -58,6 +60,9 @@ export function RequirementCreateDialog({
   const [values, setValues] = useState<CreateRequirementValues>(() => emptyValues(sources));
   const [touched, setTouched] = useState<TouchedRequirementFields>(() => emptyTouched());
   const [submitted, setSubmitted] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const continueButtonRef = useRef<HTMLButtonElement>(null);
   const errors = {
     sourceId: values.sourceId ? undefined : "来源文档必填",
     ...getRequirementDraftErrors(values),
@@ -90,6 +95,14 @@ export function RequirementCreateDialog({
     setValues((previous) => ({ ...previous, [field]: value }));
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (!event.ctrlKey && !event.metaKey) return;
+    if (event.key !== "Enter" || submitting) return;
+
+    event.preventDefault();
+    formRef.current?.requestSubmit(continueButtonRef.current);
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
@@ -105,8 +118,30 @@ export function RequirementCreateDialog({
       name: values.name.trim(),
       description: values.description.trim(),
       primaryKind: values.primaryKind,
+      secondaryKinds: values.secondaryKinds,
       tags: [],
     });
+    const nativeEvent = event.nativeEvent as SubmitEvent;
+    const continueAfterSave =
+      nativeEvent.submitter instanceof HTMLButtonElement &&
+      nativeEvent.submitter.value === "continue";
+
+    if (continueAfterSave) {
+      setValues({
+        sourceId: source.id,
+        chapterNumber: values.chapterNumber.trim(),
+        externalIdentifier: "",
+        name: "",
+        description: "",
+        primaryKind: values.primaryKind,
+        secondaryKinds: values.secondaryKinds,
+      });
+      setTouched(emptyTouched());
+      setSubmitted(false);
+      nameInputRef.current?.focus();
+      return created;
+    }
+
     reset();
     onOpenChange(false);
     return created;
@@ -114,7 +149,7 @@ export function RequirementCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>新增确认需求</DialogTitle>
           <DialogDescription>
@@ -122,7 +157,7 @@ export function RequirementCreateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form className="flex flex-col gap-4" noValidate onSubmit={submit}>
+        <form className="flex flex-col gap-4" noValidate onSubmit={submit} ref={formRef}>
           <div className="requirements-dialog-grid">
             <Field data-invalid={visibleError("sourceId") ? true : undefined}>
               <FieldLabel htmlFor="requirement-source">
@@ -153,9 +188,7 @@ export function RequirementCreateDialog({
                   ))}
                 </SelectContent>
               </Select>
-              {visibleError("sourceId") ? (
-                <FieldError id="requirement-source-error">{visibleError("sourceId")}</FieldError>
-              ) : null}
+              <FieldError id="requirement-source-error">{visibleError("sourceId")}</FieldError>
             </Field>
 
             <Field data-invalid={visibleError("chapterNumber") ? true : undefined}>
@@ -178,11 +211,9 @@ export function RequirementCreateDialog({
                 onBlur={() => touch("chapterNumber")}
                 onChange={(event) => update("chapterNumber", event.target.value)}
               />
-              {visibleError("chapterNumber") ? (
-                <FieldError id="requirement-chapter-error">
-                  {visibleError("chapterNumber")}
-                </FieldError>
-              ) : null}
+              <FieldError id="requirement-chapter-error">
+                {visibleError("chapterNumber")}
+              </FieldError>
             </Field>
 
             <Field>
@@ -224,6 +255,7 @@ export function RequirementCreateDialog({
               </FieldLabel>
               <Input
                 id="requirement-name"
+                ref={nameInputRef}
                 value={values.name}
                 autoComplete="off"
                 placeholder="例如 指令准确率性能测试"
@@ -233,9 +265,7 @@ export function RequirementCreateDialog({
                 onBlur={() => touch("name")}
                 onChange={(event) => update("name", event.target.value)}
               />
-              {visibleError("name") ? (
-                <FieldError id="requirement-name-error">{visibleError("name")}</FieldError>
-              ) : null}
+              <FieldError id="requirement-name-error">{visibleError("name")}</FieldError>
             </Field>
 
             <Field data-invalid={visibleError("primaryKind") ? true : undefined}>
@@ -247,7 +277,14 @@ export function RequirementCreateDialog({
               </FieldLabel>
               <Select
                 value={values.primaryKind}
-                onValueChange={(value) => update("primaryKind", value as RequirementPrimaryKind)}
+                onValueChange={(value) => {
+                  const primaryKind = value as RequirementPrimaryKind;
+                  setValues((previous) => ({
+                    ...previous,
+                    primaryKind,
+                    secondaryKinds: previous.secondaryKinds.filter((kind) => kind !== primaryKind),
+                  }));
+                }}
               >
                 <SelectTrigger
                   id="requirement-kind"
@@ -269,9 +306,30 @@ export function RequirementCreateDialog({
                   ))}
                 </SelectContent>
               </Select>
-              {visibleError("primaryKind") ? (
-                <FieldError id="requirement-kind-error">{visibleError("primaryKind")}</FieldError>
-              ) : null}
+              <FieldError id="requirement-kind-error">{visibleError("primaryKind")}</FieldError>
+            </Field>
+
+            <Field className="requirements-dialog-secondary">
+              <FieldLabel htmlFor="requirement-secondary-kind">副类型</FieldLabel>
+              <MultiSelectCombobox
+                id="requirement-secondary-kind"
+                ariaLabel="选择副类型"
+                options={getRequirementSecondaryKindOptions(values.primaryKind)}
+                value={values.secondaryKinds}
+                onChange={(secondaryKinds) =>
+                  update(
+                    "secondaryKinds",
+                    secondaryKinds as CreateRequirementValues["secondaryKinds"],
+                  )
+                }
+                placeholder="可选，多选"
+                searchPlaceholder="搜索副类型"
+                emptyText="没有匹配的副类型"
+                className="requirements-secondary-select"
+              />
+              <FieldError id="requirement-secondary-kind-error">
+                {visibleError("secondaryKinds")}
+              </FieldError>
             </Field>
 
             <Field
@@ -297,15 +355,13 @@ export function RequirementCreateDialog({
                 onBlur={() => touch("description")}
                 onChange={(event) => update("description", event.target.value)}
               />
-              {visibleError("description") ? (
-                <FieldError id="requirement-description-error">
-                  {visibleError("description")}
-                </FieldError>
-              ) : null}
+              <FieldError id="requirement-description-error">
+                {visibleError("description")}
+              </FieldError>
             </Field>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-wrap">
             <Button type="button" variant="outline" onClick={close}>
               取消
             </Button>
@@ -316,6 +372,20 @@ export function RequirementCreateDialog({
                 <Save data-icon="inline-start" aria-hidden />
               )}
               保存
+            </Button>
+            <Button
+              ref={continueButtonRef}
+              type="submit"
+              value="continue"
+              aria-keyshortcuts="Control+Enter Meta+Enter"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden />
+              ) : (
+                <Plus data-icon="inline-start" aria-hidden />
+              )}
+              保存并继续
             </Button>
           </DialogFooter>
         </form>
@@ -332,6 +402,7 @@ function emptyValues(sources: RequirementSource[]): CreateRequirementValues {
     name: "",
     description: "",
     primaryKind: "functional",
+    secondaryKinds: [],
   };
 }
 
@@ -342,5 +413,6 @@ function emptyTouched(): TouchedRequirementFields {
     name: false,
     description: false,
     primaryKind: false,
+    secondaryKinds: false,
   };
 }

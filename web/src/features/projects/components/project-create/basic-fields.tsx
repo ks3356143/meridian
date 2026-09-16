@@ -73,9 +73,7 @@ export function BasicFields({
           />
         </div>
         <FieldDescription>输入 4 到 5 位数字，完整标识如 R2607 或 R26070。</FieldDescription>
-        {errors.identifier ? (
-          <FieldError id="project-identifier-error">{errors.identifier}</FieldError>
-        ) : null}
+        <FieldError id="project-identifier-error">{errors.identifier}</FieldError>
       </Field>
 
       <TextField
@@ -175,7 +173,7 @@ function TextField({
         aria-describedby={error ? `${id}-error` : undefined}
         onBlur={onBlur}
       />
-      {error ? <FieldError id={`${id}-error`}>{error}</FieldError> : null}
+      <FieldError id={`${id}-error`}>{error}</FieldError>
     </Field>
   );
 }

@@ -117,7 +117,7 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
             aria-invalid={Boolean(errors.username)}
             onChange={(event) => updateValue("username", event.target.value)}
           />
-          {errors.username ? <FieldError>{errors.username}</FieldError> : null}
+          <FieldError>{errors.username}</FieldError>
         </Field>
 
         <Field className="login-field" data-invalid={errors.password ? true : undefined}>
@@ -131,7 +131,7 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
             aria-invalid={Boolean(errors.password)}
             onChange={(event) => updateValue("password", event.target.value)}
           />
-          {errors.password ? <FieldError>{errors.password}</FieldError> : null}
+          <FieldError>{errors.password}</FieldError>
         </Field>
       </FieldGroup>
 

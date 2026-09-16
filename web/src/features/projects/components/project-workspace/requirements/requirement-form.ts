@@ -6,6 +6,7 @@ export type RequirementDraft = {
   name: string;
   description: string;
   primaryKind: RequirementPrimaryKind;
+  secondaryKinds: RequirementPrimaryKind[];
 };
 
 export const requirementKindOptions: Array<{
@@ -37,8 +38,23 @@ export function getRequirementDraftErrors(draft: RequirementDraft) {
     primaryKind: requirementKindOptions.some((option) => option.value === draft.primaryKind)
       ? undefined
       : "需求类型必填",
+    secondaryKinds: draft.secondaryKinds.some((kind) => kind === draft.primaryKind)
+      ? "副类型不能与主类型相同"
+      : draft.secondaryKinds.some(
+            (kind) => !requirementKindOptions.some((option) => option.value === kind),
+          )
+        ? "副类型不正确"
+        : undefined,
     description: draft.description.trim() ? undefined : "需求描述必填",
   };
+}
+
+export function getRequirementSecondaryKindOptions(primaryKind: RequirementPrimaryKind) {
+  return requirementKindOptions.map((option) => ({
+    ...option,
+    disabled: option.value === primaryKind,
+    description: option.value === primaryKind ? "与主类型相同" : undefined,
+  }));
 }
 
 export function requirementSourceLabel(source: RequirementSource) {

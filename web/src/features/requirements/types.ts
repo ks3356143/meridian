@@ -24,6 +24,7 @@ export interface RequirementRecord {
   name: string;
   description: string;
   primaryKind: RequirementPrimaryKind;
+  secondaryKinds: RequirementPrimaryKind[];
   tags: string[];
   origin: RequirementOrigin;
   status: RequirementStatus;
@@ -45,5 +46,6 @@ export interface SaveRequirementPayload {
   name: string;
   description: string;
   primaryKind: RequirementPrimaryKind;
+  secondaryKinds: RequirementPrimaryKind[];
   tags: string[];
 }

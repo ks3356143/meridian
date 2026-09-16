@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 
@@ -198,18 +198,47 @@ function FieldError({
     );
   }, [children, errors]);
 
-  if (!content) {
+  const [lastContent, setLastContent] = useState(content);
+  const [exiting, setExiting] = useState(false);
+
+  if (content) {
+    if (exiting) setExiting(false);
+    if (lastContent !== content) setLastContent(content);
+  } else if (lastContent && !exiting) {
+    setExiting(true);
+  }
+
+  useEffect(() => {
+    if (content || !exiting) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = window.setTimeout(
+      () => {
+        setLastContent(null);
+        setExiting(false);
+      },
+      reducedMotion ? 0 : 180,
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [content, exiting]);
+
+  if (!lastContent) {
     return null;
   }
 
+  const displayContent = content ?? lastContent;
+
   return (
     <div
-      role="alert"
+      role={exiting ? undefined : "alert"}
+      aria-hidden={exiting ? true : undefined}
       data-slot="field-error"
+      data-state={exiting ? "exit" : "enter"}
       className={cn("text-sm font-normal text-destructive", className)}
       {...props}
     >
-      <div data-slot="field-error-content">{content}</div>
+      <div data-slot="field-error-content">{displayContent}</div>
     </div>
   );
 }

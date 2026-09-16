@@ -551,6 +551,13 @@
   min-width: 0;
 }
 
+.requirements-tree-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
 .requirements-tree-tab {
   font-size: 0.72rem;
   padding-inline: 0.75rem;
@@ -981,6 +988,10 @@
     minmax(7rem, 0.75fr);
 }
 
+.requirement-detail-secondary {
+  grid-column: span 2;
+}
+
 .requirements-detail-shell [data-slot="field"] {
   gap: 0.3rem;
   --field-gap: 0.3rem;
@@ -1013,6 +1024,12 @@
 .requirements-detail-shell [data-slot="select-trigger"] {
   font-size: 0.75rem;
   height: 1.9rem;
+}
+
+.requirements-detail-shell [data-slot="multi-select-trigger"] {
+  font-size: 0.75rem;
+  min-height: 1.9rem;
+  padding-block: 0.15rem;
 }
 
 .requirements-detail-shell [data-slot="textarea"] {
@@ -1094,6 +1111,10 @@
   grid-column: span 2;
 }
 
+.requirements-dialog-secondary {
+  grid-column: span 2;
+}
+
 .requirements-dialog-span {
   grid-column: 1 / -1;
 }
@@ -1161,9 +1182,120 @@
   height: 2rem;
 }
 
+.requirements-dialog-grid [data-slot="multi-select-trigger"] {
+  font-size: 0.78rem;
+  min-height: 2rem;
+  padding-block: 0.18rem;
+}
+
 .requirements-dialog-grid [data-slot="textarea"] {
   font-size: 0.8rem;
   line-height: 1.6;
+}
+
+.requirements-shortcut-title {
+  align-items: center;
+  color: var(--foreground);
+  display: flex;
+  gap: 0.45rem;
+}
+
+.requirements-shortcut-title svg {
+  color: var(--primary);
+  height: 1rem;
+  width: 1rem;
+}
+
+.requirements-shortcut-tabs {
+  gap: 0.55rem;
+}
+
+.requirements-shortcut-tabs-list {
+  height: 2.25rem;
+}
+
+.requirements-shortcut-tabs-list [data-slot="tabs-trigger"] {
+  font-size: 0.78rem;
+  padding-inline: 0.8rem;
+}
+
+.requirements-shortcut-count {
+  font-size: 0.65rem;
+  height: 1.1rem;
+  min-width: 1.25rem;
+  padding-inline: 0.25rem;
+}
+
+.requirements-shortcut-content {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--primary) 3%, var(--card));
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--primary) 48%, transparent),
+    0 1px 2px #142a1e08;
+  max-height: min(24rem, 52vh);
+  overflow-y: auto;
+  padding: 0.15rem;
+}
+
+.requirements-shortcut-table[data-slot="table"] {
+  min-width: 34rem;
+}
+
+.requirements-shortcut-table [data-slot="table-head"] {
+  font-size: 0.68rem;
+  height: 2rem;
+}
+
+.requirements-shortcut-table [data-slot="table-cell"] {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  padding-block: 0.48rem;
+}
+
+.requirements-shortcut-keys {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.requirements-shortcut-key {
+  align-items: center;
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+  box-shadow:
+    inset 0 -1px 0 color-mix(in srgb, var(--primary) 14%, transparent),
+    0 2px 5px -4px color-mix(in srgb, var(--primary) 55%, transparent);
+  color: var(--foreground);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 640;
+  height: 1.38rem;
+  justify-content: center;
+  line-height: 1;
+  min-width: 1.38rem;
+  padding-inline: 0.34rem;
+}
+
+.requirements-shortcut-plus,
+.requirements-shortcut-scope {
+  color: var(--muted-foreground);
+}
+
+.requirements-shortcut-scope {
+  font-weight: 620;
+  white-space: nowrap;
+}
+
+.requirements-shortcut-description {
+  max-width: 30rem;
+  white-space: normal;
+}
+
+.requirements-shortcut-tooltip,
+.requirements-shortcut-trigger {
+  color: var(--info);
 }
 
 .workspace-resizable-handle {

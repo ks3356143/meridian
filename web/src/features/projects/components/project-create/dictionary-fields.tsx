@@ -132,7 +132,7 @@ function DictionaryField({
         emptyText="没有匹配的字典项"
         invalid={Boolean(error)}
       />
-      {error ? <FieldError id={`${category}-error`}>{error}</FieldError> : null}
+      <FieldError id={`${category}-error`}>{error}</FieldError>
       <div className="flex items-center gap-2">
         <Input
           value={customValue}

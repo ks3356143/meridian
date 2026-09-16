@@ -50,6 +50,8 @@ var (
 	ErrNoRequirements       = errors.New("没有可操作的需求")
 	ErrReasonRequired       = errors.New("排除需求必须填写原因")
 	ErrInvalidKind          = errors.New("主需求性质不正确")
+	ErrInvalidSecondaryKind = errors.New("副需求类型不正确")
+	ErrSecondaryKindRepeat  = errors.New("副需求类型不能与主需求类型相同")
 )
 
 type Service struct {
@@ -107,6 +109,7 @@ type RequirementResponse struct {
 	Name               string   `json:"name"`
 	Description        string   `json:"description"`
 	PrimaryKind        string   `json:"primaryKind"`
+	SecondaryKinds     []string `json:"secondaryKinds"`
 	Tags               []string `json:"tags"`
 	Origin             string   `json:"origin"`
 	SourceAnchor       string   `json:"sourceAnchor"`
@@ -147,6 +150,7 @@ type CreateRequirementInput struct {
 	Name               string
 	Description        string
 	PrimaryKind        string
+	SecondaryKinds     []string
 	Tags               []string
 	OperatedBy         string
 }
@@ -159,6 +163,7 @@ type UpdateRequirementInput struct {
 	Name               string
 	Description        string
 	PrimaryKind        string
+	SecondaryKinds     []string
 	Tags               []string
 	OperatedBy         string
 }
@@ -282,6 +287,10 @@ func (s *Service) CreateRequirement(ctx context.Context, input CreateRequirement
 	if err := validatePrimaryKind(input.PrimaryKind); err != nil {
 		return RequirementResponse{}, err
 	}
+	secondaryKinds, err := normalizeSecondaryKinds(input.PrimaryKind, input.SecondaryKinds)
+	if err != nil {
+		return RequirementResponse{}, err
+	}
 	chapter, name, description, err := validateRequirement(input.ChapterNumber, input.Name, input.Description)
 	if err != nil {
 		return RequirementResponse{}, err
@@ -291,7 +300,7 @@ func (s *Service) CreateRequirement(ctx context.Context, input CreateRequirement
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		requirement, createErr := createRequirementInTx(tx, source, input.SectionID, chapter,
 			strings.TrimSpace(input.ExternalIdentifier), name, description, input.PrimaryKind,
-			normalizeTags(input.Tags), OriginManual, "", StatusOfficial, input.OperatedBy)
+			secondaryKinds, normalizeTags(input.Tags), OriginManual, "", StatusOfficial, input.OperatedBy)
 		if createErr != nil {
 			return createErr
 		}
@@ -351,7 +360,7 @@ func (s *Service) BulkCreate(ctx context.Context, input BulkCreateInput) (BulkCr
 				return validateErr
 			}
 			if _, createErr := createRequirementInTx(tx, source, "", chapter, "", name,
-				description, kind, normalizeTags(nil), OriginManual, "", StatusOfficial, input.OperatedBy); createErr != nil {
+				description, kind, nil, normalizeTags(nil), OriginManual, "", StatusOfficial, input.OperatedBy); createErr != nil {
 				return createErr
 			}
 			result.RequirementCount++
@@ -378,6 +387,22 @@ func (s *Service) UpdateRequirement(ctx context.Context, input UpdateRequirement
 	if err := validatePrimaryKind(input.PrimaryKind); err != nil {
 		return RequirementResponse{}, err
 	}
+	var secondaryKinds []string
+	if input.SecondaryKinds == nil {
+		var normalizeErr error
+		secondaryKinds, normalizeErr = normalizeSecondaryKinds(
+			input.PrimaryKind, parseStringArray(current.SecondaryKinds),
+		)
+		if normalizeErr != nil {
+			return RequirementResponse{}, normalizeErr
+		}
+	} else {
+		var normalizeErr error
+		secondaryKinds, normalizeErr = normalizeSecondaryKinds(input.PrimaryKind, input.SecondaryKinds)
+		if normalizeErr != nil {
+			return RequirementResponse{}, normalizeErr
+		}
+	}
 	chapter, name, description, err := validateRequirement(input.ChapterNumber, input.Name, input.Description)
 	if err != nil {
 		return RequirementResponse{}, err
@@ -389,6 +414,7 @@ func (s *Service) UpdateRequirement(ctx context.Context, input UpdateRequirement
 	}
 	if current.ChapterNumber == chapter && current.Name == name &&
 		current.Description == description && current.PrimaryKind == input.PrimaryKind &&
+		strings.Join(parseSecondaryKinds(current.SecondaryKinds), ",") == strings.Join(secondaryKinds, ",") &&
 		strings.Join(parseTags(current.Tags), ",") == strings.Join(tags, ",") &&
 		current.ExternalIdentifier == externalID {
 		return RequirementResponse{}, ErrNoChanges
@@ -439,6 +465,7 @@ func (s *Service) UpdateRequirement(ctx context.Context, input UpdateRequirement
 			"name":                name,
 			"description":         description,
 			"primary_kind":        input.PrimaryKind,
+			"secondary_kinds":     marshalTags(secondaryKinds),
 			"tags":                marshalTags(tags),
 			"updated_at":          now,
 		}).Error; updateErr != nil {
@@ -655,7 +682,7 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 			}
 
 			created, createErr := createRequirementInTx(tx, source, section.ID, node.ChapterNumber, node.ExternalIdentifier,
-				node.Title, node.Description, node.PrimaryKind, []string{}, OriginParsed,
+				node.Title, node.Description, node.PrimaryKind, nil, []string{}, OriginParsed,
 				node.SourceAnchor, StatusCandidate, operatedBy)
 			if createErr != nil {
 				return createErr
@@ -870,6 +897,7 @@ func createRequirementInTx(
 	name string,
 	description string,
 	primaryKind string,
+	secondaryKinds []string,
 	tags []string,
 	origin string,
 	sourceAnchor string,
@@ -931,7 +959,8 @@ func createRequirementInTx(
 		ID: requirementID, ProjectID: source.ProjectID, SourceVersionID: source.ID,
 		SectionID: &section.ID, ChapterNumber: chapter, ExternalIdentifier: externalID,
 		Name: name, Description: description, PrimaryKind: primaryKind,
-		Tags: marshalTags(tags), Origin: origin, SourceAnchor: sourceAnchor,
+		SecondaryKinds: marshalTags(secondaryKinds), Tags: marshalTags(tags),
+		Origin: origin, SourceAnchor: sourceAnchor,
 		Status: status, TestItemTaskStatus: testTaskStatus, CreatedBy: operatedBy,
 		CreatedAt: now, UpdatedAt: now,
 	}
@@ -1136,6 +1165,32 @@ func validatePrimaryKind(kind string) error {
 	}
 }
 
+func normalizeSecondaryKinds(primaryKind string, values []string) ([]string, error) {
+	orders := map[string]int{
+		KindFunctional: 0, KindPerformance: 1, KindInterface: 2,
+		KindSafety: 3, KindReliability: 4, KindOther: 5,
+	}
+	seen := make(map[string]bool, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		_, valid := orders[value]
+		if !valid {
+			return nil, ErrInvalidSecondaryKind
+		}
+		if value == primaryKind {
+			return nil, ErrSecondaryKindRepeat
+		}
+		if seen[value] {
+			continue
+		}
+		seen[value] = true
+		result = append(result, value)
+	}
+	sort.Slice(result, func(i int, j int) bool { return orders[result[i]] < orders[result[j]] })
+	return result, nil
+}
+
 func normalizeTags(values []string) []string {
 	seen := make(map[string]bool)
 	result := make([]string, 0, len(values))
@@ -1175,11 +1230,20 @@ func originLabel(origin string) string {
 }
 
 func parseTags(value string) []string {
+	return normalizeTags(parseStringArray(value))
+}
+
+func parseSecondaryKinds(value string) []string {
+	values, _ := normalizeSecondaryKinds("", parseStringArray(value))
+	return values
+}
+
+func parseStringArray(value string) []string {
 	var result []string
 	if err := json.Unmarshal([]byte(value), &result); err != nil {
 		return []string{}
 	}
-	return normalizeTags(result)
+	return result
 }
 
 func dereference(value *string) string {
@@ -1298,7 +1362,8 @@ func toRequirementResponse(requirement Requirement) RequirementResponse {
 		SectionID: dereference(requirement.SectionID), ChapterNumber: requirement.ChapterNumber,
 		ExternalIdentifier: requirement.ExternalIdentifier, Name: requirement.Name,
 		Description: requirement.Description, PrimaryKind: requirement.PrimaryKind,
-		Tags: parseTags(requirement.Tags), Origin: requirement.Origin,
+		SecondaryKinds: parseSecondaryKinds(requirement.SecondaryKinds),
+		Tags:           parseTags(requirement.Tags), Origin: requirement.Origin,
 		SourceAnchor: requirement.SourceAnchor, Status: requirement.Status,
 		TestItemTaskStatus: requirement.TestItemTaskStatus,
 		CreatedAt:          requirement.CreatedAt.Format(time.RFC3339),

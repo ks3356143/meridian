@@ -144,7 +144,7 @@ export function DictionaryEditor({
               aria-invalid={Boolean(errors.name)}
               aria-describedby={errors.name ? "dictionary-name-error" : undefined}
             />
-            {errors.name ? <FieldError id="dictionary-name-error">{errors.name}</FieldError> : null}
+            <FieldError id="dictionary-name-error">{errors.name}</FieldError>
           </Field>
 
           <Field className="gap-2" data-invalid={errors.sortOrder ? true : undefined}>
@@ -163,9 +163,7 @@ export function DictionaryEditor({
               aria-describedby={errors.sortOrder ? "dictionary-sort-error" : undefined}
             />
             <FieldDescription>数值越小越靠前。</FieldDescription>
-            {errors.sortOrder ? (
-              <FieldError id="dictionary-sort-error">{errors.sortOrder}</FieldError>
-            ) : null}
+            <FieldError id="dictionary-sort-error">{errors.sortOrder}</FieldError>
           </Field>
 
           <div className="border-border bg-muted/35 flex items-center justify-between gap-4 rounded-sm border p-3">

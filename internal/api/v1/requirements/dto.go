@@ -42,6 +42,7 @@ type CreateRequirementRequest struct {
 	Name               string   `json:"name" required:"true"`
 	Description        string   `json:"description" required:"true"`
 	PrimaryKind        string   `json:"primaryKind" required:"true"`
+	SecondaryKinds     []string `json:"secondaryKinds,omitempty"`
 	Tags               []string `json:"tags,omitempty"`
 }
 
@@ -88,6 +89,7 @@ type UpdateRequirementRequest struct {
 	Name               string   `json:"name" required:"true"`
 	Description        string   `json:"description" required:"true"`
 	PrimaryKind        string   `json:"primaryKind" required:"true"`
+	SecondaryKinds     []string `json:"secondaryKinds,omitempty"`
 	Tags               []string `json:"tags,omitempty"`
 }
 

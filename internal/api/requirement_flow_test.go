@@ -37,6 +37,7 @@ type requirementWorkbenchTestResponse struct {
 		Name               string   `json:"name"`
 		Description        string   `json:"description"`
 		PrimaryKind        string   `json:"primaryKind"`
+		SecondaryKinds     []string `json:"secondaryKinds"`
 		Tags               []string `json:"tags"`
 		Origin             string   `json:"origin"`
 		Status             string   `json:"status"`
@@ -87,12 +88,18 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 		Name:            "系统初始化",
 		Description:     "系统应在上电后完成初始化并报告状态。",
 		Kind:            "functional",
+		SecondaryKinds:  []string{"performance", "interface", "performance"},
 		Tags:            []string{"初始化"},
 	}, http.StatusOK)
 	if manualRequirement.Status != "official" ||
 		manualRequirement.TestItemTaskStatus != "pending" ||
 		manualRequirement.PrimaryKind != "functional" {
 		t.Fatalf("手动需求应直接保存为正式需求并记录测试项契约: %+v", manualRequirement)
+	}
+	if len(manualRequirement.SecondaryKinds) != 2 ||
+		manualRequirement.SecondaryKinds[0] != "performance" ||
+		manualRequirement.SecondaryKinds[1] != "interface" {
+		t.Fatalf("副需求类型应去重并按类型顺序保存: %+v", manualRequirement)
 	}
 	if manualRequirement.ExternalIdentifier != "XTCS" {
 		t.Fatalf("空标识应按名称拼音首字母生成四位: %+v", manualRequirement)
@@ -134,6 +141,22 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 		Kind:            "functional",
 		ExternalID:      "XTCS",
 	}, http.StatusConflict)
+	postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "7.2.5",
+		Name:            "主副类型重复",
+		Description:     "副类型不能与主类型相同。",
+		Kind:            "functional",
+		SecondaryKinds:  []string{"functional"},
+	}, http.StatusBadRequest)
+	postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "7.2.6",
+		Name:            "副类型非法",
+		Description:     "副类型必须使用固定枚举。",
+		Kind:            "functional",
+		SecondaryKinds:  []string{"unknown"},
+	}, http.StatusBadRequest)
 	updateConflictBody := map[string]any{
 		"sectionId":          focusedRequirement.SectionID,
 		"chapterNumber":      focusedRequirement.ChapterNumber,
@@ -149,6 +172,53 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	updateConflictBody["externalIdentifier"] = manualRequirement.ExternalIdentifier
 	postJSON(t, handler, token, http.MethodPut,
 		"/api/v1/software-requirements/"+focusedRequirement.ID, updateConflictBody, http.StatusConflict)
+
+	focusedRequirement = putRequirement(t, handler, token, focusedRequirement.ID, map[string]any{
+		"sectionId":          focusedRequirement.SectionID,
+		"chapterNumber":      focusedRequirement.ChapterNumber,
+		"externalIdentifier": focusedRequirement.ExternalIdentifier,
+		"name":               focusedRequirement.Name,
+		"description":        focusedRequirement.Description,
+		"primaryKind":        focusedRequirement.PrimaryKind,
+		"secondaryKinds":     []string{"performance"},
+		"tags":               focusedRequirement.Tags,
+	})
+	if len(focusedRequirement.SecondaryKinds) != 1 || focusedRequirement.SecondaryKinds[0] != "performance" {
+		t.Fatalf("修改需求应保存副需求类型: %+v", focusedRequirement)
+	}
+	postJSON(t, handler, token, http.MethodPut,
+		"/api/v1/software-requirements/"+focusedRequirement.ID, map[string]any{
+			"sectionId":          focusedRequirement.SectionID,
+			"chapterNumber":      focusedRequirement.ChapterNumber,
+			"externalIdentifier": focusedRequirement.ExternalIdentifier,
+			"name":               focusedRequirement.Name,
+			"description":        focusedRequirement.Description,
+			"primaryKind":        "performance",
+			"tags":               focusedRequirement.Tags,
+		}, http.StatusBadRequest)
+	postJSON(t, handler, token, http.MethodPut,
+		"/api/v1/software-requirements/"+focusedRequirement.ID, map[string]any{
+			"sectionId":          focusedRequirement.SectionID,
+			"chapterNumber":      focusedRequirement.ChapterNumber,
+			"externalIdentifier": focusedRequirement.ExternalIdentifier,
+			"name":               focusedRequirement.Name,
+			"description":        focusedRequirement.Description,
+			"primaryKind":        focusedRequirement.PrimaryKind,
+			"tags":               focusedRequirement.Tags,
+		}, http.StatusBadRequest)
+	focusedRequirement = putRequirement(t, handler, token, focusedRequirement.ID, map[string]any{
+		"sectionId":          focusedRequirement.SectionID,
+		"chapterNumber":      focusedRequirement.ChapterNumber,
+		"externalIdentifier": focusedRequirement.ExternalIdentifier,
+		"name":               focusedRequirement.Name,
+		"description":        focusedRequirement.Description,
+		"primaryKind":        focusedRequirement.PrimaryKind,
+		"secondaryKinds":     []string{},
+		"tags":               focusedRequirement.Tags,
+	})
+	if len(focusedRequirement.SecondaryKinds) != 0 {
+		t.Fatalf("显式空数组应清空副需求类型: %+v", focusedRequirement)
+	}
 
 	bulkBody := map[string]any{
 		"sourceVersionId": source.ID,
@@ -289,6 +359,7 @@ type requirementTestPayload struct {
 	Name            string
 	Description     string
 	Kind            string
+	SecondaryKinds  []string
 	Tags            []string
 }
 
@@ -300,6 +371,7 @@ type requirementTestResponse struct {
 	Name               string   `json:"name"`
 	Description        string   `json:"description"`
 	PrimaryKind        string   `json:"primaryKind"`
+	SecondaryKinds     []string `json:"secondaryKinds"`
 	Tags               []string `json:"tags"`
 	Status             string   `json:"status"`
 	TestItemTaskStatus string   `json:"testItemTaskStatus"`
@@ -418,6 +490,7 @@ func postRequirement(
 		"name":               payload.Name,
 		"description":        payload.Description,
 		"primaryKind":        payload.Kind,
+		"secondaryKinds":     payload.SecondaryKinds,
 		"tags":               payload.Tags,
 		"externalIdentifier": payload.ExternalID,
 	}

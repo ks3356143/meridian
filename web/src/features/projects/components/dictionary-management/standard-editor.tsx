@@ -171,7 +171,7 @@ export function StandardEditor({
               aria-invalid={Boolean(errors.name)}
               aria-describedby={errors.name ? "standard-name-error" : undefined}
             />
-            {errors.name ? <FieldError id="standard-name-error">{errors.name}</FieldError> : null}
+            <FieldError id="standard-name-error">{errors.name}</FieldError>
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -192,7 +192,7 @@ export function StandardEditor({
                 aria-invalid={Boolean(errors.code)}
                 aria-describedby={errors.code ? "standard-code-error" : undefined}
               />
-              {errors.code ? <FieldError id="standard-code-error">{errors.code}</FieldError> : null}
+              <FieldError id="standard-code-error">{errors.code}</FieldError>
             </Field>
 
             <Field className="gap-2" data-invalid={errors.publishedDate ? true : undefined}>
@@ -230,9 +230,7 @@ export function StandardEditor({
                   />
                 </PopoverContent>
               </Popover>
-              {errors.publishedDate ? (
-                <FieldError id="standard-date-error">{errors.publishedDate}</FieldError>
-              ) : null}
+              <FieldError id="standard-date-error">{errors.publishedDate}</FieldError>
             </Field>
           </div>
 
@@ -252,9 +250,7 @@ export function StandardEditor({
               aria-invalid={Boolean(errors.source)}
               aria-describedby={errors.source ? "standard-source-error" : undefined}
             />
-            {errors.source ? (
-              <FieldError id="standard-source-error">{errors.source}</FieldError>
-            ) : null}
+            <FieldError id="standard-source-error">{errors.source}</FieldError>
           </Field>
 
           <Field className="gap-2" data-invalid={errors.sortOrder ? true : undefined}>
@@ -273,9 +269,7 @@ export function StandardEditor({
               aria-describedby={errors.sortOrder ? "standard-sort-error" : undefined}
             />
             <FieldDescription>决定依据文件章节顺序。</FieldDescription>
-            {errors.sortOrder ? (
-              <FieldError id="standard-sort-error">{errors.sortOrder}</FieldError>
-            ) : null}
+            <FieldError id="standard-sort-error">{errors.sortOrder}</FieldError>
           </Field>
 
           <div className="grid gap-3 sm:grid-cols-2">
