@@ -68,6 +68,16 @@ export const workObjectsApi = {
     request<ReceivedWorkObject>("PUT", `/api/v1/work-object-versions/${id}`, {}, payload),
   confirm: (id: string) =>
     request<ReceivedWorkObject>("POST", `/api/v1/work-object-versions/${id}/confirm`),
+  uploadParseCopy: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<ReceivedWorkObject>(
+      "POST",
+      `/api/v1/work-object-versions/${id}/parse-copy`,
+      {},
+      formData,
+    );
+  },
   withdraw: (id: string, reason: string) =>
     request<ReceivedWorkObject>(
       "POST",

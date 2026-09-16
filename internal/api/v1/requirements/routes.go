@@ -160,6 +160,8 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error404NotFound("项目不存在")
 	case errors.Is(err, requirementsservice.ErrSourceNotFound):
 		return huma.Error404NotFound("当前已确认的软件需求规格说明不存在")
+	case errors.Is(err, requirementsservice.ErrSourceNotSrs):
+		return huma.Error400BadRequest("仅软件需求规格说明支持自动解析")
 	case errors.Is(err, requirementsservice.ErrNoSourceFile):
 		return huma.Error400BadRequest("该 SRS 没有电子文件，可先使用树状手动录入")
 	case errors.Is(err, requirementsservice.ErrNeedsDocx):
@@ -174,6 +176,10 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error409Conflict("同一 SRS 版本中章节号已存在")
 	case errors.Is(err, requirementsservice.ErrRequirementExists):
 		return huma.Error409Conflict("同一 SRS 版本中有效需求章节号已存在")
+	case errors.Is(err, requirementsservice.ErrRequirementName):
+		return huma.Error409Conflict("同一 SRS 版本中有效需求名称已存在")
+	case errors.Is(err, requirementsservice.ErrRequirementCode):
+		return huma.Error409Conflict("同一 SRS 版本中需求标识已存在")
 	case errors.Is(err, requirementsservice.ErrRequirementNotFound):
 		return huma.Error404NotFound("软件需求不存在")
 	case errors.Is(err, requirementsservice.ErrRequirementNotActive):

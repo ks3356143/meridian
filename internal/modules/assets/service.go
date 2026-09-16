@@ -31,6 +31,8 @@ var (
 	ErrReasonRequired      = errors.New("操作原因不能为空")
 	ErrVersionNotDeletable = errors.New("只有待确认版本允许删除")
 	ErrInvalidVersion      = errors.New("版本号格式不正确")
+	ErrParseCopyNotAllowed = errors.New("只有已确认的主 SRS .doc 版本允许补传 DOCX 解析副本")
+	ErrParseCopyInvalid    = errors.New("解析副本必须是 .docx 文件")
 )
 
 const maxFileSize = 2 << 30
@@ -86,6 +88,12 @@ type UpdateInput struct {
 type LifecycleInput struct {
 	VersionID  string
 	Reason     string
+	OperatedBy string
+}
+
+type ParseCopyInput struct {
+	VersionID  string
+	File       UploadFile
 	OperatedBy string
 }
 
@@ -708,6 +716,71 @@ func (s *Service) Revoke(ctx context.Context, input LifecycleInput) (WorkObjectR
 	return s.findResponseByVersionID(ctx, current.ID)
 }
 
+func (s *Service) UploadParseCopy(ctx context.Context, input ParseCopyInput) (result WorkObjectResponse, err error) {
+	if input.File.Size <= 0 || !strings.EqualFold(fileExtension(input.File.OriginalName), "docx") {
+		return WorkObjectResponse{}, ErrParseCopyInvalid
+	}
+	if input.File.Size > maxFileSize {
+		return WorkObjectResponse{}, fmt.Errorf("解析副本超过 2GB 大小限制")
+	}
+
+	var row struct {
+		WorkObjectVersion
+		ObjectKind  string `gorm:"column:object_kind"`
+		StoragePath string `gorm:"column:storage_path"`
+	}
+	err = s.db.WithContext(ctx).
+		Table("work_object_versions AS v").
+		Select("v.*, w.object_kind, COALESCE(a.storage_path, '') AS storage_path").
+		Joins("JOIN work_objects AS w ON w.id = v.work_object_id").
+		Joins("LEFT JOIN received_assets AS a ON a.work_object_version_id = v.id").
+		Where("v.id = ?", input.VersionID).
+		Scan(&row).Error
+	if err != nil {
+		return WorkObjectResponse{}, fmt.Errorf("查询工作对象版本失败: %w", err)
+	}
+	if row.ID == "" {
+		return WorkObjectResponse{}, ErrVersionNotFound
+	}
+	if row.Status != "confirmed" || row.ObjectKind != "srs" ||
+		!strings.EqualFold(filepath.Ext(row.StoragePath), ".doc") {
+		return WorkObjectResponse{}, ErrParseCopyNotAllowed
+	}
+
+	fileID, err := id.New()
+	if err != nil {
+		return WorkObjectResponse{}, err
+	}
+	relativePath := path.Join(path.Dir(filepath.ToSlash(row.StoragePath)), fileID+".parse.docx")
+	if _, _, err = s.saveFile(relativePath, input.File.Reader); err != nil {
+		return WorkObjectResponse{}, err
+	}
+	databaseSaved := false
+	defer func() {
+		if err != nil && !databaseSaved {
+			s.removeFiles([]string{relativePath})
+		}
+	}()
+
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&WorkObjectVersion{}).Where("id = ?", row.ID).Updates(map[string]any{
+			"parse_storage_path": relativePath,
+			"updated_at":         time.Now(),
+		}).Error; err != nil {
+			return fmt.Errorf("保存解析副本失败: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return WorkObjectResponse{}, err
+	}
+	databaseSaved = true
+	if row.ParseStoragePath != "" && row.ParseStoragePath != relativePath {
+		s.removeFiles([]string{row.ParseStoragePath})
+	}
+	return s.findResponseByVersionID(ctx, row.ID)
+}
+
 func (s *Service) Lifecycle(ctx context.Context, versionID string) ([]LifecycleEventResponse, error) {
 	var current WorkObjectVersion
 	if err := s.db.WithContext(ctx).Where("id = ?", versionID).First(&current).Error; err != nil {
@@ -772,9 +845,7 @@ func (s *Service) Delete(ctx context.Context, versionID string) error {
 	if err != nil {
 		return err
 	}
-	if row.StoragePath != "" {
-		s.removeFiles([]string{row.StoragePath})
-	}
+	s.removeFiles([]string{row.StoragePath, row.ParseStoragePath})
 	return nil
 }
 
@@ -806,7 +877,8 @@ func (s *Service) listRows(ctx context.Context, projectID string) ([]WorkObjectV
 			COALESCE(a.file_type, '') AS file_type,
 			COALESCE(a.mime_type, '') AS mime_type,
 			COALESCE(a.sha256, '') AS sha256,
-			COALESCE(a.storage_path, '') AS storage_path
+			COALESCE(a.storage_path, '') AS storage_path,
+			v.parse_storage_path
 		`).
 		Joins("JOIN work_objects AS w ON w.id = v.work_object_id").
 		Joins("LEFT JOIN received_assets AS a ON a.work_object_version_id = v.id").

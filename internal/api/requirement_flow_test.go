@@ -4,8 +4,11 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -13,6 +16,7 @@ import (
 type requirementWorkbenchTestResponse struct {
 	Sources []struct {
 		ID         string `json:"id"`
+		ObjectKind string `json:"objectKind"`
 		ObjectName string `json:"objectName"`
 		Version    string `json:"version"`
 		ParseState string `json:"parseState"`
@@ -23,11 +27,13 @@ type requirementWorkbenchTestResponse struct {
 		ChapterNumber string `json:"chapterNumber"`
 		Title         string `json:"title"`
 		Origin        string `json:"origin"`
+		InScope       bool   `json:"inScope"`
 	} `json:"sections"`
 	Requirements []struct {
 		ID                 string   `json:"id"`
 		SectionID          string   `json:"sectionId"`
 		ChapterNumber      string   `json:"chapterNumber"`
+		ExternalIdentifier string   `json:"externalIdentifier"`
 		Name               string   `json:"name"`
 		Description        string   `json:"description"`
 		PrimaryKind        string   `json:"primaryKind"`
@@ -49,9 +55,24 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	postJSON(t, handler, token, http.MethodPost,
 		"/api/v1/work-object-versions/"+source.ID+"/confirm", nil, http.StatusOK)
 
+	taskBook := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/work-objects/manual", map[string]string{
+			"objectKind":  "task_book",
+			"objectName":  "BCD星软件研制任务书",
+			"version":     "1.00",
+			"source":      "研制方",
+			"receivedAt":  "2026-09-16",
+			"receiveMode": "onsite",
+		}, http.StatusOK)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/work-object-versions/"+taskBook["id"].(string)+"/confirm", nil, http.StatusOK)
+
 	workbench := listRequirementsWorkbench(t, handler, token, projectCode)
-	if len(workbench.Sources) != 1 || workbench.Sources[0].ID != source.ID ||
-		workbench.Sources[0].ParseState != "ready" {
+	if len(workbench.Sources) != 2 || workbench.Sources[0].ID != source.ID ||
+		workbench.Sources[0].ObjectKind != "srs" ||
+		workbench.Sources[0].ParseState != "ready" ||
+		workbench.Sources[1].ObjectKind != "task_book" ||
+		workbench.Sources[1].ParseState != "manual" {
 		t.Fatalf("可解析主 SRS 识别错误: %+v", workbench.Sources)
 	}
 
@@ -73,6 +94,9 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 		manualRequirement.PrimaryKind != "functional" {
 		t.Fatalf("手动需求应直接保存为正式需求并记录测试项契约: %+v", manualRequirement)
 	}
+	if manualRequirement.ExternalIdentifier != "XTCS" {
+		t.Fatalf("空标识应按名称拼音首字母生成四位: %+v", manualRequirement)
+	}
 	focusedRequirement := postRequirement(t, handler, token, projectCode, requirementTestPayload{
 		SourceVersionID: source.ID,
 		Chapter:         "7.2.1",
@@ -83,6 +107,48 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	if focusedRequirement.SectionID == "" {
 		t.Fatalf("需求章节应保存并关联: %+v", focusedRequirement)
 	}
+	focusedRequirement = putRequirement(t, handler, token, focusedRequirement.ID, map[string]any{
+		"sectionId":          focusedRequirement.SectionID,
+		"chapterNumber":      "7.2.4",
+		"externalIdentifier": focusedRequirement.ExternalIdentifier,
+		"name":               focusedRequirement.Name,
+		"description":        focusedRequirement.Description,
+		"primaryKind":        focusedRequirement.PrimaryKind,
+		"tags":               focusedRequirement.Tags,
+	})
+	if focusedRequirement.ChapterNumber != "7.2.4" || focusedRequirement.SectionID == "" {
+		t.Fatalf("修改未登记章节号应创建并关联章节: %+v", focusedRequirement)
+	}
+	postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "7.2.2",
+		Name:            "系统初始化",
+		Description:     "重复名称不应保存。",
+		Kind:            "functional",
+	}, http.StatusConflict)
+	postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "7.2.3",
+		Name:            "重复标识",
+		Description:     "重复标识不应保存。",
+		Kind:            "functional",
+		ExternalID:      "XTCS",
+	}, http.StatusConflict)
+	updateConflictBody := map[string]any{
+		"sectionId":          focusedRequirement.SectionID,
+		"chapterNumber":      focusedRequirement.ChapterNumber,
+		"externalIdentifier": focusedRequirement.ExternalIdentifier,
+		"name":               manualRequirement.Name,
+		"description":        "重复名称不应更新。",
+		"primaryKind":        "functional",
+		"tags":               []string{},
+	}
+	postJSON(t, handler, token, http.MethodPut,
+		"/api/v1/software-requirements/"+focusedRequirement.ID, updateConflictBody, http.StatusConflict)
+	updateConflictBody["name"] = focusedRequirement.Name
+	updateConflictBody["externalIdentifier"] = manualRequirement.ExternalIdentifier
+	postJSON(t, handler, token, http.MethodPut,
+		"/api/v1/software-requirements/"+focusedRequirement.ID, updateConflictBody, http.StatusConflict)
 
 	bulkBody := map[string]any{
 		"sourceVersionId": source.ID,
@@ -106,12 +172,14 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	}
 
 	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
-	if len(workbench.Sections) != 10 {
+	if len(workbench.Sections) != 11 {
 		t.Fatalf("章节树数量错误: %+v", workbench.Sections)
 	}
 	sectionParents := make(map[string]string, len(workbench.Sections))
+	sectionScope := make(map[string]bool, len(workbench.Sections))
 	for _, section := range workbench.Sections {
 		sectionParents[section.ChapterNumber] = section.ParentID
+		sectionScope[section.ChapterNumber] = section.InScope
 	}
 	for _, chapter := range []string{"7", "7.2"} {
 		if _, exists := sectionParents[chapter]; exists {
@@ -120,6 +188,15 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	}
 	if sectionParents["7.2.1"] != "" {
 		t.Fatalf("缺失父章节时需求章节应保持根节点: %+v", workbench.Sections)
+	}
+	if _, exists := sectionParents["4"]; !exists {
+		t.Fatalf("无候选需求的解析章节也应保留为全文目录: %+v", workbench.Sections)
+	}
+	if sectionScope["4"] {
+		t.Fatalf("参考资料章节不应进入测试作业面: %+v", workbench.Sections)
+	}
+	if !sectionScope["3"] || !sectionScope["3.1"] {
+		t.Fatalf("候选需求章节链应进入测试作业面: %+v", workbench.Sections)
 	}
 	candidates := make([]string, 0, 2)
 	for _, requirement := range workbench.Requirements {
@@ -141,6 +218,10 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
 	statuses := make(map[string]string, len(workbench.Requirements))
 	taskStatuses := make(map[string]string, len(workbench.Requirements))
+	finalScope := make(map[string]bool, len(workbench.Sections))
+	for _, section := range workbench.Sections {
+		finalScope[section.ChapterNumber] = section.InScope
+	}
 	for _, requirement := range workbench.Requirements {
 		statuses[requirement.ChapterNumber] = requirement.Status
 		taskStatuses[requirement.ChapterNumber] = requirement.TestItemTaskStatus
@@ -151,10 +232,14 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	if statuses["3.2"] != "excluded" || taskStatuses["3.2"] != "none" {
 		t.Fatalf("排除候选需求错误: %+v", statuses)
 	}
+	if !finalScope["3"] || !finalScope["3.1"] || finalScope["3.2"] || finalScope["4"] {
+		t.Fatalf("排除候选后作业面应收缩: %+v", workbench.Sections)
+	}
 }
 
 func TestParseDocSRSRequiresConversion(t *testing.T) {
-	handler := newTestHandler(t)
+	assetRoot := filepath.Join(t.TempDir(), "file-assets")
+	handler := newTestHandlerWithAssetRoot(t, assetRoot)
 	token := loginForProjectTest(t, handler)
 	projectCode := createWorkObjectTestProject(t, handler, token)
 	source := uploadWorkObjectTestFile(t, handler, token, projectCode,
@@ -171,12 +256,36 @@ func TestParseDocSRSRequiresConversion(t *testing.T) {
 	if !strings.Contains(recorder.Body.String(), ".docx") {
 		t.Fatalf("转换提示不明确: %s", recorder.Body.String())
 	}
+
+	docx := buildRequirementTestDOCX(t)
+	parseCopyRecorder := uploadParseCopyTestRecorder(t, handler, token, source.ID,
+		"BCD星指令生成与发控软件需求规格说明V1.01.docx", docx)
+	if parseCopyRecorder.Code != http.StatusOK {
+		t.Fatalf("补传解析副本状态码应为 200，实际 %d，响应: %s",
+			parseCopyRecorder.Code, parseCopyRecorder.Body.String())
+	}
+	workbench := listRequirementsWorkbench(t, handler, token, projectCode)
+	if len(workbench.Sources) != 1 || workbench.Sources[0].ParseState != "ready" {
+		t.Fatalf("补传解析副本后 SRS 应可解析: %+v", workbench.Sources)
+	}
+	parseResult := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/parse",
+		map[string]any{"sourceVersionId": source.ID}, http.StatusOK)
+	if parseResult["sectionCount"].(float64) != 4 ||
+		parseResult["candidateCount"].(float64) != 2 {
+		t.Fatalf("解析副本解析结果错误: %+v", parseResult)
+	}
+	files, err := filepath.Glob(filepath.Join(assetRoot, "projects", projectCode, "*", "*", "*.parse.docx"))
+	if err != nil || len(files) != 1 {
+		t.Fatalf("解析副本落盘数量错误: %v, err=%v", files, err)
+	}
 }
 
 type requirementTestPayload struct {
 	SourceVersionID string
 	SectionID       string
 	Chapter         string
+	ExternalID      string
 	Name            string
 	Description     string
 	Kind            string
@@ -187,7 +296,9 @@ type requirementTestResponse struct {
 	ID                 string   `json:"id"`
 	SectionID          string   `json:"sectionId"`
 	ChapterNumber      string   `json:"chapterNumber"`
+	ExternalIdentifier string   `json:"externalIdentifier"`
 	Name               string   `json:"name"`
+	Description        string   `json:"description"`
 	PrimaryKind        string   `json:"primaryKind"`
 	Tags               []string `json:"tags"`
 	Status             string   `json:"status"`
@@ -228,6 +339,38 @@ func buildRequirementTestDOCX(t *testing.T) string {
 		t.Fatalf("关闭 DOCX 失败: %v", err)
 	}
 	return buffer.String()
+}
+
+func uploadParseCopyTestRecorder(
+	t *testing.T,
+	handler http.Handler,
+	token string,
+	versionID string,
+	fileName string,
+	content string,
+) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	file, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		t.Fatalf("构造解析副本失败: %v", err)
+	}
+	if _, err := io.WriteString(file, content); err != nil {
+		t.Fatalf("写入解析副本失败: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("关闭解析副本请求失败: %v", err)
+	}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(
+		http.MethodPost, "/api/v1/work-object-versions/"+versionID+"/parse-copy", &body,
+	)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	request.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(recorder, request)
+	return recorder
 }
 
 func postRequirementSection(
@@ -276,16 +419,39 @@ func postRequirement(
 		"description":        payload.Description,
 		"primaryKind":        payload.Kind,
 		"tags":               payload.Tags,
-		"externalIdentifier": "",
+		"externalIdentifier": payload.ExternalID,
 	}
 	recorder := postJSONRecorder(t, handler, token, http.MethodPost,
 		"/api/v1/projects/"+projectCode+"/requirements", body)
 	if recorder.Code != expectedStatus {
 		t.Fatalf("新增需求状态码应为 %d，实际 %d，响应: %s", expectedStatus, recorder.Code, recorder.Body.String())
 	}
+	if expectedStatus != http.StatusOK {
+		return requirementTestResponse{}
+	}
 	var response requirementTestResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("解析新增需求响应失败: %v", err)
+	}
+	return response
+}
+
+func putRequirement(
+	t *testing.T,
+	handler http.Handler,
+	token string,
+	requirementID string,
+	body map[string]any,
+) requirementTestResponse {
+	t.Helper()
+	recorder := postJSONRecorder(t, handler, token, http.MethodPut,
+		"/api/v1/software-requirements/"+requirementID, body)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("修改需求状态码应为 200，实际 %d，响应: %s", recorder.Code, recorder.Body.String())
+	}
+	var response requirementTestResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("解析修改需求响应失败: %v", err)
 	}
 	return response
 }

@@ -136,6 +136,32 @@ func Register(api huma.API, service *assetservice.Service) {
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "upload-srs-parse-copy",
+		Method:      http.MethodPost,
+		Path:        "/api/v1/work-object-versions/{id}/parse-copy",
+		Summary:     "补传 SRS 解析副本",
+		Description: "为已确认的 .doc 主 SRS 版本补传同版本 DOCX 解析副本；原始接收文件保持不变。",
+		Tags:        []string{"资料与对象"},
+	}, func(ctx context.Context, input *ParseCopyUploadInput) (*WorkObjectOutput, error) {
+		file := input.RawBody.Data().File
+		defer file.Close()
+		item, err := handler.service.UploadParseCopy(ctx, assetservice.ParseCopyInput{
+			VersionID: input.ID,
+			File: assetservice.UploadFile{
+				Reader:       file,
+				OriginalName: file.Filename,
+				MimeType:     file.ContentType,
+				Size:         file.Size,
+			},
+			OperatedBy: currentUserID(ctx),
+		})
+		if err != nil {
+			return nil, toAPIError(err, "上传解析副本失败")
+		}
+		return &WorkObjectOutput{Body: item}, nil
+	})
+
+	huma.Register(api, huma.Operation{
 		OperationID: "withdraw-work-object-version",
 		Method:      http.MethodPost,
 		Path:        "/api/v1/work-object-versions/{id}/withdraw",
@@ -235,6 +261,10 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error409Conflict("只有待确认版本允许删除")
 	case errors.Is(err, assetservice.ErrInvalidVersion):
 		return huma.Error400BadRequest("版本号格式应为 V1.00")
+	case errors.Is(err, assetservice.ErrParseCopyInvalid):
+		return huma.Error400BadRequest("解析副本必须是 .docx 文件")
+	case errors.Is(err, assetservice.ErrParseCopyNotAllowed):
+		return huma.Error409Conflict("只有已确认的主 SRS .doc 版本允许补传 DOCX 解析副本")
 	default:
 		return huma.Error500InternalServerError(fallback)
 	}

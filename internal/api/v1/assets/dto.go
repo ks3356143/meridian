@@ -21,9 +21,18 @@ type UploadForm struct {
 	ReceiveMode string          `form:"receiveMode" required:"true"`
 }
 
+type ParseCopyForm struct {
+	File huma.FormFile `form:"file" contentType:"application/octet-stream" required:"true"`
+}
+
 type WorkObjectUploadInput struct {
 	Code    string `path:"code" required:"true"`
 	RawBody huma.MultipartFormFiles[UploadForm]
+}
+
+type ParseCopyUploadInput struct {
+	ID      string `path:"id" required:"true"`
+	RawBody huma.MultipartFormFiles[ParseCopyForm]
 }
 
 type WorkObjectUploadOutput struct {

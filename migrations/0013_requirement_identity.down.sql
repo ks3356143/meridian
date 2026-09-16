@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS idx_software_requirements_identifier;
+DROP INDEX IF EXISTS idx_software_requirements_active_name;

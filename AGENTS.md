@@ -82,7 +82,7 @@ npm run dev
 能使用组件库组件的必须使用组件库不要手搓，手搓仅调整，能美化的都美化，前端布局和样式可以参考ui/ux pro max、frontend-design、taste-skills、garden-skills等
 
 1. 一定要美观好看，舒服
-1. 做前端时候一定要看E:\Chentools项目\ChenMeridian\srs\前端体验.md里面美化要求
+1. 做前端时候一定要看 [srs/07-前端体验.md](srs/07-前端体验.md) 里面美化要求
 
 ## 入口文档
 

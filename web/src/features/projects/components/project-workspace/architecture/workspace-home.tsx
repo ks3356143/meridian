@@ -20,14 +20,8 @@ export function WorkspaceHome() {
 
       gsap.fromTo(
         "[data-architecture-panel]",
-        { opacity: 0, y: 14 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.34,
-          ease: "power3.out",
-          stagger: 0.045,
-        },
+        { opacity: 0 },
+        { opacity: 1, duration: 0.34, ease: "power3.out", stagger: 0.045 },
       );
     },
     { scope: containerRef },

@@ -1,7 +1,9 @@
 import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useRef, type ReactNode } from "react";
+import { flushSync } from "react-dom";
+import { useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
+import { QueryLoading } from "@/components/shared/query-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useAuthStore } from "@/stores/auth-store";
@@ -39,6 +41,7 @@ export function ProjectWorkspaceLayout({
   const containerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const [pendingSection, setPendingSection] = useState<{ fromPath: string } | null>(null);
   const token = useAuthStore((state) => state.token);
   const executionRate = Math.round((project.casesExecuted / Math.max(project.casesTotal, 1)) * 100);
   const openIssues =
@@ -67,6 +70,8 @@ export function ProjectWorkspaceLayout({
     { scope: containerRef },
   );
 
+  const switchingSection = pendingSection !== null && location.pathname === pendingSection.fromPath;
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
@@ -74,9 +79,16 @@ export function ProjectWorkspaceLayout({
   const handleSectionChange = (value: string) => {
     const section = NAV_SECTIONS.find((item) => item.value === value);
     if (!section) return;
-    const target = `/projects/${project.id}/workspace${section.path ? `/${section.path}` : ""}`;
-    navigate(target);
+    navigate(prepareSection(section));
   };
+
+  function prepareSection(section: (typeof NAV_SECTIONS)[number]) {
+    const target = `/projects/${project.id}/workspace${section.path ? `/${section.path}` : ""}`;
+    if (target !== location.pathname) {
+      flushSync(() => setPendingSection({ fromPath: location.pathname }));
+    }
+    return target;
+  }
 
   return (
     <div ref={containerRef} className="workspace-shell flex min-h-svh flex-col">
@@ -87,7 +99,12 @@ export function ProjectWorkspaceLayout({
           <Tabs value={activeSection} onValueChange={handleSectionChange}>
             <TabsList variant="line" className="w-full overflow-x-auto">
               {NAV_SECTIONS.map((section) => (
-                <TabsTrigger key={section.value} value={section.value} className="min-w-28 px-3">
+                <TabsTrigger
+                  key={section.value}
+                  value={section.value}
+                  className="min-w-28 px-3"
+                  onMouseDown={() => prepareSection(section)}
+                >
                   <section.icon aria-hidden />
                   {section.label}
                 </TabsTrigger>
@@ -97,7 +114,7 @@ export function ProjectWorkspaceLayout({
         </nav>
 
         <main key={location.pathname} className="workspace-route min-w-0 flex-1">
-          {children}
+          {switchingSection ? <QueryLoading label="正在加载工作区模块" rows={6} /> : children}
         </main>
       </div>
     </div>

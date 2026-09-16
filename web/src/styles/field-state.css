@@ -1,5 +1,30 @@
 /* 表单状态光晕：focus 用 2px 静态 ring；错误先淡入，再进入红色脉冲。 */
 /* 基础态、focus 和错误态保持相同层数的阴影结构，box-shadow 才能平滑插值。 */
+[data-slot="field"] {
+  --field-gap: 0.5rem;
+}
+
+[data-slot="field"].gap-2 {
+  --field-gap: 0.5rem;
+}
+
+[data-slot="field"].gap-2\.5 {
+  --field-gap: 0.625rem;
+}
+
+[data-slot="field-error"] {
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  animation: field-error-container-enter 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+[data-slot="field-error-content"] {
+  min-height: 0;
+  overflow: hidden;
+  animation: field-error-message-enter 0.18s cubic-bezier(0.32, 0.72, 0, 1) 0.035s both;
+}
+
 [data-slot="input"]:not([data-slot="composite-input"] [data-slot="input"]),
 [data-slot="select-trigger"],
 [data-slot="composite-input"] {
@@ -102,6 +127,30 @@
   }
 }
 
+@keyframes field-error-container-enter {
+  from {
+    grid-template-rows: 0fr;
+    margin-block-start: calc(-1 * var(--field-gap, 0.5rem));
+  }
+
+  to {
+    grid-template-rows: 1fr;
+    margin-block-start: 0;
+  }
+}
+
+@keyframes field-error-message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-0.15rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes field-error-focus-enter {
   from {
     box-shadow:
@@ -153,6 +202,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  [data-slot="field-error"],
+  [data-slot="field-error-content"] {
+    animation: none;
+  }
+
   [data-slot="input"]:not([data-slot="composite-input"] [data-slot="input"]),
   [data-slot="select-trigger"],
   [data-slot="composite-input"],

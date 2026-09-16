@@ -48,8 +48,8 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
 
       gsap.fromTo(
         "[data-assets-panel]",
-        { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.32, ease: "power3.out", stagger: 0.05 },
+        { opacity: 0 },
+        { opacity: 1, duration: 0.32, ease: "power3.out", stagger: 0.05 },
       );
     },
     { scope: containerRef },

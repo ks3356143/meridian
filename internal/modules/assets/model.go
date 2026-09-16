@@ -24,6 +24,7 @@ type WorkObjectVersion struct {
 	Source                string    `gorm:"column:source" json:"source"`
 	ReceivedAt            string    `gorm:"column:received_at" json:"receivedAt"`
 	ReceiveMode           string    `gorm:"column:receive_mode" json:"receiveMode"`
+	ParseStoragePath      string    `gorm:"column:parse_storage_path" json:"parseStoragePath"`
 	CreatedBy             string    `gorm:"column:created_by" json:"createdBy"`
 	CreatedAt             time.Time `gorm:"column:created_at" json:"createdAt"`
 	UpdatedAt             time.Time `gorm:"column:updated_at" json:"updatedAt"`
@@ -85,6 +86,7 @@ type WorkObjectVersionRow struct {
 	SHA256              string    `gorm:"column:sha256"`
 	AssetID             string    `gorm:"column:asset_id"`
 	StoragePath         string    `gorm:"column:storage_path"`
+	ParseStoragePath    string    `gorm:"column:parse_storage_path"`
 	CreatedAt           time.Time `gorm:"column:created_at"`
 	UpdatedAt           time.Time `gorm:"column:updated_at"`
 }

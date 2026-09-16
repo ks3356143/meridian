@@ -7,6 +7,24 @@
   animation: brand-gradient-flow 12s linear infinite;
 }
 
+.shiny-text {
+  animation: shiny-text-sweep 2.4s linear infinite;
+  background-image: linear-gradient(
+    120deg,
+    var(--muted-foreground) 0%,
+    var(--muted-foreground) 35%,
+    color-mix(in srgb, var(--muted-foreground) 25%, white) 50%,
+    var(--muted-foreground) 65%,
+    var(--muted-foreground) 100%
+  );
+  background-size: 200% auto;
+  background-position: 150% center;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
 @keyframes brand-gradient-flow {
   0% {
     background-position: 0% 50%;
@@ -14,6 +32,16 @@
 
   100% {
     background-position: 300% 50%;
+  }
+}
+
+@keyframes shiny-text-sweep {
+  from {
+    background-position: 150% center;
+  }
+
+  to {
+    background-position: -50% center;
   }
 }
 
@@ -128,6 +156,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .brand-wordmark,
+  .shiny-text,
   .visual-wordmark,
   .globe-wireframe,
   .orbit-spin {
@@ -136,6 +165,10 @@
 
   .brand-wordmark {
     background-position: 0% 50%;
+  }
+
+  .shiny-text {
+    background-position: 0% center;
   }
 
   .btn-sheen::after {

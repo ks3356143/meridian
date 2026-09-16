@@ -209,7 +209,7 @@ function FieldError({
       className={cn("text-sm font-normal text-destructive", className)}
       {...props}
     >
-      {content}
+      <div data-slot="field-error-content">{content}</div>
     </div>
   );
 }

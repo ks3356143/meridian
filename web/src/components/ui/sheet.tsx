@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Dialog as SheetPrimitive } from "radix-ui";
+import * as SheetPrimitive from "radix-ui/dialog";
 import { X } from "lucide-react";
 import { cn } from "cn";
 

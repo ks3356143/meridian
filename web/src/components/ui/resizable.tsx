@@ -14,7 +14,7 @@ function ResizableHandle({ className, ...props }: React.ComponentProps<typeof Se
   return (
     <Separator
       className={cn(
-        "requirements-resizable-handle group/handle relative flex w-1.5 items-center justify-center",
+        "workspace-resizable-handle group/handle relative flex w-1.5 items-center justify-center",
         className,
       )}
       {...props}

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	pinyinlib "github.com/mozillazg/go-pinyin"
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/id"
@@ -33,6 +34,7 @@ const (
 var (
 	ErrProjectNotFound      = errors.New("项目不存在")
 	ErrSourceNotFound       = errors.New("可解析的软件需求规格说明不存在")
+	ErrSourceNotSrs         = errors.New("仅软件需求规格说明支持自动解析")
 	ErrNoSourceFile         = errors.New("该 SRS 没有电子文件")
 	ErrNeedsDocx            = errors.New("当前 SRS 为 .doc，需要先转换为 .docx 后解析")
 	ErrSectionNotFound      = errors.New("需求章节不存在")
@@ -40,6 +42,8 @@ var (
 	ErrChapterInvalid       = errors.New("章节号格式不正确")
 	ErrSectionExists        = errors.New("同一 SRS 版本中章节号已存在")
 	ErrRequirementExists    = errors.New("同一 SRS 版本中有效需求章节号已存在")
+	ErrRequirementName      = errors.New("同一 SRS 版本中有效需求名称已存在")
+	ErrRequirementCode      = errors.New("同一 SRS 版本中需求标识已存在")
 	ErrRequirementNotFound  = errors.New("软件需求不存在")
 	ErrRequirementNotActive = errors.New("候选或正式需求才允许修改")
 	ErrNoChanges            = errors.New("没有需要修改的需求信息")
@@ -60,6 +64,7 @@ func NewService(db *gorm.DB, assetRoot string) *Service {
 type SourceRow struct {
 	ID           string `gorm:"column:id"`
 	ProjectID    string `gorm:"column:project_id"`
+	ObjectKind   string `gorm:"column:object_kind"`
 	ObjectName   string `gorm:"column:object_name"`
 	Version      string `gorm:"column:version"`
 	FileType     string `gorm:"column:file_type"`
@@ -70,6 +75,7 @@ type SourceRow struct {
 
 type SourceResponse struct {
 	ID           string `json:"id"`
+	ObjectKind   string `json:"objectKind"`
 	ObjectName   string `json:"objectName"`
 	Version      string `json:"version"`
 	FileType     string `json:"fileType"`
@@ -86,6 +92,7 @@ type SectionResponse struct {
 	ChapterNumber   string `json:"chapterNumber"`
 	Title           string `json:"title"`
 	Origin          string `json:"origin"`
+	InScope         bool   `json:"inScope"`
 	SourceAnchor    string `json:"sourceAnchor"`
 	CreatedAt       string `json:"createdAt"`
 	UpdatedAt       string `json:"updatedAt"`
@@ -200,9 +207,6 @@ func (s *Service) Workbench(ctx context.Context, projectCode string, sourceVersi
 		return WorkbenchResponse{}, err
 	}
 	selectedSource := sourceVersionID
-	if selectedSource == "" && len(sources) > 0 {
-		selectedSource = sources[0].ID
-	}
 	sourceValid := false
 	for _, source := range sources {
 		if source.ID == selectedSource {
@@ -236,7 +240,7 @@ func (s *Service) Workbench(ctx context.Context, projectCode string, sourceVersi
 
 	return WorkbenchResponse{
 		Sources:      toSourceResponses(sources),
-		Sections:     toSectionResponses(sections),
+		Sections:     toSectionResponses(sections, requirementSectionScope(sections, requirements)),
 		Requirements: toRequirementResponses(requirements),
 	}, nil
 }
@@ -380,6 +384,9 @@ func (s *Service) UpdateRequirement(ctx context.Context, input UpdateRequirement
 	}
 	tags := normalizeTags(input.Tags)
 	externalID := strings.TrimSpace(input.ExternalIdentifier)
+	if len(externalID) > 64 {
+		return RequirementResponse{}, fmt.Errorf("需求标识最多 64 个字符")
+	}
 	if current.ChapterNumber == chapter && current.Name == name &&
 		current.Description == description && current.PrimaryKind == input.PrimaryKind &&
 		strings.Join(parseTags(current.Tags), ",") == strings.Join(tags, ",") &&
@@ -387,26 +394,35 @@ func (s *Service) UpdateRequirement(ctx context.Context, input UpdateRequirement
 		return RequirementResponse{}, ErrNoChanges
 	}
 
-	sectionID := current.SectionID
-	var section Section
-	if err := s.db.WithContext(ctx).Where("id = ?", dereference(sectionID)).First(&section).Error; err == nil {
-		if section.ChapterNumber != chapter {
-			var nextSection Section
-			nextErr := s.db.WithContext(ctx).
-				Where("source_version_id = ? AND chapter_number = ?", current.SourceVersionID, chapter).
-				First(&nextSection).Error
-			if nextErr != nil {
-				return RequirementResponse{}, ErrSectionNotFound
-			}
-			sectionID = &nextSection.ID
-		}
-	} else {
-		return RequirementResponse{}, ErrSectionNotFound
-	}
-
 	now := time.Now()
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		source := SourceRow{ID: current.SourceVersionID, ProjectID: current.ProjectID}
+		section, sectionErr := resolveOrCreateRequirementSection(
+			tx, source, "", chapter, name, OriginManual, "", input.OperatedBy,
+		)
+		if sectionErr != nil {
+			return sectionErr
+		}
+		sectionID := &section.ID
 		var count int64
+		if countErr := tx.Model(&Requirement{}).
+			Where("source_version_id = ? AND name = ? AND id <> ? AND status IN (?, ?)",
+				current.SourceVersionID, name, current.ID, StatusCandidate, StatusOfficial).
+			Count(&count).Error; countErr != nil {
+			return fmt.Errorf("检查需求名称冲突失败: %w", countErr)
+		}
+		if count > 0 {
+			return ErrRequirementName
+		}
+		if externalID == "" {
+			var err error
+			externalID, err = uniqueRequirementCode(tx, current.SourceVersionID, name)
+			if err != nil {
+				return err
+			}
+		} else if err := requirementCodeExists(tx, current.SourceVersionID, externalID, current.ID); err != nil {
+			return err
+		}
 		if countErr := tx.Model(&Requirement{}).
 			Where("source_version_id = ? AND chapter_number = ? AND id <> ? AND status IN (?, ?)",
 				current.SourceVersionID, chapter, current.ID, StatusCandidate, StatusOfficial).
@@ -532,6 +548,9 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 	if err != nil {
 		return ParseResult{}, err
 	}
+	if source.ObjectKind != "srs" {
+		return ParseResult{}, ErrSourceNotSrs
+	}
 	if source.StoragePath == "" {
 		return ParseResult{}, ErrNoSourceFile
 	}
@@ -560,7 +579,9 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 		}
 
 		now := time.Now()
+		parsedChapters := make(map[string]bool, len(parsed))
 		for _, node := range parsed {
+			parsedChapters[node.ChapterNumber] = true
 			parentID := new(string)
 			if node.ParentChapter == "" {
 				parentID = nil
@@ -615,13 +636,14 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 					continue
 				}
 				if updateErr := tx.Model(&Requirement{}).Where("id = ?", existing.ID).Updates(map[string]any{
-					"section_id":    section.ID,
-					"name":          node.Title,
-					"description":   node.Description,
-					"primary_kind":  node.PrimaryKind,
-					"source_anchor": node.SourceAnchor,
-					"origin":        OriginParsed,
-					"updated_at":    now,
+					"section_id":          section.ID,
+					"external_identifier": node.ExternalIdentifier,
+					"name":                node.Title,
+					"description":         node.Description,
+					"primary_kind":        node.PrimaryKind,
+					"source_anchor":       node.SourceAnchor,
+					"origin":              OriginParsed,
+					"updated_at":          now,
 				}).Error; updateErr != nil {
 					return fmt.Errorf("更新候选需求失败: %w", updateErr)
 				}
@@ -632,7 +654,7 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 				return fmt.Errorf("查询同章节需求失败: %w", err)
 			}
 
-			created, createErr := createRequirementInTx(tx, source, section.ID, node.ChapterNumber, "",
+			created, createErr := createRequirementInTx(tx, source, section.ID, node.ChapterNumber, node.ExternalIdentifier,
 				node.Title, node.Description, node.PrimaryKind, []string{}, OriginParsed,
 				node.SourceAnchor, StatusCandidate, operatedBy)
 			if createErr != nil {
@@ -644,12 +666,55 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 			}
 			result.CandidateCount++
 		}
+		if err := cleanupParsedSections(tx, source.ID, parsedChapters); err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {
 		return ParseResult{}, err
 	}
 	return result, nil
+}
+
+func cleanupParsedSections(tx *gorm.DB, sourceVersionID string, parsedChapters map[string]bool) error {
+	var stale []Section
+	if err := tx.Where("source_version_id = ? AND origin = ?", sourceVersionID, OriginParsed).
+		Find(&stale).Error; err != nil {
+		return fmt.Errorf("查询待清理解析章节失败: %w", err)
+	}
+	removable := make(map[string]bool)
+	for _, section := range stale {
+		if !parsedChapters[section.ChapterNumber] {
+			removable[section.ID] = true
+		}
+	}
+
+	for len(removable) > 0 {
+		deleted := false
+		for sectionID := range removable {
+			var childCount, requirementCount int64
+			if err := tx.Model(&Section{}).Where("parent_id = ?", sectionID).Count(&childCount).Error; err != nil {
+				return fmt.Errorf("检查解析章节子级失败: %w", err)
+			}
+			if err := tx.Model(&Requirement{}).Where("section_id = ?", sectionID).
+				Count(&requirementCount).Error; err != nil {
+				return fmt.Errorf("检查解析章节需求失败: %w", err)
+			}
+			if childCount > 0 || requirementCount > 0 {
+				continue
+			}
+			if err := tx.Delete(&Section{}, "id = ?", sectionID).Error; err != nil {
+				return fmt.Errorf("清理已移除章节失败: %w", err)
+			}
+			delete(removable, sectionID)
+			deleted = true
+		}
+		if !deleted {
+			return nil
+		}
+	}
+	return nil
 }
 
 func (s *Service) findProject(ctx context.Context, projectCode string) (string, error) {
@@ -676,15 +741,22 @@ func (s *Service) listSources(ctx context.Context, projectID string) ([]SourceRo
 		Table("work_object_versions AS v").
 		Select(`
 			v.id, v.project_id, v.version, v.updated_at,
+			w.object_kind,
 			w.name AS object_name,
 			COALESCE(a.file_type, '') AS file_type,
-			COALESCE(a.storage_path, '') AS storage_path,
+			COALESCE(NULLIF(v.parse_storage_path, ''), a.storage_path, '') AS storage_path,
 			COALESCE(a.original_name, '') AS original_name
 		`).
 		Joins("JOIN work_objects AS w ON w.id = v.work_object_id").
 		Joins("LEFT JOIN received_assets AS a ON a.work_object_version_id = v.id").
-		Where("v.project_id = ? AND v.status = ? AND w.object_kind = ?", projectID, "confirmed", "srs").
-		Order("v.updated_at DESC").
+		Where(`v.project_id = ? AND v.status = ? AND w.object_kind IN ?`,
+			projectID, "confirmed", []string{"srs", "task_book", "technical_requirement", "development_requirement"}).
+		Order(`CASE w.object_kind
+			WHEN 'srs' THEN 1
+			WHEN 'task_book' THEN 2
+			WHEN 'technical_requirement' THEN 3
+			WHEN 'development_requirement' THEN 4
+			ELSE 5 END, v.updated_at DESC`).
 		Scan(&rows).Error
 	if err != nil {
 		return nil, fmt.Errorf("查询可解析 SRS 失败: %w", err)
@@ -813,6 +885,30 @@ func createRequirementInTx(
 
 	var count int64
 	if err := tx.Model(&Requirement{}).
+		Where("source_version_id = ? AND name = ? AND status IN (?, ?)",
+			source.ID, name, StatusCandidate, StatusOfficial).
+		Count(&count).Error; err != nil {
+		return Requirement{}, fmt.Errorf("检查需求名称冲突失败: %w", err)
+	}
+	if count > 0 {
+		return Requirement{}, ErrRequirementName
+	}
+
+	var err error
+	externalID = strings.TrimSpace(externalID)
+	if len(externalID) > 64 {
+		return Requirement{}, fmt.Errorf("需求标识最多 64 个字符")
+	}
+	if externalID == "" {
+		externalID, err = uniqueRequirementCode(tx, source.ID, name)
+		if err != nil {
+			return Requirement{}, err
+		}
+	} else if err := requirementCodeExists(tx, source.ID, externalID, ""); err != nil {
+		return Requirement{}, err
+	}
+
+	if err := tx.Model(&Requirement{}).
 		Where("source_version_id = ? AND chapter_number = ? AND status IN (?, ?)",
 			source.ID, chapter, StatusCandidate, StatusOfficial).
 		Count(&count).Error; err != nil {
@@ -847,6 +943,76 @@ func createRequirementInTx(
 		return Requirement{}, err
 	}
 	return requirement, nil
+}
+
+func requirementCodeExists(tx *gorm.DB, sourceVersionID string, code string, exceptID string) error {
+	query := tx.Model(&Requirement{}).
+		Where("source_version_id = ? AND external_identifier = ?", sourceVersionID, code)
+	if exceptID != "" {
+		query = query.Where("id <> ?", exceptID)
+	}
+
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return fmt.Errorf("检查需求标识冲突失败: %w", err)
+	}
+	if count > 0 {
+		return ErrRequirementCode
+	}
+	return nil
+}
+
+func uniqueRequirementCode(tx *gorm.DB, sourceVersionID string, name string) (string, error) {
+	codeSeed := requirementCodeSeed(name)
+	seed := codeSeed
+	if len(seed) > 3 {
+		seed = seed[:3]
+	}
+	for len(seed) < 3 {
+		seed += "X"
+	}
+
+	if len(codeSeed) >= 4 {
+		code := codeSeed[:4]
+		if err := requirementCodeExists(tx, sourceVersionID, code, ""); err == nil {
+			return code, nil
+		} else if !errors.Is(err, ErrRequirementCode) {
+			return "", err
+		}
+	}
+
+	for _, suffix := range "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		code := seed + string(suffix)
+		if err := requirementCodeExists(tx, sourceVersionID, code, ""); err == nil {
+			return code, nil
+		} else if !errors.Is(err, ErrRequirementCode) {
+			return "", err
+		}
+	}
+	return "", fmt.Errorf("需求标识自动生成失败，请手工录入标识")
+}
+
+func requirementCodeSeed(name string) string {
+	args := pinyinlib.NewArgs()
+	args.Style = pinyinlib.FirstLetter
+	args.Fallback = func(r rune, _ pinyinlib.Args) []string {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			return []string{strings.ToUpper(string(r))}
+		}
+		return nil
+	}
+
+	var seed strings.Builder
+	for _, values := range pinyinlib.Pinyin(name, args) {
+		if len(values) == 0 || values[0] == "" {
+			continue
+		}
+		seed.WriteString(strings.ToUpper(values[0][:1]))
+	}
+	if seed.Len() == 0 {
+		return "XQ"
+	}
+	return seed.String()
 }
 
 func resolveOrCreateRequirementSection(
@@ -1039,7 +1205,7 @@ func toSourceResponses(rows []SourceRow) []SourceResponse {
 	result := make([]SourceResponse, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, SourceResponse{
-			ID: row.ID, ObjectName: row.ObjectName, Version: row.Version,
+			ID: row.ID, ObjectKind: row.ObjectKind, ObjectName: row.ObjectName, Version: row.Version,
 			FileType: row.FileType, OriginalName: row.OriginalName,
 			HasLocalFile: row.StoragePath != "", ParseState: parseState(row),
 			UpdatedAt: row.UpdatedAt.Format(time.RFC3339),
@@ -1049,6 +1215,9 @@ func toSourceResponses(rows []SourceRow) []SourceResponse {
 }
 
 func parseState(row SourceRow) string {
+	if row.ObjectKind != "srs" {
+		return "manual"
+	}
 	if row.StoragePath == "" {
 		return "manual"
 	}
@@ -1061,10 +1230,47 @@ func parseState(row SourceRow) string {
 	return "register"
 }
 
-func toSectionResponses(sections []Section) []SectionResponse {
+// requirementSectionScope 计算测试作业面章节：手工章节、承载候选/正式需求的章节及其祖先。
+// 其余解析章节保留为全文参考目录，不进入作业树。
+func requirementSectionScope(sections []Section, requirements []Requirement) map[string]bool {
+	byID := make(map[string]Section, len(sections))
+	for _, section := range sections {
+		byID[section.ID] = section
+	}
+	scope := make(map[string]bool, len(sections))
+	for _, section := range sections {
+		if section.Origin == OriginManual {
+			scope[section.ID] = true
+		}
+	}
+	for _, requirement := range requirements {
+		if requirement.Status != StatusCandidate && requirement.Status != StatusOfficial {
+			continue
+		}
+		if requirement.SectionID == nil {
+			continue
+		}
+		for sectionID := *requirement.SectionID; sectionID != ""; {
+			section, exists := byID[sectionID]
+			if !exists {
+				break
+			}
+			scope[sectionID] = true
+			if section.ParentID == nil {
+				break
+			}
+			sectionID = *section.ParentID
+		}
+	}
+	return scope
+}
+
+func toSectionResponses(sections []Section, scope map[string]bool) []SectionResponse {
 	result := make([]SectionResponse, 0, len(sections))
 	for _, section := range sections {
-		result = append(result, toSectionResponse(section))
+		response := toSectionResponse(section)
+		response.InScope = scope[section.ID]
+		result = append(result, response)
 	}
 	return result
 }
