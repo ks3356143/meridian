@@ -1,37 +1,3 @@
-.button-ripple-clip {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.button-ripple {
-  position: absolute;
-  pointer-events: none;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.22;
-  transform: translate(-50%, -50%) scale(0);
-  animation: button-ripple-in 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-
-@keyframes button-ripple-in {
-  0% {
-    opacity: 0.26;
-    transform: translate(-50%, -50%) scale(0);
-  }
-
-  30% {
-    opacity: 0.2;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
 .tabs-content[data-state="active"] {
   animation: tab-content-in 0.24s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -79,14 +45,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .button-ripple,
   .workspace-route,
   .project-detail-tab,
   .tabs-content[data-state="active"] {
     animation: none;
-  }
-
-  .button-ripple {
-    opacity: 0;
   }
 }

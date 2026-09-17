@@ -1,9 +1,13 @@
 import * as React from "react";
 import { cn } from "cn";
+import styles from "./table.module.css";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    <div
+      data-slot="table-container"
+      className={cn("relative w-full overflow-x-auto", styles.container)}
+    >
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}

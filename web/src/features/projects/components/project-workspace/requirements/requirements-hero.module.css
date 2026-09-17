@@ -1,0 +1,222 @@
+.card {
+  background:
+    radial-gradient(
+      circle at 88% -30%,
+      color-mix(in srgb, var(--info) 9%, transparent),
+      transparent 38%
+    ),
+    linear-gradient(115deg, color-mix(in srgb, var(--primary) 7%, var(--card)), var(--card) 62%),
+    var(--card);
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--primary) 72%, transparent),
+    0 1px 2px #142a1e0a,
+    0 10px 26px -22px color-mix(in srgb, var(--primary) 52%, transparent);
+  align-items: center;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  justify-content: space-between;
+  min-height: 6.25rem;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  justify-content: center;
+  min-width: min(22rem, 100%);
+}
+
+.card h2 {
+  color: var(--foreground);
+  font-size: 1.05rem;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.card p {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  max-width: 44rem;
+}
+
+.stats {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 0.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  margin: 0;
+  max-width: 27rem;
+  min-width: min(100%, 17rem);
+}
+
+.stat {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--foreground) 3%, transparent), transparent),
+    color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  box-shadow: 0 4px 12px -12px color-mix(in srgb, var(--foreground) 45%, transparent);
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.3rem 0.45rem;
+  position: relative;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.stat::before {
+  background: color-mix(in srgb, var(--foreground) 42%, transparent);
+  content: "";
+  inset-block: 0;
+  left: 0;
+  position: absolute;
+  width: 2px;
+}
+
+.stat dt {
+  color: var(--muted-foreground);
+  font-size: 0.65rem;
+  font-weight: 650;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat dd {
+  font-size: 0.95rem;
+  font-weight: 760;
+  line-height: 1.2;
+  margin: 0.12rem 0 0;
+  padding-inline-start: 0.25rem;
+}
+
+.stat[data-tone="primary"] dd {
+  color: var(--primary);
+}
+
+.stat[data-tone="info"] dd {
+  color: var(--info);
+}
+
+.stat[data-tone="warning"] dd {
+  color: var(--warning);
+}
+
+.stat[data-tone="danger"] dd {
+  color: var(--destructive);
+}
+
+.stat[data-tone="primary"]::before {
+  background: color-mix(in srgb, var(--primary) 72%, transparent);
+}
+
+.stat[data-tone="info"]::before {
+  background: color-mix(in srgb, var(--info) 72%, transparent);
+}
+
+.stat[data-tone="warning"]::before {
+  background: color-mix(in srgb, var(--warning) 72%, transparent);
+}
+
+.stat[data-tone="danger"]::before {
+  background: color-mix(in srgb, var(--destructive) 72%, transparent);
+}
+
+.stat[data-action="true"] {
+  align-items: center;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--destructive) 9%, transparent),
+      transparent 62%
+    ),
+    color-mix(in srgb, var(--card) 88%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 26%, var(--border));
+  column-gap: 0.35rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+}
+
+.stat[data-action="true"] dt {
+  grid-column: 1;
+}
+
+.stat[data-action="true"] dd {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.actionPill {
+  align-items: center;
+  background: color-mix(in srgb, var(--destructive) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--destructive) 30%, var(--border));
+  border-radius: 2px;
+  box-shadow: 0 3px 9px -8px color-mix(in srgb, var(--destructive) 70%, transparent);
+  color: var(--destructive);
+  display: inline-flex;
+  font-size: 0.61rem;
+  font-weight: 700;
+  gap: 0.18rem;
+  grid-column: 2;
+  grid-row: 1 / 3;
+  padding: 0.16rem 0.3rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.actionPill svg {
+  height: 0.65rem;
+  width: 0.65rem;
+}
+
+.trigger {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  inset: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--destructive) 46%, transparent);
+  outline-offset: 2px;
+}
+
+.stat:has(.trigger):hover,
+.stat:has(.trigger:focus-visible) {
+  border-color: color-mix(in srgb, var(--destructive) 28%, var(--border));
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--destructive) 42%, transparent),
+    0 7px 18px -14px color-mix(in srgb, var(--destructive) 62%, transparent);
+}
+
+.stat:has(.trigger:focus-visible) {
+  outline: 2px solid color-mix(in srgb, var(--destructive) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.stat:has(.trigger):hover .actionPill,
+.stat:has(.trigger:focus-visible) .actionPill,
+.stat:has(.trigger:active) .actionPill {
+  background: color-mix(in srgb, var(--destructive) 16%, var(--card));
+  border-color: color-mix(in srgb, var(--destructive) 46%, var(--border));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 5px 14px -9px color-mix(in srgb, var(--destructive) 82%, transparent);
+}
+
+.stat:has(.trigger:active) .actionPill {
+  background: color-mix(in srgb, var(--destructive) 20%, var(--card));
+  box-shadow:
+    inset 0 2px 5px color-mix(in srgb, var(--destructive) 18%, transparent),
+    0 3px 10px -9px color-mix(in srgb, var(--destructive) 88%, transparent);
+}

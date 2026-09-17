@@ -162,4 +162,27 @@
   ::selection {
     @apply bg-primary/20;
   }
+
+  [data-slot="textarea"] {
+    scrollbar-color: color-mix(in srgb, var(--primary) 42%, var(--muted)) transparent;
+    scrollbar-width: thin;
+  }
+
+  [data-slot="textarea"]::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  [data-slot="textarea"]::-webkit-scrollbar-track {
+    background: color-mix(in srgb, var(--muted) 42%, transparent);
+  }
+
+  [data-slot="textarea"]::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--primary) 44%, var(--muted));
+    border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  }
+
+  [data-slot="textarea"]::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--primary) 62%, var(--muted));
+  }
 }

@@ -1,6 +1,7 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { Flip } from "gsap/Flip";
 
-gsap.registerPlugin(useGSAP);
+gsap.registerPlugin(useGSAP, Flip);
 
-export { gsap, useGSAP };
+export { Flip, gsap, useGSAP };

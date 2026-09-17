@@ -1,0 +1,44 @@
+.dialog {
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.dialog :global([data-slot="alert-dialog-title"]) {
+  font-size: 1rem;
+}
+
+.dialog :global([data-slot="alert-dialog-description"]) {
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.warning {
+  align-items: start;
+}
+
+.warning :global([data-slot="alert-title"]) {
+  font-size: 0.78rem;
+}
+
+.warning :global([data-slot="alert-description"]) {
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.dialog :global([data-slot="field-label"]) {
+  font-size: 0.72rem;
+}
+
+.dialog :global([data-slot="textarea"]) {
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.error {
+  border: 1px solid color-mix(in srgb, var(--destructive) 32%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 7%, var(--card));
+  color: var(--destructive);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.6rem;
+}

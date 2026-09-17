@@ -21,30 +21,6 @@
   box-shadow: var(--elevation-2);
 }
 
-.button-elevated {
-  box-shadow: var(--elevation-input);
-  transition:
-    box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-    border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.button-elevated:hover:not(:disabled) {
-  box-shadow: var(--elevation-2);
-}
-
-.button-primary-elevated {
-  box-shadow: var(--elevation-primary);
-  transition:
-    box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-    border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.button-primary-elevated:hover:not(:disabled) {
-  box-shadow: 0 4px 14px -4px color-mix(in oklch, var(--primary) 52%, transparent);
-}
-
 .input-elevated {
   box-shadow: var(--elevation-input);
 }
@@ -79,8 +55,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .button-elevated,
-  .button-primary-elevated,
   .panel-surface {
     transition: none;
   }

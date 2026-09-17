@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/id"
+	"chenmeridian/internal/modules/users"
 )
 
 const (
@@ -32,26 +33,29 @@ const (
 )
 
 var (
-	ErrProjectNotFound      = errors.New("项目不存在")
-	ErrSourceNotFound       = errors.New("可解析的软件需求规格说明不存在")
-	ErrSourceNotSrs         = errors.New("仅软件需求规格说明支持自动解析")
-	ErrNoSourceFile         = errors.New("该 SRS 没有电子文件")
-	ErrNeedsDocx            = errors.New("当前 SRS 为 .doc，需要先转换为 .docx 后解析")
-	ErrSectionNotFound      = errors.New("需求章节不存在")
-	ErrParentMissing        = errors.New("父章节不存在")
-	ErrChapterInvalid       = errors.New("章节号格式不正确")
-	ErrSectionExists        = errors.New("同一 SRS 版本中章节号已存在")
-	ErrRequirementExists    = errors.New("同一 SRS 版本中有效需求章节号已存在")
-	ErrRequirementName      = errors.New("同一 SRS 版本中有效需求名称已存在")
-	ErrRequirementCode      = errors.New("同一 SRS 版本中需求标识已存在")
-	ErrRequirementNotFound  = errors.New("软件需求不存在")
-	ErrRequirementNotActive = errors.New("候选或正式需求才允许修改")
-	ErrNoChanges            = errors.New("没有需要修改的需求信息")
-	ErrNoRequirements       = errors.New("没有可操作的需求")
-	ErrReasonRequired       = errors.New("排除需求必须填写原因")
-	ErrInvalidKind          = errors.New("主需求性质不正确")
-	ErrInvalidSecondaryKind = errors.New("副需求类型不正确")
-	ErrSecondaryKindRepeat  = errors.New("副需求类型不能与主需求类型相同")
+	ErrProjectNotFound         = errors.New("项目不存在")
+	ErrSourceNotFound          = errors.New("可解析的软件需求规格说明不存在")
+	ErrSourceNotSrs            = errors.New("仅软件需求规格说明支持自动解析")
+	ErrNoSourceFile            = errors.New("该 SRS 没有电子文件")
+	ErrNeedsDocx               = errors.New("当前 SRS 为 .doc，需要先转换为 .docx 后解析")
+	ErrSectionNotFound         = errors.New("需求章节不存在")
+	ErrParentMissing           = errors.New("父章节不存在")
+	ErrChapterInvalid          = errors.New("章节号格式不正确")
+	ErrSectionExists           = errors.New("同一 SRS 版本中章节号已存在")
+	ErrRequirementExists       = errors.New("同一 SRS 版本中有效需求章节号已存在")
+	ErrRequirementName         = errors.New("同一 SRS 版本中有效需求名称已存在")
+	ErrRequirementCode         = errors.New("同一 SRS 版本中需求标识已存在")
+	ErrRequirementNotFound     = errors.New("软件需求不存在")
+	ErrRequirementNotActive    = errors.New("候选或正式需求才允许修改")
+	ErrRequirementNotDeleted   = errors.New("仅从已确认需求删除的记录允许恢复")
+	ErrRequirementNotPurgeable = errors.New("仅从已确认需求删除的记录允许彻底删除")
+	ErrPurgeReasonRequired     = errors.New("彻底删除原因必须填写")
+	ErrNoChanges               = errors.New("没有需要修改的需求信息")
+	ErrNoRequirements          = errors.New("没有可操作的需求")
+	ErrReasonTooLong           = errors.New("删除原因最多 500 个字符")
+	ErrInvalidKind             = errors.New("主需求性质不正确")
+	ErrInvalidSecondaryKind    = errors.New("副需求类型不正确")
+	ErrSecondaryKindRepeat     = errors.New("副需求类型不能与主需求类型相同")
 )
 
 type Service struct {
@@ -115,8 +119,22 @@ type RequirementResponse struct {
 	SourceAnchor       string   `json:"sourceAnchor"`
 	Status             string   `json:"status"`
 	TestItemTaskStatus string   `json:"testItemTaskStatus"`
+	DeletedFromStatus  string   `json:"deletedFromStatus"`
+	DeletedReason      string   `json:"deletedReason"`
+	DeletedAt          string   `json:"deletedAt"`
 	CreatedAt          string   `json:"createdAt"`
 	UpdatedAt          string   `json:"updatedAt"`
+}
+
+type RequirementEventResponse struct {
+	ID             string `json:"id"`
+	Action         string `json:"action"`
+	FromStatus     string `json:"fromStatus"`
+	ToStatus       string `json:"toStatus"`
+	Detail         string `json:"detail"`
+	OperatedBy     string `json:"operatedBy"`
+	OperatedByName string `json:"operatedByName"`
+	OperatedAt     string `json:"operatedAt"`
 }
 
 type WorkbenchResponse struct {
@@ -201,6 +219,16 @@ type StatusActionResult struct {
 	UpdatedCount int `json:"updatedCount"`
 }
 
+type PurgeRequirementInput struct {
+	ProjectCode string
+	ID          string
+	Reason      string
+}
+
+type PurgeRequirementResult struct {
+	DeletedCount int `json:"deletedCount"`
+}
+
 func (s *Service) Workbench(ctx context.Context, projectCode string, sourceVersionID string) (WorkbenchResponse, error) {
 	projectID, err := s.findProject(ctx, projectCode)
 	if err != nil {
@@ -242,12 +270,109 @@ func (s *Service) Workbench(ctx context.Context, projectCode string, sourceVersi
 		return WorkbenchResponse{}, fmt.Errorf("查询软件需求失败: %w", err)
 	}
 	sortRequirements(requirements)
+	requirementResponses := toRequirementResponses(requirements)
+	if err := s.attachDeletionMetadata(ctx, projectID, requirements, requirementResponses); err != nil {
+		return WorkbenchResponse{}, err
+	}
 
 	return WorkbenchResponse{
 		Sources:      toSourceResponses(sources),
 		Sections:     toSectionResponses(sections, requirementSectionScope(sections, requirements)),
-		Requirements: toRequirementResponses(requirements),
+		Requirements: requirementResponses,
 	}, nil
+}
+
+func (s *Service) Events(ctx context.Context, requirementID string) ([]RequirementEventResponse, error) {
+	var current Requirement
+	if err := s.db.WithContext(ctx).Where("id = ?", requirementID).First(&current).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrRequirementNotFound
+		}
+		return nil, fmt.Errorf("查询软件需求失败: %w", err)
+	}
+
+	var events []Event
+	if err := s.db.WithContext(ctx).
+		Where("requirement_id = ?", current.ID).
+		Order("rowid DESC").
+		Find(&events).Error; err != nil {
+		return nil, fmt.Errorf("查询需求审计记录失败: %w", err)
+	}
+
+	operatorIDs := make([]string, 0, len(events))
+	for _, event := range events {
+		if event.OperatedBy == "" {
+			continue
+		}
+		operatorIDs = append(operatorIDs, event.OperatedBy)
+	}
+	operatorNames := make(map[string]string, len(operatorIDs))
+	if len(operatorIDs) > 0 {
+		var operators []users.User
+		if err := s.db.WithContext(ctx).Where("id IN ?", operatorIDs).Find(&operators).Error; err != nil {
+			return nil, fmt.Errorf("查询需求审计操作人失败: %w", err)
+		}
+		for _, operator := range operators {
+			name := operator.DisplayName
+			if name == "" {
+				name = operator.Username
+			}
+			operatorNames[operator.ID] = name
+		}
+	}
+
+	result := make([]RequirementEventResponse, 0, len(events))
+	for _, event := range events {
+		result = append(result, RequirementEventResponse{
+			ID: event.ID, Action: event.Action, FromStatus: event.FromStatus,
+			ToStatus: event.ToStatus, Detail: event.Detail, OperatedBy: event.OperatedBy,
+			OperatedByName: operatorNames[event.OperatedBy], OperatedAt: event.OperatedAt.Format(time.RFC3339),
+		})
+	}
+	return result, nil
+}
+
+func (s *Service) attachDeletionMetadata(
+	ctx context.Context,
+	projectID string,
+	requirements []Requirement,
+	responses []RequirementResponse,
+) error {
+	if len(requirements) == 0 || len(responses) != len(requirements) {
+		return nil
+	}
+
+	ids := make([]string, 0, len(requirements))
+	responseIndexByID := make(map[string]int, len(requirements))
+	for index, requirement := range requirements {
+		if requirement.Status != StatusExcluded {
+			continue
+		}
+		ids = append(ids, requirement.ID)
+		responseIndexByID[requirement.ID] = index
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	var events []Event
+	if err := s.db.WithContext(ctx).
+		Where("project_id = ? AND requirement_id IN ? AND action = ?", projectID, ids, "exclude").
+		Order("rowid ASC").
+		Find(&events).Error; err != nil {
+		return fmt.Errorf("查询需求删除记录失败: %w", err)
+	}
+
+	for _, event := range events {
+		index, exists := responseIndexByID[event.RequirementID]
+		if !exists {
+			continue
+		}
+		responses[index].DeletedFromStatus = event.FromStatus
+		responses[index].DeletedReason = event.Detail
+		responses[index].DeletedAt = event.OperatedAt.Format(time.RFC3339)
+	}
+	return nil
 }
 
 func (s *Service) CreateSection(ctx context.Context, input CreateSectionInput) (SectionResponse, error) {
@@ -504,17 +629,21 @@ func (s *Service) ChangeStatus(ctx context.Context, input StatusActionInput) (St
 	if len(input.IDs) == 0 {
 		return StatusActionResult{}, ErrNoRequirements
 	}
+	projectID, err := s.findProject(ctx, input.ProjectCode)
+	if err != nil {
+		return StatusActionResult{}, err
+	}
 	action := strings.TrimSpace(input.Action)
-	if action != "confirm" && action != "exclude" {
+	if action != "confirm" && action != "exclude" && action != "restore" {
 		return StatusActionResult{}, fmt.Errorf("不支持的需求状态操作")
 	}
 	reason := strings.TrimSpace(input.Reason)
-	if action == "exclude" && reason == "" {
-		return StatusActionResult{}, ErrReasonRequired
+	if action == "exclude" && len([]rune(reason)) > 500 {
+		return StatusActionResult{}, ErrReasonTooLong
 	}
 
 	result := StatusActionResult{}
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, requirementID := range input.IDs {
 			var current Requirement
 			if err := tx.Where("id = ?", requirementID).First(&current).Error; err != nil {
@@ -522,6 +651,9 @@ func (s *Service) ChangeStatus(ctx context.Context, input StatusActionInput) (St
 					return ErrRequirementNotFound
 				}
 				return fmt.Errorf("查询软件需求失败: %w", err)
+			}
+			if current.ProjectID != projectID {
+				return ErrRequirementNotFound
 			}
 			if action == "confirm" {
 				if current.Status != StatusCandidate {
@@ -543,13 +675,49 @@ func (s *Service) ChangeStatus(ctx context.Context, input StatusActionInput) (St
 				continue
 			}
 
+			if action == "restore" {
+				if current.Status != StatusExcluded {
+					return ErrRequirementNotDeleted
+				}
+				latestDelete, eventErr := latestExcludeEvent(tx, current.ID)
+				if eventErr != nil {
+					return eventErr
+				}
+				if latestDelete == nil || latestDelete.FromStatus != StatusOfficial {
+					return ErrRequirementNotDeleted
+				}
+				if conflictErr := ensureRestorableRequirement(tx, &current); conflictErr != nil {
+					return conflictErr
+				}
+
+				nextTestTaskStatus := "none"
+				if strings.TrimSpace(current.Description) != "" {
+					nextTestTaskStatus = "pending"
+				}
+				now := time.Now()
+				if err := tx.Model(&Requirement{}).Where("id = ?", current.ID).Updates(map[string]any{
+					"status":                StatusOfficial,
+					"test_item_task_status": nextTestTaskStatus,
+					"updated_at":            now,
+				}).Error; err != nil {
+					return fmt.Errorf("恢复已确认需求失败: %w", err)
+				}
+				if err := createEvent(tx, current.ProjectID, current.ID, "restore", StatusExcluded, StatusOfficial,
+					"恢复为已确认需求", input.OperatedBy, now); err != nil {
+					return err
+				}
+				result.UpdatedCount++
+				continue
+			}
+
 			if current.Status != StatusCandidate && current.Status != StatusOfficial {
 				continue
 			}
 			now := time.Now()
 			if err := tx.Model(&Requirement{}).Where("id = ?", current.ID).Updates(map[string]any{
-				"status":     StatusExcluded,
-				"updated_at": now,
+				"status":                StatusExcluded,
+				"test_item_task_status": "none",
+				"updated_at":            now,
 			}).Error; err != nil {
 				return fmt.Errorf("排除软件需求失败: %w", err)
 			}
@@ -568,6 +736,49 @@ func (s *Service) ChangeStatus(ctx context.Context, input StatusActionInput) (St
 		return StatusActionResult{}, err
 	}
 	return result, nil
+}
+
+func (s *Service) PurgeRequirement(ctx context.Context, input PurgeRequirementInput) (PurgeRequirementResult, error) {
+	projectID, err := s.findProject(ctx, input.ProjectCode)
+	if err != nil {
+		return PurgeRequirementResult{}, err
+	}
+	reason := strings.TrimSpace(input.Reason)
+	if reason == "" {
+		return PurgeRequirementResult{}, ErrPurgeReasonRequired
+	}
+	if len([]rune(reason)) > 500 {
+		return PurgeRequirementResult{}, ErrReasonTooLong
+	}
+
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var current Requirement
+		if err := tx.Where("id = ?", input.ID).First(&current).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrRequirementNotFound
+			}
+			return fmt.Errorf("查询软件需求失败: %w", err)
+		}
+		if current.ProjectID != projectID || current.Status != StatusExcluded {
+			return ErrRequirementNotPurgeable
+		}
+
+		latestDelete, eventErr := latestExcludeEvent(tx, current.ID)
+		if eventErr != nil {
+			return eventErr
+		}
+		if latestDelete == nil || latestDelete.FromStatus != StatusOfficial {
+			return ErrRequirementNotPurgeable
+		}
+		if err := tx.Where("id = ?", current.ID).Delete(&Requirement{}).Error; err != nil {
+			return fmt.Errorf("彻底删除软件需求失败: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return PurgeRequirementResult{}, err
+	}
+	return PurgeRequirementResult{DeletedCount: 1}, nil
 }
 
 func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID string, operatedBy string) (ParseResult, error) {
@@ -987,6 +1198,57 @@ func requirementCodeExists(tx *gorm.DB, sourceVersionID string, code string, exc
 	}
 	if count > 0 {
 		return ErrRequirementCode
+	}
+	return nil
+}
+
+func latestExcludeEvent(tx *gorm.DB, requirementID string) (*Event, error) {
+	var event Event
+	err := tx.Where("requirement_id = ? AND action = ?", requirementID, "exclude").
+		Order("rowid DESC").First(&event).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询需求删除记录失败: %w", err)
+	}
+	return &event, nil
+}
+
+func ensureRestorableRequirement(tx *gorm.DB, requirement *Requirement) error {
+	var count int64
+	if err := tx.Model(&Requirement{}).
+		Where(
+			"source_version_id = ? AND chapter_number = ? AND id <> ? AND status IN (?, ?)",
+			requirement.SourceVersionID, requirement.ChapterNumber, requirement.ID,
+			StatusCandidate, StatusOfficial,
+		).
+		Count(&count).Error; err != nil {
+		return fmt.Errorf("检查需求章节冲突失败: %w", err)
+	}
+	if count > 0 {
+		return ErrRequirementExists
+	}
+
+	if err := tx.Model(&Requirement{}).
+		Where(
+			"source_version_id = ? AND name = ? AND id <> ? AND status IN (?, ?)",
+			requirement.SourceVersionID, requirement.Name, requirement.ID,
+			StatusCandidate, StatusOfficial,
+		).
+		Count(&count).Error; err != nil {
+		return fmt.Errorf("检查需求名称冲突失败: %w", err)
+	}
+	if count > 0 {
+		return ErrRequirementName
+	}
+
+	if requirement.ExternalIdentifier != "" {
+		if err := requirementCodeExists(
+			tx, requirement.SourceVersionID, requirement.ExternalIdentifier, requirement.ID,
+		); err != nil {
+			return err
+		}
 	}
 	return nil
 }

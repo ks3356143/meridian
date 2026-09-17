@@ -134,7 +134,7 @@ func Register(api huma.API, service *requirementsservice.Service) {
 		Method:      http.MethodPost,
 		Path:        "/api/v1/projects/{code}/requirements/status",
 		Summary:     "确认或排除需求",
-		Description: "批量确认候选需求为正式需求，或按原因排除需求。",
+		Description: "批量确认候选需求为正式需求，按原因排除需求，或将已删除的确认需求恢复为正式需求。",
 		Tags:        []string{"需求与追踪"},
 	}, func(ctx context.Context, input *StatusActionInput) (*StatusActionOutput, error) {
 		body, err := handler.service.ChangeStatus(ctx, requirementsservice.StatusActionInput{
@@ -145,6 +145,38 @@ func Register(api huma.API, service *requirementsservice.Service) {
 			return nil, toAPIError(err, "更新需求状态失败")
 		}
 		return &StatusActionOutput{Body: body}, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "list-requirement-events",
+		Method:      http.MethodGet,
+		Path:        "/api/v1/software-requirements/{id}/events",
+		Summary:     "查询需求审计",
+		Description: "按时间倒序返回需求创建、修改、确认、删除和恢复记录。",
+		Tags:        []string{"需求与追踪"},
+	}, func(ctx context.Context, input *RequirementEventsInput) (*RequirementEventsOutput, error) {
+		body, err := handler.service.Events(ctx, input.ID)
+		if err != nil {
+			return nil, toAPIError(err, "查询需求审计失败")
+		}
+		return &RequirementEventsOutput{Body: body}, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "purge-requirement",
+		Method:      http.MethodPost,
+		Path:        "/api/v1/projects/{code}/requirements/{id}/purge",
+		Summary:     "彻底删除已删除需求",
+		Description: "物理删除一条从确认基线移除的需求及其审计事件；操作不可恢复，必须填写原因。",
+		Tags:        []string{"需求与追踪"},
+	}, func(ctx context.Context, input *PurgeRequirementInput) (*PurgeRequirementOutput, error) {
+		body, err := handler.service.PurgeRequirement(ctx, requirementsservice.PurgeRequirementInput{
+			ProjectCode: input.Code, ID: input.ID, Reason: input.Body.Reason,
+		})
+		if err != nil {
+			return nil, toAPIError(err, "彻底删除需求失败")
+		}
+		return &PurgeRequirementOutput{Body: body}, nil
 	})
 }
 
@@ -186,12 +218,18 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error404NotFound("软件需求不存在")
 	case errors.Is(err, requirementsservice.ErrRequirementNotActive):
 		return huma.Error409Conflict("候选或正式需求才允许修改")
+	case errors.Is(err, requirementsservice.ErrRequirementNotDeleted):
+		return huma.Error409Conflict("仅从已确认需求删除的记录允许恢复")
+	case errors.Is(err, requirementsservice.ErrRequirementNotPurgeable):
+		return huma.Error409Conflict("仅从已确认需求删除的记录允许彻底删除")
+	case errors.Is(err, requirementsservice.ErrPurgeReasonRequired):
+		return huma.Error400BadRequest("彻底删除原因必须填写")
 	case errors.Is(err, requirementsservice.ErrNoChanges):
 		return huma.Error400BadRequest("没有需要修改的需求信息")
 	case errors.Is(err, requirementsservice.ErrNoRequirements):
 		return huma.Error400BadRequest("没有可操作的需求")
-	case errors.Is(err, requirementsservice.ErrReasonRequired):
-		return huma.Error400BadRequest("排除需求必须填写原因")
+	case errors.Is(err, requirementsservice.ErrReasonTooLong):
+		return huma.Error400BadRequest("删除原因最多 500 个字符")
 	case errors.Is(err, requirementsservice.ErrInvalidKind):
 		return huma.Error400BadRequest("主需求性质不正确")
 	case errors.Is(err, requirementsservice.ErrInvalidSecondaryKind):

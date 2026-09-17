@@ -50,6 +50,28 @@ type RequirementOutput struct {
 	Body requirementsservice.RequirementResponse
 }
 
+type RequirementEventsInput struct {
+	ID string `path:"id" required:"true"`
+}
+
+type RequirementEventsOutput struct {
+	Body []requirementsservice.RequirementEventResponse
+}
+
+type PurgeRequirementInput struct {
+	Code string `path:"code" required:"true"`
+	ID   string `path:"id" required:"true"`
+	Body PurgeRequirementRequest
+}
+
+type PurgeRequirementRequest struct {
+	Reason string `json:"reason"`
+}
+
+type PurgeRequirementOutput struct {
+	Body requirementsservice.PurgeRequirementResult
+}
+
 type BulkCreateInput struct {
 	Code string `path:"code" required:"true"`
 	Body BulkCreateRequest

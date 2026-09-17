@@ -155,7 +155,7 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
   });
 
   return (
-    <div className="panel-surface border-border overflow-hidden rounded-sm border">
+    <div className="panel-surface overflow-hidden rounded-sm">
       <DataTable
         table={table}
         leftAlignedColumns={[1]}

@@ -15,8 +15,11 @@ export function useRequirementsWorkbench(project: Project) {
     queryFn: () => requirementsApi.workbench(project.id),
   });
   const invalidate = useCallback(
-    () => queryClient.invalidateQueries({ queryKey }),
-    [queryClient, queryKey],
+    () =>
+      queryClient.invalidateQueries({
+        queryKey: ["projects", project.id, "requirements"],
+      }),
+    [project.id, queryClient],
   );
 
   const createMutation = useMutation({
@@ -39,5 +42,46 @@ export function useRequirementsWorkbench(project: Project) {
     onSuccess: () => invalidate(),
   });
 
-  return { workbenchQuery, createMutation, updateMutation };
+  const deleteMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      requirementsApi.changeStatus(project.id, {
+        ids: [id],
+        action: "exclude",
+        reason,
+      }),
+    onSuccess: () => {
+      toast.success("已删除确认需求");
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) =>
+      requirementsApi.changeStatus(project.id, {
+        ids: [id],
+        action: "restore",
+      }),
+    onSuccess: () => {
+      toast.success("已恢复确认需求");
+      return invalidate();
+    },
+  });
+
+  const purgeMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      requirementsApi.purge(project.id, id, reason),
+    onSuccess: () => {
+      toast.success("已彻底删除需求");
+      return invalidate();
+    },
+  });
+
+  return {
+    workbenchQuery,
+    createMutation,
+    updateMutation,
+    deleteMutation,
+    restoreMutation,
+    purgeMutation,
+    invalidate,
+  };
 }

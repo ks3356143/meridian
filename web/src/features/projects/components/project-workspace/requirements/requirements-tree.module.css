@@ -1,0 +1,314 @@
+.shell {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 4%, transparent), transparent 24%),
+    color-mix(in srgb, var(--card) 96%, transparent);
+  border: 1px solid var(--border);
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--primary) 72%, transparent),
+    0 1px 2px #142a1e08,
+    0 12px 26px -26px color-mix(in srgb, var(--primary) 55%, transparent);
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+.toolbar {
+  align-items: center;
+  background: color-mix(in srgb, var(--primary) 4%, var(--card));
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.4rem;
+  justify-content: space-between;
+  padding: 0.28rem 0.4rem 0;
+}
+
+.tabsList {
+  flex: 1 1 auto;
+  height: 2.1rem;
+  min-width: 0;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
+.tab {
+  font-size: 0.72rem;
+  padding-inline: 0.75rem;
+}
+
+.content {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.treeShell {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.tree {
+  overflow: hidden auto;
+  padding: 0.15rem;
+  scrollbar-color: color-mix(in srgb, var(--primary) 42%, var(--muted)) transparent;
+  scrollbar-width: thin;
+}
+
+.tree::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.tree::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--muted) 42%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.tree::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 44%, var(--muted));
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+.tree::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--primary) 62%, var(--muted));
+}
+
+.tree :global([role="treeitem"]) {
+  max-width: 100%;
+  min-width: 0 !important;
+  outline: none;
+}
+
+.tree :global([role="treeitem"]):focus-visible .row {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  box-shadow:
+    inset 2px 0 0 var(--primary),
+    0 0 0 2px color-mix(in srgb, var(--ring) 26%, transparent);
+}
+
+.guides {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.guide {
+  --guide-color: color-mix(in srgb, var(--info) 62%, transparent);
+  background: var(--guide-color);
+  bottom: 0;
+  display: block;
+  left: 7px;
+  opacity: 0.78;
+  position: absolute;
+  top: 0;
+  transition: opacity 0.18s;
+  width: 2px;
+}
+
+.guide[data-guide-level="2"] {
+  --guide-color: color-mix(in srgb, var(--primary) 62%, transparent);
+  left: 21px;
+}
+
+.guide[data-guide-level="3"] {
+  --guide-color: color-mix(in srgb, var(--warning) 64%, transparent);
+  left: 35px;
+}
+
+.guide[data-guide-level="4"] {
+  --guide-color: color-mix(in srgb, var(--destructive) 60%, transparent);
+  left: 49px;
+}
+
+.guide[data-guide-level="5"] {
+  left: 63px;
+}
+
+.guide[data-guide-level="6"] {
+  left: 77px;
+}
+
+.guide[data-guide-level="7"] {
+  left: 91px;
+}
+
+.guide[data-guide-level="8"] {
+  left: 105px;
+}
+
+.guide[data-guide-current="true"]::after {
+  background: var(--guide-color);
+  content: "";
+  height: 2px;
+  left: 2px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+}
+
+.row {
+  align-items: center;
+  border: 1px solid transparent;
+  color: var(--foreground);
+  display: flex;
+  font-size: 12px;
+  line-height: 1.3;
+  gap: 0.3rem;
+  min-height: 1.875rem;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding-block: 0.1rem;
+  padding-inline-end: 0.35rem;
+  position: relative;
+  text-align: left;
+  transition:
+    background-color 0.18s,
+    border-color 0.18s,
+    box-shadow 0.18s,
+    color 0.18s;
+  width: 100%;
+}
+
+.row::before {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  content: "";
+  inset-block: 0.25rem;
+  left: 0;
+  width: 2px;
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.row:hover {
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--border));
+}
+
+.row[data-selected="true"] {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--primary) 12%, transparent), transparent 68%),
+    color-mix(in srgb, var(--primary) 5%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+  box-shadow: 0 5px 14px -12px color-mix(in srgb, var(--primary) 62%, transparent);
+}
+
+.row[data-selected="true"]::before {
+  opacity: 1;
+}
+
+.row[data-node-type="source"] {
+  background: color-mix(in srgb, var(--info) 6%, var(--card));
+  font-weight: 700;
+}
+
+.chevron {
+  align-items: center;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  display: flex;
+  flex: 0 0 auto;
+  height: 1rem;
+  justify-content: center;
+  width: 0.85rem;
+}
+
+.chevron svg {
+  height: 0.7rem;
+  transition: transform 0.18s ease;
+  width: 0.7rem;
+}
+
+.row[data-open="true"] .chevron svg {
+  transform: rotate(90deg);
+}
+
+.icon {
+  align-items: center;
+  color: var(--primary);
+  display: flex;
+  flex: 0 0 auto;
+  height: 1.15rem;
+  justify-content: center;
+  width: 1.15rem;
+}
+
+.icon svg {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.title {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 12px !important;
+  font-weight: 600;
+}
+
+.row :global([data-slot="badge"]) {
+  height: 1.05rem;
+  font-size: 9.5px;
+  padding-inline: 0.24rem;
+}
+
+.empty {
+  min-height: 100%;
+}
+
+.shortcutTrigger,
+.shortcutTooltip {
+  color: var(--info);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide,
+  .chevron svg {
+    transition: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .shell {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .tabs {
+    height: auto;
+  }
+
+  .content {
+    overflow: visible;
+  }
+
+  .treeShell {
+    height: auto;
+    overflow: visible;
+  }
+
+  .tree {
+    overflow: visible;
+  }
+}

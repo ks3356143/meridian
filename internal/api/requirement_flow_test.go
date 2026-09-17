@@ -42,7 +42,19 @@ type requirementWorkbenchTestResponse struct {
 		Origin             string   `json:"origin"`
 		Status             string   `json:"status"`
 		TestItemTaskStatus string   `json:"testItemTaskStatus"`
+		DeletedFromStatus  string   `json:"deletedFromStatus"`
+		DeletedReason      string   `json:"deletedReason"`
+		DeletedAt          string   `json:"deletedAt"`
 	} `json:"requirements"`
+}
+
+type requirementEventsTestResponse []struct {
+	ID         string `json:"id"`
+	Action     string `json:"action"`
+	FromStatus string `json:"fromStatus"`
+	ToStatus   string `json:"toStatus"`
+	Detail     string `json:"detail"`
+	OperatedAt string `json:"operatedAt"`
 }
 
 func TestRequirementManualAndParsedFlow(t *testing.T) {
@@ -104,6 +116,18 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	if manualRequirement.ExternalIdentifier != "XTCS" {
 		t.Fatalf("空标识应按名称拼音首字母生成四位: %+v", manualRequirement)
 	}
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status",
+		map[string]any{
+			"ids":    []string{manualRequirement.ID},
+			"action": "exclude",
+			"reason": strings.Repeat("长", 501),
+		}, http.StatusBadRequest)
+	otherProjectCode := createWorkObjectTestProject(t, handler, token)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+otherProjectCode+"/requirements/status",
+		map[string]any{"ids": []string{manualRequirement.ID}, "action": "exclude"},
+		http.StatusNotFound)
 	focusedRequirement := postRequirement(t, handler, token, projectCode, requirementTestPayload{
 		SourceVersionID: source.ID,
 		Chapter:         "7.2.1",
@@ -304,6 +328,87 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	}
 	if !finalScope["3"] || !finalScope["3.1"] || finalScope["3.2"] || finalScope["4"] {
 		t.Fatalf("排除候选后作业面应收缩: %+v", workbench.Sections)
+	}
+
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status",
+		map[string]any{"ids": candidates[:1], "action": "exclude"}, http.StatusOK)
+	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
+	deletedOfficialID := ""
+	deletedCandidateID := ""
+	for _, requirement := range workbench.Requirements {
+		if requirement.ChapterNumber == "3.1" &&
+			(requirement.Status != "excluded" || requirement.TestItemTaskStatus != "none") {
+			t.Fatalf("删除确认需求应允许不填写原因并退出测试项任务: %+v", requirement)
+		}
+		if requirement.ChapterNumber == "3.1" {
+			deletedOfficialID = requirement.ID
+			if requirement.DeletedFromStatus != "official" || requirement.DeletedAt == "" {
+				t.Fatalf("删除确认需求应返回删除元数据: %+v", requirement)
+			}
+		}
+		if requirement.ChapterNumber == "3.2" {
+			deletedCandidateID = requirement.ID
+			if requirement.DeletedFromStatus != "candidate" ||
+				requirement.DeletedReason != "该段是说明文字，不作为需求" {
+				t.Fatalf("排除候选需求应返回排除元数据: %+v", requirement)
+			}
+		}
+	}
+
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/"+deletedCandidateID+"/purge",
+		map[string]any{"reason": "候选排除记录不应允许彻底删除"}, http.StatusConflict)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/"+deletedOfficialID+"/purge",
+		map[string]any{"reason": ""}, http.StatusBadRequest)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status",
+		map[string]any{"ids": []string{deletedCandidateID}, "action": "restore"},
+		http.StatusConflict)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status",
+		map[string]any{"ids": []string{deletedOfficialID}, "action": "restore"}, http.StatusOK)
+	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
+	for _, requirement := range workbench.Requirements {
+		if requirement.ChapterNumber == "3.1" &&
+			(requirement.Status != "official" || requirement.TestItemTaskStatus != "pending") {
+			t.Fatalf("恢复确认需求应回到基线并恢复测试项任务: %+v", requirement)
+		}
+	}
+
+	events := listRequirementEvents(t, handler, token, deletedOfficialID)
+	if len(events) < 3 || events[0].Action != "restore" ||
+		events[0].FromStatus != "excluded" || events[0].ToStatus != "official" {
+		t.Fatalf("需求审计应按时间倒序包含恢复记录: %+v", events)
+	}
+	hasDeleteEvent := false
+	for _, event := range events {
+		if event.Action == "exclude" && event.FromStatus == "official" {
+			hasDeleteEvent = true
+		}
+	}
+	if !hasDeleteEvent {
+		t.Fatalf("需求审计应包含删除确认需求记录: %+v", events)
+	}
+
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status",
+		map[string]any{"ids": []string{deletedOfficialID}, "action": "exclude"}, http.StatusOK)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/"+deletedOfficialID+"/purge",
+		map[string]any{"reason": "登记错误，不再保留历史"}, http.StatusOK)
+	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
+	for _, requirement := range workbench.Requirements {
+		if requirement.ID == deletedOfficialID {
+			t.Fatalf("彻底删除后需求不应保留: %+v", requirement)
+		}
+	}
+	eventRecorder := postJSONRecorder(t, handler, token, http.MethodGet,
+		"/api/v1/software-requirements/"+deletedOfficialID+"/events", nil)
+	if eventRecorder.Code != http.StatusNotFound {
+		t.Fatalf("彻底删除后审计应不可访问，实际 %d，响应: %s",
+			eventRecorder.Code, eventRecorder.Body.String())
 	}
 }
 
@@ -546,6 +651,30 @@ func listRequirementsWorkbench(
 	var response requirementWorkbenchTestResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("解析需求工作台失败: %v", err)
+	}
+	return response
+}
+
+func listRequirementEvents(
+	t *testing.T,
+	handler http.Handler,
+	token string,
+	requirementID string,
+) requirementEventsTestResponse {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(
+		http.MethodGet, "/api/v1/software-requirements/"+requirementID+"/events", nil,
+	)
+	request.Header.Set("Authorization", "Bearer "+token)
+	handler.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("需求审计状态码应为 200，实际 %d，响应: %s",
+			recorder.Code, recorder.Body.String())
+	}
+	var response requirementEventsTestResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("解析需求审计响应失败: %v", err)
 	}
 	return response
 }

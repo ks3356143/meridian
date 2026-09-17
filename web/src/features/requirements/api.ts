@@ -2,6 +2,8 @@ import { request } from "@/api/client";
 import type {
   RequirementRecord,
   RequirementsWorkbenchSnapshot,
+  RequirementStatusPayload,
+  RequirementEvent,
   SaveRequirementPayload,
 } from "./types";
 
@@ -16,5 +18,21 @@ export const requirementsApi = {
       `/api/v1/software-requirements/${requirementId}`,
       {},
       payload,
+    ),
+  changeStatus: (projectId: string, payload: RequirementStatusPayload) =>
+    request<{ updatedCount: number }>(
+      "POST",
+      `/api/v1/projects/${projectId}/requirements/status`,
+      {},
+      payload,
+    ),
+  events: (requirementId: string) =>
+    request<RequirementEvent[]>("GET", `/api/v1/software-requirements/${requirementId}/events`),
+  purge: (projectId: string, requirementId: string, reason: string) =>
+    request<{ deletedCount: number }>(
+      "POST",
+      `/api/v1/projects/${projectId}/requirements/${requirementId}/purge`,
+      {},
+      { reason },
     ),
 };

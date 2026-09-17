@@ -1,0 +1,42 @@
+.textarea {
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  border: 1px solid var(--input);
+  border-radius: 2px;
+  color: var(--foreground);
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.625;
+  overflow-y: auto;
+  padding: 0.5rem 0.625rem;
+  resize: none;
+  transition:
+    border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  width: 100%;
+}
+
+.textarea::placeholder {
+  color: var(--placeholder);
+}
+
+.textarea:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 18px -5px var(--ring);
+  outline: none;
+}
+
+.textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.textarea[aria-invalid="true"] {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--destructive) 25%, transparent);
+}
+
+:global(.dark) .textarea {
+  background: color-mix(in srgb, var(--input) 40%, transparent);
+}

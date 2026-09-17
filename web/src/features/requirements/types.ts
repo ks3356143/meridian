@@ -30,6 +30,9 @@ export interface RequirementRecord {
   status: RequirementStatus;
   sourceAnchor: string;
   testItemTaskStatus: "none" | "pending" | "completed";
+  deletedFromStatus?: RequirementStatus;
+  deletedReason?: string;
+  deletedAt?: string;
   updatedAt: string;
 }
 
@@ -48,4 +51,21 @@ export interface SaveRequirementPayload {
   primaryKind: RequirementPrimaryKind;
   secondaryKinds: RequirementPrimaryKind[];
   tags: string[];
+}
+
+export interface RequirementStatusPayload {
+  ids: string[];
+  action: "confirm" | "exclude" | "restore";
+  reason?: string;
+}
+
+export interface RequirementEvent {
+  id: string;
+  action: "create" | "update" | "confirm" | "exclude" | "restore" | "parse";
+  fromStatus: RequirementStatus | "";
+  toStatus: RequirementStatus | "";
+  detail: string;
+  operatedBy: string;
+  operatedByName: string;
+  operatedAt: string;
 }

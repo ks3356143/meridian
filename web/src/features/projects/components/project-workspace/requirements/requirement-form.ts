@@ -71,3 +71,17 @@ export function requirementSourceLabel(source: RequirementSource) {
       return source.objectName.replace(/^【[^】]+】/, "");
   }
 }
+
+export function getNextSiblingChapterNumber(chapterNumber: string, activeChapterNumbers: string[]) {
+  const parts = chapterNumber.split(".");
+  const parentParts = parts.slice(0, -1);
+  const parentPrefix = parentParts.length > 0 ? `${parentParts.join(".")}.` : "";
+  const siblingNumbers = activeChapterNumbers
+    .filter((item) => item.startsWith(parentPrefix))
+    .map((item) => item.slice(parentPrefix.length).split(".")[0])
+    .map((item) => Number.parseInt(item, 10))
+    .filter((item) => Number.isInteger(item) && item > 0);
+  const nextNumber = siblingNumbers.length > 0 ? Math.max(...siblingNumbers) + 1 : 1;
+
+  return `${parentPrefix}${nextNumber}`;
+}

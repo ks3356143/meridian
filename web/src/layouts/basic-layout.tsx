@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { Navigate, NavLink, Outlet, useMatch } from "react-router";
-import { cn } from "cn";
+import styles from "./basic-layout.module.css";
 import { BrandLogo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/provider/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -82,8 +82,8 @@ export default function BasicLayout() {
   );
 
   return (
-    <div className="bg-background flex min-h-svh flex-col lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">
-      <aside className="border-border bg-card/50 sticky top-0 z-20 hidden h-svh flex-col overflow-hidden border-r lg:flex [view-transition-name:app-sidebar]">
+    <div className="bg-background flex min-h-svh flex-col min-[900px]:grid min-[900px]:grid-cols-[236px_minmax(0,1fr)]">
+      <aside className="border-border bg-card/50 sticky top-0 z-20 hidden h-svh flex-col overflow-hidden border-r min-[900px]:flex [view-transition-name:app-sidebar]">
         <div
           className="visual-glow pointer-events-none absolute -top-24 -right-20 size-80 opacity-35"
           aria-hidden
@@ -112,7 +112,7 @@ export default function BasicLayout() {
                 <Button
                   variant="outline"
                   size="icon-sm"
-                  className="lg:hidden"
+                  className={styles.mobileNavTrigger}
                   aria-label="打开导航菜单"
                 >
                   <MenuIcon aria-hidden />
@@ -172,13 +172,10 @@ function SidebarLink({
   return (
     <Button
       asChild
-      variant="ghost"
-      className={cn(
-        "h-auto w-full justify-start px-3 py-2.5 text-sm",
-        active
-          ? "border-primary/30 bg-primary/12 font-semibold text-primary hover:bg-primary/10"
-          : "text-foreground hover:bg-primary/6 hover:text-primary",
-      )}
+      variant={null}
+      disableRipple={active}
+      className={styles.sidebarLink}
+      data-state={active ? "active" : "inactive"}
     >
       <NavLink to={to} end={end} onClick={handleClick} viewTransition>
         <Icon data-icon="inline-start" aria-hidden />

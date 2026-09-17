@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { useRef, useState } from "react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { MultiSelectOption } from "./multi-select-types";
 import { useMultiSelectBadgeMotion } from "./use-multi-select-badge-motion";
+import styles from "./multi-select-combobox.module.css";
 
 export function MultiSelectCombobox({
   id,
@@ -61,13 +62,10 @@ export function MultiSelectCombobox({
           aria-invalid={invalid ? true : undefined}
           aria-label={ariaLabel}
           data-slot="multi-select-trigger"
-          className={cn(
-            "input-elevated bg-card/80 h-auto min-h-10 w-full justify-between px-2.5 py-1.5 font-medium",
-            visibleOptions.length === 0 && "text-placeholder font-normal",
-            className,
-          )}
+          data-empty={visibleOptions.length === 0 || undefined}
+          className={cn(styles.trigger, className)}
         >
-          <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className={styles.content}>
             {visibleOptions.length === 0
               ? placeholder
               : visibleOptions.map((option) => (
@@ -82,7 +80,7 @@ export function MultiSelectCombobox({
                   </Badge>
                 ))}
           </span>
-          <ChevronsUpDown className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+          <ChevronDown className={styles.chevron} aria-hidden />
         </Button>
       </PopoverTrigger>
       <PopoverContent

@@ -91,7 +91,7 @@ export function ProjectWorkspaceLayout({
   }
 
   return (
-    <div ref={containerRef} className="workspace-shell flex min-h-svh flex-col">
+    <div ref={containerRef} className="workspace-shell flex h-svh min-h-0 flex-col">
       <WorkspaceTopbar project={project} executionRate={executionRate} openIssues={openIssues} />
 
       <div className="workspace-body flex min-h-0 flex-1 flex-col">

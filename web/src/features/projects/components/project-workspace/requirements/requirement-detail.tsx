@@ -1,7 +1,8 @@
-import { CheckCircle2, CloudUpload, FileText, Link2, Loader2 } from "lucide-react";
+import { CheckCircle2, CloudUpload, FileText, Link2, Loader2, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
   RequirementPrimaryKind,
   RequirementRecord,
@@ -25,11 +27,13 @@ import {
   requirementKindOptions,
   requirementSourceLabel,
 } from "./requirement-form";
+import styles from "./requirement-detail.module.css";
 
 export function RequirementDetail({
   requirement,
   source,
   onUpdate,
+  onDelete,
 }: {
   requirement: RequirementRecord;
   source?: RequirementSource;
@@ -37,6 +41,7 @@ export function RequirementDetail({
     id: string,
     payload: Omit<SaveRequirementPayload, "sourceVersionId">,
   ) => Promise<RequirementRecord | undefined>;
+  onDelete: (requirement: RequirementRecord, hasUnsavedChanges: boolean) => void;
 }) {
   const [draft, setDraft] = useState(() => toDraft(requirement));
   const [baseline, setBaseline] = useState(() => toDraft(requirement));
@@ -80,23 +85,39 @@ export function RequirementDetail({
   }, [dirty, draft, onUpdate, requirement]);
 
   return (
-    <section className="requirements-detail-shell" aria-label="需求详情容器">
-      <header className="requirement-detail-header">
+    <section className={styles.shell} aria-label="需求详情容器">
+      <header className={styles.header}>
         <div className="min-w-0">
-          <p className="requirement-detail-eyebrow">
+          <p className={styles.eyebrow}>
             {source ? `${requirementSourceLabel(source)}${source.version}` : "来源文档"}
           </p>
           <h3>
             §{draft.chapterNumber || requirement.chapterNumber} {draft.name || requirement.name}
           </h3>
         </div>
-        <div className="requirement-detail-status">
+        <div className={styles.status}>
           <Badge variant="primary">已确认</Badge>
           <Badge variant="outline">{kindLabel ?? "其他"}</Badge>
           {secondaryKindLabels.length ? (
             <Badge variant="outline">副类型：{secondaryKindLabels.join(" / ")}</Badge>
           ) : null}
-          <span data-save-state={status} aria-live="polite">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={styles.deleteTrigger}
+                aria-label="删除已确认需求"
+                onClick={() => onDelete(requirement, dirty)}
+              >
+                <Trash2 data-icon="inline-start" aria-hidden />
+                删除
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">删除已确认需求</TooltipContent>
+          </Tooltip>
+          <span className={styles.statusChip} data-save-state={status} aria-live="polite">
             {status === "saving" ? (
               <>
                 <Loader2 aria-hidden />
@@ -119,12 +140,12 @@ export function RequirementDetail({
         </div>
       </header>
 
-      <div className="requirement-detail-body" onBlur={saveDraft}>
-        <div className="requirement-detail-grid">
+      <div className={styles.body} onBlur={saveDraft}>
+        <div className={styles.grid}>
           <Field data-invalid={errors.chapterNumber ? true : undefined}>
             <FieldLabel htmlFor="detail-chapter">
               章节号
-              <span className="requirement-required-mark" aria-hidden>
+              <span className={styles.requiredMark} aria-hidden>
                 *
               </span>
             </FieldLabel>
@@ -151,7 +172,7 @@ export function RequirementDetail({
           <Field data-invalid={errors.name ? true : undefined}>
             <FieldLabel htmlFor="detail-name">
               名称
-              <span className="requirement-required-mark" aria-hidden>
+              <span className={styles.requiredMark} aria-hidden>
                 *
               </span>
             </FieldLabel>
@@ -169,7 +190,7 @@ export function RequirementDetail({
           <Field data-invalid={errors.primaryKind ? true : undefined}>
             <FieldLabel htmlFor="detail-kind">
               需求类型
-              <span className="requirement-required-mark" aria-hidden>
+              <span className={styles.requiredMark} aria-hidden>
                 *
               </span>
             </FieldLabel>
@@ -205,7 +226,7 @@ export function RequirementDetail({
             <FieldError id="detail-kind-error">{errors.primaryKind}</FieldError>
           </Field>
 
-          <Field className="requirement-detail-secondary">
+          <Field className={styles.secondary}>
             <FieldLabel htmlFor="detail-secondary-kind">副类型</FieldLabel>
             <MultiSelectCombobox
               id="detail-secondary-kind"
@@ -221,7 +242,6 @@ export function RequirementDetail({
               placeholder="可选，多选"
               searchPlaceholder="搜索副类型"
               emptyText="没有匹配的副类型"
-              className="requirements-secondary-select"
             />
             <FieldError id="detail-secondary-kind-error">{errors.secondaryKinds}</FieldError>
           </Field>
@@ -230,24 +250,25 @@ export function RequirementDetail({
         <Field data-invalid={errors.description ? true : undefined}>
           <FieldLabel htmlFor="detail-description">
             描述
-            <span className="requirement-required-mark" aria-hidden>
+            <span className={styles.requiredMark} aria-hidden>
               *
             </span>
           </FieldLabel>
           <Textarea
             id="detail-description"
             value={draft.description}
-            rows={9}
+            minRows={5}
+            maxRows={12}
             aria-invalid={errors.description ? true : undefined}
             aria-required="true"
             aria-describedby={errors.description ? "detail-description-error" : undefined}
             onChange={(event) => update("description", event.target.value)}
           />
           <FieldError id="detail-description-error">{errors.description}</FieldError>
-          <p className="requirement-detail-hint">支持多行段落；表格与图片先保留原文占位。</p>
+          <p className={styles.hint}>支持多行段落；表格与图片先保留原文占位。</p>
         </Field>
 
-        <section className="requirement-related">
+        <section className={styles.related}>
           <header>
             <div>
               <h4>

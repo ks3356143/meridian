@@ -1,0 +1,35 @@
+.copyAction {
+  border-color: color-mix(in srgb, var(--info) 25%, var(--border));
+  color: var(--info);
+}
+
+.copyAction:hover,
+.copyAction:focus-visible {
+  background: color-mix(in srgb, var(--info) 8%, var(--card));
+  border-color: color-mix(in srgb, var(--info) 38%, var(--border));
+  color: var(--info);
+}
+
+.historyAction {
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+  color: var(--primary);
+}
+
+.historyAction:hover,
+.historyAction:focus-visible {
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 38%, var(--border));
+  color: var(--primary);
+}
+
+.purgeAction {
+  border-color: color-mix(in srgb, var(--destructive) 25%, var(--border));
+  color: var(--destructive);
+}
+
+.purgeAction:hover,
+.purgeAction:focus-visible {
+  background: color-mix(in srgb, var(--destructive) 8%, var(--card));
+  border-color: color-mix(in srgb, var(--destructive) 38%, var(--border));
+  color: var(--destructive);
+}

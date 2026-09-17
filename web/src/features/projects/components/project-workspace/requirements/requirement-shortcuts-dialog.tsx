@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import styles from "./requirement-shortcuts-dialog.module.css";
 
 type ShortcutRow = {
   keys: string[];
@@ -116,31 +117,31 @@ export function RequirementShortcutsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="requirements-shortcut-title">
+          <DialogTitle className={styles.title}>
             <Keyboard aria-hidden />
             快捷键与功能说明
           </DialogTitle>
           <DialogDescription>查看需求工作台当前可用的键盘操作和连续录入行为。</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="shortcuts" className="requirements-shortcut-tabs">
-          <TabsList variant="line" className="requirements-shortcut-tabs-list">
+        <Tabs defaultValue="shortcuts" className={styles.tabs}>
+          <TabsList variant="line" className={styles.tabsList}>
             <TabsTrigger value="shortcuts">
               快捷键
-              <Badge variant="outline" className="requirements-shortcut-count">
+              <Badge variant="outline" className={styles.count}>
                 {shortcutRows.length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="functions">
               功能说明
-              <Badge variant="outline" className="requirements-shortcut-count">
+              <Badge variant="outline" className={styles.count}>
                 {functionRows.length}
               </Badge>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="shortcuts" className="requirements-shortcut-content">
-            <Table className="requirements-shortcut-table">
+          <TabsContent value="shortcuts" className={styles.content}>
+            <Table className={styles.table}>
               <TableHeader>
                 <TableRow>
                   <TableHead>按键</TableHead>
@@ -152,29 +153,25 @@ export function RequirementShortcutsDialog({
                 {shortcutRows.map((row) => (
                   <TableRow key={row.description}>
                     <TableCell>
-                      <span className="requirements-shortcut-keys">
+                      <span className={styles.keys}>
                         {row.keys.map((key, index) => (
                           <Fragment key={`${row.description}-${key}`}>
-                            {index > 0 ? (
-                              <span className="requirements-shortcut-plus">+</span>
-                            ) : null}
-                            <kbd className="requirements-shortcut-key">{key}</kbd>
+                            {index > 0 ? <span className={styles.plus}>+</span> : null}
+                            <kbd className={styles.key}>{key}</kbd>
                           </Fragment>
                         ))}
                       </span>
                     </TableCell>
-                    <TableCell className="requirements-shortcut-scope">{row.scope}</TableCell>
-                    <TableCell className="requirements-shortcut-description">
-                      {row.description}
-                    </TableCell>
+                    <TableCell className={styles.scope}>{row.scope}</TableCell>
+                    <TableCell className={styles.description}>{row.description}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TabsContent>
 
-          <TabsContent value="functions" className="requirements-shortcut-content">
-            <Table className="requirements-shortcut-table">
+          <TabsContent value="functions" className={styles.content}>
+            <Table className={styles.table}>
               <TableHeader>
                 <TableRow>
                   <TableHead>功能</TableHead>
@@ -184,10 +181,8 @@ export function RequirementShortcutsDialog({
               <TableBody>
                 {functionRows.map((row) => (
                   <TableRow key={row.name}>
-                    <TableCell className="requirements-shortcut-scope">{row.name}</TableCell>
-                    <TableCell className="requirements-shortcut-description">
-                      {row.description}
-                    </TableCell>
+                    <TableCell className={styles.scope}>{row.name}</TableCell>
+                    <TableCell className={styles.description}>{row.description}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
