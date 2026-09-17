@@ -37,12 +37,10 @@
   border-color: color-mix(in srgb, var(--primary) 24%, transparent);
   box-shadow: 0 7px 18px -15px color-mix(in srgb, var(--primary) 62%, transparent);
   color: var(--primary);
-  transform: translateY(-1px);
 }
 
 .sidebarLink:hover svg {
   color: var(--primary);
-  transform: scale(1.04);
 }
 
 .sidebarLink[data-state="active"] {
@@ -92,13 +90,5 @@
   .sidebarLink,
   .sidebarLink svg {
     transition: none;
-  }
-
-  .sidebarLink:hover {
-    transform: none;
-  }
-
-  .sidebarLink:hover svg {
-    transform: none;
   }
 }
