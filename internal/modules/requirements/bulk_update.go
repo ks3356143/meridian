@@ -1,0 +1,289 @@
+package requirements
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+type BulkReplaceSpec struct {
+	Find              string `json:"find"`
+	Replacement       string `json:"replacement,omitempty"`
+	ApplyToName       bool   `json:"applyToName,omitempty"`
+	ApplyToIdentifier bool   `json:"applyToIdentifier,omitempty"`
+}
+
+type BulkUpdateInput struct {
+	ProjectCode    string
+	IDs            []string
+	PrimaryKind    *string
+	SecondaryKinds *[]string
+	Replace        *BulkReplaceSpec
+	OperatedBy     string
+}
+
+type BulkUpdateResult struct {
+	UpdatedCount int `json:"updatedCount"`
+}
+
+type bulkUpdateItem struct {
+	requirement       Requirement
+	newName           string
+	newIdentifier     string
+	newPrimaryKind    string
+	newSecondaryKinds string
+	changed           bool
+}
+
+func (s *Service) BulkUpdate(ctx context.Context, input BulkUpdateInput) (BulkUpdateResult, error) {
+	if len(input.IDs) == 0 {
+		return BulkUpdateResult{}, ErrNoRequirements
+	}
+	if input.PrimaryKind == nil && input.SecondaryKinds == nil && input.Replace == nil {
+		return BulkUpdateResult{}, ErrNoChanges
+	}
+	if input.PrimaryKind != nil {
+		if err := validatePrimaryKind(*input.PrimaryKind); err != nil {
+			return BulkUpdateResult{}, err
+		}
+	}
+	replace := input.Replace
+	if replace != nil {
+		if strings.TrimSpace(replace.Find) == "" || (!replace.ApplyToName && !replace.ApplyToIdentifier) {
+			return BulkUpdateResult{}, ErrInvalidBulkReplace
+		}
+	}
+
+	projectID, err := s.findProject(ctx, input.ProjectCode)
+	if err != nil {
+		return BulkUpdateResult{}, err
+	}
+
+	var requirements []Requirement
+	if err := s.db.WithContext(ctx).
+		Where("project_id = ? AND id IN ?", projectID, input.IDs).
+		Order("source_version_id, chapter_number, id").
+		Find(&requirements).Error; err != nil {
+		return BulkUpdateResult{}, fmt.Errorf("查询软件需求失败: %w", err)
+	}
+	if len(requirements) != len(input.IDs) {
+		return BulkUpdateResult{}, ErrRequirementNotFound
+	}
+	for _, requirement := range requirements {
+		if requirement.Status != StatusOfficial {
+			return BulkUpdateResult{}, ErrRequirementNotOfficial
+		}
+	}
+
+	updates := make([]bulkUpdateItem, 0, len(requirements))
+	for _, requirement := range requirements {
+		newPrimaryKind := requirement.PrimaryKind
+		if input.PrimaryKind != nil {
+			newPrimaryKind = strings.TrimSpace(*input.PrimaryKind)
+		}
+		newSecondaryKinds := requirement.SecondaryKinds
+		if input.SecondaryKinds != nil {
+			normalized, normalizeErr := normalizeSecondaryKinds(newPrimaryKind, *input.SecondaryKinds)
+			if normalizeErr != nil {
+				return BulkUpdateResult{}, normalizeErr
+			}
+			newSecondaryKinds = marshalTags(normalized)
+		}
+		newName := requirement.Name
+		newIdentifier := requirement.ExternalIdentifier
+		if replace != nil {
+			if replace.ApplyToName {
+				newName = strings.ReplaceAll(newName, replace.Find, replace.Replacement)
+				if strings.TrimSpace(newName) == "" {
+					return BulkUpdateResult{}, ErrReplaceNameEmpty
+				}
+				if len([]rune(newName)) > 240 {
+					return BulkUpdateResult{}, ErrReplaceNameTooLong
+				}
+			}
+			if replace.ApplyToIdentifier {
+				newIdentifier = strings.ReplaceAll(newIdentifier, replace.Find, replace.Replacement)
+				if len(newIdentifier) > 64 {
+					return BulkUpdateResult{}, ErrReplaceIdentifierTooLong
+				}
+			}
+		}
+		changed := newName != requirement.Name ||
+			newIdentifier != requirement.ExternalIdentifier ||
+			newPrimaryKind != requirement.PrimaryKind ||
+			newSecondaryKinds != requirement.SecondaryKinds
+		updates = append(updates, bulkUpdateItem{
+			requirement: requirement, newName: newName, newIdentifier: newIdentifier,
+			newPrimaryKind: newPrimaryKind, newSecondaryKinds: newSecondaryKinds, changed: changed,
+		})
+	}
+
+	hasChanged := false
+	for _, update := range updates {
+		if update.changed {
+			hasChanged = true
+			break
+		}
+	}
+	if !hasChanged {
+		return BulkUpdateResult{}, ErrNoChanges
+	}
+
+	result := BulkUpdateResult{}
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := ensureBulkUpdateUniqueness(ctx, tx, updates); err != nil {
+			return err
+		}
+		for _, update := range updates {
+			if !update.changed {
+				continue
+			}
+			now := time.Now()
+			if err := tx.Model(&Requirement{}).Where("id = ?", update.requirement.ID).Updates(map[string]any{
+				"name":                update.newName,
+				"external_identifier": update.newIdentifier,
+				"primary_kind":        update.newPrimaryKind,
+				"secondary_kinds":     update.newSecondaryKinds,
+				"updated_at":          now,
+			}).Error; err != nil {
+				return fmt.Errorf("批量修改软件需求失败: %w", err)
+			}
+			detail := bulkUpdateDetail(update.requirement, update.newName, update.newIdentifier,
+				update.newPrimaryKind, update.newSecondaryKinds)
+			if err := createEvent(tx, update.requirement.ProjectID, update.requirement.ID,
+				"update", StatusOfficial, StatusOfficial, detail, input.OperatedBy, now); err != nil {
+				return err
+			}
+			result.UpdatedCount++
+		}
+		return nil
+	})
+	if err != nil {
+		return BulkUpdateResult{}, err
+	}
+	return result, nil
+}
+
+func ensureBulkUpdateUniqueness(ctx context.Context, db *gorm.DB, updates []bulkUpdateItem) error {
+	sourceIDs := make([]string, 0, len(updates))
+	sourceSeen := make(map[string]bool, len(updates))
+	for _, update := range updates {
+		if !update.changed || sourceSeen[update.requirement.SourceVersionID] {
+			continue
+		}
+		sourceSeen[update.requirement.SourceVersionID] = true
+		sourceIDs = append(sourceIDs, update.requirement.SourceVersionID)
+	}
+	if len(sourceIDs) == 0 {
+		return nil
+	}
+
+	var pool []Requirement
+	if err := db.WithContext(ctx).
+		Where("source_version_id IN ? AND status IN ?", sourceIDs, []string{StatusCandidate, StatusOfficial}).
+		Find(&pool).Error; err != nil {
+		return fmt.Errorf("查询需求冲突检查失败: %w", err)
+	}
+
+	nameCounts := make(map[string]int, len(pool))
+	codeCounts := make(map[string]int, len(pool))
+	requirementKey := func(sourceVersionID string, value string) string {
+		return sourceVersionID + "\x00" + value
+	}
+	for _, requirement := range pool {
+		nameCounts[requirementKey(requirement.SourceVersionID, requirement.Name)]++
+		if requirement.ExternalIdentifier != "" {
+			codeCounts[requirementKey(requirement.SourceVersionID, requirement.ExternalIdentifier)]++
+		}
+	}
+	for _, update := range updates {
+		if !update.changed {
+			continue
+		}
+		sourceVersionID := update.requirement.SourceVersionID
+		nameCounts[requirementKey(sourceVersionID, update.requirement.Name)]--
+		nameCounts[requirementKey(sourceVersionID, update.newName)]++
+		if update.requirement.ExternalIdentifier != "" {
+			codeCounts[requirementKey(sourceVersionID, update.requirement.ExternalIdentifier)]--
+		}
+		if update.newIdentifier != "" {
+			codeCounts[requirementKey(sourceVersionID, update.newIdentifier)]++
+		}
+	}
+	for _, update := range updates {
+		if !update.changed {
+			continue
+		}
+		sourceVersionID := update.requirement.SourceVersionID
+		if nameCounts[requirementKey(sourceVersionID, update.newName)] > 1 {
+			return ErrRequirementName
+		}
+		if update.newIdentifier != "" &&
+			codeCounts[requirementKey(sourceVersionID, update.newIdentifier)] > 1 {
+			return ErrRequirementCode
+		}
+	}
+	return nil
+}
+
+func bulkUpdateDetail(
+	current Requirement,
+	newName string,
+	newIdentifier string,
+	newPrimaryKind string,
+	newSecondaryKinds string,
+) string {
+	var parts []string
+	if newName != current.Name {
+		parts = append(parts, fmt.Sprintf("名称「%s」→「%s」", current.Name, newName))
+	}
+	if newIdentifier != current.ExternalIdentifier {
+		parts = append(parts, fmt.Sprintf("标识「%s」→「%s」", current.ExternalIdentifier, newIdentifier))
+	}
+	if newPrimaryKind != current.PrimaryKind {
+		parts = append(parts, fmt.Sprintf("主类型 %s→%s",
+			kindLabel(current.PrimaryKind), kindLabel(newPrimaryKind)))
+	}
+	if newSecondaryKinds != current.SecondaryKinds {
+		parts = append(parts, fmt.Sprintf("副类型 %s→%s",
+			secondaryKindLabel(current.SecondaryKinds), secondaryKindLabel(newSecondaryKinds)))
+	}
+	if len(parts) == 0 {
+		return "批量修改需求"
+	}
+	return "批量修改：" + strings.Join(parts, "；")
+}
+
+func kindLabel(kind string) string {
+	switch kind {
+	case KindFunctional:
+		return "功能"
+	case KindPerformance:
+		return "性能"
+	case KindInterface:
+		return "接口"
+	case KindSafety:
+		return "安全性"
+	case KindReliability:
+		return "可靠性"
+	case KindOther:
+		return "其他"
+	default:
+		return kind
+	}
+}
+
+func secondaryKindLabel(value string) string {
+	kinds := parseSecondaryKinds(value)
+	if len(kinds) == 0 {
+		return "无"
+	}
+	labels := make([]string, 0, len(kinds))
+	for _, kind := range kinds {
+		labels = append(labels, kindLabel(kind))
+	}
+	return strings.Join(labels, "、")
+}

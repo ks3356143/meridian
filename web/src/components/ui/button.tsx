@@ -102,6 +102,7 @@ function Button({
       data-size={size}
       className={buttonVariants({ variant, size, className })}
       onPointerDown={handlePointerDown}
+      disabled={disabled}
       {...props}
     >
       {asChild ? <Slottable>{children}</Slottable> : children}

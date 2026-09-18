@@ -741,3 +741,210 @@ func postJSONRecorder(
 	handler.ServeHTTP(recorder, request)
 	return recorder
 }
+
+func TestRequirementBulkUpdate(t *testing.T) {
+	handler := newTestHandler(t)
+	token := loginForProjectTest(t, handler)
+	projectCode := createWorkObjectTestProject(t, handler, token)
+
+	docx := buildRequirementTestDOCX(t)
+	source := uploadWorkObjectTestFile(t, handler, token, projectCode,
+		"BCD星指令生成与发控软件需求规格说明V1.01.docx", docx)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/work-object-versions/"+source.ID+"/confirm", nil, http.StatusOK)
+
+	first := postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "8.1.1",
+		ExternalID:      "RQGN001",
+		Name:            "BCD星指令参数管理",
+		Description:     "系统应支持BCD星指令参数的配置与管理。",
+		Kind:            "functional",
+	}, http.StatusOK)
+	second := postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "8.1.2",
+		ExternalID:      "RQGN002",
+		Name:            "BCD星遥测处理",
+		Description:     "系统应完成BCD星遥测数据的采集与处理。",
+		Kind:            "functional",
+	}, http.StatusOK)
+
+	bulkUpdate := func(body map[string]any, expectedStatus int) map[string]any {
+		t.Helper()
+		return postJSONMap(t, handler, token, http.MethodPost,
+			"/api/v1/projects/"+projectCode+"/requirements/bulk-update", body, expectedStatus)
+	}
+
+	result := bulkUpdate(map[string]any{
+		"ids":         []string{first.ID, second.ID},
+		"primaryKind": "interface",
+		"replace": map[string]any{
+			"find":              "BCD星",
+			"replacement":       "A星",
+			"applyToName":       true,
+			"applyToIdentifier": false,
+		},
+	}, http.StatusOK)
+	if result["updatedCount"].(float64) != 2 {
+		t.Fatalf("批量修改应更新两条需求: %+v", result)
+	}
+
+	workbench := listRequirementsWorkbench(t, handler, token, projectCode)
+	updatedFirst := requirementTestResponse{}
+	updatedSecond := requirementTestResponse{}
+	for _, requirement := range workbench.Requirements {
+		switch requirement.ID {
+		case first.ID:
+			updatedFirst = requirementTestResponse{
+				ID: requirement.ID, Name: requirement.Name,
+				ExternalIdentifier: requirement.ExternalIdentifier,
+				PrimaryKind:        requirement.PrimaryKind,
+				SecondaryKinds:     requirement.SecondaryKinds,
+			}
+		case second.ID:
+			updatedSecond = requirementTestResponse{
+				ID: requirement.ID, Name: requirement.Name,
+				PrimaryKind:    requirement.PrimaryKind,
+				SecondaryKinds: requirement.SecondaryKinds,
+			}
+		}
+	}
+	if updatedFirst.Name != "A星指令参数管理" || updatedFirst.PrimaryKind != "interface" ||
+		updatedFirst.ExternalIdentifier != "RQGN001" {
+		t.Fatalf("第一条需求批量修改结果错误: %+v", updatedFirst)
+	}
+	if updatedSecond.Name != "A星遥测处理" || updatedSecond.PrimaryKind != "interface" {
+		t.Fatalf("第二条需求批量修改结果错误: %+v", updatedSecond)
+	}
+
+	events := listRequirementEvents(t, handler, token, first.ID)
+	if len(events) < 2 || events[0].Action != "update" ||
+		!strings.Contains(events[0].Detail, "批量修改") ||
+		!strings.Contains(events[0].Detail, "BCD星") || !strings.Contains(events[0].Detail, "A星") ||
+		!strings.Contains(events[0].Detail, "功能") || !strings.Contains(events[0].Detail, "接口") {
+		t.Fatalf("批量修改应写入包含变更明细的审计事件: %+v", events)
+	}
+
+	// 替换精确匹配大小写：小写查找词不命中，无变化应返回 400。
+	bulkUpdate(map[string]any{
+		"ids": []string{first.ID},
+		"replace": map[string]any{
+			"find":        "bcd星",
+			"replacement": "X",
+			"applyToName": true,
+		},
+	}, http.StatusBadRequest)
+
+	// 替换后与同版本其他需求名称冲突应返回 409。
+	bulkUpdate(map[string]any{
+		"ids": []string{first.ID},
+		"replace": map[string]any{
+			"find":        "指令参数管理",
+			"replacement": "遥测处理",
+			"applyToName": true,
+		},
+	}, http.StatusConflict)
+
+	// 跨来源版本允许同名需求，批量替换不得把不同版本的同值误判为冲突。
+	taskBook := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/work-objects/manual", map[string]string{
+			"objectKind":  "task_book",
+			"objectName":  "A星软件研制任务书",
+			"version":     "1.00",
+			"source":      "研制方",
+			"receivedAt":  "2026-09-18",
+			"receiveMode": "onsite",
+		}, http.StatusOK)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/work-object-versions/"+taskBook["id"].(string)+"/confirm", nil, http.StatusOK)
+	crossSource := postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: taskBook["id"].(string),
+		Chapter:         "3.1",
+		ExternalID:      "RQGN001",
+		Name:            "A星指令参数管理",
+		Description:     "任务书来源的同名需求。",
+		Kind:            "functional",
+	}, http.StatusOK)
+	crossResult := bulkUpdate(map[string]any{
+		"ids": []string{first.ID, crossSource.ID},
+		"replace": map[string]any{
+			"find":        "A星",
+			"replacement": "B星",
+			"applyToName": true,
+		},
+	}, http.StatusOK)
+	if crossResult["updatedCount"].(float64) != 2 {
+		t.Fatalf("跨来源版本的同名需求应允许批量替换: %+v", crossResult)
+	}
+
+	// 批量设置副类型：去重保存后再次提交相同值应因无变化返回 400。
+	bulkUpdate(map[string]any{
+		"ids":            []string{second.ID},
+		"secondaryKinds": []string{"performance", "performance"},
+	}, http.StatusOK)
+	bulkUpdate(map[string]any{
+		"ids":            []string{second.ID},
+		"secondaryKinds": []string{"performance"},
+	}, http.StatusBadRequest)
+
+	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
+	for _, requirement := range workbench.Requirements {
+		if requirement.ID != second.ID {
+			continue
+		}
+		if len(requirement.SecondaryKinds) != 1 || requirement.SecondaryKinds[0] != "performance" {
+			t.Fatalf("副类型批量设置结果错误: %+v", requirement)
+		}
+	}
+
+	// 查找词为空应返回 400。
+	bulkUpdate(map[string]any{
+		"ids": []string{first.ID},
+		"replace": map[string]any{
+			"find":        "  ",
+			"applyToName": true,
+		},
+	}, http.StatusBadRequest)
+
+	// 空集合应返回 400。
+	bulkUpdate(map[string]any{"ids": []string{}}, http.StatusBadRequest)
+
+	// 已删除需求不允许批量修改。
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status",
+		map[string]any{
+			"ids":    []string{second.ID},
+			"action": "exclude",
+			"reason": "批量修改测试用",
+		}, http.StatusOK)
+	bulkUpdate(map[string]any{
+		"ids":         []string{second.ID},
+		"primaryKind": "performance",
+	}, http.StatusConflict)
+
+	// 批量删除复用状态迁移接口，应在一个事务中排除多条已确认需求并逐条写审计。
+	deleteResult := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status", map[string]any{
+			"ids":    []string{first.ID, crossSource.ID},
+			"action": "exclude",
+			"reason": "批量删除测试",
+		}, http.StatusOK)
+	if deleteResult["updatedCount"].(float64) != 2 {
+		t.Fatalf("批量删除应排除两条确认需求: %+v", deleteResult)
+	}
+	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
+	for _, requirement := range workbench.Requirements {
+		if requirement.ID != first.ID && requirement.ID != crossSource.ID {
+			continue
+		}
+		if requirement.Status != "excluded" || requirement.DeletedFromStatus != "official" {
+			t.Fatalf("批量删除后的需求状态错误: %+v", requirement)
+		}
+	}
+	events = listRequirementEvents(t, handler, token, first.ID)
+	if len(events) == 0 || events[0].Action != "exclude" ||
+		events[0].FromStatus != "official" || events[0].ToStatus != "excluded" {
+		t.Fatalf("批量删除应写入排除审计: %+v", events)
+	}
+}

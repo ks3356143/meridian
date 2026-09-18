@@ -129,3 +129,19 @@ type StatusActionRequest struct {
 type StatusActionOutput struct {
 	Body requirementsservice.StatusActionResult
 }
+
+type BulkUpdateRequirementInput struct {
+	Code string `path:"code" required:"true"`
+	Body BulkUpdateRequirementRequest
+}
+
+type BulkUpdateRequirementRequest struct {
+	IDs            []string                             `json:"ids" required:"true"`
+	PrimaryKind    *string                              `json:"primaryKind,omitempty"`
+	SecondaryKinds *[]string                            `json:"secondaryKinds,omitempty"`
+	Replace        *requirementsservice.BulkReplaceSpec `json:"replace,omitempty"`
+}
+
+type BulkUpdateRequirementOutput struct {
+	Body requirementsservice.BulkUpdateResult
+}

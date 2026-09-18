@@ -93,6 +93,28 @@ func Register(api huma.API, service *requirementsservice.Service) {
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "bulk-update-requirements",
+		Method:      http.MethodPost,
+		Path:        "/api/v1/projects/{code}/requirements/bulk-update",
+		Summary:     "批量修改确认需求",
+		Description: "对勾选的已确认需求批量修改主类型、副类型，或按精确子串替换名称与标识；事务内逐条更新并写审计。",
+		Tags:        []string{"需求与追踪"},
+	}, func(ctx context.Context, input *BulkUpdateRequirementInput) (*BulkUpdateRequirementOutput, error) {
+		body, err := handler.service.BulkUpdate(ctx, requirementsservice.BulkUpdateInput{
+			ProjectCode:    input.Code,
+			IDs:            input.Body.IDs,
+			PrimaryKind:    input.Body.PrimaryKind,
+			SecondaryKinds: input.Body.SecondaryKinds,
+			Replace:        input.Body.Replace,
+			OperatedBy:     currentUserID(ctx),
+		})
+		if err != nil {
+			return nil, toAPIError(err, "批量修改需求失败")
+		}
+		return &BulkUpdateRequirementOutput{Body: body}, nil
+	})
+
+	huma.Register(api, huma.Operation{
 		OperationID: "parse-srs-requirements",
 		Method:      http.MethodPost,
 		Path:        "/api/v1/projects/{code}/requirements/parse",
@@ -236,6 +258,16 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("副需求类型不正确")
 	case errors.Is(err, requirementsservice.ErrSecondaryKindRepeat):
 		return huma.Error400BadRequest("副需求类型不能与主需求类型相同")
+	case errors.Is(err, requirementsservice.ErrRequirementNotOfficial):
+		return huma.Error409Conflict("仅已确认需求支持批量修改")
+	case errors.Is(err, requirementsservice.ErrInvalidBulkReplace):
+		return huma.Error400BadRequest("查找词不能为空，且必须选择名称或标识至少一个替换范围")
+	case errors.Is(err, requirementsservice.ErrReplaceNameEmpty):
+		return huma.Error400BadRequest("批量替换后的需求名称不能为空")
+	case errors.Is(err, requirementsservice.ErrReplaceNameTooLong):
+		return huma.Error400BadRequest("批量替换后的需求名称最多 240 个字符")
+	case errors.Is(err, requirementsservice.ErrReplaceIdentifierTooLong):
+		return huma.Error400BadRequest("批量替换后的需求标识最多 64 个字符")
 	default:
 		return huma.Error500InternalServerError(fallback)
 	}

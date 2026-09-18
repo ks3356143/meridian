@@ -53,18 +53,18 @@ export function RequirementsHero({
             <dt>{stat.label}</dt>
             <dd className="font-mono">{loading ? "--" : stat.value}</dd>
             {stat.opensDeleted ? (
-              <span className={styles.actionPill} aria-hidden>
-                <Archive />
-                管理
-              </span>
-            ) : null}
-            {stat.opensDeleted ? (
-              <button
-                type="button"
-                className={styles.trigger}
-                aria-label={`查看${stat.label}，当前 ${stat.value} 条`}
-                onClick={onOpenDeleted}
-              />
+              <>
+                <span className={styles.actionPill} aria-hidden>
+                  <Archive />
+                  管理
+                </span>
+                <button
+                  type="button"
+                  className={styles.trigger}
+                  aria-label={`查看${stat.label}，当前 ${stat.value} 条`}
+                  onClick={onOpenDeleted}
+                />
+              </>
             ) : null}
           </div>
         ))}

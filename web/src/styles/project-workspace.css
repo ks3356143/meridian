@@ -148,6 +148,28 @@
   animation: workspace-route-enter 0.28s ease-out;
 }
 
+main.workspace-route {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-color: color-mix(in srgb, var(--primary) 42%, var(--muted)) transparent;
+  scrollbar-width: thin;
+}
+
+main.workspace-route::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+main.workspace-route::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--muted) 42%, transparent);
+}
+
+main.workspace-route::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 44%, var(--muted));
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+}
+
 @keyframes workspace-route-enter {
   from {
     opacity: 0;
@@ -496,28 +518,6 @@
 .workspace-resizable-handle:focus-visible {
   background: color-mix(in srgb, var(--primary) 32%, var(--border));
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 24%, transparent);
-}
-
-@media (max-width: 1100px) {
-  .workspace-route {
-    overflow-y: auto;
-    scrollbar-color: color-mix(in srgb, var(--primary) 42%, var(--muted)) transparent;
-    scrollbar-width: thin;
-  }
-
-  .workspace-route::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
-  }
-
-  .workspace-route::-webkit-scrollbar-track {
-    background: color-mix(in srgb, var(--muted) 42%, transparent);
-  }
-
-  .workspace-route::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--primary) 44%, var(--muted));
-    border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  }
 }
 
 .received-asset-table [data-slot="table-head"],

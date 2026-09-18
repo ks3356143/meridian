@@ -9,7 +9,7 @@
     var(--card);
   box-shadow:
     inset 2px 0 0 color-mix(in srgb, var(--primary) 72%, transparent),
-    0 1px 2px #142a1e0a,
+    0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent),
     0 10px 26px -22px color-mix(in srgb, var(--primary) 52%, transparent);
   align-items: center;
   border: 1px solid var(--border);
@@ -89,6 +89,7 @@
 }
 
 .stat dd {
+  font-family: var(--font-mono);
   font-size: 0.95rem;
   font-weight: 760;
   line-height: 1.2;

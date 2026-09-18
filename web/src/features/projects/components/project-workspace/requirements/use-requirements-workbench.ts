@@ -43,14 +43,16 @@ export function useRequirementsWorkbench(project: Project) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+    mutationFn: ({ ids, reason }: { ids: string[]; reason: string }) =>
       requirementsApi.changeStatus(project.id, {
-        ids: [id],
+        ids,
         action: "exclude",
         reason,
       }),
-    onSuccess: () => {
-      toast.success("已删除确认需求");
+    onSuccess: (result) => {
+      toast.success(
+        result.updatedCount === 1 ? "已删除确认需求" : `已删除 ${result.updatedCount} 条确认需求`,
+      );
     },
   });
 
@@ -75,6 +77,15 @@ export function useRequirementsWorkbench(project: Project) {
     },
   });
 
+  const bulkUpdateMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof requirementsApi.bulkUpdate>[1]) =>
+      requirementsApi.bulkUpdate(project.id, payload),
+    onSuccess: (result) => {
+      toast.success(`已更新 ${result.updatedCount} 条需求`);
+      return invalidate();
+    },
+  });
+
   return {
     workbenchQuery,
     createMutation,
@@ -82,6 +93,7 @@ export function useRequirementsWorkbench(project: Project) {
     deleteMutation,
     restoreMutation,
     purgeMutation,
+    bulkUpdateMutation,
     invalidate,
   };
 }

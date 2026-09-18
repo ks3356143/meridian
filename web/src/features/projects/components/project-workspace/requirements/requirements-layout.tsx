@@ -15,6 +15,8 @@ import { RequirementDeleteDialog } from "./requirement-delete-dialog";
 import { RequirementPurgeDialog } from "./requirement-purge-dialog";
 import { RequirementDetail } from "./requirement-detail";
 import { RequirementAuditDialog } from "./requirement-audit-dialog";
+import { RequirementBulkDeleteDialog } from "./requirement-bulk-delete-dialog";
+import { RequirementBulkUpdateDialog } from "./requirement-bulk-update-dialog";
 import { RequirementsHero } from "./requirements-hero";
 import { RequirementsTree } from "./requirements-tree";
 import { useRequirementsWorkbench } from "./use-requirements-workbench";
@@ -35,12 +37,17 @@ export function RequirementsLayout({ project }: { project: Project }) {
     deleteMutation,
     restoreMutation,
     purgeMutation,
+    bulkUpdateMutation,
     invalidate,
   } = useRequirementsWorkbench(project);
   const [createOpen, setCreateOpen] = useState(false);
   const [createSeed, setCreateSeed] = useState<RequirementCreateSeed | null>(null);
   const [deletedOpen, setDeletedOpen] = useState(false);
   const [auditRequirement, setAuditRequirement] = useState<RequirementRecord | null>(null);
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{
     requirement: RequirementRecord;
@@ -62,6 +69,9 @@ export function RequirementsLayout({ project }: { project: Project }) {
     officialRequirements[0];
   const selectedSource = sources.find(
     (source) => source.id === selectedRequirement?.sourceVersionId,
+  );
+  const selectedRequirements = officialRequirements.filter((requirement) =>
+    selectedIds.includes(requirement.id),
   );
 
   const updateRequirement = updateMutation.mutateAsync;
@@ -127,7 +137,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
         officialRequirements[currentIndex + 1] ?? officialRequirements[currentIndex - 1];
 
       try {
-        await deleteMutation.mutateAsync({ id: requirement.id, reason });
+        await deleteMutation.mutateAsync({ ids: [requirement.id], reason });
         setSelectedId(neighbor?.id ?? "");
         await requestTreeExitRef.current(requirement.id);
         await invalidate();
@@ -149,6 +159,64 @@ export function RequirementsLayout({ project }: { project: Project }) {
     },
     [purgeMutation],
   );
+  const toggleBatchMode = useCallback(() => {
+    setBatchMode((previous) => !previous);
+    setSelectedIds([]);
+  }, []);
+  const toggleRequirementSelected = useCallback((id: string, checked: boolean) => {
+    setSelectedIds((previous) =>
+      checked ? [...new Set([...previous, id])] : previous.filter((item) => item !== id),
+    );
+  }, []);
+  const toggleSourceSelected = useCallback(
+    (sourceId: string, checked: boolean) => {
+      setSelectedIds((previous) => {
+        const sourceRequirementIds = officialRequirements
+          .filter((requirement) => requirement.sourceVersionId === sourceId)
+          .map((requirement) => requirement.id);
+        const sourceIDSet = new Set(sourceRequirementIds);
+        const kept = previous.filter((id) => !sourceIDSet.has(id));
+        return checked ? [...new Set([...kept, ...sourceRequirementIds])] : kept;
+      });
+    },
+    [officialRequirements],
+  );
+  const clearSelection = useCallback(() => setSelectedIds([]), []);
+  const submitBulkUpdate = useCallback(
+    async (payload: Parameters<typeof bulkUpdateMutation.mutateAsync>[0]) => {
+      await bulkUpdateMutation.mutateAsync(payload);
+      setBulkUpdateOpen(false);
+      setBatchMode(false);
+      setSelectedIds([]);
+    },
+    [bulkUpdateMutation],
+  );
+  const submitBulkDelete = useCallback(
+    async (reason: string) => {
+      const deletingIDs = new Set(selectedRequirements.map((requirement) => requirement.id));
+      const remaining = officialRequirements.filter(
+        (requirement) => !deletingIDs.has(requirement.id),
+      );
+
+      try {
+        await deleteMutation.mutateAsync({
+          ids: [...deletingIDs],
+          reason,
+        });
+        await Promise.all(
+          [...deletingIDs].map((requirementId) => requestTreeExitRef.current(requirementId)),
+        );
+        await invalidate();
+        setSelectedId(remaining[0]?.id ?? "");
+        setBulkDeleteOpen(false);
+        setBatchMode(false);
+        setSelectedIds([]);
+      } catch {
+        // 保持确认框打开，由 mutation.error 展示失败原因。
+      }
+    },
+    [deleteMutation, invalidate, officialRequirements, selectedRequirements],
+  );
 
   if (workbenchQuery.isPending) return <QueryLoading label="正在加载确认需求" rows={8} />;
   if (workbenchQuery.isError) {
@@ -160,9 +228,17 @@ export function RequirementsLayout({ project }: { project: Project }) {
       sources={sources}
       requirements={workbench?.requirements ?? []}
       selectedId={selectedRequirement?.id ?? ""}
+      batchMode={batchMode}
+      selectedIds={selectedIds}
       onSelect={(requirement) => setSelectedId(requirement.id)}
       onCreate={() => setCreateOpen(true)}
       onDelete={handleDeleteRequest}
+      onToggleBatchMode={toggleBatchMode}
+      onToggleRequirement={toggleRequirementSelected}
+      onToggleSource={toggleSourceSelected}
+      onOpenBulkUpdate={() => setBulkUpdateOpen(true)}
+      onOpenBulkDelete={() => setBulkDeleteOpen(true)}
+      onClearSelection={clearSelection}
       onRegisterExitAnimation={registerTreeExitAnimation}
       naturalHeight={!wideLayout}
     />
@@ -293,6 +369,40 @@ export function RequirementsLayout({ project }: { project: Project }) {
     );
   }
 
+  function renderBulkUpdateDialog() {
+    return (
+      <RequirementBulkUpdateDialog
+        open={bulkUpdateOpen}
+        requirements={selectedRequirements}
+        allRequirements={workbench?.requirements ?? []}
+        submitting={bulkUpdateMutation.isPending}
+        error={bulkUpdateMutation.error}
+        onOpenChange={(open) => {
+          setBulkUpdateOpen(open);
+          if (!open) bulkUpdateMutation.reset();
+        }}
+        onSubmit={submitBulkUpdate}
+      />
+    );
+  }
+
+  function renderBulkDeleteDialog() {
+    return (
+      <RequirementBulkDeleteDialog
+        key={`bulk-delete-${bulkDeleteOpen ? selectedIds.join(",") : "none"}`}
+        open={bulkDeleteOpen}
+        requirements={selectedRequirements}
+        submitting={deleteMutation.isPending}
+        error={deleteMutation.error}
+        onOpenChange={(open) => {
+          setBulkDeleteOpen(open);
+          if (!open) deleteMutation.reset();
+        }}
+        onConfirm={submitBulkDelete}
+      />
+    );
+  }
+
   const surface = wideLayout ? (
     <section className={styles.workbench}>
       <ResizablePanelGroup
@@ -337,6 +447,8 @@ export function RequirementsLayout({ project }: { project: Project }) {
       {renderDeletedDialog()}
       {renderAuditDialog()}
       {renderPurgeDialog()}
+      {renderBulkUpdateDialog()}
+      {renderBulkDeleteDialog()}
     </>
   );
 }

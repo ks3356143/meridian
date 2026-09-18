@@ -1,0 +1,168 @@
+.dialog {
+  max-width: 56rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.section :global([data-slot="select-trigger"]) {
+  font-size: 0.75rem;
+  height: 1.9rem;
+  min-height: 1.9rem;
+}
+
+.section :global([data-slot="multi-select-trigger"]) {
+  font-size: 0.75rem;
+  height: auto;
+  min-height: 1.9rem;
+  padding-block: 0.1875rem;
+}
+
+.section {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--primary) 52%, transparent),
+    0 6px 18px -18px color-mix(in srgb, var(--foreground) 48%, transparent);
+  padding: 0.65rem 0.75rem;
+}
+
+.section h4 {
+  color: var(--foreground);
+  font-size: 0.8rem;
+  font-weight: 720;
+  margin-bottom: 0.5rem;
+}
+
+.requiredMark {
+  color: var(--destructive);
+  font-weight: 700;
+}
+
+.attributeGrid,
+.replaceGrid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.secondaryHead {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.replaceTargets {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+}
+
+.target {
+  align-items: center;
+  color: var(--foreground);
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 620;
+  gap: 0.3rem;
+}
+
+.matchHint {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+}
+
+.preview {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--info) 52%, transparent),
+    0 6px 18px -18px color-mix(in srgb, var(--foreground) 48%, transparent);
+  padding: 0.65rem 0.75rem;
+}
+
+.preview header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.preview h4 {
+  color: var(--foreground);
+  font-size: 0.8rem;
+  font-weight: 720;
+}
+
+.preview header span {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+
+.chapter,
+.nameCell {
+  font-family: var(--font-mono);
+}
+
+.nameCell {
+  max-width: 22rem;
+  white-space: normal;
+}
+
+.same {
+  color: var(--muted-foreground);
+}
+
+.changed {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.removed {
+  color: var(--destructive);
+}
+
+.added {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.arrow {
+  color: var(--muted-foreground);
+}
+
+.preview :global([data-conflict]) {
+  background: color-mix(in srgb, var(--destructive) 7%, var(--card));
+}
+
+.conflictHint,
+.error {
+  color: var(--destructive);
+  font-size: 0.72rem;
+  margin-top: 0.45rem;
+}
+
+.empty {
+  color: var(--muted-foreground);
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .attributeGrid,
+  .replaceGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dialog {
+    max-height: calc(100vh - 1rem);
+  }
+}

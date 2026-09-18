@@ -5,7 +5,7 @@
   border: 1px solid var(--border);
   box-shadow:
     inset 2px 0 0 color-mix(in srgb, var(--info) 58%, transparent),
-    0 1px 2px #142a1e08,
+    0 1px 2px color-mix(in srgb, var(--foreground) 3%, transparent),
     0 12px 26px -26px color-mix(in srgb, var(--info) 52%, transparent);
   display: grid;
   flex: 1 1 auto;
@@ -147,6 +147,7 @@
 
 .body::-webkit-scrollbar-track {
   background: color-mix(in srgb, var(--muted) 42%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .body::-webkit-scrollbar-thumb {
@@ -208,6 +209,9 @@
 
 .shell :global([data-slot="multi-select-trigger"]) {
   font-size: 0.75rem;
+  height: auto;
+  min-height: 1.9rem;
+  padding-block: 0.1875rem;
 }
 
 .shell :global([data-slot="textarea"]) {

@@ -59,6 +59,20 @@ export interface RequirementStatusPayload {
   reason?: string;
 }
 
+export interface BulkReplacePayload {
+  find: string;
+  replacement?: string;
+  applyToName?: boolean;
+  applyToIdentifier?: boolean;
+}
+
+export interface BulkUpdateRequirementPayload {
+  ids: string[];
+  primaryKind?: RequirementPrimaryKind;
+  secondaryKinds?: RequirementPrimaryKind[];
+  replace?: BulkReplacePayload;
+}
+
 export interface RequirementEvent {
   id: string;
   action: "create" | "update" | "confirm" | "exclude" | "restore" | "parse";
