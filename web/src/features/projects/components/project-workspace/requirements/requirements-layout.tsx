@@ -17,6 +17,7 @@ import { RequirementDetail } from "./requirement-detail";
 import { RequirementAuditDialog } from "./requirement-audit-dialog";
 import { RequirementBulkDeleteDialog } from "./requirement-bulk-delete-dialog";
 import { RequirementBulkUpdateDialog } from "./requirement-bulk-update-dialog";
+import { RequirementBulkPasteDialog } from "./requirement-bulk-paste-dialog";
 import { RequirementsHero } from "./requirements-hero";
 import { RequirementsTree } from "./requirements-tree";
 import { useRequirementsWorkbench } from "./use-requirements-workbench";
@@ -38,6 +39,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
     restoreMutation,
     purgeMutation,
     bulkUpdateMutation,
+    bulkCreateMutation,
     invalidate,
   } = useRequirementsWorkbench(project);
   const [createOpen, setCreateOpen] = useState(false);
@@ -48,6 +50,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkPasteOpen, setBulkPasteOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{
     requirement: RequirementRecord;
@@ -219,6 +222,13 @@ export function RequirementsLayout({ project }: { project: Project }) {
     },
     [deleteMutation, invalidate, officialRequirements, selectedRequirements],
   );
+  const submitBulkPaste = useCallback(
+    async (payload: Parameters<typeof bulkCreateMutation.mutateAsync>[0]) => {
+      await bulkCreateMutation.mutateAsync(payload);
+      setBulkPasteOpen(false);
+    },
+    [bulkCreateMutation],
+  );
 
   if (workbenchQuery.isPending) return <QueryLoading label="正在加载确认需求" rows={8} />;
   if (workbenchQuery.isError) {
@@ -251,6 +261,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       requirements={workbench?.requirements ?? []}
       loading={workbenchQuery.isFetching}
       onOpenDeleted={() => setDeletedOpen(true)}
+      onOpenBulkPaste={() => setBulkPasteOpen(true)}
     />
   );
   const detail = selectedRequirement ? (
@@ -409,6 +420,24 @@ export function RequirementsLayout({ project }: { project: Project }) {
     );
   }
 
+  function renderBulkPasteDialog() {
+    return (
+      <RequirementBulkPasteDialog
+        open={bulkPasteOpen}
+        sources={sources}
+        requirements={activeChapterRequirements}
+        defaultSourceId={selectedSource?.id ?? ""}
+        submitting={bulkCreateMutation.isPending}
+        error={bulkCreateMutation.error}
+        onOpenChange={(open) => {
+          setBulkPasteOpen(open);
+          if (!open) bulkCreateMutation.reset();
+        }}
+        onSubmit={submitBulkPaste}
+      />
+    );
+  }
+
   const surface = wideLayout ? (
     <section className={styles.workbench}>
       <ResizablePanelGroup
@@ -455,6 +484,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       {renderPurgeDialog()}
       {renderBulkUpdateDialog()}
       {renderBulkDeleteDialog()}
+      {renderBulkPasteDialog()}
     </>
   );
 }

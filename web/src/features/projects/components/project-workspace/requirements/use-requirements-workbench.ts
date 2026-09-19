@@ -86,6 +86,19 @@ export function useRequirementsWorkbench(project: Project) {
     },
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof requirementsApi.bulkCreate>[1]) =>
+      requirementsApi.bulkCreate(project.id, payload),
+    onSuccess: (result) => {
+      toast.success(
+        result.requirementCount === 1
+          ? "已批量入库 1 条需求"
+          : `已批量入库 ${result.requirementCount} 条需求`,
+      );
+      return invalidate();
+    },
+  });
+
   return {
     workbenchQuery,
     createMutation,
@@ -94,6 +107,7 @@ export function useRequirementsWorkbench(project: Project) {
     restoreMutation,
     purgeMutation,
     bulkUpdateMutation,
+    bulkCreateMutation,
     invalidate,
   };
 }

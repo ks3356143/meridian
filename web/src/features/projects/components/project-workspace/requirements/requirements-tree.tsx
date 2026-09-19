@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   BookOpen,
   ChevronRight,
   CopyPlus,
@@ -20,7 +21,7 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
+import { Tree, type NodeRendererProps, type RowRendererProps, type TreeApi } from "react-arborist";
 import { gsap, useGSAP } from "@/lib/gsap";
 import styles from "./requirements-tree.module.css";
 import { TruncatedText } from "@/components/shared/truncated-text";
@@ -300,6 +301,7 @@ function ConfirmedTree({
   const shellRef = useRef<HTMLDivElement>(null);
   const rowHandlersRef = useRef({ onCopy, onDelete, onSelect });
   const [height, setHeight] = useState(360);
+  const selectedTreeId = selectedId ? `requirement:${selectedId}` : "";
   const { requestTreeToggle, requestTreeExit } = useRequirementTreeMotion({
     shellRef,
     structureSignature,
@@ -329,7 +331,24 @@ function ConfirmedTree({
     return () => observer.disconnect();
   }, [naturalHeight]);
 
-  const renderRow = useCallback(
+  useEffect(() => {
+    const tree = treeRef.current;
+    if (!tree) return;
+
+    if (!selectedTreeId) {
+      if (tree.selectedIds.size > 0) tree.deselectAll();
+      return;
+    }
+
+    if (tree.isSelected(selectedTreeId)) return;
+    tree.setSelection({
+      ids: [selectedTreeId],
+      anchor: selectedTreeId,
+      mostRecent: selectedTreeId,
+    });
+  }, [selectedTreeId]);
+
+  const renderNode = useCallback(
     (props: NodeRendererProps<ConfirmedRequirementNode>) => (
       <ConfirmedTreeRow {...props} handlersRef={rowHandlersRef} />
     ),
@@ -391,8 +410,8 @@ function ConfirmedTree({
           openByDefault
           initialOpenState={{ [nodes[0].key]: true }}
           idAccessor={(node) => node.key}
-          selection={selectedId ? `requirement:${selectedId}` : ""}
-          selectionFollowsFocus
+          renderRow={ConfirmedTreeRowRenderer}
+          selectionFollowsFocus={false}
           disableMultiSelection
           disableDrag
           disableDrop
@@ -408,7 +427,7 @@ function ConfirmedTree({
             }
           }}
         >
-          {renderRow}
+          {renderNode}
         </Tree>
       </confirmedTreeRowContext.Provider>
     </div>
@@ -422,6 +441,32 @@ type ConfirmedTreeRowProps = NodeRendererProps<ConfirmedRequirementNode> & {
     onSelect: (requirement: RequirementRecord) => void;
   }>;
 };
+
+function ConfirmedTreeRowRenderer({
+  node,
+  attrs,
+  innerRef,
+  children,
+}: RowRendererProps<ConfirmedRequirementNode>) {
+  return (
+    <div
+      {...attrs}
+      role="treeitem"
+      ref={innerRef}
+      onFocus={(event) => event.stopPropagation()}
+      onClick={() => {
+        node.tree.setSelection({
+          ids: [node.id],
+          anchor: node.id,
+          mostRecent: node.id,
+        });
+        node.tree.focus(node, { scroll: false });
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 function ConfirmedTreeRow({ node, style, dragHandle, handlersRef }: ConfirmedTreeRowProps) {
   const data = node.data;
@@ -451,6 +496,7 @@ function ConfirmedTreeRow({ node, style, dragHandle, handlersRef }: ConfirmedTre
       data-node-type={data.type}
       data-node-id={node.id}
       data-tree-row="true"
+      data-incomplete={requirement && requirement.description.trim() === "" ? "true" : undefined}
       data-selected={node.isSelected ? "true" : undefined}
       data-open={node.isOpen ? "true" : undefined}
       className={styles.row}
@@ -505,6 +551,22 @@ function ConfirmedTreeRow({ node, style, dragHandle, handlersRef }: ConfirmedTre
       </span>
       <TruncatedText value={data.title} className={styles.title} />
       {data.type === "source" ? <Badge variant="outline">{data.count}</Badge> : null}
+      {requirement && requirement.description.trim() === "" ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className={styles.incompleteMarker}
+              aria-label="待补描述；补全后才能关联测试项"
+            >
+              <AlertTriangle aria-hidden />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className={styles.incompleteTooltip}>
+            待补描述；补全后才能关联测试项。
+          </TooltipContent>
+        </Tooltip>
+      ) : null}
     </div>
   );
 

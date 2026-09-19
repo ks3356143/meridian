@@ -1,15 +1,18 @@
-import { Archive } from "lucide-react";
+import { Archive, ClipboardPaste } from "lucide-react";
 import type { RequirementRecord } from "@/features/requirements/types";
+import { Button } from "@/components/ui/button";
 import styles from "./requirements-hero.module.css";
 
 export function RequirementsHero({
   requirements,
   loading,
   onOpenDeleted,
+  onOpenBulkPaste,
 }: {
   requirements: RequirementRecord[];
   loading: boolean;
   onOpenDeleted: () => void;
+  onOpenBulkPaste: () => void;
 }) {
   const deletedRequirements = requirements.filter(
     (requirement) =>
@@ -33,6 +36,13 @@ export function RequirementsHero({
       tone: "danger",
       value: deletedRequirements.length,
       opensDeleted: true,
+    },
+    {
+      label: "待补描述",
+      tone: "warning",
+      value: requirements.filter(
+        (requirement) => requirement.status === "official" && requirement.description.trim() === "",
+      ).length,
     },
   ];
 
@@ -69,6 +79,12 @@ export function RequirementsHero({
           </div>
         ))}
       </dl>
+      <div className={styles.actions}>
+        <Button type="button" size="sm" onClick={onOpenBulkPaste}>
+          <ClipboardPaste data-icon="inline-start" aria-hidden />
+          批量粘贴建树
+        </Button>
+      </div>
     </header>
   );
 }

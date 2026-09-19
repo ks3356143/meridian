@@ -244,13 +244,51 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 		t.Fatalf("显式空数组应清空副需求类型: %+v", focusedRequirement)
 	}
 
+	invalidBulkBody := map[string]any{
+		"sourceVersionId": source.ID,
+		"items": []map[string]string{
+			{
+				"nodeType": "requirement", "chapterNumber": "6.1", "name": "未分类需求",
+				"description": "系统应提供未分类需求校验。",
+			},
+		},
+	}
+	invalidBulkRecorder := postJSONRecorder(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/bulk", invalidBulkBody)
+	if invalidBulkRecorder.Code != http.StatusBadRequest {
+		t.Fatalf("缺少主类型的批量录入应返回 400，实际 %d，响应: %s",
+			invalidBulkRecorder.Code, invalidBulkRecorder.Body.String())
+	}
+	if !strings.Contains(invalidBulkRecorder.Body.String(), "主需求性质不正确") {
+		t.Fatalf("缺少主类型的批量录入应返回明确错误: %s", invalidBulkRecorder.Body.String())
+	}
+
+	invalidNodeTypeBody := map[string]any{
+		"sourceVersionId": source.ID,
+		"items": []map[string]string{
+			{"nodeType": "section", "chapterNumber": "6"},
+		},
+	}
+	invalidNodeTypeRecorder := postJSONRecorder(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/bulk", invalidNodeTypeBody)
+	if invalidNodeTypeRecorder.Code != http.StatusBadRequest {
+		t.Fatalf("批量章节节点应返回 400，实际 %d，响应: %s",
+			invalidNodeTypeRecorder.Code, invalidNodeTypeRecorder.Body.String())
+	}
+	if !strings.Contains(invalidNodeTypeRecorder.Body.String(), "批量粘贴仅支持需求节点") {
+		t.Fatalf("批量章节节点应返回明确错误: %s", invalidNodeTypeRecorder.Body.String())
+	}
+
 	bulkBody := map[string]any{
 		"sourceVersionId": source.ID,
 		"items": []map[string]string{
-			{"nodeType": "section", "chapterNumber": "6", "title": "批量章节"},
 			{
 				"nodeType": "requirement", "chapterNumber": "6.1", "name": "接口自检",
 				"description": "系统应提供接口自检指令。", "primaryKind": "interface",
+			},
+			{
+				"nodeType": "requirement", "chapterNumber": "6.2", "name": "性能骨架",
+				"description": "", "primaryKind": "performance",
 			},
 		},
 	}
@@ -271,6 +309,16 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	}
 	sectionParents := make(map[string]string, len(workbench.Sections))
 	sectionScope := make(map[string]bool, len(workbench.Sections))
+	taskStatusesByChapter := make(map[string]string)
+	for _, requirement := range workbench.Requirements {
+		taskStatusesByChapter[requirement.ChapterNumber] = requirement.TestItemTaskStatus
+	}
+	if taskStatusesByChapter["6.1"] != "pending" {
+		t.Fatalf("完整批量需求应记录待建测试项任务: %+v", taskStatusesByChapter)
+	}
+	if taskStatusesByChapter["6.2"] != "none" {
+		t.Fatalf("待补描述批量需求不应记录待建测试项任务: %+v", taskStatusesByChapter)
+	}
 	for _, section := range workbench.Sections {
 		sectionParents[section.ChapterNumber] = section.ParentID
 		sectionScope[section.ChapterNumber] = section.InScope

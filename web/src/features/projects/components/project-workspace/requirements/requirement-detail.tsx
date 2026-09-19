@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   CheckCircle2,
   CloudUpload,
   CopyPlus,
@@ -65,6 +66,7 @@ export function RequirementDetail({
   const secondaryKindLabels = draft.secondaryKinds.map(
     (kind) => requirementKindOptions.find((option) => option.value === kind)?.label ?? kind,
   );
+  const incomplete = requirement.description.trim() === "";
   const errors = getRequirementDraftErrors(draft);
   const status = dirty ? saveState : "saved";
   const saveDraft = useCallback(async () => {
@@ -108,6 +110,12 @@ export function RequirementDetail({
         </div>
         <div className={styles.status}>
           <Badge variant="primary">已确认</Badge>
+          {incomplete ? (
+            <Badge variant="warning" className={styles.incompleteBadge}>
+              <AlertTriangle aria-hidden />
+              待补描述
+            </Badge>
+          ) : null}
           <Badge variant="outline">{kindLabel ?? "其他"}</Badge>
           {secondaryKindLabels.length ? (
             <Badge variant="outline">副类型：{secondaryKindLabels.join(" / ")}</Badge>
@@ -303,6 +311,9 @@ export function RequirementDetail({
                 关联测试项
               </h4>
               <p>测试项模块落地后在此维护多对多追踪关系。</p>
+              {incomplete ? (
+                <p className={styles.incompleteHint}>补全描述后才能关联测试项。</p>
+              ) : null}
             </div>
             <Badge variant="outline">
               <FileText aria-hidden />

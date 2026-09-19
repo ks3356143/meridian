@@ -1,5 +1,7 @@
 import { request } from "@/api/client";
 import type {
+  BulkCreateRequirementPayload,
+  BulkCreateRequirementResult,
   BulkUpdateRequirementPayload,
   RequirementRecord,
   RequirementsWorkbenchSnapshot,
@@ -40,6 +42,13 @@ export const requirementsApi = {
     request<{ updatedCount: number }>(
       "POST",
       `/api/v1/projects/${projectId}/requirements/bulk-update`,
+      {},
+      payload,
+    ),
+  bulkCreate: (projectId: string, payload: BulkCreateRequirementPayload) =>
+    request<BulkCreateRequirementResult>(
+      "POST",
+      `/api/v1/projects/${projectId}/requirements/bulk`,
       {},
       payload,
     ),

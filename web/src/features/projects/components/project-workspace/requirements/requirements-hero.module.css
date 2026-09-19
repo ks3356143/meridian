@@ -13,10 +13,12 @@
     0 10px 26px -22px color-mix(in srgb, var(--primary) 52%, transparent);
   align-items: center;
   border: 1px solid var(--border);
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 0.6rem 1rem;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "copy actions"
+    "stats stats";
   min-height: 6.25rem;
   min-width: 0;
   padding: 0.6rem 0.75rem;
@@ -27,7 +29,8 @@
   flex-direction: column;
   gap: 0.25rem;
   justify-content: center;
-  min-width: min(22rem, 100%);
+  grid-area: copy;
+  min-width: 0;
 }
 
 .card h2 {
@@ -45,13 +48,53 @@
 }
 
 .stats {
+  align-content: center;
   display: grid;
-  flex: 1 1 auto;
   gap: 0.4rem;
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  grid-area: stats;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
-  max-width: 27rem;
-  min-width: min(100%, 17rem);
+  max-width: none;
+  width: 100%;
+}
+
+.actions {
+  align-self: center;
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+  grid-area: actions;
+  justify-self: end;
+}
+
+@media (max-width: 900px) {
+  .card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "copy"
+      "stats"
+      "actions";
+  }
+
+  .actions {
+    justify-self: stretch;
+  }
+
+  .actions :global([data-slot="button"]) {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .stat {
@@ -60,8 +103,11 @@
     color-mix(in srgb, var(--card) 88%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   box-shadow: 0 4px 12px -12px color-mix(in srgb, var(--foreground) 45%, transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 3.55rem;
   min-width: 0;
-  overflow: hidden;
   padding: 0.3rem 0.45rem;
   position: relative;
   transition:
@@ -79,13 +125,14 @@
 }
 
 .stat dt {
+  align-items: flex-start;
   color: var(--muted-foreground);
+  display: flex;
   font-size: 0.65rem;
   font-weight: 650;
   line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-height: 2.4em;
+  overflow-wrap: anywhere;
 }
 
 .stat dd {

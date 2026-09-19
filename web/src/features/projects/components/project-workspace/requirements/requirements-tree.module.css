@@ -287,6 +287,62 @@
   padding-inline: 0.24rem;
 }
 
+.row[data-incomplete="true"] {
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+}
+
+.row[data-incomplete="true"] .title {
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+
+.row[data-incomplete="true"]:hover,
+.row[data-incomplete="true"][data-selected="true"],
+.tree :global([role="treeitem"]):focus-visible .row[data-incomplete="true"] {
+  color: var(--foreground);
+}
+
+.row[data-incomplete="true"]:hover .title,
+.row[data-incomplete="true"][data-selected="true"] .title,
+.tree :global([role="treeitem"]):focus-visible .row[data-incomplete="true"] .title {
+  color: var(--foreground);
+}
+
+.incompleteMarker {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--warning);
+  display: inline-flex;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--warning) 68%, transparent));
+  height: 1.05rem;
+  justify-content: center;
+  transition: color 0.18s ease;
+  width: 1.05rem;
+}
+
+.incompleteMarker svg {
+  height: 0.78rem;
+  width: 0.78rem;
+}
+
+.incompleteMarker:hover,
+.incompleteMarker:focus-visible {
+  color: color-mix(in srgb, var(--warning) 88%, var(--foreground));
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--warning) 82%, transparent));
+}
+
+.incompleteMarker:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--warning) 42%, transparent);
+  outline-offset: 2px;
+}
+
+.incompleteTooltip {
+  max-width: 18rem;
+}
+
 .row[data-node-type="source"] :global([data-slot="badge"]) {
   background: color-mix(in srgb, var(--info) 12%, var(--card));
   border-color: color-mix(in srgb, var(--info) 30%, var(--border));

@@ -66,6 +66,22 @@ export interface BulkReplacePayload {
   applyToIdentifier?: boolean;
 }
 
+export type BulkCreateRequirementItem = {
+  nodeType: "requirement";
+  chapterNumber: string;
+  name: string;
+  primaryKind: RequirementPrimaryKind;
+};
+
+export interface BulkCreateRequirementPayload {
+  sourceVersionId: string;
+  items: BulkCreateRequirementItem[];
+}
+
+export interface BulkCreateRequirementResult {
+  requirementCount: number;
+}
+
 export interface BulkUpdateRequirementPayload {
   ids: string[];
   primaryKind?: RequirementPrimaryKind;

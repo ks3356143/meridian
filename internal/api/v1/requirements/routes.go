@@ -78,8 +78,8 @@ func Register(api huma.API, service *requirementsservice.Service) {
 		OperationID: "bulk-create-requirements",
 		Method:      http.MethodPost,
 		Path:        "/api/v1/projects/{code}/requirements/bulk",
-		Summary:     "批量录入需求结构",
-		Description: "批量粘贴预览确认后，一次性保存章节和正式需求。",
+		Summary:     "批量录入需求节点",
+		Description: "批量粘贴预览确认后，一次性保存正式需求节点；描述可留空，待补全后才能关联测试项。",
 		Tags:        []string{"需求与追踪"},
 	}, func(ctx context.Context, input *BulkCreateInput) (*BulkCreateOutput, error) {
 		body, err := handler.service.BulkCreate(ctx, requirementsservice.BulkCreateInput{
@@ -260,6 +260,8 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("副需求类型不能与主需求类型相同")
 	case errors.Is(err, requirementsservice.ErrRequirementNotOfficial):
 		return huma.Error409Conflict("仅已确认需求支持批量修改")
+	case errors.Is(err, requirementsservice.ErrInvalidBulkNodeType):
+		return huma.Error400BadRequest("批量粘贴仅支持需求节点")
 	case errors.Is(err, requirementsservice.ErrInvalidBulkReplace):
 		return huma.Error400BadRequest("查找词不能为空，且必须选择名称或标识至少一个替换范围")
 	case errors.Is(err, requirementsservice.ErrReplaceNameEmpty):

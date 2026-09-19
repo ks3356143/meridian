@@ -57,6 +57,7 @@ var (
 	ErrInvalidSecondaryKind     = errors.New("副需求类型不正确")
 	ErrSecondaryKindRepeat      = errors.New("副需求类型不能与主需求类型相同")
 	ErrRequirementNotOfficial   = errors.New("仅已确认需求支持批量修改")
+	ErrInvalidBulkNodeType      = errors.New("批量粘贴仅支持需求节点")
 	ErrInvalidBulkReplace       = errors.New("查找词不能为空，且必须选择名称或标识至少一个替换范围")
 	ErrReplaceNameEmpty         = errors.New("批量替换后的需求名称不能为空")
 	ErrReplaceNameTooLong       = errors.New("批量替换后的需求名称最多 240 个字符")
@@ -194,7 +195,6 @@ type UpdateRequirementInput struct {
 type BulkItem struct {
 	NodeType      string `json:"nodeType"`
 	ChapterNumber string `json:"chapterNumber"`
-	Title         string `json:"title,omitempty"`
 	Name          string `json:"name,omitempty"`
 	Description   string `json:"description,omitempty"`
 	PrimaryKind   string `json:"primaryKind,omitempty"`
@@ -208,7 +208,6 @@ type BulkCreateInput struct {
 }
 
 type BulkCreateResult struct {
-	SectionCount     int `json:"sectionCount"`
 	RequirementCount int `json:"requirementCount"`
 }
 
@@ -459,27 +458,11 @@ func (s *Service) BulkCreate(ctx context.Context, input BulkCreateInput) (BulkCr
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, item := range input.Items {
 			nodeType := strings.TrimSpace(item.NodeType)
-			if nodeType == "section" {
-				chapter, title, validateErr := validateSection(item.ChapterNumber, item.Title)
-				if validateErr != nil {
-					return validateErr
-				}
-				parentID, parentErr := resolveParentID(tx, source, "", chapter)
-				if parentErr != nil {
-					return parentErr
-				}
-				if _, createErr := createSectionInTx(tx, source.ProjectID, source.ID, parentID,
-					chapter, title, OriginManual, "", input.OperatedBy); createErr != nil {
-					return createErr
-				}
-				result.SectionCount++
-				continue
+			if nodeType != "requirement" {
+				return ErrInvalidBulkNodeType
 			}
 
 			kind := strings.TrimSpace(item.PrimaryKind)
-			if kind == "" {
-				kind = KindFunctional
-			}
 			if validateErr := validatePrimaryKind(kind); validateErr != nil {
 				return validateErr
 			}
@@ -603,12 +586,7 @@ func (s *Service) UpdateRequirement(ctx context.Context, input UpdateRequirement
 		}
 		nextTestTaskStatus := current.TestItemTaskStatus
 		if current.Status == StatusOfficial {
-			if current.TestItemTaskStatus == "none" && strings.TrimSpace(description) != "" {
-				nextTestTaskStatus = "pending"
-			}
-			if current.TestItemTaskStatus == "pending" && strings.TrimSpace(description) == "" {
-				nextTestTaskStatus = "none"
-			}
+			nextTestTaskStatus = resolveTestItemTaskStatus(StatusOfficial, description)
 		}
 		if nextTestTaskStatus != current.TestItemTaskStatus {
 			if taskErr := tx.Model(&Requirement{}).Where("id = ?", current.ID).
@@ -665,9 +643,10 @@ func (s *Service) ChangeStatus(ctx context.Context, input StatusActionInput) (St
 					continue
 				}
 				now := time.Now()
+				nextTestTaskStatus := resolveTestItemTaskStatus(StatusOfficial, current.Description)
 				if err := tx.Model(&Requirement{}).Where("id = ?", current.ID).Updates(map[string]any{
 					"status":                StatusOfficial,
-					"test_item_task_status": "pending",
+					"test_item_task_status": nextTestTaskStatus,
 					"updated_at":            now,
 				}).Error; err != nil {
 					return fmt.Errorf("确认软件需求失败: %w", err)
@@ -695,10 +674,7 @@ func (s *Service) ChangeStatus(ctx context.Context, input StatusActionInput) (St
 					return conflictErr
 				}
 
-				nextTestTaskStatus := "none"
-				if strings.TrimSpace(current.Description) != "" {
-					nextTestTaskStatus = "pending"
-				}
+				nextTestTaskStatus := resolveTestItemTaskStatus(StatusOfficial, current.Description)
 				now := time.Now()
 				if err := tx.Model(&Requirement{}).Where("id = ?", current.ID).Updates(map[string]any{
 					"status":                StatusOfficial,
@@ -1167,10 +1143,7 @@ func createRequirementInTx(
 		return Requirement{}, err
 	}
 	now := time.Now()
-	testTaskStatus := "none"
-	if status == StatusOfficial && strings.TrimSpace(description) != "" {
-		testTaskStatus = "pending"
-	}
+	testTaskStatus := resolveTestItemTaskStatus(status, description)
 	requirement := Requirement{
 		ID: requirementID, ProjectID: source.ProjectID, SourceVersionID: source.ID,
 		SectionID: &section.ID, ChapterNumber: chapter, ExternalIdentifier: externalID,
@@ -1188,6 +1161,13 @@ func createRequirementInTx(
 		return Requirement{}, err
 	}
 	return requirement, nil
+}
+
+func resolveTestItemTaskStatus(status string, description string) string {
+	if status == StatusOfficial && strings.TrimSpace(description) != "" {
+		return "pending"
+	}
+	return "none"
 }
 
 func requirementCodeExists(tx *gorm.DB, sourceVersionID string, code string, exceptID string) error {
