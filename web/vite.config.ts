@@ -56,6 +56,9 @@ function lucideDeepImports(): Plugin {
 
 export default defineConfig({
   plugins: [lucideDeepImports(), react(), tailwindcss()],
+  optimizeDeps: {
+    entries: ["index.html", "src/**/*.ts", "src/**/*.tsx"],
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -63,6 +66,9 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    warmup: {
+      clientFiles: ["src/**/*.ts", "src/**/*.tsx"],
+    },
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8787",
