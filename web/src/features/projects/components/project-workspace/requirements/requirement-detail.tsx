@@ -1,4 +1,12 @@
-import { CheckCircle2, CloudUpload, FileText, Link2, Loader2, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  CloudUpload,
+  CopyPlus,
+  FileText,
+  Link2,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useState } from "react";
 import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +34,7 @@ import {
   isRequirementDraftValid,
   requirementKindOptions,
   requirementSourceLabel,
+  type RequirementDraft,
 } from "./requirement-form";
 import styles from "./requirement-detail.module.css";
 
@@ -34,6 +43,7 @@ export function RequirementDetail({
   source,
   onUpdate,
   onDelete,
+  onCopy,
 }: {
   requirement: RequirementRecord;
   source?: RequirementSource;
@@ -42,6 +52,7 @@ export function RequirementDetail({
     payload: Omit<SaveRequirementPayload, "sourceVersionId">,
   ) => Promise<RequirementRecord | undefined>;
   onDelete: (requirement: RequirementRecord, hasUnsavedChanges: boolean) => void;
+  onCopy: (requirement: RequirementRecord, draft: RequirementDraft) => void;
 }) {
   const [draft, setDraft] = useState(() => toDraft(requirement));
   const [baseline, setBaseline] = useState(() => toDraft(requirement));
@@ -101,6 +112,22 @@ export function RequirementDetail({
           {secondaryKindLabels.length ? (
             <Badge variant="outline">副类型：{secondaryKindLabels.join(" / ")}</Badge>
           ) : null}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={styles.copyTrigger}
+                aria-label="复制新增已确认需求"
+                onClick={() => onCopy(requirement, draft)}
+              >
+                <CopyPlus data-icon="inline-start" aria-hidden />
+                复制新增
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">复制新增已确认需求</TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

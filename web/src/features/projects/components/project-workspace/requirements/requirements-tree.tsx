@@ -1,6 +1,7 @@
 import {
   BookOpen,
   ChevronRight,
+  CopyPlus,
   FileText,
   Keyboard,
   ListChecks,
@@ -20,6 +21,7 @@ import {
   type RefObject,
 } from "react";
 import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
+import { gsap, useGSAP } from "@/lib/gsap";
 import styles from "./requirements-tree.module.css";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +67,7 @@ export function RequirementsTree({
   selectedIds,
   onSelect,
   onCreate,
+  onCopy,
   onDelete,
   onToggleBatchMode,
   onToggleRequirement,
@@ -82,6 +85,7 @@ export function RequirementsTree({
   selectedIds: string[];
   onSelect: (requirement: RequirementRecord) => void;
   onCreate: () => void;
+  onCopy: (requirement: RequirementRecord) => void;
   onDelete: (requirement: RequirementRecord) => void;
   onToggleBatchMode: () => void;
   onToggleRequirement: (id: string, checked: boolean) => void;
@@ -94,13 +98,62 @@ export function RequirementsTree({
 }) {
   const nodes = buildConfirmedTree(sources, requirements);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const shellRef = useRef<HTMLElement>(null);
   const structureSignature = nodes
     .flatMap((source) => source.children.map((requirement) => requirement.key))
     .join("|");
   const selectedCount = selectedIds.length;
 
+  useGSAP(
+    () => {
+      if (!batchMode || !shellRef.current) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+      const bar = shellRef.current.querySelector<HTMLElement>(`.${styles.batchBar}`);
+      const actions = shellRef.current.querySelector<HTMLElement>(`.${styles.batchActions}`);
+      const checks = shellRef.current.querySelectorAll<HTMLElement>(`.${styles.rowCheck}`);
+      if (!bar) return;
+
+      gsap.fromTo(
+        bar,
+        { autoAlpha: 0, y: 12 },
+        { autoAlpha: 1, y: 0, duration: 0.26, ease: "power2.out", clearProps: "all" },
+      );
+      if (actions) {
+        gsap.fromTo(
+          actions,
+          { autoAlpha: 0, y: 6 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.22,
+            delay: 0.04,
+            ease: "power2.out",
+            clearProps: "all",
+          },
+        );
+      }
+      if (checks.length) {
+        gsap.fromTo(
+          checks,
+          { autoAlpha: 0, scale: 0.86 },
+          {
+            autoAlpha: 1,
+            scale: 1,
+            duration: 0.18,
+            stagger: 0.004,
+            ease: "power2.out",
+            clearProps: "all",
+          },
+        );
+      }
+    },
+    { dependencies: [batchMode], scope: shellRef },
+  );
+
   return (
     <aside
+      ref={shellRef}
       className={styles.shell}
       data-batch={batchMode ? "true" : undefined}
       aria-label="需求目录容器"
@@ -161,6 +214,7 @@ export function RequirementsTree({
             batchMode={batchMode}
             selectedIds={selectedIds}
             onSelect={onSelect}
+            onCopy={onCopy}
             onDelete={onDelete}
             onToggleRequirement={onToggleRequirement}
             onToggleSource={onToggleSource}
@@ -177,32 +231,35 @@ export function RequirementsTree({
           <div className={styles.batchActions}>
             <Button
               type="button"
-              size="sm"
+              size="xs"
               disabled={selectedCount === 0}
               onClick={onOpenBulkUpdate}
+              aria-label="批量修改选中需求"
             >
               <PencilLine data-icon="inline-start" aria-hidden />
-              批量修改
+              修改
             </Button>
             <Button
               type="button"
+              size="xs"
               variant="destructive"
-              size="sm"
               disabled={selectedCount === 0}
               onClick={onOpenBulkDelete}
+              aria-label="批量删除选中需求"
             >
               <Trash2 data-icon="inline-start" aria-hidden />
-              批量删除
+              删除
             </Button>
             <Button
               type="button"
+              size="xs"
               variant="outline"
-              size="sm"
               disabled={selectedCount === 0}
               onClick={onClearSelection}
+              aria-label="清除批量选择"
             >
               <X data-icon="inline-start" aria-hidden />
-              清除选择
+              清除
             </Button>
           </div>
         </div>
@@ -219,6 +276,7 @@ function ConfirmedTree({
   batchMode,
   selectedIds,
   onSelect,
+  onCopy,
   onDelete,
   onToggleRequirement,
   onToggleSource,
@@ -231,6 +289,7 @@ function ConfirmedTree({
   batchMode: boolean;
   selectedIds: string[];
   onSelect: (requirement: RequirementRecord) => void;
+  onCopy: (requirement: RequirementRecord) => void;
   onDelete: (requirement: RequirementRecord) => void;
   onToggleRequirement: (id: string, checked: boolean) => void;
   onToggleSource: (sourceId: string, checked: boolean) => void;
@@ -239,7 +298,7 @@ function ConfirmedTree({
 }) {
   const treeRef = useRef<TreeApi<ConfirmedRequirementNode>>(null);
   const shellRef = useRef<HTMLDivElement>(null);
-  const rowHandlersRef = useRef({ onDelete, onSelect });
+  const rowHandlersRef = useRef({ onCopy, onDelete, onSelect });
   const [height, setHeight] = useState(360);
   const { requestTreeToggle, requestTreeExit } = useRequirementTreeMotion({
     shellRef,
@@ -250,6 +309,10 @@ function ConfirmedTree({
   useEffect(() => {
     onRegisterExitAnimation(requestTreeExit);
   }, [onRegisterExitAnimation, requestTreeExit]);
+
+  useEffect(() => {
+    rowHandlersRef.current = { onCopy, onDelete, onSelect };
+  }, [onCopy, onDelete, onSelect]);
 
   useEffect(() => {
     if (naturalHeight) return;
@@ -354,6 +417,7 @@ function ConfirmedTree({
 
 type ConfirmedTreeRowProps = NodeRendererProps<ConfirmedRequirementNode> & {
   handlersRef: RefObject<{
+    onCopy: (requirement: RequirementRecord) => void;
     onDelete: (requirement: RequirementRecord) => void;
     onSelect: (requirement: RequirementRecord) => void;
   }>;
@@ -451,6 +515,10 @@ function ConfirmedTreeRow({ node, style, dragHandle, handlersRef }: ConfirmedTre
       <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuLabel>需求操作</ContextMenuLabel>
+        <ContextMenuItem onSelect={() => handlersRef.current.onCopy(requirement)}>
+          <CopyPlus aria-hidden />
+          复制新增...
+        </ContextMenuItem>
         <ContextMenuItem
           variant="destructive"
           onSelect={() => handlersRef.current.onDelete(requirement)}

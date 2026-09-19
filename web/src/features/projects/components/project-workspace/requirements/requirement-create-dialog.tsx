@@ -1,5 +1,5 @@
 import { Info, Loader2, Plus, Save } from "lucide-react";
-import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +33,8 @@ import {
   requirementKindOptions,
   requirementSourceLabel,
   type RequirementDraft,
+  findActiveChapterConflict,
+  suggestNextChapterNumber,
 } from "./requirement-form";
 import styles from "./requirement-create-dialog.module.css";
 
@@ -51,31 +53,66 @@ type TouchedRequirementFields = Record<
 export function RequirementCreateDialog({
   open,
   sources,
+  requirements,
   initialValues = null,
+  chapterSeedRequirement = null,
   submitting,
   onOpenChange,
   onSubmit,
 }: {
   open: boolean;
   sources: RequirementSource[];
+  requirements: RequirementRecord[];
   initialValues?: RequirementCreateInitialValues | null;
+  chapterSeedRequirement?: RequirementRecord | null;
   submitting: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (payload: SaveRequirementPayload) => Promise<RequirementRecord>;
 }) {
+  const sourceId = chapterSeedRequirement?.sourceVersionId ?? sources[0]?.id ?? "";
+  const chapterSuggestion = chapterSeedRequirement
+    ? suggestNextChapterNumber(
+        chapterSeedRequirement.chapterNumber,
+        requirements,
+        chapterSeedRequirement.sourceVersionId,
+      )
+    : "";
   const [values, setValues] = useState<CreateRequirementValues>(
-    () => initialValues ?? emptyValues(sources),
+    () => initialValues ?? emptyValues(sources, sourceId, chapterSuggestion),
   );
   const [touched, setTouched] = useState<TouchedRequirementFields>(() => emptyTouched());
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
+  const chapterConflict = findActiveChapterConflict(
+    values.chapterNumber,
+    values.sourceId,
+    requirements,
+  );
+  const draftErrors = getRequirementDraftErrors(values);
   const errors = {
     sourceId: values.sourceId ? undefined : "来源文档必填",
-    ...getRequirementDraftErrors(values),
+    ...draftErrors,
+    chapterNumber:
+      draftErrors.chapterNumber ??
+      (chapterConflict
+        ? `章节号已被 §${chapterConflict.chapterNumber} ${chapterConflict.name} 使用`
+        : undefined),
   };
   const valid = Object.values(errors).every((error) => !error);
+
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!open || wasOpen) return;
+
+    setValues(initialValues ?? emptyValues(sources, sourceId, chapterSuggestion));
+    setTouched(emptyTouched());
+    setSubmitted(false);
+    // 只在关闭 -> 打开时重置；保存并沿用期间不覆盖表单。
+  }, [chapterSuggestion, initialValues, open, sourceId, sources]);
 
   function close() {
     reset();
@@ -83,7 +120,7 @@ export function RequirementCreateDialog({
   }
 
   function reset() {
-    setValues(initialValues ?? emptyValues(sources));
+    setValues(initialValues ?? emptyValues(sources, sourceId, chapterSuggestion));
     setTouched(emptyTouched());
     setSubmitted(false);
   }
@@ -95,6 +132,12 @@ export function RequirementCreateDialog({
   function visibleError(field: keyof typeof errors) {
     return touched[field] || submitted ? errors[field] : undefined;
   }
+
+  const visibleChapterError =
+    visibleError("chapterNumber") ??
+    (chapterConflict
+      ? `章节号已被 §${chapterConflict.chapterNumber} ${chapterConflict.name} 使用`
+      : undefined);
 
   function update<K extends keyof CreateRequirementValues>(
     field: K,
@@ -135,9 +178,14 @@ export function RequirementCreateDialog({
       nativeEvent.submitter.value === "continue";
 
     if (continueAfterSave) {
+      const nextChapterNumber = suggestNextChapterNumber(
+        created.chapterNumber,
+        requirements,
+        created.sourceVersionId,
+      );
       setValues({
         sourceId: source.id,
-        chapterNumber: values.chapterNumber.trim(),
+        chapterNumber: nextChapterNumber,
         externalIdentifier: "",
         name: "",
         description: "",
@@ -163,8 +211,10 @@ export function RequirementCreateDialog({
           <DialogTitle>{initialValues ? "复制新增确认需求" : "新增确认需求"}</DialogTitle>
           <DialogDescription>
             {initialValues
-              ? "已继承删除需求的登记信息，请确认章节号和名称后保存。"
-              : "保存后直接进入确认需求基线，作为后续测试项的需求依据。"}
+              ? "已继承原需求的登记信息，请确认章节号和名称后保存。"
+              : chapterSuggestion
+                ? `已按当前需求预填章节号 ${chapterSuggestion}；需要连续录入时使用“保存并沿用”。`
+                : "保存后直接进入确认需求基线；需要连续录入时使用“保存并沿用”。"}
           </DialogDescription>
         </DialogHeader>
 
@@ -202,7 +252,7 @@ export function RequirementCreateDialog({
               <FieldError id="requirement-source-error">{visibleError("sourceId")}</FieldError>
             </Field>
 
-            <Field data-invalid={visibleError("chapterNumber") ? true : undefined}>
+            <Field data-invalid={visibleChapterError ? true : undefined}>
               <FieldLabel htmlFor="requirement-chapter">
                 章节号
                 <span className={styles.requiredMark} aria-hidden>
@@ -213,18 +263,14 @@ export function RequirementCreateDialog({
                 id="requirement-chapter"
                 value={values.chapterNumber}
                 autoComplete="off"
-                placeholder="例如 4.4"
-                aria-invalid={visibleError("chapterNumber") ? true : undefined}
+                placeholder={chapterSuggestion || "例如 4.4"}
+                aria-invalid={visibleChapterError ? true : undefined}
                 aria-required="true"
-                aria-describedby={
-                  visibleError("chapterNumber") ? "requirement-chapter-error" : undefined
-                }
+                aria-describedby={visibleChapterError ? "requirement-chapter-error" : undefined}
                 onBlur={() => touch("chapterNumber")}
                 onChange={(event) => update("chapterNumber", event.target.value)}
               />
-              <FieldError id="requirement-chapter-error">
-                {visibleError("chapterNumber")}
-              </FieldError>
+              <FieldError id="requirement-chapter-error">{visibleChapterError}</FieldError>
             </Field>
 
             <Field>
@@ -388,7 +434,7 @@ export function RequirementCreateDialog({
               ) : (
                 <Plus data-icon="inline-start" aria-hidden />
               )}
-              保存并继续
+              保存并沿用
             </Button>
           </DialogFooter>
         </form>
@@ -397,10 +443,14 @@ export function RequirementCreateDialog({
   );
 }
 
-function emptyValues(sources: RequirementSource[]): CreateRequirementValues {
+function emptyValues(
+  sources: RequirementSource[],
+  sourceId: string,
+  chapterNumber: string,
+): CreateRequirementValues {
   return {
-    sourceId: sources[0]?.id ?? "",
-    chapterNumber: "",
+    sourceId: sources.some((source) => source.id === sourceId) ? sourceId : (sources[0]?.id ?? ""),
+    chapterNumber,
     externalIdentifier: "",
     name: "",
     description: "",

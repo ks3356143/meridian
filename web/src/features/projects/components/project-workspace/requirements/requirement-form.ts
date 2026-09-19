@@ -1,4 +1,8 @@
-import type { RequirementPrimaryKind, RequirementSource } from "@/features/requirements/types";
+import type {
+  RequirementPrimaryKind,
+  RequirementRecord,
+  RequirementSource,
+} from "@/features/requirements/types";
 
 export type RequirementDraft = {
   chapterNumber: string;
@@ -7,6 +11,11 @@ export type RequirementDraft = {
   description: string;
   primaryKind: RequirementPrimaryKind;
   secondaryKinds: RequirementPrimaryKind[];
+};
+
+export type RequirementCopySeed = RequirementDraft & {
+  sourceId: string;
+  tags: string[];
 };
 
 export const requirementKindOptions: Array<{
@@ -84,4 +93,67 @@ export function getNextSiblingChapterNumber(chapterNumber: string, activeChapter
   const nextNumber = siblingNumbers.length > 0 ? Math.max(...siblingNumbers) + 1 : 1;
 
   return `${parentPrefix}${nextNumber}`;
+}
+
+export function findActiveChapterConflict(
+  chapterNumber: string,
+  sourceVersionId: string,
+  requirements: RequirementRecord[],
+) {
+  const normalizedChapterNumber = chapterNumber.trim();
+  if (!normalizedChapterNumber) return null;
+
+  return (
+    requirements.find(
+      (requirement) =>
+        requirement.sourceVersionId === sourceVersionId &&
+        requirement.chapterNumber === normalizedChapterNumber &&
+        (requirement.status === "candidate" || requirement.status === "official"),
+    ) ?? null
+  );
+}
+
+export function getActiveChapterNumbers(
+  requirements: RequirementRecord[],
+  sourceVersionId: string,
+) {
+  return requirements
+    .filter(
+      (requirement) =>
+        requirement.sourceVersionId === sourceVersionId &&
+        (requirement.status === "candidate" || requirement.status === "official"),
+    )
+    .map((requirement) => requirement.chapterNumber);
+}
+
+export function suggestNextChapterNumber(
+  chapterNumber: string,
+  requirements: RequirementRecord[],
+  sourceVersionId: string,
+) {
+  return getNextSiblingChapterNumber(chapterNumber, [
+    chapterNumber,
+    ...getActiveChapterNumbers(requirements, sourceVersionId),
+  ]);
+}
+
+export function buildRequirementCopySeed(
+  requirement: RequirementRecord,
+  requirements: RequirementRecord[],
+  source: RequirementDraft = requirement,
+): RequirementCopySeed {
+  return {
+    sourceId: requirement.sourceVersionId,
+    chapterNumber: suggestNextChapterNumber(
+      source.chapterNumber,
+      requirements,
+      requirement.sourceVersionId,
+    ),
+    externalIdentifier: "",
+    name: source.name,
+    description: source.description,
+    primaryKind: source.primaryKind,
+    secondaryKinds: source.secondaryKinds,
+    tags: requirement.tags,
+  };
 }

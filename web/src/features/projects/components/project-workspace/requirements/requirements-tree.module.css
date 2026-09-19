@@ -27,12 +27,16 @@
 
 .toolbar {
   align-items: center;
-  background: color-mix(in srgb, var(--primary) 4%, var(--card));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--primary) 6%, var(--card)),
+    color-mix(in srgb, var(--info) 4%, var(--card))
+  );
   border-bottom: 1px solid var(--border);
   display: flex;
   gap: 0.4rem;
   justify-content: space-between;
-  padding: 0.28rem 0.4rem 0;
+  padding: 0.32rem 0.48rem 0;
 }
 
 .tabsList {
@@ -170,6 +174,7 @@
 .row {
   align-items: center;
   border: 1px solid transparent;
+  border-radius: 2px;
   color: var(--foreground);
   display: flex;
   font-size: 12px;
@@ -220,8 +225,12 @@
 }
 
 .row[data-node-type="source"] {
-  background: color-mix(in srgb, var(--info) 6%, var(--card));
-  font-weight: 700;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--info) 7%, transparent), transparent 78%),
+    color-mix(in srgb, var(--info) 3%, var(--card));
+  border-color: color-mix(in srgb, var(--info) 10%, transparent);
+  color: var(--foreground);
+  font-weight: 400;
 }
 
 .chevron {
@@ -260,17 +269,28 @@
   width: 0.75rem;
 }
 
+.row[data-node-type="source"] .icon {
+  color: var(--info);
+}
+
 .title {
   flex: 1 1 0;
   min-width: 0;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .row :global([data-slot="badge"]) {
   height: 1.05rem;
   font-size: 9.5px;
   padding-inline: 0.24rem;
+}
+
+.row[data-node-type="source"] :global([data-slot="badge"]) {
+  background: color-mix(in srgb, var(--info) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--info) 30%, var(--border));
+  color: var(--info);
 }
 
 .empty {
@@ -295,35 +315,50 @@
 
 .batchBar {
   align-items: center;
-  backdrop-filter: blur(6px);
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--info) 30%, var(--border));
-  bottom: 0;
-  box-shadow: 0 -6px 18px -14px color-mix(in srgb, var(--info) 60%, transparent);
+  backdrop-filter: blur(9px);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--info) 7%, transparent), transparent 62%),
+    color-mix(in srgb, var(--card) 91%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 26%, var(--border));
+  border-radius: 2px;
+  bottom: 0.35rem;
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--info) 72%, transparent),
+    0 10px 24px -20px color-mix(in srgb, var(--info) 62%, transparent);
   display: flex;
-  gap: 0.5rem;
-  inset-inline: 0;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  inset-inline: 0.35rem;
   justify-content: space-between;
-  padding: 0.4rem 0.55rem;
+  padding: 0.42rem 0.5rem;
   position: absolute;
   z-index: 5;
 }
 
 .batchCount {
+  background: color-mix(in srgb, var(--info) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--info) 25%, var(--border));
+  border-radius: 2px;
   color: var(--info);
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 400;
+  padding-block: 0.12rem;
+  padding-inline: 0.36rem;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .batchActions {
   display: flex;
-  flex: 0 0 auto;
-  gap: 0.3rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
 }
 
 .shell[data-batch="true"] .tree {
-  padding-bottom: 3.1rem;
+  padding-bottom: 4.3rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -355,5 +390,12 @@
 
   .tree {
     overflow: visible;
+  }
+
+  .batchBar {
+    bottom: auto;
+    inset-inline: 0.35rem 0.35rem;
+    margin-top: 0.35rem;
+    position: static;
   }
 }

@@ -86,6 +86,9 @@
 
 .grid :global([data-slot="multi-select-trigger"]) {
   font-size: 0.78rem;
+  height: 2rem;
+  min-height: 2rem;
+  padding-block: 0.2rem;
 }
 
 .grid :global([data-slot="textarea"]) {

@@ -36,7 +36,7 @@ const shortcutRows: ShortcutRow[] = [
   {
     keys: ["Ctrl / Meta", "Enter"],
     scope: "新增需求弹窗",
-    description: "保存当前需求并继续录入，保留来源、章节号和需求类型。",
+    description: "保存当前需求并沿用登记信息，继续录入下一条。",
   },
   {
     keys: ["Esc"],
@@ -72,9 +72,9 @@ const shortcutRows: ShortcutRow[] = [
 
 const functionRows: FunctionRow[] = [
   {
-    name: "保存并继续",
+    name: "保存并沿用",
     description:
-      "保存后不关闭弹窗，保留来源文档、章节号和需求类型，清空标识、名称和描述，并把焦点移回名称。",
+      "保存后不关闭弹窗，沿用来源文档、章节层级和需求类型，自动预填下一条章节号，并把焦点移回名称。",
   },
   {
     name: "保存",
@@ -94,7 +94,7 @@ const functionRows: FunctionRow[] = [
   },
   {
     name: "副类型",
-    description: "可选多选；不能与主类型相同，保存并继续时随主类型一起保留。",
+    description: "可选多选；不能与主类型相同，保存并沿用时随主类型一起保留。",
   },
   {
     name: "章节挂接",

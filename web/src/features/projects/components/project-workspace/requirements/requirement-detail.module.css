@@ -44,6 +44,28 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.copyTrigger {
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 38%, var(--border));
+  color: var(--primary);
+  flex: 0 0 auto;
+}
+
+.copyTrigger:hover {
+  background: color-mix(in srgb, var(--primary) 15%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
+  box-shadow: 0 4px 14px -6px color-mix(in srgb, var(--primary) 55%, transparent);
+  color: var(--primary);
+}
+
+.actionGroup {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .deleteTrigger {
@@ -67,6 +89,7 @@
   font-weight: 650;
   gap: 0.25rem;
   padding: 0.2rem 0.38rem;
+  white-space: nowrap;
   transition:
     background-color 0.22s ease,
     border-color 0.22s ease,
@@ -261,8 +284,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .statusChip,
-  .statusChip svg {
+  .saveState,
+  .saveState::before {
     animation: none;
     transition: none;
   }
@@ -291,5 +314,18 @@
   .header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .headerAside {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .headerMeta {
+    justify-content: flex-start;
+  }
+
+  .actionGroup {
+    justify-content: flex-start;
   }
 }

@@ -10,7 +10,7 @@ import {
   RequirementCreateDialog,
   type RequirementCreateInitialValues,
 } from "./requirement-create-dialog";
-import { getNextSiblingChapterNumber } from "./requirement-form";
+import { buildRequirementCopySeed, type RequirementDraft } from "./requirement-form";
 import { RequirementDeleteDialog } from "./requirement-delete-dialog";
 import { RequirementPurgeDialog } from "./requirement-purge-dialog";
 import { RequirementDetail } from "./requirement-detail";
@@ -73,6 +73,9 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const selectedRequirements = officialRequirements.filter((requirement) =>
     selectedIds.includes(requirement.id),
   );
+  const activeChapterRequirements = (workbench?.requirements ?? []).filter(
+    (requirement) => requirement.status === "candidate" || requirement.status === "official",
+  );
 
   const updateRequirement = updateMutation.mutateAsync;
   const savePanelLayout = useCallback((layout: Record<string, number>) => {
@@ -106,29 +109,28 @@ export function RequirementsLayout({ project }: { project: Project }) {
   );
   const handleCopyDeleted = useCallback(
     (requirement: RequirementRecord) => {
-      const activeChapterNumbers = officialRequirements
-        .filter((item) => item.sourceVersionId === requirement.sourceVersionId)
-        .map((item) => item.chapterNumber);
       setCreateSeed({
         key: `copy-${requirement.id}`,
-        values: {
-          sourceId: requirement.sourceVersionId,
-          chapterNumber: getNextSiblingChapterNumber(requirement.chapterNumber, [
-            requirement.chapterNumber,
-            ...activeChapterNumbers,
-          ]),
-          externalIdentifier: "",
-          name: requirement.name,
-          description: requirement.description,
-          primaryKind: requirement.primaryKind,
-          secondaryKinds: requirement.secondaryKinds,
-          tags: requirement.tags,
-        },
+        values: buildRequirementCopySeed(requirement, activeChapterRequirements),
       });
       setDeletedOpen(false);
       setCreateOpen(true);
     },
-    [officialRequirements],
+    [activeChapterRequirements],
+  );
+  const handleCopyRequirement = useCallback(
+    (requirement: RequirementRecord, draft?: RequirementDraft) => {
+      setCreateSeed({
+        key: `copy-${requirement.id}`,
+        values: buildRequirementCopySeed(
+          requirement,
+          activeChapterRequirements,
+          draft ?? requirement,
+        ),
+      });
+      setCreateOpen(true);
+    },
+    [activeChapterRequirements],
   );
   const submitDelete = useCallback(
     async (requirement: RequirementRecord, reason: string) => {
@@ -232,6 +234,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       selectedIds={selectedIds}
       onSelect={(requirement) => setSelectedId(requirement.id)}
       onCreate={() => setCreateOpen(true)}
+      onCopy={handleCopyRequirement}
       onDelete={handleDeleteRequest}
       onToggleBatchMode={toggleBatchMode}
       onToggleRequirement={toggleRequirementSelected}
@@ -257,6 +260,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       source={selectedSource}
       onUpdate={handleUpdate}
       onDelete={handleDeleteRequest}
+      onCopy={handleCopyRequirement}
     />
   ) : (
     <section className={styles.detailShell} aria-label="需求详情容器">
@@ -273,7 +277,9 @@ export function RequirementsLayout({ project }: { project: Project }) {
         key={createSeed?.key ?? "blank"}
         open={createOpen}
         sources={sources}
+        requirements={activeChapterRequirements}
         initialValues={createSeed?.values ?? null}
+        chapterSeedRequirement={createSeed ? null : selectedRequirement}
         submitting={createMutation.isPending}
         onOpenChange={(open) => {
           setCreateOpen(open);
