@@ -1,6 +1,4 @@
 import {
-  ArrowLeft,
-  ArrowRight,
   AlertTriangle,
   BookOpen,
   ChevronDown,
@@ -13,8 +11,10 @@ import {
   ListChecks,
   PencilLine,
   Plus,
+  Redo2,
   Search,
   Trash2,
+  Undo2,
   X,
 } from "lucide-react";
 import {
@@ -224,18 +224,20 @@ export function RequirementsTree({
 
       if (event.ctrlKey && event.altKey && event.key === "ArrowLeft") {
         event.preventDefault();
+        event.stopPropagation();
         goToSearchResult(-1);
         return;
       }
 
       if (event.ctrlKey && event.altKey && event.key === "ArrowRight") {
         event.preventDefault();
+        event.stopPropagation();
         goToSearchResult(1);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [goToSearchResult, goToHistory]);
 
   useGSAP(
@@ -429,7 +431,7 @@ export function RequirementsTree({
                   disabled={!history.previous}
                   onClick={() => goToHistory(-1)}
                 >
-                  <ArrowLeft data-icon="inline-start" aria-hidden />
+                  <Undo2 data-icon="inline-start" aria-hidden />
                   上一条
                 </Button>
               </TooltipTrigger>
@@ -450,7 +452,7 @@ export function RequirementsTree({
                   onClick={() => goToHistory(1)}
                   aria-label="回到下一条最近查看需求"
                 >
-                  <ArrowRight data-icon="inline-start" aria-hidden />
+                  <Redo2 data-icon="inline-start" aria-hidden />
                   下一条
                 </Button>
               </TooltipTrigger>
@@ -481,6 +483,7 @@ export function RequirementsTree({
               >
                 <span className={styles.helpTitle}>搜索与定位快捷键</span>
                 <div className={styles.helpList}>
+                  <span className={styles.helpSection}>搜索结果</span>
                   <div className={styles.helpRow}>
                     <span className={styles.helpKeys}>
                       <kbd className={styles.helpKey}>Ctrl / Meta</kbd>
@@ -523,6 +526,8 @@ export function RequirementsTree({
                     </span>
                     <span className={styles.helpDescription}>下一个结果</span>
                   </div>
+                  <span className={styles.helpSection}>最近访问</span>
+                  <p className={styles.helpNote}>“上一条 / 下一条”按钮只控制最近访问历史。</p>
                 </div>
               </PopoverContent>
             </Popover>
@@ -729,8 +734,19 @@ function ConfirmedTree({
       onKeyDownCapture={(event) => {
         if ((event.target as HTMLElement).closest('[data-slot="checkbox"]')) return;
 
+        const target = event.target as HTMLElement;
+        const targetRow =
+          target.closest<HTMLElement>('[data-tree-row="true"]') ??
+          target.querySelector<HTMLElement>('[data-tree-row="true"]');
+        if (targetRow?.dataset.nodeType === "requirement" && event.key === "ArrowRight") {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
         const node = treeRef.current?.focusedNode;
-        if (!node || node.isLeaf) return;
+        if (!node) return;
+        if (node.isLeaf) return;
 
         const shouldToggle =
           event.key === " " ||

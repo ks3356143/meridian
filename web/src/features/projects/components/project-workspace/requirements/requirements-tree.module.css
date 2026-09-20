@@ -226,6 +226,14 @@
   gap: 0.35rem;
 }
 
+.helpSection {
+  color: var(--info);
+  font-size: 0.64rem;
+  font-weight: 650;
+  line-height: 1.2;
+  margin-top: 0.1rem;
+}
+
 .helpRow {
   align-items: center;
   display: grid;
@@ -264,6 +272,13 @@
   font-size: 0.68rem;
   line-height: 1.35;
   white-space: nowrap;
+}
+
+.helpNote {
+  color: var(--muted-foreground);
+  font-size: 0.64rem;
+  line-height: 1.4;
+  margin: 0;
 }
 
 @keyframes helpPopoverIn {
