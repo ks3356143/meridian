@@ -27,6 +27,80 @@
   color: var(--destructive);
 }
 
+.toolbar {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+  padding: 0.45rem 0.55rem;
+}
+
+.selection {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+
+.bulkActions {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.deleteAllAction {
+  border-color: color-mix(in srgb, var(--destructive) 25%, var(--border));
+  color: var(--destructive);
+}
+
+.tableShell {
+  min-width: 0;
+}
+
+.tableShell :global([data-slot="table-container"]) {
+  overflow-x: auto;
+}
+
+.tableShell :global([data-slot="table-head"]),
+.tableShell :global([data-slot="table-cell"]) {
+  padding-block: 0.4rem;
+  padding-inline: 0.45rem;
+}
+
+.tableShell :global([data-slot="table-head"]:first-child),
+.tableShell :global([data-slot="table-cell"]:first-child) {
+  max-width: 2rem;
+  min-width: 2rem;
+  padding-inline: 0.2rem;
+  width: 2rem;
+}
+
+.tableShell :global([data-slot="table-head"]:last-child),
+.tableShell :global([data-slot="table-cell"]:last-child) {
+  max-width: 7rem;
+  min-width: 7rem;
+  padding-inline: 0.15rem;
+  width: 7rem;
+}
+
+.tableShell :global([data-slot="table"]) {
+  min-width: 50rem;
+}
+
+.actionGroup {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.1rem;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.rowCheck {
+  height: 0.85rem;
+  width: 0.85rem;
+}
+
 .purgeAction:hover,
 .purgeAction:focus-visible {
   background: color-mix(in srgb, var(--destructive) 8%, var(--card));

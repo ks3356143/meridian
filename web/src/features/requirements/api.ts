@@ -2,6 +2,7 @@ import { request } from "@/api/client";
 import type {
   BulkCreateRequirementPayload,
   BulkCreateRequirementResult,
+  BulkPurgeRequirementsPayload,
   BulkUpdateRequirementPayload,
   RequirementRecord,
   RequirementsWorkbenchSnapshot,
@@ -37,6 +38,13 @@ export const requirementsApi = {
       `/api/v1/projects/${projectId}/requirements/${requirementId}/purge`,
       {},
       { reason },
+    ),
+  bulkPurge: (projectId: string, payload: BulkPurgeRequirementsPayload) =>
+    request<{ deletedCount: number }>(
+      "POST",
+      `/api/v1/projects/${projectId}/requirements/purge`,
+      {},
+      payload,
     ),
   bulkUpdate: (projectId: string, payload: BulkUpdateRequirementPayload) =>
     request<{ updatedCount: number }>(

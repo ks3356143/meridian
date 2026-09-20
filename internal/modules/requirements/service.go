@@ -50,6 +50,7 @@ var (
 	ErrRequirementNotDeleted    = errors.New("仅从已确认需求删除的记录允许恢复")
 	ErrRequirementNotPurgeable  = errors.New("仅从已确认需求删除的记录允许彻底删除")
 	ErrPurgeReasonRequired      = errors.New("彻底删除原因必须填写")
+	ErrPurgeSelectionInvalid    = errors.New("删除全部时不能同时指定需求")
 	ErrNoChanges                = errors.New("没有需要修改的需求信息")
 	ErrNoRequirements           = errors.New("没有可操作的需求")
 	ErrReasonTooLong            = errors.New("删除原因最多 500 个字符")
@@ -231,6 +232,13 @@ type PurgeRequirementInput struct {
 
 type PurgeRequirementResult struct {
 	DeletedCount int `json:"deletedCount"`
+}
+
+type PurgeRequirementsInput struct {
+	ProjectCode string
+	IDs         []string
+	All         bool
+	Reason      string
 }
 
 func (s *Service) Workbench(ctx context.Context, projectCode string, sourceVersionID string) (WorkbenchResponse, error) {
@@ -724,12 +732,8 @@ func (s *Service) PurgeRequirement(ctx context.Context, input PurgeRequirementIn
 	if err != nil {
 		return PurgeRequirementResult{}, err
 	}
-	reason := strings.TrimSpace(input.Reason)
-	if reason == "" {
-		return PurgeRequirementResult{}, ErrPurgeReasonRequired
-	}
-	if len([]rune(reason)) > 500 {
-		return PurgeRequirementResult{}, ErrReasonTooLong
+	if err := validatePurgeReason(input.Reason); err != nil {
+		return PurgeRequirementResult{}, err
 	}
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -760,6 +764,83 @@ func (s *Service) PurgeRequirement(ctx context.Context, input PurgeRequirementIn
 		return PurgeRequirementResult{}, err
 	}
 	return PurgeRequirementResult{DeletedCount: 1}, nil
+}
+
+func (s *Service) PurgeRequirements(ctx context.Context, input PurgeRequirementsInput) (PurgeRequirementResult, error) {
+	if !input.All && len(input.IDs) == 0 {
+		return PurgeRequirementResult{}, ErrNoRequirements
+	}
+	if input.All && len(input.IDs) > 0 {
+		return PurgeRequirementResult{}, ErrPurgeSelectionInvalid
+	}
+	projectID, err := s.findProject(ctx, input.ProjectCode)
+	if err != nil {
+		return PurgeRequirementResult{}, err
+	}
+	if err := validatePurgeReason(input.Reason); err != nil {
+		return PurgeRequirementResult{}, err
+	}
+
+	result := PurgeRequirementResult{}
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var excluded []Requirement
+		if err := tx.Where("project_id = ? AND status = ?", projectID, StatusExcluded).
+			Find(&excluded).Error; err != nil {
+			return fmt.Errorf("查询已删除需求失败: %w", err)
+		}
+		excludedByID := make(map[string]Requirement, len(excluded))
+		for _, requirement := range excluded {
+			excludedByID[requirement.ID] = requirement
+		}
+
+		var events []Event
+		if err := tx.Where("project_id = ? AND action = ?", projectID, "exclude").
+			Order("rowid ASC").
+			Find(&events).Error; err != nil {
+			return fmt.Errorf("查询需求删除记录失败: %w", err)
+		}
+		latestDelete := make(map[string]Event, len(events))
+		for _, event := range events {
+			latestDelete[event.RequirementID] = event
+		}
+
+		purgeIDs := input.IDs
+		if input.All {
+			purgeIDs = make([]string, 0, len(excluded))
+			for _, requirement := range excluded {
+				if latestDelete[requirement.ID].FromStatus == StatusOfficial {
+					purgeIDs = append(purgeIDs, requirement.ID)
+				}
+			}
+		}
+		seen := make(map[string]bool, len(purgeIDs))
+		for _, requirementID := range purgeIDs {
+			if seen[requirementID] {
+				continue
+			}
+			seen[requirementID] = true
+			current, exists := excludedByID[requirementID]
+			if !exists || current.ProjectID != projectID {
+				return ErrRequirementNotFound
+			}
+			event := latestDelete[current.ID]
+			if event.ID == "" || event.FromStatus != StatusOfficial {
+				return ErrRequirementNotPurgeable
+			}
+			if err := tx.Where("id = ?", current.ID).Delete(&Requirement{}).Error; err != nil {
+				return fmt.Errorf("彻底删除软件需求失败: %w", err)
+			}
+			result.DeletedCount++
+		}
+		if result.DeletedCount == 0 {
+			return ErrNoRequirements
+		}
+		return nil
+	})
+	if err != nil {
+		return PurgeRequirementResult{}, err
+	}
+	return result, nil
 }
 
 func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID string, operatedBy string) (ParseResult, error) {
@@ -1200,6 +1281,17 @@ func latestExcludeEvent(tx *gorm.DB, requirementID string) (*Event, error) {
 	return &event, nil
 }
 
+func validatePurgeReason(raw string) error {
+	reason := strings.TrimSpace(raw)
+	if reason == "" {
+		return ErrPurgeReasonRequired
+	}
+	if len([]rune(reason)) > 500 {
+		return ErrReasonTooLong
+	}
+	return nil
+}
+
 func ensureRestorableRequirement(tx *gorm.DB, requirement *Requirement) error {
 	var count int64
 	if err := tx.Model(&Requirement{}).
@@ -1382,9 +1474,6 @@ func validateRequirement(chapter string, name string, description string) (strin
 	if name == "" {
 		return "", "", "", fmt.Errorf("需求名称不能为空")
 	}
-	if description == "" {
-		return "", "", "", fmt.Errorf("需求描述不能为空")
-	}
 	if len([]rune(name)) > 240 {
 		return "", "", "", fmt.Errorf("需求名称最多 240 个字符")
 	}
@@ -1396,11 +1485,7 @@ func validateBulkRequirement(
 	name string,
 	description string,
 ) (string, string, string, error) {
-	chapter, name, _, err := validateRequirement(chapter, name, "批量结构占位描述")
-	if err != nil {
-		return "", "", "", err
-	}
-	return chapter, name, strings.TrimSpace(description), nil
+	return validateRequirement(chapter, name, description)
 }
 
 func validatePrimaryKind(kind string) error {

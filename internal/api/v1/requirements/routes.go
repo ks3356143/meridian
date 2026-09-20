@@ -57,7 +57,7 @@ func Register(api huma.API, service *requirementsservice.Service) {
 		Method:      http.MethodPost,
 		Path:        "/api/v1/projects/{code}/requirements",
 		Summary:     "新增软件需求",
-		Description: "手工保存正式软件需求，并记录待创建关联测试项契约。",
+		Description: "手工保存正式软件需求；描述可留空并标记为待补描述，补全前不得进入测试项创建与关联链路。",
 		Tags:        []string{"需求与追踪"},
 	}, func(ctx context.Context, input *CreateRequirementInput) (*RequirementOutput, error) {
 		body, err := handler.service.CreateRequirement(ctx, requirementsservice.CreateRequirementInput{
@@ -134,7 +134,7 @@ func Register(api huma.API, service *requirementsservice.Service) {
 		Method:      http.MethodPut,
 		Path:        "/api/v1/software-requirements/{id}",
 		Summary:     "修改软件需求",
-		Description: "修改候选或正式需求的登记信息，并写入审计事件。",
+		Description: "修改候选或正式需求的登记信息；描述可留空，补全描述后恢复测试项创建资格，并写入审计事件。",
 		Tags:        []string{"需求与追踪"},
 	}, func(ctx context.Context, input *UpdateRequirementInput) (*RequirementOutput, error) {
 		body, err := handler.service.UpdateRequirement(ctx, requirementsservice.UpdateRequirementInput{
@@ -200,6 +200,26 @@ func Register(api huma.API, service *requirementsservice.Service) {
 		}
 		return &PurgeRequirementOutput{Body: body}, nil
 	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "bulk-purge-requirements",
+		Method:      http.MethodPost,
+		Path:        "/api/v1/projects/{code}/requirements/purge",
+		Summary:     "批量彻底删除已删除需求",
+		Description: "按勾选批量物理删除，或删除当前项目全部可彻底删除的已删除确认需求；操作不可恢复，必须填写原因。",
+		Tags:        []string{"需求与追踪"},
+	}, func(ctx context.Context, input *BulkPurgeRequirementsInput) (*BulkPurgeRequirementsOutput, error) {
+		body, err := handler.service.PurgeRequirements(ctx, requirementsservice.PurgeRequirementsInput{
+			ProjectCode: input.Code,
+			IDs:         input.Body.IDs,
+			All:         input.Body.All,
+			Reason:      input.Body.Reason,
+		})
+		if err != nil {
+			return nil, toAPIError(err, "批量彻底删除需求失败")
+		}
+		return &BulkPurgeRequirementsOutput{Body: body}, nil
+	})
 }
 
 func currentUserID(ctx context.Context) string {
@@ -246,6 +266,8 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error409Conflict("仅从已确认需求删除的记录允许彻底删除")
 	case errors.Is(err, requirementsservice.ErrPurgeReasonRequired):
 		return huma.Error400BadRequest("彻底删除原因必须填写")
+	case errors.Is(err, requirementsservice.ErrPurgeSelectionInvalid):
+		return huma.Error400BadRequest("删除全部时不能同时指定需求")
 	case errors.Is(err, requirementsservice.ErrNoChanges):
 		return huma.Error400BadRequest("没有需要修改的需求信息")
 	case errors.Is(err, requirementsservice.ErrNoRequirements):

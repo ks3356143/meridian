@@ -40,7 +40,7 @@ type CreateRequirementRequest struct {
 	ChapterNumber      string   `json:"chapterNumber" required:"true"`
 	ExternalIdentifier string   `json:"externalIdentifier,omitempty"`
 	Name               string   `json:"name" required:"true"`
-	Description        string   `json:"description" required:"true"`
+	Description        string   `json:"description"`
 	PrimaryKind        string   `json:"primaryKind" required:"true"`
 	SecondaryKinds     []string `json:"secondaryKinds,omitempty"`
 	Tags               []string `json:"tags,omitempty"`
@@ -69,6 +69,21 @@ type PurgeRequirementRequest struct {
 }
 
 type PurgeRequirementOutput struct {
+	Body requirementsservice.PurgeRequirementResult
+}
+
+type BulkPurgeRequirementsInput struct {
+	Code string `path:"code" required:"true"`
+	Body BulkPurgeRequirementsRequest
+}
+
+type BulkPurgeRequirementsRequest struct {
+	IDs    []string `json:"ids,omitempty"`
+	All    bool     `json:"all,omitempty"`
+	Reason string   `json:"reason" required:"true"`
+}
+
+type BulkPurgeRequirementsOutput struct {
 	Body requirementsservice.PurgeRequirementResult
 }
 
@@ -109,7 +124,7 @@ type UpdateRequirementRequest struct {
 	ChapterNumber      string   `json:"chapterNumber" required:"true"`
 	ExternalIdentifier string   `json:"externalIdentifier,omitempty"`
 	Name               string   `json:"name" required:"true"`
-	Description        string   `json:"description" required:"true"`
+	Description        string   `json:"description"`
 	PrimaryKind        string   `json:"primaryKind" required:"true"`
 	SecondaryKinds     []string `json:"secondaryKinds,omitempty"`
 	Tags               []string `json:"tags,omitempty"`

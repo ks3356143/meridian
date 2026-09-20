@@ -67,6 +67,7 @@ export function RequirementDetail({
     (kind) => requirementKindOptions.find((option) => option.value === kind)?.label ?? kind,
   );
   const incomplete = requirement.description.trim() === "";
+  const draftIncomplete = draft.description.trim() === "";
   const errors = getRequirementDraftErrors(draft);
   const status = dirty ? saveState : "saved";
   const saveDraft = useCallback(async () => {
@@ -98,7 +99,11 @@ export function RequirementDetail({
   }, [dirty, draft, onUpdate, requirement]);
 
   return (
-    <section className={styles.shell} aria-label="需求详情容器">
+    <section
+      className={styles.shell}
+      data-incomplete={incomplete ? "true" : undefined}
+      aria-label="需求详情容器"
+    >
       <header className={styles.header}>
         <div className="min-w-0">
           <p className={styles.eyebrow}>
@@ -282,25 +287,24 @@ export function RequirementDetail({
           </Field>
         </div>
 
-        <Field data-invalid={errors.description ? true : undefined}>
-          <FieldLabel htmlFor="detail-description">
-            描述
-            <span className={styles.requiredMark} aria-hidden>
-              *
-            </span>
-          </FieldLabel>
+        <Field>
+          <FieldLabel htmlFor="detail-description">描述（可留空）</FieldLabel>
           <Textarea
             id="detail-description"
             value={draft.description}
             minRows={5}
             maxRows={12}
-            aria-invalid={errors.description ? true : undefined}
-            aria-required="true"
-            aria-describedby={errors.description ? "detail-description-error" : undefined}
+            placeholder="留空保存为待补描述；补全前不能关联测试项。"
             onChange={(event) => update("description", event.target.value)}
           />
-          <FieldError id="detail-description-error">{errors.description}</FieldError>
-          <p className={styles.hint}>支持多行段落；表格与图片先保留原文占位。</p>
+          <p
+            id="detail-description-hint"
+            className={draftIncomplete ? styles.incompleteHint : styles.hint}
+          >
+            {draftIncomplete
+              ? "描述待补；补全后才能关联测试项。"
+              : "支持多行段落；表格与图片先保留原文占位。"}
+          </p>
         </Field>
 
         <section className={styles.related}>

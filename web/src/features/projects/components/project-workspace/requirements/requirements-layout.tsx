@@ -6,6 +6,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import type { RequirementRecord } from "@/features/requirements/types";
 import type { Project } from "../../../types";
 import { DeletedRequirementsDialog } from "./deleted-requirements-dialog";
+import { DeletedRequirementsPurgeDialog } from "./deleted-requirements-purge-dialog";
 import {
   RequirementCreateDialog,
   type RequirementCreateInitialValues,
@@ -38,6 +39,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
     deleteMutation,
     restoreMutation,
     purgeMutation,
+    bulkPurgeMutation,
     bulkUpdateMutation,
     bulkCreateMutation,
     invalidate,
@@ -57,6 +59,10 @@ export function RequirementsLayout({ project }: { project: Project }) {
     hasUnsavedChanges: boolean;
   } | null>(null);
   const [pendingPurge, setPendingPurge] = useState<RequirementRecord | null>(null);
+  const [pendingPurgeMany, setPendingPurgeMany] = useState<{
+    requirements: RequirementRecord[];
+    all: boolean;
+  } | null>(null);
   const requestTreeExitRef = useRef((_id: string) => Promise.resolve());
   const workbench = workbenchQuery.data;
   const sources = workbench?.sources ?? [];
@@ -163,6 +169,28 @@ export function RequirementsLayout({ project }: { project: Project }) {
       }
     },
     [purgeMutation],
+  );
+  const handlePurgeMany = useCallback((requirements: RequirementRecord[], all: boolean) => {
+    setPendingPurgeMany({ requirements, all });
+  }, []);
+  const submitPurgeMany = useCallback(
+    async (reason: string) => {
+      if (!pendingPurgeMany) return;
+
+      try {
+        await bulkPurgeMutation.mutateAsync({
+          ids: pendingPurgeMany.all
+            ? undefined
+            : pendingPurgeMany.requirements.map((item) => item.id),
+          all: pendingPurgeMany.all,
+          reason,
+        });
+        setPendingPurgeMany(null);
+      } catch {
+        // 保持确认框打开，由 bulkPurgeMutation.error 展示失败原因。
+      }
+    },
+    [bulkPurgeMutation, pendingPurgeMany],
   );
   const toggleBatchMode = useCallback(() => {
     setBatchMode((previous) => !previous);
@@ -337,18 +365,23 @@ export function RequirementsLayout({ project }: { project: Project }) {
         error={restoreMutation.error}
         purgingId={purgeMutation.isPending ? (purgeMutation.variables?.id ?? "") : ""}
         purgeError={purgeMutation.error}
+        bulkPurging={bulkPurgeMutation.isPending}
+        bulkPurgeError={bulkPurgeMutation.error}
         onOpenChange={(open) => {
           setDeletedOpen(open);
           if (!open) {
             restoreMutation.reset();
             purgeMutation.reset();
+            bulkPurgeMutation.reset();
             setPendingPurge(null);
+            setPendingPurgeMany(null);
           }
         }}
         onRestore={handleRestore}
         onCopy={handleCopyDeleted}
         onShowAudit={setAuditRequirement}
         onPurge={setPendingPurge}
+        onPurgeMany={handlePurgeMany}
       />
     );
   }
@@ -370,6 +403,26 @@ export function RequirementsLayout({ project }: { project: Project }) {
           }
         }}
         onConfirm={submitPurge}
+      />
+    );
+  }
+
+  function renderDeletedPurgeDialog() {
+    return (
+      <DeletedRequirementsPurgeDialog
+        key={`bulk-purge-${pendingPurgeMany?.all ? "all" : (pendingPurgeMany?.requirements.map((item) => item.id).join(",") ?? "none")}`}
+        open={pendingPurgeMany !== null}
+        requirements={pendingPurgeMany?.requirements ?? []}
+        all={pendingPurgeMany?.all ?? false}
+        submitting={bulkPurgeMutation.isPending}
+        error={bulkPurgeMutation.error}
+        onOpenChange={(open) => {
+          if (!open) {
+            bulkPurgeMutation.reset();
+            setPendingPurgeMany(null);
+          }
+        }}
+        onConfirm={submitPurgeMany}
       />
     );
   }
@@ -480,6 +533,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       {renderCreateDialog()}
       {renderDeleteDialog()}
       {renderDeletedDialog()}
+      {renderDeletedPurgeDialog()}
       {renderAuditDialog()}
       {renderPurgeDialog()}
       {renderBulkUpdateDialog()}

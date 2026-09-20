@@ -89,6 +89,12 @@ export interface BulkUpdateRequirementPayload {
   replace?: BulkReplacePayload;
 }
 
+export interface BulkPurgeRequirementsPayload {
+  ids?: string[];
+  all?: boolean;
+  reason: string;
+}
+
 export interface RequirementEvent {
   id: string;
   action: "create" | "update" | "confirm" | "exclude" | "restore" | "parse";

@@ -54,7 +54,6 @@ export function getRequirementDraftErrors(draft: RequirementDraft) {
           )
         ? "副类型不正确"
         : undefined,
-    description: draft.description.trim() ? undefined : "需求描述必填",
   };
 }
 

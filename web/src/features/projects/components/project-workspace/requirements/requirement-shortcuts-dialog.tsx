@@ -68,6 +68,36 @@ const shortcutRows: ShortcutRow[] = [
     scope: "需求树",
     description: "激活当前节点；需求节点进入右侧详情。",
   },
+  {
+    keys: ["Ctrl / Meta", "K"],
+    scope: "需求目录",
+    description: "聚焦需求搜索框，可继续输入章节号、名称、描述、标识或标签。",
+  },
+  {
+    keys: ["Enter"],
+    scope: "需求搜索",
+    description: "选中下一个搜索结果，并滚动定位到需求树对应行。",
+  },
+  {
+    keys: ["Shift", "Enter"],
+    scope: "需求搜索",
+    description: "选中上一个搜索结果，并滚动定位到需求树对应行。",
+  },
+  {
+    keys: ["Esc"],
+    scope: "需求搜索",
+    description: "清空搜索关键字。",
+  },
+  {
+    keys: ["Ctrl", "Alt", "←"],
+    scope: "需求搜索",
+    description: "选中上一个搜索结果，并滚动定位到需求树对应行。",
+  },
+  {
+    keys: ["Ctrl", "Alt", "→"],
+    scope: "需求搜索",
+    description: "选中下一个搜索结果，并滚动定位到需求树对应行。",
+  },
 ];
 
 const functionRows: FunctionRow[] = [
@@ -87,6 +117,16 @@ const functionRows: FunctionRow[] = [
   {
     name: "树焦点联动",
     description: "键盘或鼠标聚焦需求节点时，右侧详情同步切换。",
+  },
+  {
+    name: "搜索与定位",
+    description:
+      "搜索保留完整树结构并高亮命中行；输入 4.3 时会命中该章节及其子级需求。当前搜索结果在搜索框下方显示命中字段和摘要。",
+  },
+  {
+    name: "最近访问",
+    description:
+      "需求节点被选中后进入会话内最近访问历史；使用“上一条 / 下一条”按钮可在最近查看的需求之间回退、前进。",
   },
   {
     name: "标识自动生成",

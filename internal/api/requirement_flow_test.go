@@ -116,6 +116,31 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	if manualRequirement.ExternalIdentifier != "XTCS" {
 		t.Fatalf("空标识应按名称拼音首字母生成四位: %+v", manualRequirement)
 	}
+	incompleteRequirement := postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		SectionID:       childSection.ID,
+		Chapter:         "5.1.2",
+		Name:            "待补描述需求",
+		Description:     "",
+		Kind:            "interface",
+	}, http.StatusOK)
+	if incompleteRequirement.Status != "official" ||
+		incompleteRequirement.TestItemTaskStatus != "none" ||
+		incompleteRequirement.Description != "" {
+		t.Fatalf("手动空描述需求应保存为待补描述: %+v", incompleteRequirement)
+	}
+	incompleteRequirement = putRequirement(t, handler, token, incompleteRequirement.ID, map[string]any{
+		"sectionId":          childSection.ID,
+		"chapterNumber":      incompleteRequirement.ChapterNumber,
+		"externalIdentifier": incompleteRequirement.ExternalIdentifier,
+		"name":               incompleteRequirement.Name,
+		"description":        "系统应在补全描述后进入测试项创建链路。",
+		"primaryKind":        incompleteRequirement.PrimaryKind,
+		"tags":               []string{},
+	})
+	if incompleteRequirement.TestItemTaskStatus != "pending" {
+		t.Fatalf("补全描述后应恢复测试项契约: %+v", incompleteRequirement)
+	}
 	postJSON(t, handler, token, http.MethodPost,
 		"/api/v1/projects/"+projectCode+"/requirements/status",
 		map[string]any{
@@ -304,7 +329,7 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 	}
 
 	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
-	if len(workbench.Sections) != 11 {
+	if len(workbench.Sections) != 12 {
 		t.Fatalf("章节树数量错误: %+v", workbench.Sections)
 	}
 	sectionParents := make(map[string]string, len(workbench.Sections))
@@ -456,6 +481,143 @@ func TestRequirementManualAndParsedFlow(t *testing.T) {
 		"/api/v1/software-requirements/"+deletedOfficialID+"/events", nil)
 	if eventRecorder.Code != http.StatusNotFound {
 		t.Fatalf("彻底删除后审计应不可访问，实际 %d，响应: %s",
+			eventRecorder.Code, eventRecorder.Body.String())
+	}
+}
+
+func TestRequirementBulkPurgeDeleted(t *testing.T) {
+	handler := newTestHandler(t)
+	token := loginForProjectTest(t, handler)
+	projectCode := createWorkObjectTestProject(t, handler, token)
+
+	docx := buildRequirementTestDOCX(t)
+	source := uploadWorkObjectTestFile(t, handler, token, projectCode,
+		"BCD星指令生成与发控软件需求规格说明V1.01.docx", docx)
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/work-object-versions/"+source.ID+"/confirm", nil, http.StatusOK)
+
+	first := postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "9.1.1",
+		Name:            "批量删除一",
+		Description:     "系统应支持批量彻底删除验证。",
+		Kind:            "functional",
+	}, http.StatusOK)
+	second := postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "9.1.2",
+		Name:            "批量删除二",
+		Description:     "系统应支持删除全部验证。",
+		Kind:            "functional",
+	}, http.StatusOK)
+	third := postRequirement(t, handler, token, projectCode, requirementTestPayload{
+		SourceVersionID: source.ID,
+		Chapter:         "9.1.3",
+		Name:            "批量删除三",
+		Description:     "系统应保留未选择的需求。",
+		Kind:            "functional",
+	}, http.StatusOK)
+	deletedIDs := []string{first.ID, second.ID, third.ID}
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status",
+		map[string]any{
+			"ids":    deletedIDs,
+			"action": "exclude",
+			"reason": "批量删除功能验证",
+		}, http.StatusOK)
+
+	parseResult := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/parse",
+		map[string]any{"sourceVersionId": source.ID}, http.StatusOK)
+	if parseResult["candidateCount"].(float64) != 2 {
+		t.Fatalf("应解析出候选需求用于验证删除范围: %+v", parseResult)
+	}
+	workbench := listRequirementsWorkbench(t, handler, token, projectCode)
+	candidateIDs := make([]string, 0, 2)
+	for _, requirement := range workbench.Requirements {
+		if requirement.Status == "candidate" {
+			candidateIDs = append(candidateIDs, requirement.ID)
+		}
+	}
+	if len(candidateIDs) != 2 {
+		t.Fatalf("候选需求数量错误: %+v", workbench.Requirements)
+	}
+	postJSON(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/requirements/status",
+		map[string]any{
+			"ids":    candidateIDs[:1],
+			"action": "exclude",
+			"reason": "候选排除记录不应被删除全部影响",
+		}, http.StatusOK)
+
+	bulkPurge := func(body map[string]any, expectedStatus int) map[string]any {
+		t.Helper()
+		return postJSONMap(t, handler, token, http.MethodPost,
+			"/api/v1/projects/"+projectCode+"/requirements/purge", body, expectedStatus)
+	}
+	bulkPurge(map[string]any{
+		"all":    true,
+		"ids":    []string{first.ID},
+		"reason": "参数不能同时指定",
+	}, http.StatusBadRequest)
+	bulkPurge(map[string]any{
+		"ids":    []string{first.ID},
+		"reason": "",
+	}, http.StatusBadRequest)
+	bulkPurge(map[string]any{
+		"ids":    []string{first.ID, candidateIDs[0]},
+		"reason": "候选排除记录不可彻底删除",
+	}, http.StatusConflict)
+
+	result := bulkPurge(map[string]any{
+		"ids":    []string{first.ID, third.ID},
+		"reason": "批量清理验证需求",
+	}, http.StatusOK)
+	if result["deletedCount"].(float64) != 2 {
+		t.Fatalf("批量删除应删除 2 条已删除需求: %+v", result)
+	}
+
+	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
+	remainingIDs := make(map[string]requirementTestResponse)
+	for _, requirement := range workbench.Requirements {
+		remainingIDs[requirement.ID] = requirementTestResponse{
+			ID:     requirement.ID,
+			Status: requirement.Status,
+		}
+	}
+	if _, exists := remainingIDs[first.ID]; exists {
+		t.Fatalf("批量删除后第一条不应保留: %+v", workbench.Requirements)
+	}
+	if _, exists := remainingIDs[third.ID]; exists {
+		t.Fatalf("批量删除后第三条不应保留: %+v", workbench.Requirements)
+	}
+	if remainingIDs[second.ID].Status != "excluded" {
+		t.Fatalf("未选择需求应保留: %+v", workbench.Requirements)
+	}
+	if remainingIDs[candidateIDs[0]].Status != "excluded" {
+		t.Fatalf("候选排除记录应保留: %+v", workbench.Requirements)
+	}
+
+	result = bulkPurge(map[string]any{
+		"all":    true,
+		"reason": "清理全部已删除确认需求",
+	}, http.StatusOK)
+	if result["deletedCount"].(float64) != 1 {
+		t.Fatalf("删除全部应只处理 1 条可彻底删除需求: %+v", result)
+	}
+	workbench = listRequirementsWorkbench(t, handler, token, projectCode)
+	for _, requirement := range workbench.Requirements {
+		if requirement.ID == second.ID {
+			t.Fatalf("删除全部后确认需求不应保留: %+v", requirement)
+		}
+		if requirement.ID == candidateIDs[0] && requirement.Status != "excluded" {
+			t.Fatalf("删除全部不应影响候选排除记录: %+v", requirement)
+		}
+	}
+	eventRecorder := postJSONRecorder(t, handler, token, http.MethodGet,
+		"/api/v1/software-requirements/"+second.ID+"/events", nil)
+	if eventRecorder.Code != http.StatusNotFound {
+		t.Fatalf("删除全部后审计应不可访问，实际 %d，响应: %s",
 			eventRecorder.Code, eventRecorder.Body.String())
 	}
 }

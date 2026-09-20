@@ -46,7 +46,7 @@ type CreateRequirementValues = RequirementDraft & {
 export type RequirementCreateInitialValues = CreateRequirementValues;
 
 type TouchedRequirementFields = Record<
-  "sourceId" | "chapterNumber" | "name" | "description" | "primaryKind" | "secondaryKinds",
+  "sourceId" | "chapterNumber" | "name" | "primaryKind" | "secondaryKinds",
   boolean
 >;
 
@@ -129,7 +129,7 @@ export function RequirementCreateDialog({
     setTouched((previous) => ({ ...previous, [field]: true }));
   }
 
-  function visibleError(field: keyof typeof errors) {
+  function visibleError(field: keyof TouchedRequirementFields) {
     return touched[field] || submitted ? errors[field] : undefined;
   }
 
@@ -381,32 +381,20 @@ export function RequirementCreateDialog({
               </FieldError>
             </Field>
 
-            <Field
-              className={styles.span}
-              data-invalid={visibleError("description") ? true : undefined}
-            >
-              <FieldLabel htmlFor="requirement-description">
-                描述
-                <span className={styles.requiredMark} aria-hidden>
-                  *
-                </span>
-              </FieldLabel>
+            <Field className={styles.span}>
+              <FieldLabel htmlFor="requirement-description">描述（可留空）</FieldLabel>
               <Textarea
                 id="requirement-description"
                 value={values.description}
                 minRows={5}
                 maxRows={12}
-                aria-invalid={visibleError("description") ? true : undefined}
-                aria-required="true"
-                aria-describedby={
-                  visibleError("description") ? "requirement-description-error" : undefined
-                }
-                onBlur={() => touch("description")}
+                placeholder="留空保存为待补描述；补全前不能关联测试项。"
+                aria-describedby="requirement-description-hint"
                 onChange={(event) => update("description", event.target.value)}
               />
-              <FieldError id="requirement-description-error">
-                {visibleError("description")}
-              </FieldError>
+              <p id="requirement-description-hint" className={styles.descriptionHint}>
+                空描述需求会显示“待补描述”，补全后才能进入测试项链路。
+              </p>
             </Field>
           </div>
 
@@ -465,7 +453,6 @@ function emptyTouched(): TouchedRequirementFields {
     sourceId: false,
     chapterNumber: false,
     name: false,
-    description: false,
     primaryKind: false,
     secondaryKinds: false,
   };

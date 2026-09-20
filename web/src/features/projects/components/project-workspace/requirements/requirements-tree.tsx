@@ -1,13 +1,19 @@
 import {
+  ArrowLeft,
+  ArrowRight,
   AlertTriangle,
   BookOpen,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   CopyPlus,
   FileText,
+  HelpCircle,
   Keyboard,
   ListChecks,
   PencilLine,
   Plus,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -36,17 +42,26 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 import type { RequirementRecord, RequirementSource } from "@/features/requirements/types";
 import { RequirementShortcutsDialog } from "./requirement-shortcuts-dialog";
 import { requirementSourceLabel } from "./requirement-form";
 import { useRequirementTreeMotion } from "./use-requirement-tree-motion";
+import { useRequirementHistory } from "./use-requirement-history";
+import {
+  requirementSearchFieldLabels,
+  useRequirementSearch,
+  type RequirementSearchHit,
+} from "./use-requirement-search";
 
 type ConfirmedRequirementNode = {
   key: string;
   type: "source" | "requirement";
   title: string;
   count: number;
+  incompleteCount: number;
   requirement?: RequirementRecord;
   children: ConfirmedRequirementNode[];
 };
@@ -54,6 +69,9 @@ type ConfirmedRequirementNode = {
 type ConfirmedTreeRowState = {
   batchMode: boolean;
   selectedIds: string[];
+  activeSearchId: string;
+  searchActive: boolean;
+  searchHitsById: Map<string, RequirementSearchHit>;
   onToggleRequirement: (id: string, checked: boolean) => void;
   onToggleSource: (sourceId: string, checked: boolean) => void;
 };
@@ -98,12 +116,127 @@ export function RequirementsTree({
   naturalHeight: boolean;
 }) {
   const nodes = buildConfirmedTree(sources, requirements);
+  const treeRef = useRef<TreeApi<ConfirmedRequirementNode>>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchState, setSearchState] = useState({
+    committed: false,
+    index: 0,
+    query: "",
+  });
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const shellRef = useRef<HTMLElement>(null);
   const structureSignature = nodes
     .flatMap((source) => source.children.map((requirement) => requirement.key))
     .join("|");
   const selectedCount = selectedIds.length;
+
+  const officialRequirements = useMemo(
+    () =>
+      sources.flatMap((source) =>
+        requirements.filter(
+          (requirement) =>
+            requirement.status === "official" && requirement.sourceVersionId === source.id,
+        ),
+      ),
+    [requirements, sources],
+  );
+  const officialRequirementsById = useMemo(
+    () => new Map(officialRequirements.map((requirement) => [requirement.id, requirement])),
+    [officialRequirements],
+  );
+  const search = useRequirementSearch(officialRequirements, searchState.query);
+  const boundedSearchIndex = Math.min(Math.max(searchState.index, 0), search.hits.length - 1);
+  const activeSearchHit = search.hits[boundedSearchIndex];
+  const activeSearchId = activeSearchHit?.requirement.id ?? "";
+  const history = useRequirementHistory(selectedId, officialRequirementsById);
+  const updateSearchQuery = (query: string) => {
+    setSearchState({ committed: false, index: 0, query });
+  };
+
+  const scrollToRequirement = useCallback((requirementId: string) => {
+    const nodeId = `requirement:${requirementId}`;
+    const tree = treeRef.current;
+    if (!tree) return;
+
+    tree.openParents(nodeId);
+    window.requestAnimationFrame(() => {
+      void tree.scrollTo(nodeId, "center");
+    });
+  }, []);
+
+  const goToSearchResult = useCallback(
+    (direction: -1 | 1) => {
+      if (!search.hits.length) return;
+
+      let nextIndex = boundedSearchIndex;
+      let nextCommitted = searchState.committed;
+      if (!searchState.committed) {
+        nextIndex = direction === 1 ? 0 : search.hits.length - 1;
+        nextCommitted = true;
+      } else {
+        nextIndex = (boundedSearchIndex + direction + search.hits.length) % search.hits.length;
+      }
+
+      const hit = search.hits[nextIndex];
+      setSearchState({
+        committed: nextCommitted,
+        index: nextIndex,
+        query: searchState.query,
+      });
+      onSelect(hit.requirement);
+      scrollToRequirement(hit.requirement.id);
+    },
+    [boundedSearchIndex, onSelect, scrollToRequirement, search.hits, searchState, setSearchState],
+  );
+
+  const goToHistory = useCallback(
+    (direction: -1 | 1) => {
+      const requirement = history.moveTo(direction);
+      if (!requirement) return;
+
+      onSelect(requirement);
+      scrollToRequirement(requirement.id);
+
+      if (!searchState.query) return;
+      const hitIndex = search.hits.findIndex((hit) => hit.requirement.id === requirement.id);
+      if (hitIndex >= 0) {
+        setSearchState({
+          committed: true,
+          index: hitIndex,
+          query: searchState.query,
+        });
+      }
+    },
+    [history, onSelect, scrollToRequirement, search.hits, searchState, setSearchState],
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("[role='dialog']")) return;
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        return;
+      }
+
+      if (event.ctrlKey && event.altKey && event.key === "ArrowLeft") {
+        event.preventDefault();
+        goToSearchResult(-1);
+        return;
+      }
+
+      if (event.ctrlKey && event.altKey && event.key === "ArrowRight") {
+        event.preventDefault();
+        goToSearchResult(1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [goToSearchResult, goToHistory]);
 
   useGSAP(
     () => {
@@ -207,6 +340,194 @@ export function RequirementsTree({
             </Button>
           </div>
         </div>
+        <div className={styles.searchPanel}>
+          <div className={styles.searchField}>
+            <Search className={styles.searchGlyph} aria-hidden />
+            <Input
+              ref={searchInputRef}
+              className={styles.searchInput}
+              type="text"
+              value={searchState.query}
+              onChange={(event) => updateSearchQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  goToSearchResult(event.shiftKey ? -1 : 1);
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  updateSearchQuery("");
+                }
+              }}
+              placeholder="搜索章节 / 名称 / 描述 / 标识 / 标签"
+              aria-label="搜索需求"
+            />
+            <div className={styles.searchActions}>
+              {searchState.query ? (
+                <button
+                  type="button"
+                  className={styles.clearSearch}
+                  onClick={() => updateSearchQuery("")}
+                  aria-label="清空搜索"
+                >
+                  <X aria-hidden />
+                </button>
+              ) : null}
+              <span className={styles.searchCount} role="status" aria-live="polite">
+                {searchState.query
+                  ? `${search.hits.length ? boundedSearchIndex + 1 : 0}/${search.hits.length}`
+                  : ""}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                className={styles.searchNav}
+                disabled={!searchState.query || !search.hits.length}
+                onClick={() => goToSearchResult(-1)}
+                aria-label="上一个搜索结果"
+              >
+                <ChevronUp aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                className={styles.searchNav}
+                disabled={!searchState.query || !search.hits.length}
+                onClick={() => goToSearchResult(1)}
+                aria-label="下一个搜索结果"
+              >
+                <ChevronDown aria-hidden />
+              </Button>
+            </div>
+          </div>
+          {searchState.query ? (
+            <div className={styles.searchPreview}>
+              {activeSearchHit ? (
+                <>
+                  <span className={styles.searchPreviewLabel}>
+                    {activeSearchHit.fields
+                      .map((field) => requirementSearchFieldLabels[field])
+                      .join(" / ")}
+                  </span>
+                  <TruncatedText value={activeSearchHit.excerpt} />
+                </>
+              ) : (
+                <TruncatedText value="无匹配需求" placeholder="无匹配需求" />
+              )}
+            </div>
+          ) : null}
+          <div className={styles.historyRow}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  className={styles.historyButton}
+                  disabled={!history.previous}
+                  onClick={() => goToHistory(-1)}
+                >
+                  <ArrowLeft data-icon="inline-start" aria-hidden />
+                  上一条
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {history.previous
+                  ? `回到上一条：${history.previous.requirement.chapterNumber} ${history.previous.requirement.name}`
+                  : "暂无上一条"}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  className={styles.historyForward}
+                  disabled={!history.next}
+                  onClick={() => goToHistory(1)}
+                  aria-label="回到下一条最近查看需求"
+                >
+                  <ArrowRight data-icon="inline-start" aria-hidden />
+                  下一条
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {history.next
+                  ? `回到下一条：${history.next.requirement.chapterNumber} ${history.next.requirement.name}`
+                  : "暂无下一条"}
+              </TooltipContent>
+            </Tooltip>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className={styles.helpTrigger}
+                  aria-label="搜索与定位快捷键说明"
+                >
+                  <HelpCircle aria-hidden />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                side="right"
+                sideOffset={6}
+                collisionPadding={8}
+                className={styles.helpPopover}
+              >
+                <span className={styles.helpTitle}>搜索与定位快捷键</span>
+                <div className={styles.helpList}>
+                  <div className={styles.helpRow}>
+                    <span className={styles.helpKeys}>
+                      <kbd className={styles.helpKey}>Ctrl / Meta</kbd>
+                      <kbd className={styles.helpKey}>K</kbd>
+                    </span>
+                    <span className={styles.helpDescription}>聚焦搜索</span>
+                  </div>
+                  <div className={styles.helpRow}>
+                    <span className={styles.helpKeys}>
+                      <kbd className={styles.helpKey}>Enter</kbd>
+                    </span>
+                    <span className={styles.helpDescription}>下一个结果</span>
+                  </div>
+                  <div className={styles.helpRow}>
+                    <span className={styles.helpKeys}>
+                      <kbd className={styles.helpKey}>Shift</kbd>
+                      <kbd className={styles.helpKey}>Enter</kbd>
+                    </span>
+                    <span className={styles.helpDescription}>上一个结果</span>
+                  </div>
+                  <div className={styles.helpRow}>
+                    <span className={styles.helpKeys}>
+                      <kbd className={styles.helpKey}>Esc</kbd>
+                    </span>
+                    <span className={styles.helpDescription}>清空搜索</span>
+                  </div>
+                  <div className={styles.helpRow}>
+                    <span className={styles.helpKeys}>
+                      <kbd className={styles.helpKey}>Ctrl</kbd>
+                      <kbd className={styles.helpKey}>Alt</kbd>
+                      <kbd className={styles.helpKey}>←</kbd>
+                    </span>
+                    <span className={styles.helpDescription}>上一个结果</span>
+                  </div>
+                  <div className={styles.helpRow}>
+                    <span className={styles.helpKeys}>
+                      <kbd className={styles.helpKey}>Ctrl</kbd>
+                      <kbd className={styles.helpKey}>Alt</kbd>
+                      <kbd className={styles.helpKey}>→</kbd>
+                    </span>
+                    <span className={styles.helpDescription}>下一个结果</span>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
         <TabsContent value="confirmed" className={styles.content}>
           <ConfirmedTree
             nodes={nodes}
@@ -221,6 +542,10 @@ export function RequirementsTree({
             onToggleSource={onToggleSource}
             onRegisterExitAnimation={onRegisterExitAnimation}
             naturalHeight={naturalHeight}
+            treeRef={treeRef}
+            searchHitsById={search.hitsById}
+            activeSearchId={activeSearchId}
+            searchActive={Boolean(searchState.query.trim())}
           />
         </TabsContent>
       </Tabs>
@@ -283,6 +608,10 @@ function ConfirmedTree({
   onToggleSource,
   onRegisterExitAnimation,
   naturalHeight,
+  treeRef,
+  searchHitsById,
+  activeSearchId,
+  searchActive,
 }: {
   nodes: ConfirmedRequirementNode[];
   selectedId: string;
@@ -296,8 +625,11 @@ function ConfirmedTree({
   onToggleSource: (sourceId: string, checked: boolean) => void;
   onRegisterExitAnimation: (requestExit: (id: string) => Promise<void>) => void;
   naturalHeight: boolean;
+  treeRef: RefObject<TreeApi<ConfirmedRequirementNode> | null>;
+  searchHitsById: Map<string, RequirementSearchHit>;
+  activeSearchId: string;
+  searchActive: boolean;
 }) {
-  const treeRef = useRef<TreeApi<ConfirmedRequirementNode>>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const rowHandlersRef = useRef({ onCopy, onDelete, onSelect });
   const [height, setHeight] = useState(360);
@@ -346,7 +678,7 @@ function ConfirmedTree({
       anchor: selectedTreeId,
       mostRecent: selectedTreeId,
     });
-  }, [selectedTreeId]);
+  }, [selectedTreeId, treeRef]);
 
   const renderNode = useCallback(
     (props: NodeRendererProps<ConfirmedRequirementNode>) => (
@@ -356,8 +688,24 @@ function ConfirmedTree({
   );
 
   const rowState = useMemo(
-    () => ({ batchMode, selectedIds, onToggleRequirement, onToggleSource }),
-    [batchMode, selectedIds, onToggleRequirement, onToggleSource],
+    () => ({
+      activeSearchId,
+      batchMode,
+      searchActive,
+      searchHitsById,
+      selectedIds,
+      onToggleRequirement,
+      onToggleSource,
+    }),
+    [
+      activeSearchId,
+      batchMode,
+      searchActive,
+      searchHitsById,
+      selectedIds,
+      onToggleRequirement,
+      onToggleSource,
+    ],
   );
 
   if (!nodes.length) return <div className={styles.empty} />;
@@ -476,6 +824,16 @@ function ConfirmedTreeRow({ node, style, dragHandle, handlersRef }: ConfirmedTre
   const guideCount = node.level;
   const requirement = data.requirement;
   const requirementId = requirement?.id ?? "";
+  const searchHit =
+    rowState.searchActive && requirementId ? rowState.searchHitsById.get(requirementId) : undefined;
+  const isSearchCurrent =
+    rowState.searchActive && requirementId && rowState.activeSearchId === requirementId;
+  const searchGroupHit =
+    rowState.searchActive && !requirement
+      ? data.children.find(
+          (child) => child.requirement && rowState.searchHitsById.has(child.requirement.id),
+        )
+      : undefined;
   const checked = requirementId !== "" && rowState.selectedIds.includes(requirementId);
   const childCheckedCount = data.children.filter((child) =>
     rowState.selectedIds.includes(child.requirement?.id ?? ""),
@@ -499,6 +857,9 @@ function ConfirmedTreeRow({ node, style, dragHandle, handlersRef }: ConfirmedTre
       data-incomplete={requirement && requirement.description.trim() === "" ? "true" : undefined}
       data-selected={node.isSelected ? "true" : undefined}
       data-open={node.isOpen ? "true" : undefined}
+      data-search={searchHit ? "true" : undefined}
+      data-search-current={isSearchCurrent ? "true" : undefined}
+      data-search-group={searchGroupHit ? "true" : undefined}
       className={styles.row}
       onContextMenu={
         data.type === "requirement" && requirement
@@ -550,7 +911,27 @@ function ConfirmedTreeRow({ node, style, dragHandle, handlersRef }: ConfirmedTre
         <Icon />
       </span>
       <TruncatedText value={data.title} className={styles.title} />
+      {searchHit ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className={styles.searchMarker} aria-label={`搜索命中：${searchHit.excerpt}`}>
+              <Search aria-hidden />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className={styles.searchTooltip}>
+            <span className={styles.searchTooltipFields}>
+              {searchHit.fields.map((field) => requirementSearchFieldLabels[field]).join(" / ")}
+            </span>
+            <span className={styles.searchTooltipExcerpt}>{searchHit.excerpt}</span>
+          </TooltipContent>
+        </Tooltip>
+      ) : null}
       {data.type === "source" ? <Badge variant="outline">{data.count}</Badge> : null}
+      {data.type === "source" && data.incompleteCount > 0 ? (
+        <Badge variant="warning" className={styles.incompleteCountBadge}>
+          待补 {data.incompleteCount}
+        </Badge>
+      ) : null}
       {requirement && requirement.description.trim() === "" ? (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -604,17 +985,22 @@ function buildConfirmedTree(sources: RequirementSource[], requirements: Requirem
       (requirement) =>
         requirement.status === "official" && requirement.sourceVersionId === source.id,
     );
+    const incompleteCount = officialRequirements.filter(
+      (requirement) => requirement.description.trim() === "",
+    ).length;
 
     return {
       key: `source:${source.id}`,
       type: "source" as const,
       title: `${requirementSourceLabel(source)}${source.version}`,
       count: officialRequirements.length,
+      incompleteCount,
       children: officialRequirements.map((requirement) => ({
         key: `requirement:${requirement.id}`,
         type: "requirement" as const,
         title: `§${requirement.chapterNumber} ${requirement.name}`,
         count: 0,
+        incompleteCount: requirement.description.trim() === "" ? 1 : 0,
         requirement,
         children: [],
       })),

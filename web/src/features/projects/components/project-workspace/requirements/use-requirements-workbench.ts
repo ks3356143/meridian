@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { requirementsApi } from "@/features/requirements/api";
+import type { BulkPurgeRequirementsPayload } from "@/features/requirements/types";
 import type { Project } from "../../../types";
 
 export function useRequirementsWorkbench(project: Project) {
@@ -77,6 +78,19 @@ export function useRequirementsWorkbench(project: Project) {
     },
   });
 
+  const bulkPurgeMutation = useMutation({
+    mutationFn: (payload: BulkPurgeRequirementsPayload) =>
+      requirementsApi.bulkPurge(project.id, payload),
+    onSuccess: (result) => {
+      toast.success(
+        result.deletedCount === 1
+          ? "已彻底删除 1 条需求"
+          : `已彻底删除 ${result.deletedCount} 条需求`,
+      );
+      return invalidate();
+    },
+  });
+
   const bulkUpdateMutation = useMutation({
     mutationFn: (payload: Parameters<typeof requirementsApi.bulkUpdate>[1]) =>
       requirementsApi.bulkUpdate(project.id, payload),
@@ -106,6 +120,7 @@ export function useRequirementsWorkbench(project: Project) {
     deleteMutation,
     restoreMutation,
     purgeMutation,
+    bulkPurgeMutation,
     bulkUpdateMutation,
     bulkCreateMutation,
     invalidate,

@@ -1,6 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 
@@ -21,9 +22,36 @@ for (const [, specifiers, source] of lucideRuntime.matchAll(
 }
 
 function lucideDeepImports(): Plugin {
+  const sourceRoot = fileURLToPath(new URL("./src", import.meta.url));
+  const deepImports = new Set<string>();
+  for (const path of readdirSync(sourceRoot, { recursive: true, encoding: "utf8" })) {
+    if (!/\.(?:ts|tsx)$/.test(path)) continue;
+    const content = readFileSync(join(sourceRoot, path), "utf8");
+    const lucideImports = content.matchAll(
+      /import\s+\{([^}]+)\}\s+from\s+["']lucide-react["'];?/g,
+    );
+    for (const [, namedSource] of lucideImports) {
+      for (const rawName of namedSource.split(",")) {
+        const specifier = rawName.trim();
+        if (!specifier || specifier.startsWith("type ") || specifier === "LucideIcon") continue;
+        const imported = specifier.replace(/^type\s+/, "").split(/\s+as\s+/)[0];
+        const source = lucideDefaultExports.get(imported);
+        if (!source) throw new Error(`未找到 lucide-react 图标导出: ${imported}`);
+        deepImports.add(source);
+      }
+    }
+  }
+
   return {
     name: "chenmeridian:lucide-deep-imports",
     enforce: "pre",
+    config() {
+      return {
+        optimizeDeps: {
+          include: [...deepImports],
+        },
+      };
+    },
     transform(code, id) {
       if (!/[\\/]src[\\/].*\.(?:ts|tsx)(?:\?.*)?$/.test(id)) return null;
       const lucideImport = /import\s+\{([^}]+)\}\s+from\s+["']lucide-react["'];?/g;
