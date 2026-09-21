@@ -7,9 +7,9 @@
 3. 需求、模块边界和未确定事项先维护到 `srs/`，入口是 [srs/README.md](srs/README.md)。
 4. 可复用坑位只记录到 [docs/项目记忆.md](docs/项目记忆.md)，格式固定为“现象、原因、规避方式”。
 5. 浏览器视觉验证默认使用视觉模型：直接生成截图并查看截图，不再要求用户切换模型，也不再把 DOM 文本断言作为视觉验收结论。
-6. 用户说“下班”时：先跑当前改动对应验证，再检查 `git status`，只提交本次相关文件，Commit 信息用中文，最后执行 `git push origin`；验证失败或无远端时说明原因并停止。
+6. 用户说“下班”时：先跑当前改动对应验证，再检查 `git status`，只提交本次相关文件，Commit 信息用中文，最后执行 `git push origin`；同时列出本次会话实际使用的 skills，检查其可用更新并提醒用户决定由代理更新还是用户更新，未获明确决定前不得升级、重装或删除 skills。验证失败或无远端时说明原因并停止。
 7. ChenMeridian / Meridian 工具可以参考 [团队工具](http://47.108.230.220:8081/) 的理论、信息组织与交互思路；该条仅作为理念参考，不因此主动写代码或修改实现。
-8. 用户说“开始工作”或要求打开前后端时：直接构建启动或确认服务可用即可，不主动跑测试或额外验证；由用户自行验证并反馈问题，收到问题再处理。
+8. 用户说“开始工作”或要求打开前后端时：启动前必须分别检查全部后端 Go 依赖库（含 Huma v2、GORM、SQLite 驱动等）和全部前端 npm 依赖库是否有可用更新；有更新时升级到兼容的最新稳定版，更新 `go.mod`、`go.sum`、`package.json` 和 `package-lock.json`，完成对应构建或依赖一致性验证后再启动；无更新时直接构建启动或确认服务可用。启动阶段不扩展业务测试，由用户自行验证并反馈问题，收到问题再处理。
 9. 尽量使用最新工具链与环境：PowerShell 7（pwsh）+ Windows Terminal，命令示例优先 pwsh 语法；文本检索用 ripgrep（rg）。
 10. 必须看本文档的前端铁律，必须使用组件库。
 11. 能用 MCP 坚决用 MCP：浏览器截图、视觉验证等任务开工先检查可用的 MCP 工具；能用就用。仅当当前会话确实没有对应 MCP 工具时，才允许用本机 Edge + Playwright 做截图和导航兑底，且必须说明原因。Playwright 不用于替代截图视觉判断。
@@ -38,12 +38,17 @@
 
 ```powershell
 # 后端
+go list -u -m all
+go get -u ./...
+go mod tidy
 gofmt -w cmd internal migrations
 go test ./...
 go vet ./...
 go build -o bin/chenmeridian.exe ./cmd/chenmeridian
 
 # 前端，在 web/ 执行
+npm outdated
+npm install
 npm run check
 npm run dev
 
@@ -51,6 +56,23 @@ npm run dev
 # 后端 API 文档：http://127.0.0.1:8787/docs
 # 前端登录页：http://localhost:5173/login
 ```
+
+## 依赖更新铁律
+
+每次会话开工时（用户说“开始工作”或要求打开前后端），都必须先检查全部前后端依赖更新，禁止跳过检查直接启动或继续工作；若服务已经运行，依赖升级后必须重启服务。
+
+1. 后端执行 `go list -u -m all`，检查全部 Go 依赖库，明确包含 Huma v2、GORM、SQLite 驱动等；有可用更新时执行 `go get -u ./...` 和 `go mod tidy`。优先升级到最新稳定版，仍须保持 pure Go SQLite 路线，不引入 CGO。
+2. 前端在 `web/` 执行 `npm outdated`，检查全部 npm 依赖库，包含 React、Vite、React Router、Tailwind、TanStack、Radix、shadcn 相关依赖和构建工具等；有可用更新时升级到最新稳定版并更新 `package-lock.json`。React Router 相关包必须保持同一版本，不使用 `--force` 掩盖 peer dependency 冲突。
+3. 依赖发生变化后，后端至少执行 `go test ./... -count=1`、`go vet ./...` 和 `go build -o bin/chenmeridian.exe ./cmd/chenmeridian`；前端至少执行 `npm run check`。验证通过后再启动服务。
+4. 若最新版本与当前技术栈或运行环境不兼容，保留可用的最新兼容版本，并在汇报和当天跨会话记忆中记录未升级项、原因和后续处理条件。
+5. 依赖检查结果和升级结果属于启动汇报内容；无更新时明确说明已检查，有更新时说明升级项和验证结果。
+
+## Skills 更新提醒铁律
+
+1. 每次用户说“下班”时，必须列出本次会话实际使用的 skills，并检查本地安装或插件市场是否有可用更新。
+2. 必须提醒用户“这些 skills 需要你决定由代理更新还是由你更新”；在用户明确决定前，不得升级、重装、删除或替换 skills。
+3. 无法自动检查更新来源时，必须说明检查限制，并至少列出本次使用的 skills 供用户决定。
+4. 用户决定由代理更新后，再执行更新并验证技能可用；更新结果写入当次下班汇报。
 
 ## 验证铁律
 
@@ -91,6 +113,7 @@ npm run dev
 1. 组件必须 `import styles from './Button.module.css'`，自定义 `className` 使用 `styles.xxx`；变体使用 `styles.primary` / `styles.ghost`，状态使用 `data-state` + CSS 属性选择器。
 1. 禁止把新增自定义视觉样式继续写入全局 CSS 大文件或散落在 TSX 长工具类里；Tailwind 只用于少量布局工具和 shadcn/Radix 既有组合，主题、变体、状态和业务视觉归 CSS Module。
 1. CSS Module 按组件职责拆分，选择器使用 camelCase 类名；跨组件第三方子元素用 `:global()`，禁止用标签选择器扩大影响面。
+1. 涉及 React 19 并发能力、渲染性能、重渲染、包体积或数据请求优化的，必须优先参考本机已安装技能 `react19-concurrent-patterns` 和 `build-web-apps:react-best-practices`，再结合 [srs/21-前端性能优化策略.md](srs/21-前端性能优化策略.md) 做测量、修改和验收。Next.js、RSC 等不适用于本项目 Vite SPA 的规则只作思路参考，不得机械套用。
 
 ## 入口文档
 
