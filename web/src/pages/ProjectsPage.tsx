@@ -1,7 +1,7 @@
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, FolderKanban, FolderPlus } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,13 +26,14 @@ export function Component() {
   const [filters, setFilters] = useState<ProjectFilterValues>(loadProjectFilters);
   const projectsQuery = useQuery({ queryKey: ["projects", "list"], queryFn: projectsApi.list });
   const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
+  const deferredKeyword = useDeferredValue(filters.keyword);
 
   useEffect(() => {
     saveProjectFilters(filters);
   }, [filters]);
 
   const filteredProjects = useMemo(() => {
-    const keyword = filters.keyword.trim().toLowerCase();
+    const keyword = deferredKeyword.trim().toLowerCase();
     return projects.filter((project) => {
       const keywordMatched =
         keyword.length === 0 ||
@@ -47,7 +48,7 @@ export function Component() {
         filters.platform.length === 0 || project.platform === filters.platform;
       return keywordMatched && statusMatched && levelMatched && platformMatched;
     });
-  }, [filters, projects]);
+  }, [deferredKeyword, filters.level, filters.platform, filters.status, projects]);
 
   useGSAP(
     () => {

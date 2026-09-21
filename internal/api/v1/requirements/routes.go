@@ -93,6 +93,23 @@ func Register(api huma.API, service *requirementsservice.Service) {
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "preview-requirement-identifier",
+		Method:      http.MethodGet,
+		Path:        "/api/v1/projects/{code}/requirements/identifier-preview",
+		Summary:     "预览自动生成的需求标识",
+		Description: "标识留空时按名称预估拼音首字母标识；只读预览，保存时以后端唯一性校验为准。",
+		Tags:        []string{"需求与追踪"},
+	}, func(ctx context.Context, input *RequirementIdentifierPreviewInput) (*RequirementIdentifierPreviewOutput, error) {
+		body, err := handler.service.PreviewRequirementIdentifier(
+			ctx, input.Code, input.SourceVersionID, input.Name,
+		)
+		if err != nil {
+			return nil, toAPIError(err, "预览需求标识失败")
+		}
+		return &RequirementIdentifierPreviewOutput{Body: body}, nil
+	})
+
+	huma.Register(api, huma.Operation{
 		OperationID: "bulk-update-requirements",
 		Method:      http.MethodPost,
 		Path:        "/api/v1/projects/{code}/requirements/bulk-update",

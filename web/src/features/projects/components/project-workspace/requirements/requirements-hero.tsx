@@ -1,4 +1,5 @@
 import { Archive, ClipboardPaste } from "lucide-react";
+import { useMemo } from "react";
 import type { RequirementRecord } from "@/features/requirements/types";
 import { Button } from "@/components/ui/button";
 import styles from "./requirements-hero.module.css";
@@ -14,37 +15,33 @@ export function RequirementsHero({
   onOpenDeleted: () => void;
   onOpenBulkPaste: () => void;
 }) {
-  const deletedRequirements = requirements.filter(
-    (requirement) =>
-      requirement.status === "excluded" && requirement.deletedFromStatus === "official",
-  );
-  const stats = [
-    {
-      label: "已确认需求",
-      tone: "primary",
-      value: requirements.filter((requirement) => requirement.status === "official").length,
-    },
-    {
-      label: "自动解析未确认需求",
-      tone: "warning",
-      value: requirements.filter(
-        (requirement) => requirement.origin === "parsed" && requirement.status === "candidate",
-      ).length,
-    },
-    {
-      label: "已删除需求",
-      tone: "danger",
-      value: deletedRequirements.length,
-      opensDeleted: true,
-    },
-    {
-      label: "待补描述",
-      tone: "warning",
-      value: requirements.filter(
-        (requirement) => requirement.status === "official" && requirement.description.trim() === "",
-      ).length,
-    },
-  ];
+  const stats = useMemo(() => {
+    let officialCount = 0;
+    let parsedCandidateCount = 0;
+    let deletedCount = 0;
+    let incompleteCount = 0;
+
+    for (const requirement of requirements) {
+      if (requirement.status === "official") {
+        officialCount++;
+        if (requirement.description.trim() === "") incompleteCount++;
+      } else if (requirement.origin === "parsed" && requirement.status === "candidate") {
+        parsedCandidateCount++;
+      } else if (
+        requirement.status === "excluded" &&
+        requirement.deletedFromStatus === "official"
+      ) {
+        deletedCount++;
+      }
+    }
+
+    return [
+      { label: "已确认需求", tone: "primary", value: officialCount },
+      { label: "自动解析未确认需求", tone: "warning", value: parsedCandidateCount },
+      { label: "已删除需求", tone: "danger", value: deletedCount, opensDeleted: true },
+      { label: "待补描述", tone: "warning", value: incompleteCount },
+    ];
+  }, [requirements]);
 
   return (
     <header className={styles.card} aria-label="需求任务卡片容器">

@@ -13,6 +13,16 @@ type WorkbenchOutput struct {
 	Body requirementsservice.WorkbenchResponse
 }
 
+type RequirementIdentifierPreviewInput struct {
+	Code            string `path:"code" required:"true"`
+	SourceVersionID string `query:"sourceVersionId" required:"true"`
+	Name            string `query:"name" required:"true" maxLength:"240"`
+}
+
+type RequirementIdentifierPreviewOutput struct {
+	Body requirementsservice.RequirementIdentifierPreviewResponse
+}
+
 type CreateSectionInput struct {
 	Code string `path:"code" required:"true"`
 	Body CreateSectionRequest

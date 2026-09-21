@@ -41,7 +41,7 @@ const shortcutRows: ShortcutRow[] = [
   {
     keys: ["Esc"],
     scope: "新增需求弹窗",
-    description: "关闭弹窗并清空本次未保存内容。",
+    description: "有未保存修改时确认是否丢弃；无修改时直接关闭。",
   },
   {
     keys: ["Tab"],
@@ -104,11 +104,11 @@ const functionRows: FunctionRow[] = [
   {
     name: "保存并沿用",
     description:
-      "保存后不关闭弹窗，沿用来源文档、章节层级和需求类型，自动预填下一条章节号，并把焦点移回名称。",
+      "保存后不关闭弹窗，沿用来源文档、章节层级和需求类型，自动预填下一条章节号；新需求在树中同步高亮，焦点留在名称。",
   },
   {
     name: "保存",
-    description: "校验通过后写入正式需求基线并关闭弹窗。",
+    description: "校验通过后写入正式需求基线并关闭弹窗；需求树滚动定位、聚焦并短暂高亮新需求。",
   },
   {
     name: "失焦自动保存",

@@ -41,7 +41,7 @@
 }
 
 .card p {
-  color: var(--muted-foreground);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
   font-size: 0.72rem;
   line-height: 1.5;
   max-width: 44rem;
@@ -126,9 +126,9 @@
 
 .stat dt {
   align-items: flex-start;
-  color: var(--muted-foreground);
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
   display: flex;
-  font-size: 0.65rem;
+  font-size: 0.66rem;
   font-weight: 650;
   line-height: 1.2;
   min-height: 2.4em;

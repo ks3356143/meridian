@@ -1,5 +1,16 @@
 import { Info, Loader2, Plus, Save } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +38,7 @@ import type {
   RequirementSource,
   SaveRequirementPayload,
 } from "@/features/requirements/types";
+import { requirementsApi } from "@/features/requirements/api";
 import {
   getRequirementDraftErrors,
   getRequirementSecondaryKindOptions,
@@ -52,6 +64,7 @@ type TouchedRequirementFields = Record<
 
 export function RequirementCreateDialog({
   open,
+  projectId,
   sources,
   requirements,
   initialValues = null,
@@ -59,8 +72,10 @@ export function RequirementCreateDialog({
   submitting,
   onOpenChange,
   onSubmit,
+  onCreated,
 }: {
   open: boolean;
+  projectId: string;
   sources: RequirementSource[];
   requirements: RequirementRecord[];
   initialValues?: RequirementCreateInitialValues | null;
@@ -68,6 +83,7 @@ export function RequirementCreateDialog({
   submitting: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (payload: SaveRequirementPayload) => Promise<RequirementRecord>;
+  onCreated?: (requirement: RequirementRecord, options: { focusTree: boolean }) => void;
 }) {
   const sourceId = chapterSeedRequirement?.sourceVersionId ?? sources[0]?.id ?? "";
   const chapterSuggestion = chapterSeedRequirement
@@ -80,8 +96,14 @@ export function RequirementCreateDialog({
   const [values, setValues] = useState<CreateRequirementValues>(
     () => initialValues ?? emptyValues(sources, sourceId, chapterSuggestion),
   );
+  const [baseline, setBaseline] = useState<CreateRequirementValues>(
+    () => initialValues ?? emptyValues(sources, sourceId, chapterSuggestion),
+  );
   const [touched, setTouched] = useState<TouchedRequirementFields>(() => emptyTouched());
   const [submitted, setSubmitted] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [identifierPreviewName, setIdentifierPreviewName] = useState("");
+  const savedRequirementRef = useRef<RequirementRecord | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
@@ -101,6 +123,7 @@ export function RequirementCreateDialog({
         : undefined),
   };
   const valid = Object.values(errors).every((error) => !error);
+  const hasUnsavedChanges = !areValuesEqual(values, baseline);
 
   const wasOpenRef = useRef(false);
   useEffect(() => {
@@ -108,11 +131,47 @@ export function RequirementCreateDialog({
     wasOpenRef.current = open;
     if (!open || wasOpen) return;
 
-    setValues(initialValues ?? emptyValues(sources, sourceId, chapterSuggestion));
+    const nextValues = initialValues ?? emptyValues(sources, sourceId, chapterSuggestion);
+    setValues(nextValues);
+    setBaseline(nextValues);
     setTouched(emptyTouched());
     setSubmitted(false);
+    setDiscardOpen(false);
     // 只在关闭 -> 打开时重置；保存并沿用期间不覆盖表单。
   }, [chapterSuggestion, initialValues, open, sourceId, sources]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIdentifierPreviewName(values.name.trim());
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [values.name]);
+
+  const identifierIsEmpty = values.externalIdentifier.trim() === "";
+  const identifierPreviewVisible =
+    identifierIsEmpty && values.sourceId !== "" && identifierPreviewName !== "";
+  const identifierPreviewQuery = useQuery({
+    queryKey: [
+      "projects",
+      projectId,
+      "requirements",
+      "identifier-preview",
+      values.sourceId,
+      identifierPreviewName,
+    ],
+    queryFn: () =>
+      requirementsApi.previewIdentifier(projectId, values.sourceId, identifierPreviewName),
+    enabled: identifierIsEmpty && values.sourceId !== "" && identifierPreviewName !== "",
+    staleTime: 0,
+  });
+  const identifierPlaceholder = identifierPreviewVisible
+    ? identifierPreviewQuery.data
+      ? `预计 ${identifierPreviewQuery.data.identifier}（${
+          identifierPreviewQuery.data.conflictAdjusted ? "已调整" : "冲突自动调整"
+        }）`
+      : "预计标识…"
+    : "留空自动生成";
 
   function close() {
     reset();
@@ -120,9 +179,22 @@ export function RequirementCreateDialog({
   }
 
   function reset() {
-    setValues(initialValues ?? emptyValues(sources, sourceId, chapterSuggestion));
+    const nextValues = initialValues ?? emptyValues(sources, sourceId, chapterSuggestion);
+    setValues(nextValues);
+    setBaseline(nextValues);
     setTouched(emptyTouched());
     setSubmitted(false);
+  }
+
+  function requestClose() {
+    if (submitting) return;
+
+    if (hasUnsavedChanges) {
+      setDiscardOpen(true);
+      return;
+    }
+
+    close();
   }
 
   function touch(field: keyof TouchedRequirementFields) {
@@ -157,7 +229,12 @@ export function RequirementCreateDialog({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
-    if (!valid) return;
+    if (!valid) {
+      window.requestAnimationFrame(() => {
+        formRef.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus();
+      });
+      return;
+    }
 
     const source = sources.find((item) => item.id === values.sourceId);
     if (!source) return;
@@ -183,7 +260,7 @@ export function RequirementCreateDialog({
         requirements,
         created.sourceVersionId,
       );
-      setValues({
+      const nextFormValues = {
         sourceId: source.id,
         chapterNumber: nextChapterNumber,
         externalIdentifier: "",
@@ -192,21 +269,36 @@ export function RequirementCreateDialog({
         primaryKind: values.primaryKind,
         secondaryKinds: values.secondaryKinds,
         tags: [],
-      });
+      };
+      setValues(nextFormValues);
       setTouched(emptyTouched());
       setSubmitted(false);
+      setBaseline(nextFormValues);
       nameInputRef.current?.focus();
+      onCreated?.(created, { focusTree: false });
       return created;
     }
 
+    savedRequirementRef.current = created;
     reset();
     onOpenChange(false);
     return created;
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
-      <DialogContent className="max-w-2xl" onKeyDown={handleKeyDown}>
+    <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : requestClose())}>
+      <DialogContent
+        className="max-w-2xl"
+        onKeyDown={handleKeyDown}
+        onCloseAutoFocus={(event) => {
+          const created = savedRequirementRef.current;
+          if (!created || !onCreated) return;
+
+          event.preventDefault();
+          savedRequirementRef.current = null;
+          onCreated(created, { focusTree: true });
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{initialValues ? "复制新增确认需求" : "新增确认需求"}</DialogTitle>
           <DialogDescription>
@@ -291,9 +383,17 @@ export function RequirementCreateDialog({
                 id="requirement-code"
                 value={values.externalIdentifier}
                 autoComplete="off"
-                placeholder="留空自动生成"
+                placeholder={identifierPlaceholder}
+                aria-describedby={
+                  identifierPreviewVisible ? "requirement-identifier-preview" : undefined
+                }
                 onChange={(event) => update("externalIdentifier", event.target.value)}
               />
+              {identifierPreviewVisible ? (
+                <span id="requirement-identifier-preview" className={styles.screenReaderPreview}>
+                  预计使用拼音首字母自动生成标识；保存时如冲突会自动调整。
+                </span>
+              ) : null}
             </Field>
 
             <Field className={styles.name} data-invalid={visibleError("name") ? true : undefined}>
@@ -366,6 +466,7 @@ export function RequirementCreateDialog({
                 ariaLabel="选择副类型"
                 options={getRequirementSecondaryKindOptions(values.primaryKind)}
                 value={values.secondaryKinds}
+                invalid={visibleError("secondaryKinds") ? true : undefined}
                 onChange={(secondaryKinds) =>
                   update(
                     "secondaryKinds",
@@ -399,7 +500,7 @@ export function RequirementCreateDialog({
           </div>
 
           <DialogFooter className="flex-wrap">
-            <Button type="button" variant="outline" onClick={close}>
+            <Button type="button" variant="outline" onClick={requestClose} disabled={submitting}>
               取消
             </Button>
             <Button type="submit" disabled={submitting}>
@@ -427,8 +528,37 @@ export function RequirementCreateDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+      <AlertDialog
+        open={discardOpen}
+        onOpenChange={(next) => {
+          if (!next) setDiscardOpen(false);
+        }}
+      >
+        <AlertDialogContent className={styles.discardDialog}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>丢弃未保存修改？</AlertDialogTitle>
+            <AlertDialogDescription>当前修改尚未保存，关闭后将丢弃。</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>继续编辑</AlertDialogCancel>
+            <AlertDialogAction
+              className={styles.discardAction}
+              onClick={() => {
+                setDiscardOpen(false);
+                close();
+              }}
+            >
+              丢弃并关闭
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
+}
+
+function areValuesEqual(left: CreateRequirementValues, right: CreateRequirementValues) {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function emptyValues(

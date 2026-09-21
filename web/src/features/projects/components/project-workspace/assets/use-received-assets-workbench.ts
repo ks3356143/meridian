@@ -197,22 +197,31 @@ export function useReceivedAssetsWorkbench(project: Project) {
   }, [queueFilter, workObjectsQuery.data]);
 
   const summary = useMemo(() => {
-    const draftAssets = assets.filter((asset) => asset.status === "draft");
-    const confirmedAssets = assets.filter((asset) => asset.status === "confirmed");
-    const historicalAssets = assets.filter(
-      (asset) => asset.status === "superseded" || asset.status === "revoked",
-    );
-    const parseableAssets = assets.filter((asset) => getParseState(asset).tone === "ready");
-    const codePackages = assets.filter((asset) => asset.objectKind === "code_package");
+    let draftCount = 0;
+    let confirmedCount = 0;
+    let historicalCount = 0;
+    let parseableCount = 0;
+    let codePackageCount = 0;
+    let confirmedDocumentCount = 0;
+
+    for (const asset of assets) {
+      if (asset.status === "draft") draftCount++;
+      if (asset.status === "confirmed") {
+        confirmedCount++;
+        if (asset.objectKind !== "code_package") confirmedDocumentCount++;
+      }
+      if (asset.status === "superseded" || asset.status === "revoked") historicalCount++;
+      if (getParseState(asset).tone === "ready") parseableCount++;
+      if (asset.objectKind === "code_package") codePackageCount++;
+    }
 
     return {
-      draftCount: draftAssets.length,
-      confirmedCount: confirmedAssets.length,
-      historicalCount: historicalAssets.length,
-      parseableCount: parseableAssets.length,
-      codePackageCount: codePackages.length,
-      confirmedDocumentCount: confirmedAssets.filter((asset) => asset.objectKind !== "code_package")
-        .length,
+      draftCount,
+      confirmedCount,
+      historicalCount,
+      parseableCount,
+      codePackageCount,
+      confirmedDocumentCount,
     };
   }, [assets]);
 

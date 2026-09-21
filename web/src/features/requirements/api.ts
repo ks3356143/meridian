@@ -6,6 +6,7 @@ import type {
   BulkUpdateRequirementPayload,
   RequirementRecord,
   RequirementsWorkbenchSnapshot,
+  RequirementIdentifierPreview,
   RequirementStatusPayload,
   RequirementEvent,
   SaveRequirementPayload,
@@ -14,6 +15,14 @@ import type {
 export const requirementsApi = {
   workbench: (projectId: string) =>
     request<RequirementsWorkbenchSnapshot>("GET", `/api/v1/projects/${projectId}/requirements`),
+  previewIdentifier: (projectId: string, sourceVersionId: string, name: string) => {
+    const query = new URLSearchParams({ sourceVersionId, name });
+    return request<RequirementIdentifierPreview>(
+      "GET",
+      `/api/v1/projects/${projectId}/requirements/identifier-preview?${query}`,
+      { skipErrorToast: true },
+    );
+  },
   create: (projectId: string, payload: SaveRequirementPayload) =>
     request<RequirementRecord>("POST", `/api/v1/projects/${projectId}/requirements`, {}, payload),
   update: (requirementId: string, payload: Omit<SaveRequirementPayload, "sourceVersionId">) =>

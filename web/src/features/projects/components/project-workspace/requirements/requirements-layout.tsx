@@ -1,5 +1,5 @@
 import { FileSearch } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./requirements-layout.module.css";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -20,7 +20,7 @@ import { RequirementBulkDeleteDialog } from "./requirement-bulk-delete-dialog";
 import { RequirementBulkUpdateDialog } from "./requirement-bulk-update-dialog";
 import { RequirementBulkPasteDialog } from "./requirement-bulk-paste-dialog";
 import { RequirementsHero } from "./requirements-hero";
-import { RequirementsTree } from "./requirements-tree";
+import { RequirementsTree, type RequirementCreatedSignal } from "./requirements-tree";
 import { useRequirementsWorkbench } from "./use-requirements-workbench";
 
 let requirementsPanelLayout: Record<string, number> | undefined;
@@ -50,6 +50,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const [auditRequirement, setAuditRequirement] = useState<RequirementRecord | null>(null);
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [createdSignal, setCreatedSignal] = useState<RequirementCreatedSignal | null>(null);
   const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkPasteOpen, setBulkPasteOpen] = useState(false);
@@ -65,28 +66,53 @@ export function RequirementsLayout({ project }: { project: Project }) {
   } | null>(null);
   const requestTreeExitRef = useRef((_id: string) => Promise.resolve());
   const workbench = workbenchQuery.data;
-  const sources = workbench?.sources ?? [];
-  const officialRequirements = (workbench?.requirements ?? []).filter(
-    (requirement) => requirement.status === "official",
+  const requirements = useMemo(() => workbench?.requirements ?? [], [workbench]);
+  const sources = useMemo(() => workbench?.sources ?? [], [workbench]);
+  const officialRequirements = useMemo(
+    () => requirements.filter((requirement) => requirement.status === "official"),
+    [requirements],
   );
-  const deletedRequirements = (workbench?.requirements ?? []).filter(
-    (requirement) =>
-      requirement.status === "excluded" && requirement.deletedFromStatus === "official",
+  const deletedRequirements = useMemo(
+    () =>
+      requirements.filter(
+        (requirement) =>
+          requirement.status === "excluded" && requirement.deletedFromStatus === "official",
+      ),
+    [requirements],
   );
-  const selectedRequirement =
-    officialRequirements.find((requirement) => requirement.id === selectedId) ??
-    officialRequirements[0];
-  const selectedSource = sources.find(
-    (source) => source.id === selectedRequirement?.sourceVersionId,
+  const selectedRequirement = useMemo(
+    () =>
+      officialRequirements.find((requirement) => requirement.id === selectedId) ??
+      officialRequirements[0],
+    [officialRequirements, selectedId],
   );
-  const selectedRequirements = officialRequirements.filter((requirement) =>
-    selectedIds.includes(requirement.id),
+  const selectedSource = useMemo(
+    () => sources.find((source) => source.id === selectedRequirement?.sourceVersionId),
+    [selectedRequirement?.sourceVersionId, sources],
   );
-  const activeChapterRequirements = (workbench?.requirements ?? []).filter(
-    (requirement) => requirement.status === "candidate" || requirement.status === "official",
+  const selectedRequirements = useMemo(() => {
+    const selectedIDSet = new Set(selectedIds);
+    return officialRequirements.filter((requirement) => selectedIDSet.has(requirement.id));
+  }, [officialRequirements, selectedIds]);
+  const activeChapterRequirements = useMemo(
+    () =>
+      requirements.filter(
+        (requirement) => requirement.status === "candidate" || requirement.status === "official",
+      ),
+    [requirements],
   );
 
   const updateRequirement = updateMutation.mutateAsync;
+  const handleCreated = useCallback(
+    (requirement: RequirementRecord, options: { focusTree: boolean }) => {
+      setCreatedSignal({
+        id: requirement.id,
+        nonce: Date.now(),
+        focusTree: options.focusTree,
+      });
+    },
+    [],
+  );
   const savePanelLayout = useCallback((layout: Record<string, number>) => {
     requirementsPanelLayout = layout;
   }, []);
@@ -202,10 +228,14 @@ export function RequirementsLayout({ project }: { project: Project }) {
     );
   }, []);
   const toggleSourceSelected = useCallback(
-    (sourceId: string, checked: boolean) => {
+    (sourceId: string, checked: boolean, requirementIds?: string[]) => {
       setSelectedIds((previous) => {
         const sourceRequirementIds = officialRequirements
-          .filter((requirement) => requirement.sourceVersionId === sourceId)
+          .filter(
+            (requirement) =>
+              requirement.sourceVersionId === sourceId &&
+              (!requirementIds || requirementIds.includes(requirement.id)),
+          )
           .map((requirement) => requirement.id);
         const sourceIDSet = new Set(sourceRequirementIds);
         const kept = previous.filter((id) => !sourceIDSet.has(id));
@@ -268,6 +298,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       sources={sources}
       requirements={workbench?.requirements ?? []}
       selectedId={selectedRequirement?.id ?? ""}
+      createdSignal={createdSignal}
       batchMode={batchMode}
       selectedIds={selectedIds}
       onSelect={(requirement) => setSelectedId(requirement.id)}
@@ -315,6 +346,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       <RequirementCreateDialog
         key={createSeed?.key ?? "blank"}
         open={createOpen}
+        projectId={project.id}
         sources={sources}
         requirements={activeChapterRequirements}
         initialValues={createSeed?.values ?? null}
@@ -329,6 +361,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
           setSelectedId(created.id);
           return created;
         }}
+        onCreated={handleCreated}
       />
     );
   }

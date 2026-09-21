@@ -167,6 +167,44 @@
   white-space: nowrap;
 }
 
+.completenessFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.completenessFilter {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted-foreground);
+  font-size: 10.5px;
+  font-weight: 500;
+  height: 1.35rem;
+  padding-inline: 0.32rem;
+}
+
+.completenessFilter:hover {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+}
+
+.completenessFilter[data-active="true"] {
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+  color: var(--primary);
+}
+
+.completenessFilter[aria-pressed="true"]:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 46%, transparent);
+}
+
+.completenessCount {
+  color: currentcolor;
+  font-size: 9.5px;
+  opacity: 0.72;
+}
+
 .historyRow {
   align-items: center;
   display: flex;
@@ -571,6 +609,14 @@
   box-shadow: inset 2px 0 0 color-mix(in srgb, var(--info) 72%, transparent);
 }
 
+.row[data-created="true"] {
+  animation: createdRow 1.8s ease-out;
+  border-color: color-mix(in srgb, var(--primary) 46%, var(--border));
+  box-shadow:
+    inset 3px 0 0 var(--primary),
+    0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
 .row[data-search="true"] {
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--info) 11%, transparent), transparent 72%),
@@ -688,6 +734,25 @@
   max-width: 18rem;
 }
 
+.identifierMarker {
+  align-items: center;
+  color: var(--info);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 1.05rem;
+  justify-content: center;
+  width: 1.05rem;
+}
+
+.identifierMarker svg {
+  height: 0.72rem;
+  width: 0.72rem;
+}
+
+.identifierTooltip {
+  max-width: 18rem;
+}
+
 .row[data-node-type="source"] :global([data-slot="badge"]) {
   background: color-mix(in srgb, var(--info) 12%, var(--card));
   border-color: color-mix(in srgb, var(--info) 30%, var(--border));
@@ -768,8 +833,33 @@
     transition: none;
   }
 
+  .row[data-created="true"] {
+    animation: none;
+  }
+
   .helpPopover {
     animation: none;
+  }
+}
+
+@keyframes createdRow {
+  0% {
+    background: color-mix(in srgb, var(--primary) 19%, var(--card));
+    box-shadow:
+      inset 3px 0 0 var(--primary),
+      0 0 0 3px color-mix(in srgb, var(--primary) 26%, transparent);
+  }
+  70% {
+    background: color-mix(in srgb, var(--primary) 10%, var(--card));
+    box-shadow:
+      inset 3px 0 0 var(--primary),
+      0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+  100% {
+    background: transparent;
+    box-shadow:
+      inset 3px 0 0 var(--primary),
+      0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
   }
 }
 
