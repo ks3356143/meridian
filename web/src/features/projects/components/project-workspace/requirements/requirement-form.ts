@@ -36,6 +36,7 @@ export function isRequirementDraftValid(draft: RequirementDraft) {
 
 export function getRequirementDraftErrors(draft: RequirementDraft) {
   const chapterNumber = draft.chapterNumber.trim();
+  const externalIdentifier = draft.externalIdentifier.trim();
 
   return {
     chapterNumber: !chapterNumber
@@ -43,6 +44,7 @@ export function getRequirementDraftErrors(draft: RequirementDraft) {
       : /^\d+(?:\.\d+)*$/.test(chapterNumber)
         ? undefined
         : "章节号格式不正确",
+    externalIdentifier: externalIdentifier.length > 64 ? "标识最多 64 个字符" : undefined,
     name: draft.name.trim() ? undefined : "名称必填",
     primaryKind: requirementKindOptions.some((option) => option.value === draft.primaryKind)
       ? undefined

@@ -10,6 +10,7 @@ import type {
   RequirementStatusPayload,
   RequirementEvent,
   SaveRequirementPayload,
+  RequirementParseResult,
 } from "./types";
 
 export const requirementsApi = {
@@ -38,6 +39,13 @@ export const requirementsApi = {
       `/api/v1/projects/${projectId}/requirements/status`,
       {},
       payload,
+    ),
+  parse: (projectId: string, sourceVersionId: string) =>
+    request<RequirementParseResult>(
+      "POST",
+      `/api/v1/projects/${projectId}/requirements/parse`,
+      {},
+      { sourceVersionId },
     ),
   events: (requirementId: string) =>
     request<RequirementEvent[]>("GET", `/api/v1/software-requirements/${requirementId}/events`),

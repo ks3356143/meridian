@@ -943,7 +943,7 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 
 	result := ParseResult{}
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("source_version_id = ? AND status = ?", source.ID, StatusCandidate).
+		if err := tx.Where("source_version_id = ? AND status = ? AND origin = ?", source.ID, StatusCandidate, OriginParsed).
 			Delete(&Requirement{}).Error; err != nil {
 			return fmt.Errorf("清理旧候选需求失败: %w", err)
 		}
@@ -978,13 +978,16 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 				section.Title = node.Title
 				section.SourceAnchor = node.SourceAnchor
 				section.UpdatedAt = now
-				if err := tx.Model(&Section{}).Where("id = ?", section.ID).Updates(map[string]any{
+				sectionUpdates := map[string]any{
 					"parent_id":     section.ParentID,
 					"title":         section.Title,
 					"source_anchor": section.SourceAnchor,
-					"origin":        OriginParsed,
 					"updated_at":    section.UpdatedAt,
-				}).Error; err != nil {
+				}
+				if section.Origin != OriginManual {
+					sectionUpdates["origin"] = OriginParsed
+				}
+				if err := tx.Model(&Section{}).Where("id = ?", section.ID).Updates(sectionUpdates).Error; err != nil {
 					return fmt.Errorf("同步解析章节失败: %w", err)
 				}
 			} else {

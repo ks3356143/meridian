@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./requirements-layout.module.css";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import type { RequirementRecord } from "@/features/requirements/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { RequirementRecord, SaveRequirementPayload } from "@/features/requirements/types";
 import type { Project } from "../../../types";
 import { DeletedRequirementsDialog } from "./deleted-requirements-dialog";
 import { DeletedRequirementsPurgeDialog } from "./deleted-requirements-purge-dialog";
@@ -20,10 +21,15 @@ import { RequirementBulkDeleteDialog } from "./requirement-bulk-delete-dialog";
 import { RequirementBulkUpdateDialog } from "./requirement-bulk-update-dialog";
 import { RequirementBulkPasteDialog } from "./requirement-bulk-paste-dialog";
 import { RequirementsHero } from "./requirements-hero";
+import { RequirementsCandidateTree } from "./requirements-candidate-tree";
+import { RequirementsCandidateWorkbench } from "./requirements-candidate-workbench";
 import { RequirementsTree, type RequirementCreatedSignal } from "./requirements-tree";
 import { useRequirementsWorkbench } from "./use-requirements-workbench";
 
 let requirementsPanelLayout: Record<string, number> | undefined;
+let candidatePanelLayout: Record<string, number> | undefined;
+
+type WorkbenchTab = "confirmed" | "candidate";
 
 type RequirementCreateSeed = {
   key: string;
@@ -42,6 +48,8 @@ export function RequirementsLayout({ project }: { project: Project }) {
     bulkPurgeMutation,
     bulkUpdateMutation,
     bulkCreateMutation,
+    parseMutation,
+    candidateStatusMutation,
     invalidate,
   } = useRequirementsWorkbench(project);
   const [createOpen, setCreateOpen] = useState(false);
@@ -55,6 +63,8 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkPasteOpen, setBulkPasteOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
+  const [workbenchTab, setWorkbenchTab] = useState<WorkbenchTab>("confirmed");
+  const [candidateSelectedId, setCandidateSelectedId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{
     requirement: RequirementRecord;
     hasUnsavedChanges: boolean;
@@ -286,6 +296,36 @@ export function RequirementsLayout({ project }: { project: Project }) {
       setBulkPasteOpen(false);
     },
     [bulkCreateMutation],
+  );
+  const saveCandidatePanelLayout = useCallback((layout: Record<string, number>) => {
+    candidatePanelLayout = layout;
+  }, []);
+  const handleParseSRS = useCallback(
+    async (sourceVersionId: string) => {
+      try {
+        return await parseMutation.mutateAsync(sourceVersionId);
+      } catch {
+        return undefined;
+      }
+    },
+    [parseMutation],
+  );
+  const handleCandidateConfirm = useCallback(
+    async (ids: string[]) => {
+      await candidateStatusMutation.mutateAsync({ ids, action: "confirm" });
+    },
+    [candidateStatusMutation],
+  );
+  const handleCandidateExclude = useCallback(
+    async (ids: string[], reason: string) => {
+      await candidateStatusMutation.mutateAsync({ ids, action: "exclude", reason });
+    },
+    [candidateStatusMutation],
+  );
+  const handleCandidateUpdate = useCallback(
+    async (id: string, payload: Omit<SaveRequirementPayload, "sourceVersionId">) =>
+      updateMutation.mutateAsync({ id, payload }),
+    [updateMutation],
   );
 
   if (workbenchQuery.isPending) return <QueryLoading label="正在加载确认需求" rows={8} />;
@@ -560,9 +600,95 @@ export function RequirementsLayout({ project }: { project: Project }) {
     </section>
   );
 
+  const candidateSurface = wideLayout ? (
+    <section className={styles.workbench}>
+      <ResizablePanelGroup
+        id="requirements-candidate-container-layout"
+        defaultLayout={candidatePanelLayout}
+        onLayoutChanged={saveCandidatePanelLayout}
+        resizeTargetMinimumSize={{ coarse: 36, fine: 24 }}
+      >
+        <ResizablePanel
+          id="requirements-candidate-tree-panel"
+          className={styles.panelFrame}
+          defaultSize={380}
+          minSize="22%"
+          maxSize="680px"
+        >
+          <RequirementsCandidateTree
+            sources={sources}
+            sections={workbench?.sections ?? []}
+            requirements={workbench?.requirements ?? []}
+            selectedId={candidateSelectedId}
+            onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
+            naturalHeight={false}
+          />
+        </ResizablePanel>
+        <ResizableHandle
+          id="requirements-candidate-tree-handle"
+          aria-label="调整待确认需求目录宽度"
+        />
+        <ResizablePanel id="requirements-candidate-right-panel" className={styles.panelFrame}>
+          <RequirementsCandidateWorkbench
+            sources={sources}
+            requirements={workbench?.requirements ?? []}
+            selectedId={candidateSelectedId}
+            onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
+            parsePending={parseMutation.isPending}
+            statusPending={candidateStatusMutation.isPending}
+            updatePending={updateMutation.isPending}
+            onParse={handleParseSRS}
+            onConfirm={handleCandidateConfirm}
+            onExclude={handleCandidateExclude}
+            onUpdate={handleCandidateUpdate}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </section>
+  ) : (
+    <section className={styles.workbench}>
+      <RequirementsCandidateTree
+        sources={sources}
+        sections={workbench?.sections ?? []}
+        requirements={workbench?.requirements ?? []}
+        selectedId={candidateSelectedId}
+        onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
+        naturalHeight
+      />
+      <RequirementsCandidateWorkbench
+        sources={sources}
+        requirements={workbench?.requirements ?? []}
+        selectedId={candidateSelectedId}
+        onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
+        parsePending={parseMutation.isPending}
+        statusPending={candidateStatusMutation.isPending}
+        updatePending={updateMutation.isPending}
+        onParse={handleParseSRS}
+        onConfirm={handleCandidateConfirm}
+        onExclude={handleCandidateExclude}
+        onUpdate={handleCandidateUpdate}
+      />
+    </section>
+  );
+
   return (
     <>
-      {surface}
+      <Tabs
+        className={styles.tabs}
+        value={workbenchTab}
+        onValueChange={(value) => setWorkbenchTab(value as WorkbenchTab)}
+      >
+        <TabsList className={styles.tabsList} aria-label="需求工作台视图">
+          <TabsTrigger value="confirmed">已确认需求</TabsTrigger>
+          <TabsTrigger value="candidate">待确认需求</TabsTrigger>
+        </TabsList>
+        <TabsContent value="confirmed" className={styles.tabContent}>
+          {surface}
+        </TabsContent>
+        <TabsContent value="candidate" className={styles.tabContent}>
+          {candidateSurface}
+        </TabsContent>
+      </Tabs>
       {renderCreateDialog()}
       {renderDeleteDialog()}
       {renderDeletedDialog()}

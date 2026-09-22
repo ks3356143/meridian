@@ -113,6 +113,37 @@ export function useRequirementsWorkbench(project: Project) {
     },
   });
 
+  const parseMutation = useMutation({
+    mutationFn: (sourceVersionId: string) => requirementsApi.parse(project.id, sourceVersionId),
+    onSuccess: (result) => {
+      toast.success(
+        `解析完成：生成 ${result.candidateCount} 条待确认需求，匹配正式 ${result.officialMatchCount} 条，匹配排除 ${result.excludedMatchCount} 条`,
+      );
+      return invalidate();
+    },
+  });
+
+  const candidateStatusMutation = useMutation({
+    mutationFn: ({
+      ids,
+      action,
+      reason,
+    }: {
+      ids: string[];
+      action: "confirm" | "exclude";
+      reason?: string;
+    }) => requirementsApi.changeStatus(project.id, { ids, action, reason }),
+    onSuccess: (result, variables) => {
+      const label = variables.action === "confirm" ? "确认" : "排除";
+      toast.success(
+        result.updatedCount === 1
+          ? `已${label} 1 条待确认需求`
+          : `已${label} ${result.updatedCount} 条待确认需求`,
+      );
+      return invalidate();
+    },
+  });
+
   return {
     workbenchQuery,
     createMutation,
@@ -123,6 +154,8 @@ export function useRequirementsWorkbench(project: Project) {
     bulkPurgeMutation,
     bulkUpdateMutation,
     bulkCreateMutation,
+    parseMutation,
+    candidateStatusMutation,
     invalidate,
   };
 }

@@ -13,6 +13,21 @@ export interface RequirementSource {
   objectKind: string;
   objectName: string;
   version: string;
+  fileType: string;
+  originalName: string;
+  hasLocalFile: boolean;
+  parseState: "ready" | "convert" | "manual" | "register";
+}
+
+export interface RequirementSection {
+  id: string;
+  parentId: string;
+  sourceVersionId: string;
+  chapterNumber: string;
+  title: string;
+  origin: RequirementOrigin;
+  inScope: boolean;
+  sourceAnchor: string;
 }
 
 export interface RequirementRecord {
@@ -42,6 +57,7 @@ export interface RequirementRecord {
 
 export interface RequirementsWorkbenchSnapshot {
   sources: RequirementSource[];
+  sections: RequirementSection[];
   requirements: RequirementRecord[];
 }
 
@@ -66,6 +82,13 @@ export interface RequirementStatusPayload {
   ids: string[];
   action: "confirm" | "exclude" | "restore";
   reason?: string;
+}
+
+export interface RequirementParseResult {
+  sectionCount: number;
+  candidateCount: number;
+  officialMatchCount: number;
+  excludedMatchCount: number;
 }
 
 export interface BulkReplacePayload {
