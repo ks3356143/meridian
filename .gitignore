@@ -23,6 +23,7 @@ reports/*
 
 # 环境与编辑器
 .codex/tmp/
+.playwright-mcp/
 .env
 .env.*
 .idea/
