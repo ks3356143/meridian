@@ -1,7 +1,8 @@
 import { BookOpen, ChevronRight, FileText, Folder } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Tree, type NodeRendererProps, type RowRendererProps, type TreeApi } from "react-arborist";
 import styles from "./requirements-tree.module.css";
+import { useRequirementTreeMotion } from "./use-requirement-tree-motion";
 import { Badge } from "@/components/ui/badge";
 import type {
   RequirementRecord,
@@ -26,6 +27,7 @@ export function RequirementsCandidateTree({
   selectedId,
   onSelect,
   naturalHeight,
+  toolbarTabs,
 }: {
   sources: RequirementSource[];
   sections: RequirementSection[];
@@ -33,6 +35,7 @@ export function RequirementsCandidateTree({
   selectedId: string;
   onSelect: (requirement: RequirementRecord) => void;
   naturalHeight: boolean;
+  toolbarTabs: ReactNode;
 }) {
   const treeRef = useRef<TreeApi<CandidateTreeNode>>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -46,6 +49,14 @@ export function RequirementsCandidateTree({
     () => buildCandidateTree(sources, sections, candidateRequirements),
     [candidateRequirements, sections, sources],
   );
+  const structureSignature = useMemo(() => getStructureSignature(nodes), [nodes]);
+  const selectedTreeId = selectedId ? `requirement:${selectedId}` : "";
+  const { requestTreeToggle } = useRequirementTreeMotion<CandidateTreeNode>({
+    treeRef,
+    shellRef,
+    structureSignature,
+    selectedTreeId,
+  });
 
   useEffect(() => {
     if (naturalHeight) return;
@@ -61,56 +72,102 @@ export function RequirementsCandidateTree({
     return () => observer.disconnect();
   }, [naturalHeight]);
 
-  const renderNode = (props: NodeRendererProps<CandidateTreeNode>) => (
-    <CandidateTreeRow {...props} selectedId={selectedId} onSelect={onSelect} />
+  const renderNode = useCallback(
+    (props: NodeRendererProps<CandidateTreeNode>) => (
+      <CandidateTreeRow {...props} selectedId={selectedId} />
+    ),
+    [selectedId],
   );
 
   if (!nodes.length) {
     return (
-      <div className={styles.empty}>
-        <p className="text-muted-foreground px-3 text-xs">暂无待确认需求章节</p>
-      </div>
+      <aside className={styles.shell} aria-label="待确认需求目录容器">
+        <div className={styles.tabs}>
+          <div className={styles.toolbar}>{toolbarTabs}</div>
+          <div className={styles.content}>
+            <div className={styles.empty}>
+              <p className="text-muted-foreground px-3 text-xs">暂无待确认需求章节</p>
+            </div>
+          </div>
+        </div>
+      </aside>
     );
   }
 
   return (
-    <div ref={shellRef} className={styles.treeShell}>
-      <Tree<CandidateTreeNode>
-        key={nodes[0]?.key ?? "candidate"}
-        ref={treeRef}
-        data={nodes}
-        className={styles.tree}
-        aria-label="待确认需求章节树"
-        height={naturalHeight ? getNaturalCandidateTreeHeight(nodes) : height}
-        width="100%"
-        rowHeight={30}
-        indent={14}
-        overscanCount={12}
-        openByDefault
-        initialOpenState={{ [nodes[0].key]: true }}
-        idAccessor={(node) => node.key}
-        renderRow={CandidateTreeRowRenderer}
-        selectionFollowsFocus={false}
-        disableMultiSelection
-        disableDrag
-        disableDrop
-        disableEdit
-        onActivate={(node) => {
-          if (node.data.requirement) onSelect(node.data.requirement);
-        }}
-        onFocus={(node) => {
-          if (node.data.requirement) onSelect(node.data.requirement);
-        }}
-      >
-        {renderNode}
-      </Tree>
-    </div>
+    <aside className={styles.shell} aria-label="待确认需求目录容器">
+      <div className={styles.tabs}>
+        <div className={styles.toolbar}>{toolbarTabs}</div>
+        <div className={styles.content}>
+          <div
+            ref={shellRef}
+            className={styles.treeShell}
+            data-candidate="true"
+            onClickCapture={(event) => {
+              const chevron = (event.target as HTMLElement).closest(`.${styles.chevron}`);
+              if (!chevron) return;
+
+              const row = chevron.closest("[role='treeitem']");
+              const nodeId = row?.querySelector<HTMLElement>(`.${styles.row}`)?.dataset.nodeId;
+              if (!nodeId) return;
+
+              event.preventDefault();
+              event.stopPropagation();
+              requestTreeToggle(nodeId);
+            }}
+            onKeyDownCapture={(event) => {
+              const node = treeRef.current?.focusedNode;
+              if (!node || node.isLeaf) return;
+
+              const shouldToggle =
+                event.key === " " ||
+                (event.key === "ArrowRight" && node.isClosed) ||
+                (event.key === "ArrowLeft" && node.isOpen);
+              if (!shouldToggle) return;
+
+              event.preventDefault();
+              event.stopPropagation();
+              requestTreeToggle(node.id);
+            }}
+          >
+            <Tree<CandidateTreeNode>
+              key={nodes[0]?.key ?? "candidate"}
+              ref={treeRef}
+              data={nodes}
+              className={styles.tree}
+              aria-label="待确认需求章节树"
+              height={naturalHeight ? getNaturalCandidateTreeHeight(nodes) : height}
+              width="100%"
+              rowHeight={30}
+              indent={14}
+              overscanCount={12}
+              openByDefault
+              initialOpenState={{ [nodes[0].key]: true }}
+              idAccessor={(node) => node.key}
+              renderRow={CandidateTreeRowRenderer}
+              selectionFollowsFocus={false}
+              disableMultiSelection
+              disableDrag
+              disableDrop
+              disableEdit
+              onActivate={(node) => {
+                if (node.data.requirement) onSelect(node.data.requirement);
+              }}
+              onFocus={(node) => {
+                if (node.data.requirement) onSelect(node.data.requirement);
+              }}
+            >
+              {renderNode}
+            </Tree>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 }
 
 type CandidateTreeRowProps = NodeRendererProps<CandidateTreeNode> & {
   selectedId: string;
-  onSelect: (requirement: RequirementRecord) => void;
 };
 
 function CandidateTreeRowRenderer({
@@ -135,6 +192,7 @@ function CandidateTreeRow({ node, style, dragHandle, selectedId }: CandidateTree
   const data = node.data;
   const Icon = data.type === "source" ? BookOpen : data.type === "section" ? Folder : FileText;
   const requirementId = data.requirement?.id ?? "";
+  const guideCount = node.level;
 
   return (
     <div
@@ -142,27 +200,35 @@ function CandidateTreeRow({ node, style, dragHandle, selectedId }: CandidateTree
       style={style}
       className={styles.row}
       data-node-type={data.type}
+      data-node-id={node.id}
       data-tree-row="true"
       data-selected={requirementId && requirementId === selectedId ? "true" : undefined}
       data-open={node.isOpen ? "true" : undefined}
     >
+      <span className={styles.guides} aria-hidden>
+        {Array.from({ length: guideCount }, (_, index) => (
+          <span
+            key={index}
+            className={styles.guide}
+            data-guide-level={index + 1}
+            data-guide-current={index === guideCount - 1 ? "true" : undefined}
+          />
+        ))}
+      </span>
       {data.children.length > 0 ? (
-        <span
-          className={styles.chevron}
-          aria-hidden
-          onClick={(event) => {
-            event.stopPropagation();
-            node.toggle();
-          }}
-        >
+        <span className={styles.chevron} aria-hidden>
           <ChevronRight />
         </span>
-      ) : null}
+      ) : (
+        <span className={styles.chevronSpacer} aria-hidden />
+      )}
       <span className={styles.icon} aria-hidden>
         <Icon />
       </span>
       <span className={styles.title}>{data.title}</span>
-      {data.count > 0 ? <Badge variant="warning">{data.count}</Badge> : null}
+      {data.type !== "requirement" && data.count > 0 ? (
+        <Badge variant="outline">{data.count}</Badge>
+      ) : null}
     </div>
   );
 }
@@ -259,4 +325,8 @@ function toRequirementNode(requirement: RequirementRecord): CandidateTreeNode {
     requirement,
     children: [],
   };
+}
+
+function getStructureSignature(nodes: CandidateTreeNode[]): string {
+  return nodes.map((node) => `${node.key}:${getStructureSignature(node.children)}`).join("|");
 }

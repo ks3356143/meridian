@@ -31,7 +31,7 @@ export function WorkspaceModulePlaceholder({
   return (
     <section
       data-workspace-module={tone}
-      className="grid min-h-[480px] gap-4 rounded-sm border p-4 pl-5 xl:grid-cols-[268px_minmax(0,1fr)]"
+      className="grid min-h-full gap-4 p-4 pl-5 xl:grid-cols-[268px_minmax(0,1fr)]"
       aria-labelledby="workspace-module-title"
     >
       <aside className="flex min-w-0 flex-col gap-3">
@@ -78,7 +78,7 @@ export function WorkspaceModulePlaceholder({
           <article
             key={currentBlock.label}
             data-module-card
-            className="workspace-route flex min-w-0 flex-col gap-4 rounded-sm border p-4"
+            className="flex min-w-0 flex-col gap-4 rounded-sm border p-4"
           >
             <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">

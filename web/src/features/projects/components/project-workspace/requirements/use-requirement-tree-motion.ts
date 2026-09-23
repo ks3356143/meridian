@@ -1,15 +1,12 @@
-import { useRef, useState, type RefObject } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { flushSync } from "react-dom";
 import type { TreeApi } from "react-arborist";
 import { Flip, gsap, useGSAP } from "@/lib/gsap";
 
 type TreeFlipState = ReturnType<typeof Flip.getState>;
 
-type TreeMotionRequest =
-  | { kind: "open"; previousIds: Set<string>; state: TreeFlipState }
-  | { kind: "settle-close"; state: TreeFlipState };
-
 type TreeRow = { outer: HTMLElement; inner: HTMLElement; id: string };
+type TreeMotionRequest = { previousIds: Set<string>; state: TreeFlipState };
 type TreeStructureSnapshot = {
   signature: string;
   ids: Set<string>;
@@ -20,15 +17,41 @@ export function useRequirementTreeMotion<T>({
   treeRef,
   shellRef,
   structureSignature,
+  selectedTreeId,
 }: {
   treeRef: RefObject<TreeApi<T> | null>;
   shellRef: RefObject<HTMLDivElement | null>;
   structureSignature: string;
+  selectedTreeId?: string;
 }) {
   const requestTreeToggleRef = useRef((_id: string) => {});
   const requestTreeExitRef = useRef((_id: string) => Promise.resolve());
-  const structureSnapshotRef = useRef<TreeStructureSnapshot | null>(null);
   const [motionRequest, setMotionRequest] = useState<TreeMotionRequest | null>(null);
+  const structureSnapshotRef = useRef<TreeStructureSnapshot | null>(null);
+  const previousSelectedTreeIdRef = useRef(selectedTreeId);
+
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    const previousTreeId = previousSelectedTreeIdRef.current;
+    previousSelectedTreeIdRef.current = selectedTreeId;
+
+    if (!shell || !selectedTreeId || selectedTreeId === previousTreeId) return;
+
+    const row = Array.from(shell.querySelectorAll<HTMLElement>("[data-node-id]")).find(
+      (item) => item.dataset.nodeId === selectedTreeId,
+    );
+    if (!row) return;
+
+    row.dataset.selectionMotion = "true";
+    const timer = window.setTimeout(() => {
+      delete row.dataset.selectionMotion;
+    }, 320);
+
+    return () => {
+      window.clearTimeout(timer);
+      delete row.dataset.selectionMotion;
+    };
+  }, [selectedTreeId, shellRef]);
 
   useGSAP(
     (_context, contextSafe) => {
@@ -85,10 +108,12 @@ export function useRequirementTreeMotion<T>({
           rows.map((row) => row.outer),
           { simple: true },
         );
+        shell.dataset.motion = "true";
 
         if (node.isOpen) {
           const descendants = getVisibleDescendantRows(tree, shell, id);
           if (!descendants.length) {
+            delete shell.dataset.motion;
             tree.close(id);
             return;
           }
@@ -102,7 +127,23 @@ export function useRequirementTreeMotion<T>({
               stagger: 0.003,
               onComplete: () => {
                 flushSync(() => tree.close(id));
-                setMotionRequest({ kind: "settle-close", state });
+
+                let released = false;
+                const releaseMotion = () => {
+                  if (released) return;
+                  released = true;
+                  delete shell.dataset.motion;
+                };
+                const nextRows = getTreeRows(shell);
+                prepareForCapture(nextRows);
+                Flip.from(state, {
+                  duration: 0.2,
+                  ease: "power2.out",
+                  scale: false,
+                  targets: nextRows.map((row) => row.outer),
+                  onComplete: releaseMotion,
+                  onInterrupt: releaseMotion,
+                });
               },
             },
           );
@@ -111,7 +152,7 @@ export function useRequirementTreeMotion<T>({
 
         const previousIds = new Set(rows.map((row) => row.id));
         tree.open(id);
-        setMotionRequest({ kind: "open", previousIds, state });
+        setMotionRequest({ previousIds, state });
       });
 
       if (shell) {
@@ -121,22 +162,35 @@ export function useRequirementTreeMotion<T>({
       if (!motionRequest || !shell) return;
 
       const rows = getTreeRows(shell);
-      if (motionRequest.kind === "settle-close") prepareForCapture(rows);
-      if (rows.length) {
-        Flip.from(motionRequest.state, {
-          duration: 0.2,
-          ease: "power2.out",
-          scale: false,
-          targets: rows.map((row) => row.outer),
-        });
+      let released = false;
+      const releaseMotion = () => {
+        if (released) return;
+        released = true;
+        delete shell.dataset.motion;
+        setMotionRequest(null);
+      };
+
+      prepareForCapture(rows);
+      const enteringRows = rows
+        .filter((row) => !motionRequest.previousIds.has(row.id))
+        .map((row) => row.inner);
+      const movingRows = rows.filter((row) => motionRequest.previousIds.has(row.id));
+
+      if (enteringRows.length) {
+        gsap.set(enteringRows, { autoAlpha: 0 });
       }
 
-      if (motionRequest.kind === "open") {
-        const enteringRows = rows
-          .filter((row) => !motionRequest.previousIds.has(row.id))
-          .map((row) => row.inner);
+      Flip.from(motionRequest.state, {
+        duration: 0.2,
+        ease: "power2.out",
+        scale: false,
+        targets: movingRows.map((row) => row.outer),
+        onComplete: () => {
+          if (!enteringRows.length) {
+            releaseMotion();
+            return;
+          }
 
-        if (enteringRows.length) {
           gsap.fromTo(
             enteringRows,
             { autoAlpha: 0 },
@@ -146,12 +200,21 @@ export function useRequirementTreeMotion<T>({
               duration: 0.18,
               ease: "power2.out",
               stagger: 0.003,
+              onComplete: releaseMotion,
+              onInterrupt: releaseMotion,
             },
           );
-        }
-      }
-
-      setMotionRequest(null);
+        },
+        onInterrupt: () => {
+          if (enteringRows.length) {
+            gsap.set(enteringRows, {
+              autoAlpha: 1,
+              clearProps: "opacity,visibility,transform",
+            });
+          }
+          releaseMotion();
+        },
+      });
     },
     { dependencies: [motionRequest, structureSignature], scope: shellRef },
   );

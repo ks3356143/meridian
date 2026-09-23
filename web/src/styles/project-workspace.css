@@ -139,12 +139,16 @@
 }
 
 .workspace-primary-nav {
-  margin-top: 0.875rem;
+  margin-top: 2px;
 }
 
 .workspace-route {
   min-height: 0;
-  padding-top: 0.45rem;
+  padding-top: 0;
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
+  border-top: 0;
+  border-radius: 0 0 2px 2px;
+  background: var(--card);
   animation: workspace-route-enter 0.28s ease-out;
 }
 
@@ -154,6 +158,10 @@ main.workspace-route {
   scrollbar-gutter: stable;
   scrollbar-color: color-mix(in srgb, var(--primary) 42%, var(--muted)) transparent;
   scrollbar-width: thin;
+}
+
+.workspace-route > :first-child {
+  min-height: 100%;
 }
 
 main.workspace-route::-webkit-scrollbar {
@@ -336,7 +344,6 @@ main.workspace-route::-webkit-scrollbar-thumb {
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1fr);
-  padding-top: 0.25rem;
   min-width: 0;
 }
 
@@ -902,7 +909,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
   content: "";
   position: absolute;
   top: -72px;
-  right: -56px;
+  right: 0;
   width: 300px;
   aspect-ratio: 1;
   border-radius: 50%;

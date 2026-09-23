@@ -110,6 +110,49 @@
   min-width: 52rem;
 }
 
+.tableShell :global(thead th:nth-child(2)),
+.tableShell :global(tbody td:nth-child(2)) {
+  max-width: 5.5rem;
+  min-width: 5.5rem;
+  width: 5.5rem;
+}
+
+.tableShell :global(thead th:nth-child(3)),
+.tableShell :global(tbody td:nth-child(3)) {
+  max-width: 6.5rem;
+  min-width: 6.5rem;
+  width: 6.5rem;
+}
+
+.tableShell :global(thead th:nth-child(4)),
+.tableShell :global(tbody td:nth-child(4)) {
+  max-width: 10rem;
+  min-width: 10rem;
+  width: 10rem;
+}
+
+.tableShell :global(thead th:nth-child(6)),
+.tableShell :global(tbody td:nth-child(6)) {
+  max-width: 9.5rem;
+  min-width: 9.5rem;
+  width: 9.5rem;
+}
+
+.tableShell :global(thead th:nth-child(7)),
+.tableShell :global(tbody td:nth-child(7)) {
+  max-width: 6.25rem;
+  min-width: 6.25rem;
+  width: 6.25rem;
+}
+
+.tableShell :global(thead th:first-child),
+.tableShell :global(tbody td:first-child) {
+  max-width: 2.5rem;
+  min-width: 2.5rem;
+  padding-inline: 0.35rem;
+  width: 2.5rem;
+}
+
 .rowCheck {
   height: 0.85rem;
   width: 0.85rem;

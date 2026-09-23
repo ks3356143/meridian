@@ -28,6 +28,7 @@ import {
   useRef,
   useState,
   type RefObject,
+  type ReactNode,
 } from "react";
 import { Tree, type NodeRendererProps, type RowRendererProps, type TreeApi } from "react-arborist";
 import { gsap, useGSAP } from "@/lib/gsap";
@@ -43,7 +44,6 @@ import {
   ContextMenuLabel,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -111,6 +111,7 @@ export function RequirementsTree({
   onClearSelection,
   onRegisterExitAnimation,
   naturalHeight,
+  toolbarTabs,
 }: {
   sources: RequirementSource[];
   requirements: RequirementRecord[];
@@ -130,6 +131,7 @@ export function RequirementsTree({
   onClearSelection: () => void;
   onRegisterExitAnimation: (requestExit: (id: string) => Promise<void>) => void;
   naturalHeight: boolean;
+  toolbarTabs: ReactNode;
 }) {
   const treeRef = useRef<TreeApi<ConfirmedRequirementNode>>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -396,13 +398,9 @@ export function RequirementsTree({
       data-batch={batchMode ? "true" : undefined}
       aria-label="需求目录容器"
     >
-      <Tabs defaultValue="confirmed" className={styles.tabs}>
+      <div className={styles.tabs}>
         <div className={styles.toolbar}>
-          <TabsList variant="line" className={styles.tabsList}>
-            <TabsTrigger value="confirmed" className={styles.tab}>
-              已确认需求
-            </TabsTrigger>
-          </TabsList>
+          {toolbarTabs}
           <div className={styles.actions}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -438,9 +436,15 @@ export function RequirementsTree({
                 快捷键与功能说明
               </TooltipContent>
             </Tooltip>
-            <Button type="button" size="sm" onClick={onCreate}>
+            <Button
+              type="button"
+              size="sm"
+              aria-label="新增确认需求"
+              className={styles.addButton}
+              onClick={onCreate}
+            >
               <Plus data-icon="inline-start" aria-hidden />
-              新增确认需求
+              <span className={styles.addLabel}>新增确认需求</span>
             </Button>
           </div>
         </div>
@@ -677,7 +681,7 @@ export function RequirementsTree({
             </Popover>
           </div>
         </div>
-        <TabsContent value="confirmed" className={styles.content}>
+        <div className={styles.content}>
           <ConfirmedTree
             nodes={nodes}
             selectedId={selectedId}
@@ -697,8 +701,8 @@ export function RequirementsTree({
             activeSearchId={activeSearchId}
             searchActive={Boolean(searchState.query.trim())}
           />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
       {batchMode ? (
         <div className={styles.batchBar} role="status" aria-live="polite">
           <span className={styles.batchCount} aria-atomic="true">
@@ -790,6 +794,7 @@ function ConfirmedTree({
     shellRef,
     structureSignature,
     treeRef,
+    selectedTreeId,
   });
 
   useEffect(() => {
@@ -1079,7 +1084,7 @@ function ConfirmedTreeRow({
           }}
         />
       ) : null}
-      {data.children.length === 0 ? null : (
+      {data.children.length > 0 ? (
         <span
           className={styles.chevron}
           aria-hidden
@@ -1090,6 +1095,8 @@ function ConfirmedTreeRow({
         >
           <ChevronRight />
         </span>
+      ) : (
+        <span className={styles.chevronSpacer} aria-hidden />
       )}
       <span className={styles.icon} aria-hidden>
         <Icon />

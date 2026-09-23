@@ -1,9 +1,10 @@
 import { FileSearch } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import styles from "./requirements-layout.module.css";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { RequirementRecord, SaveRequirementPayload } from "@/features/requirements/types";
 import type { Project } from "../../../types";
 import { DeletedRequirementsDialog } from "./deleted-requirements-dialog";
@@ -78,6 +79,13 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const workbench = workbenchQuery.data;
   const requirements = useMemo(() => workbench?.requirements ?? [], [workbench]);
   const sources = useMemo(() => workbench?.sources ?? [], [workbench]);
+  const candidateCount = useMemo(
+    () =>
+      requirements.filter(
+        (requirement) => requirement.origin === "parsed" && requirement.status === "candidate",
+      ).length,
+    [requirements],
+  );
   const officialRequirements = useMemo(
     () => requirements.filter((requirement) => requirement.status === "official"),
     [requirements],
@@ -333,10 +341,40 @@ export function RequirementsLayout({ project }: { project: Project }) {
     return <QueryError title="确认需求加载失败" onRetry={() => workbenchQuery.refetch()} />;
   }
 
+  const workspaceTabs: ReactNode = (
+    <TabsList variant="default" className={styles.workspaceTabsList} aria-label="需求工作台视图">
+      <TabsTrigger value="confirmed" className={styles.workspaceTab}>
+        已确认需求
+      </TabsTrigger>
+      <TabsTrigger
+        value="candidate"
+        className={styles.workspaceTab}
+        aria-label={`待确认需求，自动解析有 ${candidateCount} 个需求未确认`}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className={styles.workspaceTabLabel}>
+              待确认需求
+              <span className={styles.candidateOrb} aria-hidden>
+                {candidateCount}
+              </span>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {candidateCount > 0
+              ? `自动解析有 ${candidateCount} 个需求未确认`
+              : "自动解析暂无待确认需求"}
+          </TooltipContent>
+        </Tooltip>
+      </TabsTrigger>
+    </TabsList>
+  );
+
   const tree = (
     <RequirementsTree
       sources={sources}
       requirements={workbench?.requirements ?? []}
+      toolbarTabs={workspaceTabs}
       selectedId={selectedRequirement?.id ?? ""}
       createdSignal={createdSignal}
       batchMode={batchMode}
@@ -576,7 +614,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
           id="requirements-tree-panel"
           className={styles.panelFrame}
           defaultSize={380}
-          minSize="22%"
+          minSize="411px"
           maxSize="680px"
         >
           {tree}
@@ -612,13 +650,14 @@ export function RequirementsLayout({ project }: { project: Project }) {
           id="requirements-candidate-tree-panel"
           className={styles.panelFrame}
           defaultSize={380}
-          minSize="22%"
+          minSize="411px"
           maxSize="680px"
         >
           <RequirementsCandidateTree
             sources={sources}
             sections={workbench?.sections ?? []}
             requirements={workbench?.requirements ?? []}
+            toolbarTabs={workspaceTabs}
             selectedId={candidateSelectedId}
             onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
             naturalHeight={false}
@@ -651,6 +690,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
         sources={sources}
         sections={workbench?.sections ?? []}
         requirements={workbench?.requirements ?? []}
+        toolbarTabs={workspaceTabs}
         selectedId={candidateSelectedId}
         onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
         naturalHeight
@@ -678,10 +718,6 @@ export function RequirementsLayout({ project }: { project: Project }) {
         value={workbenchTab}
         onValueChange={(value) => setWorkbenchTab(value as WorkbenchTab)}
       >
-        <TabsList className={styles.tabsList} aria-label="需求工作台视图">
-          <TabsTrigger value="confirmed">已确认需求</TabsTrigger>
-          <TabsTrigger value="candidate">待确认需求</TabsTrigger>
-        </TabsList>
         <TabsContent value="confirmed" className={styles.tabContent}>
           {surface}
         </TabsContent>

@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
   RequirementParseResult,
   RequirementRecord,
@@ -202,48 +203,63 @@ export function RequirementsCandidateWorkbench({
             const requirement = info.row.original;
             return (
               <div className={styles.actionGroup}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  aria-label={`编辑 ${requirement.name}`}
-                  disabled={statusPending || updatePending}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setEditingRequirement(requirement);
-                  }}
-                >
-                  <PencilLine aria-hidden />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  className={styles.confirmAction}
-                  aria-label={`确认 ${requirement.name}`}
-                  disabled={statusPending}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void onConfirm([requirement.id]);
-                  }}
-                >
-                  <CheckCircle2 aria-hidden />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  className={styles.excludeAction}
-                  aria-label={`排除 ${requirement.name}`}
-                  disabled={statusPending}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setExcludeReason("");
-                    setExcludeTarget({ ids: [requirement.id], title: requirement.name });
-                  }}
-                >
-                  <Ban aria-hidden />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-xs"
+                      aria-label={`编辑 ${requirement.name}`}
+                      disabled={statusPending || updatePending}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setEditingRequirement(requirement);
+                      }}
+                    >
+                      <PencilLine aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">编辑</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-xs"
+                      className={styles.confirmAction}
+                      aria-label={`确认 ${requirement.name}`}
+                      disabled={statusPending}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void onConfirm([requirement.id]);
+                      }}
+                    >
+                      <CheckCircle2 aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">确认</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-xs"
+                      className={styles.excludeAction}
+                      aria-label={`排除 ${requirement.name}`}
+                      disabled={statusPending}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setExcludeReason("");
+                        setExcludeTarget({ ids: [requirement.id], title: requirement.name });
+                      }}
+                    >
+                      <Ban aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">排除</TooltipContent>
+                </Tooltip>
               </div>
             );
           },

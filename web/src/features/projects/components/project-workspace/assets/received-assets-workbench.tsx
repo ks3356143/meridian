@@ -58,7 +58,7 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
   return (
     <section
       ref={containerRef}
-      className="workspace-route received-assets-workbench"
+      className="received-assets-workbench"
       aria-labelledby="received-assets-title"
     >
       <header className="received-header" data-assets-panel>

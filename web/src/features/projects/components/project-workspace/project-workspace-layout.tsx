@@ -9,6 +9,7 @@ import { gsap, useGSAP } from "@/lib/gsap";
 import { useAuthStore } from "@/stores/auth-store";
 import type { Project } from "@/features/projects/types";
 import { WorkspaceTopbar } from "./workspace-topbar";
+import styles from "./project-workspace-layout.module.css";
 
 export interface ProjectWorkspaceOutletContext {
   project: Project;
@@ -95,17 +96,20 @@ export function ProjectWorkspaceLayout({
       <WorkspaceTopbar project={project} executionRate={executionRate} openIssues={openIssues} />
 
       <div className="workspace-body flex min-h-0 flex-1 flex-col">
-        <nav aria-label="项目工作区一级导航" className="workspace-primary-nav">
+        <nav
+          aria-label="项目工作区一级导航"
+          className={`workspace-primary-nav ${styles.primaryNav}`}
+        >
           <Tabs value={activeSection} onValueChange={handleSectionChange}>
-            <TabsList variant="line" className="w-full overflow-x-auto">
+            <TabsList variant="default" className={`${styles.tabList} w-full overflow-x-auto`}>
               {NAV_SECTIONS.map((section) => (
                 <TabsTrigger
                   key={section.value}
                   value={section.value}
-                  className="min-w-28 px-3"
+                  className={styles.tabTrigger}
                   onMouseDown={() => prepareSection(section)}
                 >
-                  <section.icon aria-hidden />
+                  <section.icon className={styles.tabIcon} aria-hidden />
                   {section.label}
                 </TabsTrigger>
               ))}

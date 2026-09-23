@@ -15,6 +15,7 @@
   min-width: 0;
   overflow: hidden;
   position: relative;
+  container-type: inline-size;
 }
 
 .tabs {
@@ -36,8 +37,8 @@
   display: flex;
   gap: 0.4rem;
   justify-content: space-between;
-  flex-wrap: wrap;
-  padding: 0.32rem 0.48rem 0;
+  flex-wrap: nowrap;
+  padding: 0 0.48rem;
   row-gap: 0.22rem;
 }
 
@@ -53,9 +54,27 @@
   flex: 1 1 auto;
   gap: 0.35rem;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   min-width: 0;
   row-gap: 0.2rem;
+}
+
+.addButton {
+  flex: 0 0 auto;
+}
+
+.addLabel {
+  white-space: nowrap;
+}
+
+@container (max-width: 300px) {
+  .addLabel {
+    display: none;
+  }
+
+  .addButton {
+    padding-inline: 0.42rem;
+  }
 }
 
 .tab {
@@ -330,16 +349,21 @@
   }
 }
 .content {
+  flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
 }
 
 .treeShell {
+  flex: 1 1 auto;
   height: 100%;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
   overflow: hidden;
   position: relative;
+  contain: layout paint;
 }
 
 .tree {
@@ -347,6 +371,11 @@
   padding: 0.15rem;
   scrollbar-color: color-mix(in srgb, var(--primary) 42%, var(--muted)) transparent;
   scrollbar-width: thin;
+}
+
+.treeShell[data-motion="true"] .tree {
+  overflow: clip !important;
+  scrollbar-gutter: auto;
 }
 
 .tree::-webkit-scrollbar {
@@ -496,6 +525,18 @@
   opacity: 1;
 }
 
+.row[data-selection-motion="true"] {
+  animation: treeSelectionGlow 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.row[data-selection-motion="true"]::before {
+  animation: treeSelectionRailIn 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.row[data-selection-motion="true"] .title {
+  animation: treeSelectionTextIn 200ms ease-out;
+}
+
 .row[data-node-type="source"] {
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--info) 7%, transparent), transparent 78%),
@@ -522,6 +563,12 @@
   width: 0.7rem;
 }
 
+.chevronSpacer {
+  flex: 0 0 auto;
+  height: 1rem;
+  width: 0.85rem;
+}
+
 .row[data-open="true"] .chevron svg {
   transform: rotate(90deg);
 }
@@ -545,12 +592,30 @@
   color: var(--info);
 }
 
+:where(.treeShell[data-candidate="true"]) .row[data-node-type="source"],
+:where(.treeShell[data-candidate="true"]) .row[data-node-type="section"],
+:where(.treeShell[data-candidate="true"]) .row[data-node-type="requirement"] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--foreground);
+  font-weight: 400;
+}
+
+:where(.treeShell[data-candidate="true"]) .row[data-node-type="source"] .icon,
+:where(.treeShell[data-candidate="true"]) .row[data-node-type="section"] .icon,
+:where(.treeShell[data-candidate="true"]) .row[data-node-type="requirement"] .icon {
+  color: var(--muted-foreground);
+}
+
 .title {
   flex: 1 1 0;
   min-width: 0;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
+  transition:
+    color 0.18s ease,
+    font-weight 0.18s ease;
 }
 
 .row :global([data-slot="badge"]) {
@@ -753,10 +818,18 @@
   max-width: 18rem;
 }
 
-.row[data-node-type="source"] :global([data-slot="badge"]) {
-  background: color-mix(in srgb, var(--info) 12%, var(--card));
-  border-color: color-mix(in srgb, var(--info) 30%, var(--border));
-  color: var(--info);
+:where(.treeShell[data-candidate="true"])
+  .row[data-node-type="source"]
+  :global([data-slot="badge"]),
+:where(.treeShell[data-candidate="true"])
+  .row[data-node-type="section"]
+  :global([data-slot="badge"]),
+:where(.treeShell[data-candidate="true"])
+  .row[data-node-type="requirement"]
+  :global([data-slot="badge"]) {
+  background: color-mix(in srgb, var(--muted) 68%, var(--card));
+  border-color: var(--border);
+  color: var(--muted-foreground);
 }
 
 .empty {
@@ -833,6 +906,12 @@
     transition: none;
   }
 
+  .row[data-selection-motion="true"],
+  .row[data-selection-motion="true"]::before,
+  .row[data-selection-motion="true"] .title {
+    animation: none;
+  }
+
   .row[data-created="true"] {
     animation: none;
   }
@@ -860,6 +939,58 @@
     box-shadow:
       inset 3px 0 0 var(--primary),
       0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+}
+
+@keyframes treeSelectionGlow {
+  0% {
+    background: linear-gradient(90deg, transparent, transparent), transparent;
+    border-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+  55% {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--primary) 22%, transparent), transparent 72%),
+      color-mix(in srgb, var(--primary) 8%, var(--card));
+    border-color: color-mix(in srgb, var(--primary) 66%, var(--border));
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent),
+      0 5px 14px -12px color-mix(in srgb, var(--primary) 72%, transparent);
+  }
+  100% {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--primary) 18%, transparent), transparent 72%),
+      color-mix(in srgb, var(--primary) 7%, var(--card));
+    border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
+    box-shadow:
+      inset 4px 0 0 var(--primary),
+      0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+}
+
+@keyframes treeSelectionRailIn {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.2);
+  }
+  60% {
+    opacity: 1;
+    transform: scaleY(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes treeSelectionTextIn {
+  0% {
+    filter: brightness(1.12);
+    opacity: 0.68;
+  }
+  100% {
+    filter: brightness(1);
+    opacity: 1;
   }
 }
 

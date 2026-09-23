@@ -5,6 +5,7 @@ import type { RowData } from "@tanstack/table-core";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { TruncatedText } from "@/components/shared/truncated-text";
+import styles from "./data-table.module.css";
 import {
   Table,
   TableBody,
@@ -104,9 +105,11 @@ export function DataTable<TData extends RowData & { id: string }>({
             <TableRow
               key={row.id}
               {...rowProps}
+              data-selected={selectedId === row.original.id ? "true" : undefined}
               className={cn(
                 "group/row border-border transition-[background-color,box-shadow] hover:bg-primary/5",
                 selectedId === row.original.id && "bg-primary/8",
+                selectedId === row.original.id && styles.selectedRow,
                 onRowActivate &&
                   "relative cursor-pointer focus-visible:bg-primary/8 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
                 rowClassName,
@@ -125,7 +128,10 @@ export function DataTable<TData extends RowData & { id: string }>({
                   >
                     {onRowActivate && index === 0 ? (
                       <span
-                        className="bg-primary absolute top-2 bottom-2 left-0 w-[3px] origin-center scale-y-0 transition-transform duration-200 group-hover/row:scale-y-100 group-focus-visible/row:scale-y-100"
+                        className={cn(
+                          "bg-primary absolute top-2 bottom-2 left-0 w-[3px] origin-center scale-y-0 transition-transform duration-200 group-hover/row:scale-y-100 group-focus-visible/row:scale-y-100",
+                          selectedId === row.original.id && "scale-y-100",
+                        )}
                         aria-hidden
                       />
                     ) : null}
