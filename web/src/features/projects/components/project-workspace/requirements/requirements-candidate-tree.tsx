@@ -1,5 +1,14 @@
 import { BookOpen, ChevronRight, FileText, Folder } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Tree, type NodeRendererProps, type RowRendererProps, type TreeApi } from "react-arborist";
 import styles from "./requirements-tree.module.css";
 import { useRequirementTreeMotion } from "./use-requirement-tree-motion";
@@ -10,6 +19,8 @@ import type {
   RequirementSource,
 } from "@/features/requirements/types";
 import { requirementSourceLabel } from "./requirement-form";
+
+const candidateSelectedIdContext = createContext("");
 
 type CandidateTreeNode = {
   key: string;
@@ -73,10 +84,8 @@ export function RequirementsCandidateTree({
   }, [naturalHeight]);
 
   const renderNode = useCallback(
-    (props: NodeRendererProps<CandidateTreeNode>) => (
-      <CandidateTreeRow {...props} selectedId={selectedId} />
-    ),
-    [selectedId],
+    (props: NodeRendererProps<CandidateTreeNode>) => <CandidateTreeRow {...props} />,
+    [],
   );
 
   if (!nodes.length) {
@@ -130,35 +139,37 @@ export function RequirementsCandidateTree({
               requestTreeToggle(node.id);
             }}
           >
-            <Tree<CandidateTreeNode>
-              key={nodes[0]?.key ?? "candidate"}
-              ref={treeRef}
-              data={nodes}
-              className={styles.tree}
-              aria-label="待确认需求章节树"
-              height={naturalHeight ? getNaturalCandidateTreeHeight(nodes) : height}
-              width="100%"
-              rowHeight={30}
-              indent={14}
-              overscanCount={12}
-              openByDefault
-              initialOpenState={{ [nodes[0].key]: true }}
-              idAccessor={(node) => node.key}
-              renderRow={CandidateTreeRowRenderer}
-              selectionFollowsFocus={false}
-              disableMultiSelection
-              disableDrag
-              disableDrop
-              disableEdit
-              onActivate={(node) => {
-                if (node.data.requirement) onSelect(node.data.requirement);
-              }}
-              onFocus={(node) => {
-                if (node.data.requirement) onSelect(node.data.requirement);
-              }}
-            >
-              {renderNode}
-            </Tree>
+            <candidateSelectedIdContext.Provider value={selectedId}>
+              <Tree<CandidateTreeNode>
+                key={nodes[0]?.key ?? "candidate"}
+                ref={treeRef}
+                data={nodes}
+                className={styles.tree}
+                aria-label="待确认需求章节树"
+                height={naturalHeight ? getNaturalCandidateTreeHeight(nodes) : height}
+                width="100%"
+                rowHeight={30}
+                indent={14}
+                overscanCount={12}
+                openByDefault
+                initialOpenState={{ [nodes[0].key]: true }}
+                idAccessor={(node) => node.key}
+                renderRow={CandidateTreeRowRenderer}
+                selectionFollowsFocus={false}
+                disableMultiSelection
+                disableDrag
+                disableDrop
+                disableEdit
+                onActivate={(node) => {
+                  if (node.data.requirement) onSelect(node.data.requirement);
+                }}
+                onFocus={(node) => {
+                  if (node.data.requirement) onSelect(node.data.requirement);
+                }}
+              >
+                {renderNode}
+              </Tree>
+            </candidateSelectedIdContext.Provider>
           </div>
         </div>
       </div>
@@ -166,9 +177,7 @@ export function RequirementsCandidateTree({
   );
 }
 
-type CandidateTreeRowProps = NodeRendererProps<CandidateTreeNode> & {
-  selectedId: string;
-};
+type CandidateTreeRowProps = NodeRendererProps<CandidateTreeNode>;
 
 function CandidateTreeRowRenderer({
   attrs,
@@ -188,7 +197,8 @@ function CandidateTreeRowRenderer({
   );
 }
 
-function CandidateTreeRow({ node, style, dragHandle, selectedId }: CandidateTreeRowProps) {
+function CandidateTreeRow({ node, style, dragHandle }: CandidateTreeRowProps) {
+  const selectedId = useContext(candidateSelectedIdContext);
   const data = node.data;
   const Icon = data.type === "source" ? BookOpen : data.type === "section" ? Folder : FileText;
   const requirementId = data.requirement?.id ?? "";

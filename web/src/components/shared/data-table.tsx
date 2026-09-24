@@ -129,8 +129,10 @@ export function DataTable<TData extends RowData & { id: string }>({
                     {onRowActivate && index === 0 ? (
                       <span
                         className={cn(
-                          "bg-primary absolute top-2 bottom-2 left-0 w-[3px] origin-center scale-y-0 transition-transform duration-200 group-hover/row:scale-y-100 group-focus-visible/row:scale-y-100",
-                          selectedId === row.original.id && "scale-y-100",
+                          "bg-primary absolute top-2 bottom-2 left-0 w-[3px] origin-center",
+                          selectedId === row.original.id
+                            ? "scale-y-100"
+                            : "scale-y-0 transition-transform duration-200 group-hover/row:scale-y-100 group-focus-visible/row:scale-y-100",
                         )}
                         aria-hidden
                       />

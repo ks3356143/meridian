@@ -5,21 +5,15 @@
 @keyframes selectedRowIn {
   0% {
     background-color: transparent;
-    box-shadow:
-      inset 3px 0 0 transparent,
-      0 0 0 0 color-mix(in srgb, var(--primary) 0%, transparent);
+    box-shadow: 0 0 0 0 transparent;
   }
   55% {
     background-color: color-mix(in srgb, var(--primary) 11%, transparent);
-    box-shadow:
-      inset 3px 0 0 var(--primary),
-      0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
   }
   100% {
     background-color: color-mix(in srgb, var(--primary) 8%, transparent);
-    box-shadow:
-      inset 3px 0 0 transparent,
-      0 0 0 0 transparent;
+    box-shadow: 0 0 0 0 transparent;
   }
 }
 

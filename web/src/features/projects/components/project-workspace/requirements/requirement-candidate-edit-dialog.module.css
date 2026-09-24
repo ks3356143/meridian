@@ -19,6 +19,16 @@
   color: var(--muted-foreground);
 }
 
+.dialog :global([data-slot="select-trigger"]) {
+  height: 2.25rem;
+}
+
+.dialog :global([data-slot="multi-select-trigger"]) {
+  height: auto;
+  min-height: 2.25rem;
+  padding-block: 0.1875rem;
+}
+
 .requiredMark {
   color: var(--destructive);
   margin-left: 0.18rem;

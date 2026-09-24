@@ -143,7 +143,8 @@ export function RequirementsTree({
     query: "",
   });
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [highlightedCreatedId, setHighlightedCreatedId] = useState("");
+  const [expiredHighlightSignalKey, setExpiredHighlightSignalKey] = useState("");
+  const [revealedCreatedSignalKey, setRevealedCreatedSignalKey] = useState("");
   const processedCreatedSignalRef = useRef("");
   const shellRef = useRef<HTMLElement>(null);
   const selectedCount = selectedIds.length;
@@ -208,6 +209,21 @@ export function RequirementsTree({
   const activeSearchHit = search.hits[boundedSearchIndex];
   const activeSearchId = activeSearchHit?.requirement.id ?? "";
   const history = useRequirementHistory(selectedId, visibleRequirementsById);
+  // 新建需求不在当前完整度筛选内时，回到“全部”口径（渲染期调整状态，避免在 effect 里同步 setState）。
+  const createdSignalKey = createdSignal ? `${createdSignal.nonce}:${createdSignal.id}` : "";
+  if (createdSignal && createdSignalKey !== revealedCreatedSignalKey) {
+    const createdRequirement = officialRequirementsById.get(createdSignal.id);
+    if (createdRequirement && !visibleRequirementsById.has(createdRequirement.id)) {
+      setRevealedCreatedSignalKey(createdSignalKey);
+      setCompletenessFilter("all");
+    }
+  }
+  const highlightedCreatedId =
+    createdSignal &&
+    createdSignalKey !== expiredHighlightSignalKey &&
+    visibleRequirementsById.has(createdSignal.id)
+      ? createdSignal.id
+      : "";
   const updateSearchQuery = (query: string) => {
     setSearchState({ committed: false, index: 0, query });
   };
@@ -225,15 +241,12 @@ export function RequirementsTree({
 
     const requirement = officialRequirementsById.get(createdSignal.id);
     if (!requirement) return;
-    if (!visibleRequirementsById.has(requirement.id)) {
-      setCompletenessFilter("all");
-      return;
-    }
+    // 不在当前筛选内时上面已把筛选切回“全部”，本轮先不高亮，等需求可见后再定位。
+    if (!visibleRequirementsById.has(requirement.id)) return;
 
     processedCreatedSignalRef.current = signalKey;
-    setHighlightedCreatedId(requirement.id);
     const highlightTimer = window.setTimeout(() => {
-      setHighlightedCreatedId("");
+      setExpiredHighlightSignalKey(signalKey);
     }, 1800);
 
     if (!createdSignal.focusTree) return () => window.clearTimeout(highlightTimer);
@@ -969,19 +982,26 @@ function ConfirmedTreeRowRenderer({
   innerRef,
   children,
 }: RowRendererProps<ConfirmedRequirementNode>) {
+  const selectNode = () => {
+    node.tree.setSelection({
+      ids: [node.id],
+      anchor: node.id,
+      mostRecent: node.id,
+    });
+    node.tree.focus(node, { scroll: false });
+  };
+
   return (
     <div
       {...attrs}
       role="treeitem"
+      tabIndex={-1}
       ref={innerRef}
       onFocus={(event) => event.stopPropagation()}
-      onClick={() => {
-        node.tree.setSelection({
-          ids: [node.id],
-          anchor: node.id,
-          mostRecent: node.id,
-        });
-        node.tree.focus(node, { scroll: false });
+      onClick={selectNode}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        selectNode();
       }}
     >
       {children}

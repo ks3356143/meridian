@@ -472,6 +472,10 @@
   width: 5px;
 }
 
+.row[data-node-type="requirement"] .guide[data-guide-current="true"]::after {
+  width: 24px;
+}
+
 .row {
   align-items: center;
   border: 1px solid transparent;
@@ -500,12 +504,12 @@
 .row::before {
   background: color-mix(in srgb, var(--primary) 20%, transparent);
   content: "";
-  inset-block: 0.25rem;
+  inset-block: 0;
   left: 0;
-  width: 2px;
+  width: 4px;
   position: absolute;
   opacity: 0;
-  transition: opacity 0.18s;
+  transition: opacity 0.18s ease;
 }
 
 .row:hover {
@@ -527,10 +531,6 @@
 
 .row[data-selection-motion="true"] {
   animation: treeSelectionGlow 280ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.row[data-selection-motion="true"]::before {
-  animation: treeSelectionRailIn 220ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .row[data-selection-motion="true"] .title {
@@ -706,8 +706,8 @@
     color-mix(in srgb, var(--primary) 7%, var(--card));
   border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
   box-shadow:
-    inset 4px 0 0 var(--primary),
-    0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
+    0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent),
+    0 5px 14px -12px color-mix(in srgb, var(--primary) 62%, transparent);
 }
 
 .row[data-node-type="requirement"][data-selected="true"]::before {
@@ -729,6 +729,10 @@
   box-shadow:
     inset 4px 0 0 var(--warning),
     0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.row[data-node-type="requirement"][data-selected="true"][data-incomplete="true"]::before {
+  opacity: 0;
 }
 
 .searchMarker {
@@ -902,12 +906,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .guide,
-  .chevron svg {
+  .chevron svg,
+  .row::before {
     transition: none;
   }
 
   .row[data-selection-motion="true"],
-  .row[data-selection-motion="true"]::before,
   .row[data-selection-motion="true"] .title {
     animation: none;
   }
@@ -946,40 +950,18 @@
   0% {
     background: linear-gradient(90deg, transparent, transparent), transparent;
     border-color: transparent;
-    box-shadow: 0 0 0 0 transparent;
   }
   55% {
     background:
       linear-gradient(90deg, color-mix(in srgb, var(--primary) 22%, transparent), transparent 72%),
       color-mix(in srgb, var(--primary) 8%, var(--card));
     border-color: color-mix(in srgb, var(--primary) 66%, var(--border));
-    box-shadow:
-      0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent),
-      0 5px 14px -12px color-mix(in srgb, var(--primary) 72%, transparent);
   }
   100% {
     background:
       linear-gradient(90deg, color-mix(in srgb, var(--primary) 18%, transparent), transparent 72%),
       color-mix(in srgb, var(--primary) 7%, var(--card));
     border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
-    box-shadow:
-      inset 4px 0 0 var(--primary),
-      0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
-  }
-}
-
-@keyframes treeSelectionRailIn {
-  0% {
-    opacity: 0;
-    transform: scaleY(0.2);
-  }
-  60% {
-    opacity: 1;
-    transform: scaleY(1.05);
-  }
-  100% {
-    opacity: 1;
-    transform: scaleY(1);
   }
 }
 
