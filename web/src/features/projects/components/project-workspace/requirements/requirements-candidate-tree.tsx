@@ -180,10 +180,20 @@ export function RequirementsCandidateTree({
 type CandidateTreeRowProps = NodeRendererProps<CandidateTreeNode>;
 
 function CandidateTreeRowRenderer({
+  node,
   attrs,
   innerRef,
   children,
 }: RowRendererProps<CandidateTreeNode>) {
+  const selectNode = () => {
+    node.tree.setSelection({
+      ids: [node.id],
+      anchor: node.id,
+      mostRecent: node.id,
+    });
+    node.tree.focus(node, { scroll: false });
+  };
+
   return (
     <div
       {...attrs}
@@ -191,6 +201,11 @@ function CandidateTreeRowRenderer({
       tabIndex={-1}
       ref={innerRef}
       onFocus={(event) => event.stopPropagation()}
+      onClick={selectNode}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        selectNode();
+      }}
     >
       {children}
     </div>

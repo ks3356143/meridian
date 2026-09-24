@@ -431,15 +431,6 @@
     flex-direction: column;
   }
 
-  .headerAside {
-    align-items: flex-start;
-    justify-content: flex-start;
-  }
-
-  .headerMeta {
-    justify-content: flex-start;
-  }
-
   .actionGroup {
     justify-content: flex-start;
   }
