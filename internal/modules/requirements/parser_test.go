@@ -58,3 +58,40 @@ func TestParseDOCXHeadingsIgnoreTOCAndTables(t *testing.T) {
 		t.Fatalf("标题包含要求且描述包含应的章节应成为需求: %+v", nodes[5])
 	}
 }
+
+func TestParseDOCXOnlyExternalInterfaceIsRequirement(t *testing.T) {
+	paragraphs := []docxParagraph{
+		{style: "1", text: "4 接口", position: 1},
+		{style: "2", text: "内部接口", position: 2},
+		{text: "系统应在模块间转发数据。", position: 3},
+		{style: "2", text: "外部接口", position: 4},
+		{text: "系统应提供对外数据交换能力。", position: 5},
+		{style: "3", text: "与测控系统接口", position: 6},
+		{text: "系统应接收测控系统指令。", position: 7},
+		{text: "[表格]", inTable: true, position: 8},
+		{style: "2", text: "接口说明", position: 9},
+		{text: "系统应按照接口文件执行。", position: 10},
+	}
+
+	nodes := buildParsedNodes(paragraphs)
+	byChapter := make(map[string]ParsedNode, len(nodes))
+	for _, node := range nodes {
+		byChapter[node.ChapterNumber] = node
+	}
+
+	if byChapter["1"].IsRequirement || byChapter["1.1"].IsRequirement ||
+		byChapter["1.2.1"].IsRequirement || byChapter["1.3"].IsRequirement {
+		t.Fatalf("泛化接口、内部接口和外部接口子章节不应成为需求: %+v", nodes)
+	}
+	external := byChapter["1.2"]
+	if !external.IsRequirement || external.PrimaryKind != KindInterface {
+		t.Fatalf("外部接口应成为接口需求: %+v", external)
+	}
+	if len(external.Tags) != 1 || external.Tags[0] != "外部接口" {
+		t.Fatalf("外部接口应携带标识: %+v", external.Tags)
+	}
+	if !strings.Contains(external.Description, "与测控系统接口：系统应接收测控系统指令。") ||
+		!strings.Contains(external.Description, "[表格]") {
+		t.Fatalf("外部接口应合并子章节和表格上下文: %+v", external.Description)
+	}
+}

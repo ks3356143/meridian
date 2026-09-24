@@ -45,22 +45,22 @@
 
 .candidateOrb {
   align-items: center;
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
   background:
-    radial-gradient(circle at 28% 26%, #ffffff70, transparent 46%),
-    linear-gradient(
-      135deg,
-      var(--warning),
-      color-mix(in srgb, var(--destructive) 56%, var(--info)) 42%,
-      var(--info) 72%,
-      var(--primary)
-    );
-  border: 1px solid color-mix(in srgb, var(--card) 52%, transparent);
+    radial-gradient(circle at 30% 24%, #ffffffd9, transparent 42%),
+    linear-gradient(135deg, #22d3ee, #a3e635 26%, #fde047 46%, #fb7185 68%, #a78bfa 86%, #22d3ee);
+  border: 1px solid #ffffff8f;
   border-radius: 999px;
   box-shadow:
-    inset 0 1px 0 #ffffff48,
-    0 0 9px color-mix(in srgb, var(--warning) 36%, transparent),
-    0 0 14px color-mix(in srgb, var(--info) 24%, transparent);
-  color: #fff;
+    inset 0 0 0 1px #ffffff59,
+    inset 0 1px 2px #ffffffc4,
+    0 0 8px #22d3ee73,
+    0 0 14px #fde04752,
+    0 0 20px #fb718542;
+  color: #07140f;
+  text-shadow: 0 1px 0 #ffffff59;
   display: inline-flex;
   flex: 0 0 auto;
   font-size: 0.58rem;
@@ -71,6 +71,36 @@
   margin-left: 0.16rem;
   min-width: 1.05rem;
   padding-inline: 0.14rem;
+}
+
+.candidateOrb::before {
+  content: "";
+  inset: -42%;
+  position: absolute;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 154deg,
+    #ffffffd0 184deg,
+    transparent 214deg 360deg
+  );
+  mix-blend-mode: screen;
+  opacity: 0.56;
+  pointer-events: none;
+  animation: candidateOrbSweep 2.8s linear infinite;
+}
+
+@keyframes candidateOrbSweep {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candidateOrb::before {
+    animation: none;
+    opacity: 0.34;
+  }
 }
 
 @container (max-width: 362px) {

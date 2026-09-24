@@ -19,6 +19,7 @@ type ParsedNode struct {
 	SourceAnchor       string
 	PrimaryKind        string
 	ExternalIdentifier string
+	Tags               []string
 	IsRequirement      bool
 }
 
@@ -35,6 +36,8 @@ type docxParagraph struct {
 var chapterPattern = regexp.MustCompile(`^(\d+(?:\.\d+)*)(?:[、.．:：\s]\s*(.+))?$`)
 var leafRequirementPattern = regexp.MustCompile(`^\[(RQGN[^-\]]+-[^-\]]+-\d+)\]`)
 var requirementGroupPattern = regexp.MustCompile(`^\[RQGN[^-\]]+(?:-[^-\]]+)+\]`)
+
+const externalInterfaceTag = "外部接口"
 
 func ParseDOCX(path string) ([]ParsedNode, error) {
 	reader, err := zip.OpenReader(path)
@@ -215,6 +218,30 @@ func buildParsedNodes(paragraphs []docxParagraph) []ParsedNode {
 	for _, chapter := range orderedChapters {
 		node := chapters[chapter]
 		node.IsRequirement = false
+		externalInterfaceChapter, insideExternalInterface := externalInterfaceChapter(orderedChapters, chapters, chapter)
+		if insideExternalInterface {
+			if chapter == externalInterfaceChapter && !hasExplicitLeafDescendant(orderedChapters, chapters, chapter) {
+				node.ExternalIdentifier = externalRequirementIdentifier(node.Title)
+				node.IsRequirement = true
+				node.Description = mergeChapterDescription(chapter, orderedChapters, chapters)
+				node.Tags = []string{externalInterfaceTag}
+			} else if chapter != externalInterfaceChapter && leafRequirementPattern.MatchString(node.Title) {
+				if matches := leafRequirementPattern.FindStringSubmatch(node.Title); matches != nil {
+					node.ExternalIdentifier = matches[1]
+					node.IsRequirement = true
+					node.Description = mergeChapterDescription(chapter, orderedChapters, chapters)
+					node.Tags = []string{externalInterfaceTag}
+				}
+			}
+			node.PrimaryKind = inferPrimaryKind(node.Title + " " + node.Description)
+			nodes = append(nodes, node)
+			continue
+		}
+		if insideInterfaceChapter(orderedChapters, chapters, chapter) {
+			node.PrimaryKind = inferPrimaryKind(node.Title + " " + node.Description)
+			nodes = append(nodes, node)
+			continue
+		}
 		if matches := leafRequirementPattern.FindStringSubmatch(node.Title); matches != nil {
 			node.ExternalIdentifier = matches[1]
 			node.IsRequirement = true
@@ -240,6 +267,89 @@ func buildParsedNodes(paragraphs []docxParagraph) []ParsedNode {
 		nodes = append(nodes, node)
 	}
 	return nodes
+}
+
+func externalInterfaceChapter(orderedChapters []string, chapters map[string]ParsedNode, chapter string) (string, bool) {
+	found := ""
+	for _, candidate := range orderedChapters {
+		if candidate != chapter && !strings.HasPrefix(chapter, candidate+".") {
+			continue
+		}
+		if !isExternalInterfaceTitle(chapters[candidate].Title) {
+			continue
+		}
+		if found == "" || compareChapter(candidate, found) < 0 {
+			found = candidate
+		}
+	}
+	return found, found != ""
+}
+
+func interfaceChapter(orderedChapters []string, chapters map[string]ParsedNode, chapter string) (string, bool) {
+	found := ""
+	for _, candidate := range orderedChapters {
+		if candidate != chapter && !strings.HasPrefix(chapter, candidate+".") {
+			continue
+		}
+		if !isInterfaceTitle(chapters[candidate].Title) {
+			continue
+		}
+		if found == "" || compareChapter(candidate, found) > 0 {
+			found = candidate
+		}
+	}
+	return found, found != ""
+}
+
+func insideInterfaceChapter(orderedChapters []string, chapters map[string]ParsedNode, chapter string) bool {
+	_, ok := interfaceChapter(orderedChapters, chapters, chapter)
+	return ok
+}
+
+func isInterfaceTitle(title string) bool {
+	return strings.Contains(title, "接口")
+}
+
+func isExternalInterfaceTitle(title string) bool {
+	return strings.Contains(title, "外部接口") || strings.Contains(title, "对外接口")
+}
+
+func hasExplicitLeafDescendant(orderedChapters []string, chapters map[string]ParsedNode, chapter string) bool {
+	for _, candidate := range orderedChapters {
+		if !strings.HasPrefix(candidate, chapter+".") {
+			continue
+		}
+		if leafRequirementPattern.MatchString(chapters[candidate].Title) {
+			return true
+		}
+	}
+	return false
+}
+
+func externalRequirementIdentifier(title string) string {
+	if matches := leafRequirementPattern.FindStringSubmatch(title); matches != nil {
+		return matches[1]
+	}
+	return ""
+}
+
+func mergeChapterDescription(chapter string, orderedChapters []string, chapters map[string]ParsedNode) string {
+	node := chapters[chapter]
+	parts := make([]string, 0)
+	if node.Description != "" {
+		parts = append(parts, node.Description)
+	}
+	for _, childChapter := range orderedChapters {
+		if !strings.HasPrefix(childChapter, chapter+".") {
+			continue
+		}
+		child := chapters[childChapter]
+		if child.Description == "" {
+			continue
+		}
+		parts = append(parts, child.Title+"："+child.Description)
+	}
+	return strings.Join(parts, "\n")
 }
 
 func insideRequirementGroup(orderedChapters []string, chapters map[string]ParsedNode, chapter string) bool {

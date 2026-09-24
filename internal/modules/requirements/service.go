@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -1017,12 +1018,19 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 					result.ExcludedMatchCount++
 					continue
 				}
+				existingTags := parseTags(existing.Tags)
+				for _, tag := range node.Tags {
+					if !slices.Contains(existingTags, tag) {
+						existingTags = append(existingTags, tag)
+					}
+				}
 				if updateErr := tx.Model(&Requirement{}).Where("id = ?", existing.ID).Updates(map[string]any{
 					"section_id":          section.ID,
 					"external_identifier": node.ExternalIdentifier,
 					"name":                node.Title,
 					"description":         node.Description,
 					"primary_kind":        node.PrimaryKind,
+					"tags":                marshalTags(existingTags),
 					"source_anchor":       node.SourceAnchor,
 					"origin":              OriginParsed,
 					"updated_at":          now,
@@ -1037,7 +1045,7 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 			}
 
 			created, createErr := createRequirementInTx(tx, source, section.ID, node.ChapterNumber, node.ExternalIdentifier,
-				node.Title, node.Description, node.PrimaryKind, nil, []string{}, OriginParsed,
+				node.Title, node.Description, node.PrimaryKind, nil, node.Tags, OriginParsed,
 				node.SourceAnchor, StatusCandidate, operatedBy)
 			if createErr != nil {
 				return createErr

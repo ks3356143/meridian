@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -176,7 +177,16 @@ export function RequirementsCandidateWorkbench({
         }),
         columnHelper.accessor("name", {
           header: "名称",
-          cell: (info) => <TruncatedText value={info.getValue()} className="font-medium" />,
+          cell: (info) => (
+            <div className={styles.nameCell}>
+              <TruncatedText value={info.getValue()} className="font-medium" />
+              {info.row.original.tags.includes("外部接口") ? (
+                <Badge variant="info" className={styles.externalTag}>
+                  外部接口
+                </Badge>
+              ) : null}
+            </div>
+          ),
         }),
         columnHelper.accessor("description", {
           header: "原文描述",
@@ -326,6 +336,7 @@ export function RequirementsCandidateWorkbench({
               type="button"
               variant="outline"
               size="sm"
+              className={styles.parseButton}
               disabled={!parseSource || parsePending || statusPending}
               onClick={() => setParseOpen(true)}
             >
