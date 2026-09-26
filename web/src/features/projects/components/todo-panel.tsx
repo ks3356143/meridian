@@ -46,7 +46,7 @@ export function TodoPanel({ projects }: { projects: Project[] }) {
     .slice(0, 4);
 
   return (
-    <aside className="panel-surface border-border relative flex w-full shrink-0 flex-col overflow-hidden rounded-sm border min-[1760px]:w-80">
+    <aside className="panel-surface border-border relative grid w-full overflow-hidden rounded-sm border md:grid-cols-3">
       <TodoSection
         title="未闭环问题"
         icon={CircleAlert}
@@ -132,7 +132,7 @@ function TodoSection({
   const hasContent = Children.count(children) > 0;
 
   return (
-    <section className="border-border relative border-b p-4 pl-5 last:border-b-0">
+    <section className="border-border relative border-b p-4 pl-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
       <span className={cn("absolute inset-y-0 left-0 w-[3px]", style.bar)} aria-hidden />
       <div className="mb-3 flex items-center gap-2.5">
         <span

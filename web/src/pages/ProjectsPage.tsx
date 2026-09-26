@@ -152,16 +152,15 @@ export function Component() {
 
       <RiskActivityBar projects={filteredProjects} />
 
-      <div className="flex min-w-0 flex-col items-stretch gap-5 min-[1760px]:flex-row min-[1760px]:items-start">
-        <div className="dash-reveal min-w-0 flex-1">
-          <ProjectsTable
-            projects={filteredProjects}
-            onClearFilters={() => setFilters(emptyProjectFilters)}
-          />
-        </div>
-        <div className="dash-reveal hidden min-[1760px]:block">
-          <TodoPanel projects={filteredProjects} />
-        </div>
+      <div className="dash-reveal">
+        <TodoPanel projects={filteredProjects} />
+      </div>
+
+      <div className="dash-reveal min-w-0">
+        <ProjectsTable
+          projects={filteredProjects}
+          onClearFilters={() => setFilters(emptyProjectFilters)}
+        />
       </div>
 
       <p className="text-muted-foreground dash-reveal flex items-center gap-1.5 text-xs">
