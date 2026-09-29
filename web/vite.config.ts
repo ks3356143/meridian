@@ -83,6 +83,19 @@ function lucideDeepImports(): Plugin {
 }
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // 查询运行时同时被需求主面板和候选懒加载面板使用；固定成独立 vendor chunk，
+          // 避免 Rollup 因共享依赖把它提升进应用入口 chunk，拖慢工作区首屏。
+          if (id.includes("@tanstack/query-core")) {
+            return "vendor-query";
+          }
+        },
+      },
+    },
+  },
   plugins: [lucideDeepImports(), react(), tailwindcss()],
   optimizeDeps: {
     entries: ["index.html", "src/**/*.ts", "src/**/*.tsx"],
@@ -97,6 +110,15 @@ export default defineConfig({
     warmup: {
       clientFiles: ["src/**/*.ts", "src/**/*.tsx"],
     },
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    port: 4173,
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8787",

@@ -1,18 +1,9 @@
-import { useMemo } from "react";
-import type { RequirementRecord } from "@/features/requirements/types";
+import { useEffect, useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { requirementsApi } from "@/features/requirements/api";
+import type { RequirementSearchField } from "@/features/requirements/types";
 
-export type RequirementSearchField =
-  | "chapter"
-  | "description"
-  | "externalIdentifier"
-  | "name"
-  | "tags";
-
-export type RequirementSearchHit = {
-  excerpt: string;
-  fields: RequirementSearchField[];
-  requirement: RequirementRecord;
-};
+export type { RequirementSearchField, RequirementSearchHit } from "@/features/requirements/types";
 
 export const requirementSearchFieldLabels: Record<RequirementSearchField, string> = {
   chapter: "章节号",
@@ -22,79 +13,36 @@ export const requirementSearchFieldLabels: Record<RequirementSearchField, string
   tags: "标签",
 };
 
-function buildExcerpt(
-  requirement: RequirementRecord,
-  query: string,
-  fields: RequirementSearchField[],
-) {
-  const source = fields.includes("description")
-    ? requirement.description
-    : fields.includes("name")
-      ? requirement.name
-      : fields.includes("chapter")
-        ? `§${requirement.chapterNumber} ${requirement.name}`
-        : fields.includes("externalIdentifier")
-          ? requirement.externalIdentifier
-          : requirement.tags.join(" / ");
+function useDebouncedValue<T>(value: T, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
-  const lowercaseSource = source.toLowerCase();
-  const matchIndex = lowercaseSource.indexOf(query);
-  if (matchIndex < 0) return source.length > 120 ? `${source.slice(0, 117)}...` : source;
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedValue(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [delay, value]);
 
-  const start = Math.max(0, matchIndex - 42);
-  const end = Math.min(source.length, matchIndex + query.length + 72);
-  const prefix = start > 0 ? "..." : "";
-  const suffix = end < source.length ? "..." : "";
-  return `${prefix}${source.slice(start, end)}${suffix}`;
+  return debouncedValue;
 }
 
-export function useRequirementSearch(requirements: RequirementRecord[], query: string) {
-  const normalizedQuery = query.trim().toLowerCase();
-  const normalizedChapterQuery = normalizedQuery.replace(/^§/, "");
+export function useRequirementSearch(projectId: string, query: string) {
+  const normalizedQuery = query.trim();
+  const debouncedQuery = useDebouncedValue(normalizedQuery, 220);
+  const searchQuery = useQuery({
+    queryKey: ["projects", projectId, "requirements", "search", debouncedQuery],
+    queryFn: () => requirementsApi.search(projectId, debouncedQuery),
+    enabled: debouncedQuery.length > 0,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
 
   return useMemo(() => {
-    if (!normalizedQuery) {
-      return {
-        hits: [] as RequirementSearchHit[],
-        hitsById: new Map<string, RequirementSearchHit>(),
-      };
-    }
-
-    const hits = requirements.flatMap((requirement) => {
-      const fields: RequirementSearchField[] = [];
-      const chapterNumber = requirement.chapterNumber.toLowerCase();
-
-      if (
-        normalizedChapterQuery &&
-        (chapterNumber === normalizedChapterQuery ||
-          chapterNumber.startsWith(`${normalizedChapterQuery}.`))
-      ) {
-        fields.push("chapter");
-      }
-      if (requirement.name.toLowerCase().includes(normalizedQuery)) fields.push("name");
-      if (requirement.description.toLowerCase().includes(normalizedQuery)) {
-        fields.push("description");
-      }
-      if (requirement.externalIdentifier.toLowerCase().includes(normalizedQuery)) {
-        fields.push("externalIdentifier");
-      }
-      if (requirement.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery))) {
-        fields.push("tags");
-      }
-
-      if (!fields.length) return [];
-      return [
-        {
-          excerpt: buildExcerpt(requirement, normalizedQuery, fields),
-          fields,
-          requirement,
-        },
-      ];
-    });
-
+    const hits = debouncedQuery ? (searchQuery.data?.items ?? []) : [];
     return {
+      error: searchQuery.error,
       hits,
-      hitsById: new Map(hits.map((hit) => [hit.requirement.id, hit])),
+      hitsById: new Map(hits.map((hit) => [hit.id, hit])),
+      isSearching: debouncedQuery.length > 0 && searchQuery.isFetching,
+      query: debouncedQuery,
     };
-  }, [normalizedChapterQuery, normalizedQuery, requirements]);
+  }, [debouncedQuery, searchQuery.data, searchQuery.error, searchQuery.isFetching]);
 }

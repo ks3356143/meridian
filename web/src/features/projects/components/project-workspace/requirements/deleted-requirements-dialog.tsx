@@ -1,10 +1,19 @@
 import { createColumnHelper, useTable, type SortingState } from "@tanstack/react-table";
-import { ArchiveRestore, CopyPlus, History, SearchX, Trash2, TriangleAlert } from "lucide-react";
+import {
+  ArchiveRestore,
+  CopyPlus,
+  History,
+  SearchX,
+  Trash2,
+  TriangleAlert,
+  Undo2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { managementTableFeatures } from "@/components/shared/table-features";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -28,12 +37,15 @@ export function DeletedRequirementsDialog({
   sources,
   restoringId,
   error,
+  bulkRestoring,
+  bulkRestoreError,
   purgingId,
   purgeError,
   bulkPurging,
   bulkPurgeError,
   onOpenChange,
   onRestore,
+  onRestoreMany,
   onCopy,
   onShowAudit,
   onPurge,
@@ -44,12 +56,15 @@ export function DeletedRequirementsDialog({
   sources: RequirementSource[];
   restoringId: string;
   error: Error | null;
+  bulkRestoring: boolean;
+  bulkRestoreError: Error | null;
   purgingId: string;
   purgeError: Error | null;
   bulkPurging: boolean;
   bulkPurgeError: Error | null;
   onOpenChange: (open: boolean) => void;
   onRestore: (requirement: RequirementRecord) => void;
+  onRestoreMany: (requirements: RequirementRecord[]) => void;
   onCopy: (requirement: RequirementRecord) => void;
   onShowAudit: (requirement: RequirementRecord) => void;
   onPurge: (requirement: RequirementRecord) => void;
@@ -57,13 +72,23 @@ export function DeletedRequirementsDialog({
 }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "deletedAt", desc: true }]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selectableRequirements = useMemo(
+    () => requirements.filter((requirement) => requirement.deletedFromStatus === "official"),
+    [requirements],
+  );
   const selectedRequirements = requirements.filter((requirement) =>
     selectedIds.includes(requirement.id),
+  );
+  const selectedCandidates = selectedRequirements.filter(
+    (requirement) => requirement.deletedFromStatus === "candidate",
+  );
+  const selectedPurgables = selectedRequirements.filter(
+    (requirement) => requirement.deletedFromStatus === "official",
   );
   const allSelected =
     requirements.length > 0 && selectedRequirements.length === requirements.length;
   const someSelected = selectedRequirements.length > 0 && !allSelected;
-  const actionInFlight = restoringId !== "" || purgingId !== "" || bulkPurging;
+  const actionInFlight = restoringId !== "" || purgingId !== "" || bulkRestoring || bulkPurging;
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) setSelectedIds([]);
@@ -83,7 +108,7 @@ export function DeletedRequirementsDialog({
             <Checkbox
               className={styles.rowCheck}
               checked={allSelected ? true : someSelected ? "indeterminate" : false}
-              aria-label="选择全部已删除需求"
+              aria-label="选择全部回收站记录"
               disabled={actionInFlight || requirements.length === 0}
               onCheckedChange={(checked) =>
                 setSelectedIds(checked === true ? requirements.map((item) => item.id) : [])
@@ -96,7 +121,7 @@ export function DeletedRequirementsDialog({
               <Checkbox
                 className={styles.rowCheck}
                 checked={selectedIds.includes(requirement.id)}
-                aria-label={`选择已删除需求 ${requirement.name}`}
+                aria-label={`选择回收站记录 ${requirement.name}`}
                 disabled={actionInFlight}
                 onCheckedChange={(checked) =>
                   setSelectedIds((previous) =>
@@ -118,6 +143,19 @@ export function DeletedRequirementsDialog({
         columnHelper.accessor("name", {
           header: "需求名称",
           cell: (info) => <TruncatedText value={info.getValue()} className="font-medium" />,
+        }),
+        columnHelper.display({
+          id: "recordType",
+          header: "类型",
+          cell: (info) => {
+            const requirement = info.row.original;
+            const candidateExclusion = requirement.deletedFromStatus === "candidate";
+            return (
+              <Badge variant={candidateExclusion ? "warning" : "danger"}>
+                {candidateExclusion ? "候选排除" : "正式删除"}
+              </Badge>
+            );
+          },
         }),
         columnHelper.accessor(
           (row) => {
@@ -151,6 +189,7 @@ export function DeletedRequirementsDialog({
           cell: (info) => {
             const requirement = info.row.original;
             const restoring = restoringId === requirement.id;
+            const candidateExclusion = requirement.deletedFromStatus === "candidate";
             return (
               <div className={styles.actionGroup}>
                 <Tooltip>
@@ -159,14 +198,22 @@ export function DeletedRequirementsDialog({
                       type="button"
                       variant="default"
                       size="icon-xs"
-                      aria-label={restoring ? "恢复中" : `恢复 ${requirement.name}`}
+                      aria-label={
+                        restoring
+                          ? "处理中"
+                          : candidateExclusion
+                            ? `撤回排除 ${requirement.name}`
+                            : `恢复 ${requirement.name}`
+                      }
                       disabled={actionInFlight}
                       onClick={() => onRestore(requirement)}
                     >
-                      <ArchiveRestore aria-hidden />
+                      {candidateExclusion ? <Undo2 aria-hidden /> : <ArchiveRestore aria-hidden />}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">恢复</TooltipContent>
+                  <TooltipContent side="top">
+                    {candidateExclusion ? "撤回排除" : "恢复确认"}
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -200,22 +247,24 @@ export function DeletedRequirementsDialog({
                   </TooltipTrigger>
                   <TooltipContent side="top">查看审计</TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-xs"
-                      className={styles.purgeAction}
-                      aria-label={`彻底删除 ${requirement.name}`}
-                      disabled={actionInFlight}
-                      onClick={() => onPurge(requirement)}
-                    >
-                      <Trash2 aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">彻底删除</TooltipContent>
-                </Tooltip>
+                {candidateExclusion ? null : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-xs"
+                        className={styles.purgeAction}
+                        aria-label={`彻底删除 ${requirement.name}`}
+                        disabled={actionInFlight}
+                        onClick={() => onPurge(requirement)}
+                      >
+                        <Trash2 aria-hidden />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">彻底删除</TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             );
           },
@@ -242,15 +291,15 @@ export function DeletedRequirementsDialog({
     state: { sorting },
     onSortingChange: setSorting,
   });
-  const actionError = error ?? purgeError ?? bulkPurgeError;
+  const actionError = error ?? bulkRestoreError ?? purgeError ?? bulkPurgeError;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-5xl">
         <DialogHeader>
-          <DialogTitle>已删除确认需求</DialogTitle>
+          <DialogTitle>需求回收站</DialogTitle>
           <DialogDescription>
-            可恢复回确认基线、复制为一条新需求、查看完整审计轨迹，或在不影响当前基线的情况下彻底删除。
+            已删除的确认需求可恢复回基线；已排除的待确认需求可撤回回待确认队列。复制新增与审计轨迹在表格内处理，彻底删除仅针对已删除的确认需求。
           </DialogDescription>
         </DialogHeader>
 
@@ -260,10 +309,21 @@ export function DeletedRequirementsDialog({
             <div className={styles.bulkActions}>
               <Button
                 type="button"
+                variant="outline"
+                size="xs"
+                className={styles.restoreAction}
+                disabled={actionInFlight || selectedCandidates.length === 0}
+                onClick={() => onRestoreMany(selectedCandidates)}
+              >
+                <Undo2 data-icon="inline-start" aria-hidden />
+                批量撤回
+              </Button>
+              <Button
+                type="button"
                 variant="destructive"
                 size="xs"
-                disabled={actionInFlight || selectedRequirements.length === 0}
-                onClick={() => onPurgeMany(selectedRequirements, false)}
+                disabled={actionInFlight || selectedPurgables.length === 0}
+                onClick={() => onPurgeMany(selectedPurgables, false)}
               >
                 <Trash2 data-icon="inline-start" aria-hidden />
                 批量删除
@@ -273,8 +333,8 @@ export function DeletedRequirementsDialog({
                 variant="outline"
                 size="xs"
                 className={styles.deleteAllAction}
-                disabled={actionInFlight || requirements.length === 0}
-                onClick={() => onPurgeMany(requirements, true)}
+                disabled={actionInFlight || selectableRequirements.length === 0}
+                onClick={() => onPurgeMany(selectableRequirements, true)}
               >
                 <Trash2 data-icon="inline-start" aria-hidden />
                 删除全部
@@ -298,7 +358,7 @@ export function DeletedRequirementsDialog({
             emptyContent={
               <div className="flex flex-col items-center gap-2">
                 <SearchX className="text-muted-foreground size-5" aria-hidden />
-                <p className="text-muted-foreground text-sm">当前没有已删除的确认需求</p>
+                <p className="text-muted-foreground text-sm">当前没有已删除或已排除的需求</p>
               </div>
             }
           />

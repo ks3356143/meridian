@@ -10,11 +10,7 @@ function TooltipProvider({
 }
 
 function Tooltip({ children, ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  return (
-    <TooltipProvider>
-      <TooltipPrimitive.Root {...props}>{children}</TooltipPrimitive.Root>
-    </TooltipProvider>
-  );
+  return <TooltipPrimitive.Root {...props}>{children}</TooltipPrimitive.Root>;
 }
 
 function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {

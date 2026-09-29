@@ -2,11 +2,15 @@ import { request } from "@/api/client";
 import type {
   BulkCreateRequirementPayload,
   BulkCreateRequirementResult,
+  BulkCleanNamesPayload,
+  BulkCleanNamesResult,
   BulkPurgeRequirementsPayload,
   BulkUpdateRequirementPayload,
   RequirementRecord,
   RequirementsWorkbenchSnapshot,
   RequirementIdentifierPreview,
+  RequirementContent,
+  RequirementSearchResult,
   RequirementStatusPayload,
   RequirementEvent,
   SaveRequirementPayload,
@@ -16,6 +20,17 @@ import type {
 export const requirementsApi = {
   workbench: (projectId: string) =>
     request<RequirementsWorkbenchSnapshot>("GET", `/api/v1/projects/${projectId}/requirements`),
+  content: (requirementId: string) =>
+    request<RequirementContent>("GET", `/api/v1/software-requirements/${requirementId}/content`),
+  search: (projectId: string, query: string, sourceVersionId = "") => {
+    const params = new URLSearchParams({ q: query });
+    if (sourceVersionId) params.set("sourceVersionId", sourceVersionId);
+    return request<RequirementSearchResult>(
+      "GET",
+      `/api/v1/projects/${projectId}/requirements/search?${params}`,
+      { skipErrorToast: true },
+    );
+  },
   previewIdentifier: (projectId: string, sourceVersionId: string, name: string) => {
     const query = new URLSearchParams({ sourceVersionId, name });
     return request<RequirementIdentifierPreview>(
@@ -74,6 +89,13 @@ export const requirementsApi = {
     request<BulkCreateRequirementResult>(
       "POST",
       `/api/v1/projects/${projectId}/requirements/bulk`,
+      {},
+      payload,
+    ),
+  bulkCleanNames: (projectId: string, payload: BulkCleanNamesPayload) =>
+    request<BulkCleanNamesResult>(
+      "POST",
+      `/api/v1/projects/${projectId}/requirements/bulk-clean-names`,
       {},
       payload,
     ),

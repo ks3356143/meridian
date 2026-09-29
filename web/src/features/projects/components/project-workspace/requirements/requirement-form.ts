@@ -141,7 +141,7 @@ export function suggestNextChapterNumber(
 export function buildRequirementCopySeed(
   requirement: RequirementRecord,
   requirements: RequirementRecord[],
-  source: RequirementDraft = requirement,
+  source: RequirementDraft = { ...requirement, description: requirement.description ?? "" },
 ): RequirementCopySeed {
   return {
     sourceId: requirement.sourceVersionId,

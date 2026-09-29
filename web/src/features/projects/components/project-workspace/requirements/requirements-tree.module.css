@@ -42,12 +42,6 @@
   row-gap: 0.22rem;
 }
 
-.tabsList {
-  flex: 1 1 7.5rem;
-  height: 2.1rem;
-  min-width: 6.75rem;
-}
-
 .actions {
   align-items: center;
   display: flex;
@@ -351,6 +345,8 @@
 }
 
 .treeShell {
+  /* 自定义滚动条实测宽度（8px 滑块 + 1px 轨道边框）；脚本测到真实值会覆盖它。 */
+  --tree-scrollbar-width: 10px;
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
@@ -361,6 +357,16 @@
   contain: layout paint;
 }
 
+/* react-arborist 给每一行都写内联 min-width: max-content，等于让每行做一次内容固有宽度测量；
+   需求树列宽固定、长文本走省略号，压回 0 可显著降低展开/折叠与滚动时的布局成本。 */
+.tree [role="treeitem"] {
+  min-width: 0 !important;
+  /* 屏幕外的行交给浏览器跳过样式/布局/绘制（react-window 只裁窗口，挂载的行仍会参与布局）。
+     行高固定 30px，contain-intrinsic-size 与之一致，避免滚动高度抖动。 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 30px;
+}
+
 .tree {
   overflow: hidden auto;
   padding: 0.15rem;
@@ -368,9 +374,30 @@
   scrollbar-width: thin;
 }
 
-.treeShell[data-motion="true"] .tree {
-  overflow: clip !important;
-  scrollbar-gutter: auto;
+/* 动画期固定行宽：仅在确有滚动条时保留槽位（data-scrollbar 由动效脚本标记），
+   无滚动条时不留槽位，避免树行右侧出现空白间隙。
+   注意不要在这里把 overflow 切成 hidden —— 那会让滚动条在动画期间整个消失、
+   结束时再出现；保留 auto，滚动条全程可见，槽位由 scrollbar-gutter 兜住。 */
+.treeShell[data-motion="true"][data-scrollbar="true"] .tree {
+  scrollbar-gutter: stable;
+}
+/* 折叠/展开动效：子树按“高度收拢/展开”裁剪，不做透明度过渡，
+   后续同级内容同步位移。--tree-row-top / --tree-row-h 在动画建立时写到行上，
+   --tree-motion-line 与 --tree-motion-shift 每帧更新一次。 */
+.treeShell[data-motion="true"] [data-motion-block] {
+  clip-path: inset(
+    0 0
+      clamp(
+        0px,
+        calc(var(--tree-row-top, 0px) + var(--tree-row-h, 30px) - var(--tree-motion-line, 0px)),
+        var(--tree-row-h, 30px)
+      )
+      0
+  );
+}
+
+.treeShell[data-motion="true"] [data-motion-follow] {
+  translate: 0 var(--tree-motion-shift, 0px);
 }
 
 .tree::-webkit-scrollbar {
@@ -469,6 +496,13 @@
 
 .row[data-node-type="requirement"] .guide[data-guide-current="true"]::after {
   width: 24px;
+}
+
+/* 无纵向滚动条时补上行内容右内边距：有滚动条时徽章距面板右边缘 = 行内边距 + 滚动条宽，
+   不补偿的话空态/短树会把徽章压到贴边。只补内容内边距，行盒子仍满宽，
+   hover 与选中底色不会出现缺口。 */
+.treeShell[data-has-scrollbar="false"] .row {
+  padding-inline-end: calc(0.35rem + var(--tree-scrollbar-width, 10px));
 }
 
 .row {
@@ -617,6 +651,17 @@
   height: 1.05rem;
   font-size: 9.5px;
   padding-inline: 0.24rem;
+}
+
+.row :global([data-slot="badge"]).countBadge {
+  background: color-mix(in srgb, var(--primary) 18%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 44%, var(--border));
+  color: var(--primary);
+  height: 1.15rem;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 1.5rem;
+  padding-inline: 0.32rem;
 }
 
 .incompleteCountBadge {
@@ -819,13 +864,13 @@
 
 :where(.treeShell[data-candidate="true"])
   .row[data-node-type="source"]
-  :global([data-slot="badge"]),
+  :global([data-slot="badge"]):not(.countBadge),
 :where(.treeShell[data-candidate="true"])
   .row[data-node-type="section"]
-  :global([data-slot="badge"]),
+  :global([data-slot="badge"]):not(.countBadge),
 :where(.treeShell[data-candidate="true"])
   .row[data-node-type="requirement"]
-  :global([data-slot="badge"]) {
+  :global([data-slot="badge"]):not(.countBadge) {
   background: color-mix(in srgb, var(--muted) 68%, var(--card));
   border-color: var(--border);
   color: var(--muted-foreground);
@@ -833,6 +878,45 @@
 
 .empty {
   min-height: 100%;
+}
+
+/* 仅用于空状态（nodes.length === 0 分支），不参与树行样式：
+   图标 + 文案，距容器顶部留出固定间距，水平居中。 */
+.emptyState {
+  align-items: center;
+  color: var(--muted-foreground);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 4.5rem 1rem 2rem;
+  text-align: center;
+}
+
+.emptyStateIcon {
+  color: color-mix(in srgb, var(--primary) 52%, var(--muted-foreground));
+  height: 1.6rem;
+  opacity: 0.9;
+  width: 1.6rem;
+}
+
+.emptyStateText {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.emptyStateAction {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.emptyStateHint {
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .shortcutTrigger,
@@ -848,7 +932,18 @@
 
 .rowCheck {
   height: 0.85rem;
+  margin-inline-end: 0.2rem;
   width: 0.85rem;
+}
+
+.rowCheckSpacer {
+  flex: 0 0 auto;
+  height: 0.85rem;
+  width: 0.85rem;
+}
+
+.row[data-node-type="requirement"] .rowCheck {
+  margin-inline-start: 1.2rem;
 }
 
 .batchBar {
@@ -897,6 +992,10 @@
 
 .shell[data-batch="true"] .tree {
   padding-bottom: 4.3rem;
+}
+
+.shell[data-batch="true"] .row {
+  gap: 0.12rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

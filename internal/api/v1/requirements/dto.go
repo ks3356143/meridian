@@ -170,3 +170,33 @@ type BulkUpdateRequirementRequest struct {
 type BulkUpdateRequirementOutput struct {
 	Body requirementsservice.BulkUpdateResult
 }
+type BulkCleanNamesInput struct {
+	Code string `path:"code" required:"true"`
+	Body BulkCleanNamesRequest
+}
+
+type BulkCleanNamesRequest struct {
+	IDs []string `json:"ids" required:"true"`
+}
+
+type BulkCleanNamesOutput struct {
+	Body requirementsservice.BulkCleanNamesResult
+}
+
+type SearchRequirementsInput struct {
+	Code            string `path:"code" required:"true"`
+	SourceVersionID string `query:"sourceVersionId"`
+	Query           string `query:"q" required:"true" maxLength:"200"`
+}
+
+type SearchRequirementsOutput struct {
+	Body requirementsservice.RequirementSearchResult
+}
+
+type RequirementContentInput struct {
+	ID string `path:"id" required:"true"`
+}
+
+type RequirementContentOutput struct {
+	Body requirementsservice.RequirementContentResponse
+}

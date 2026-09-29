@@ -344,6 +344,9 @@ main.workspace-route::-webkit-scrollbar-thumb {
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1fr);
+  /* 首行按内容高度，禁止被剩余高度拉伸：否则 align-items: flex-end 的页头
+     会把多余高度留在顶部，窗口越大顶部空白带越明显。 */
+  grid-template-rows: max-content minmax(0, 1fr);
   min-width: 0;
 }
 

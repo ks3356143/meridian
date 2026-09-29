@@ -103,11 +103,13 @@ function getActionLabel(event: RequirementEvent) {
   if (event.action === "exclude") {
     return event.fromStatus === "official" ? "删除确认需求" : "排除候选需求";
   }
+  if (event.action === "restore") {
+    return event.toStatus === "candidate" ? "撤回排除" : "恢复确认";
+  }
   const labels = {
     create: "创建需求",
     update: "修改需求",
     confirm: "确认需求",
-    restore: "恢复确认",
     parse: "解析生成",
   } as const;
   return labels[event.action];

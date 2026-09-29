@@ -1,10 +1,21 @@
 import { FileSearch } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import styles from "./requirements-layout.module.css";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
+import { LazyChunkBoundary } from "@/components/shared/retryable-lazy";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { requirementsApi } from "@/features/requirements/api";
 import type { RequirementRecord, SaveRequirementPayload } from "@/features/requirements/types";
 import type { Project } from "../../../types";
 import { DeletedRequirementsDialog } from "./deleted-requirements-dialog";
@@ -22,13 +33,28 @@ import { RequirementBulkDeleteDialog } from "./requirement-bulk-delete-dialog";
 import { RequirementBulkUpdateDialog } from "./requirement-bulk-update-dialog";
 import { RequirementBulkPasteDialog } from "./requirement-bulk-paste-dialog";
 import { RequirementsHero } from "./requirements-hero";
-import { RequirementsCandidateTree } from "./requirements-candidate-tree";
-import { RequirementsCandidateWorkbench } from "./requirements-candidate-workbench";
+
 import { RequirementsTree, type RequirementCreatedSignal } from "./requirements-tree";
 import { useRequirementsWorkbench } from "./use-requirements-workbench";
 
 let requirementsPanelLayout: Record<string, number> | undefined;
 let candidatePanelLayout: Record<string, number> | undefined;
+
+const LazyRequirementsCandidateTree = lazy(() =>
+  import("./requirements-candidate-tree").then((module) => ({
+    default: module.RequirementsCandidateTree,
+  })),
+);
+const LazyRequirementsCandidateWorkbench = lazy(() =>
+  import("./requirements-candidate-workbench").then((module) => ({
+    default: module.RequirementsCandidateWorkbench,
+  })),
+);
+
+function preloadCandidateSurface() {
+  void import("./requirements-candidate-tree");
+  void import("./requirements-candidate-workbench");
+}
 
 type WorkbenchTab = "confirmed" | "candidate";
 
@@ -45,10 +71,12 @@ export function RequirementsLayout({ project }: { project: Project }) {
     updateMutation,
     deleteMutation,
     restoreMutation,
+    bulkRestoreMutation,
     purgeMutation,
     bulkPurgeMutation,
     bulkUpdateMutation,
     bulkCreateMutation,
+    bulkCleanNamesMutation,
     parseMutation,
     candidateStatusMutation,
     invalidate,
@@ -65,6 +93,10 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const [bulkPasteOpen, setBulkPasteOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [workbenchTab, setWorkbenchTab] = useState<WorkbenchTab>("confirmed");
+  const [candidateActivated, setCandidateActivated] = useState(false);
+  const [panelsReady, setPanelsReady] = useState(false);
+  const [isCandidatePending, startCandidateTransition] = useTransition();
+  const candidateActivatedRef = useRef(false);
   const [candidateSelectedId, setCandidateSelectedId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{
     requirement: RequirementRecord;
@@ -90,13 +122,15 @@ export function RequirementsLayout({ project }: { project: Project }) {
     () => requirements.filter((requirement) => requirement.status === "official"),
     [requirements],
   );
-  const deletedRequirements = useMemo(
-    () =>
-      requirements.filter(
-        (requirement) =>
-          requirement.status === "excluded" && requirement.deletedFromStatus === "official",
-      ),
+  const recycleBinRequirements = useMemo(
+    () => requirements.filter((requirement) => requirement.status === "excluded"),
     [requirements],
+  );
+  const excludedCandidateCount = useMemo(
+    () =>
+      recycleBinRequirements.filter((requirement) => requirement.deletedFromStatus === "candidate")
+        .length,
+    [recycleBinRequirements],
   );
   const selectedRequirement = useMemo(
     () =>
@@ -119,8 +153,61 @@ export function RequirementsLayout({ project }: { project: Project }) {
       ),
     [requirements],
   );
+  const sections = useMemo(() => workbench?.sections ?? [], [workbench]);
+  const handleSelectConfirmed = useCallback((requirement: RequirementRecord) => {
+    setSelectedId(requirement.id);
+  }, []);
+  const handleSelectCandidate = useCallback((requirement: RequirementRecord) => {
+    setCandidateSelectedId(requirement.id);
+  }, []);
+  const openCreateDialog = useCallback(() => setCreateOpen(true), []);
+  const openBulkUpdateDialog = useCallback(() => setBulkUpdateOpen(true), []);
+  const openBulkDeleteDialog = useCallback(() => setBulkDeleteOpen(true), []);
+  const openBulkPasteDialog = useCallback(() => setBulkPasteOpen(true), []);
+  const workspaceTabs = useMemo(
+    () => (
+      <TabsList
+        variant="default"
+        className={styles.workspaceTabsList}
+        aria-label="需求工作台视图"
+        data-active-tab={workbenchTab}
+      >
+        <TabsTrigger value="confirmed" className={styles.workspaceTab}>
+          已确认需求
+        </TabsTrigger>
+        <TabsTrigger
+          value="candidate"
+          className={styles.workspaceTab}
+          aria-label={`待确认需求，自动解析有 ${candidateCount} 个需求未确认`}
+          onFocus={preloadCandidateSurface}
+          onPointerDown={preloadCandidateSurface}
+          onPointerEnter={preloadCandidateSurface}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={styles.workspaceTabLabel}>
+                待确认需求
+                <span className={styles.candidateOrb} aria-hidden>
+                  {candidateCount}
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" hideWhenDetached>
+              {candidateCount > 0
+                ? `自动解析有 ${candidateCount} 个需求未确认`
+                : "自动解析暂无待确认需求"}
+            </TooltipContent>
+          </Tooltip>
+        </TabsTrigger>
+      </TabsList>
+    ),
+    [candidateCount, workbenchTab],
+  );
 
   const updateRequirement = updateMutation.mutateAsync;
+  const parseSRS = parseMutation.mutateAsync;
+  const changeCandidateStatus = candidateStatusMutation.mutateAsync;
+  const cleanCandidateNames = bulkCleanNamesMutation.mutateAsync;
   const handleCreated = useCallback(
     (requirement: RequirementRecord, options: { focusTree: boolean }) => {
       setCreatedSignal({
@@ -148,40 +235,82 @@ export function RequirementsLayout({ project }: { project: Project }) {
     },
     [],
   );
-  const handleRestore = useCallback(
-    async (requirement: RequirementRecord) => {
+  const openRecycleBin = useCallback(() => setDeletedOpen(true), []);
+  const openCandidateTab = useCallback(() => {
+    setWorkbenchTab("candidate");
+    setPanelsReady(true);
+    preloadCandidateSurface();
+    if (!candidateActivatedRef.current) {
+      candidateActivatedRef.current = true;
+      startCandidateTransition(() => setCandidateActivated(true));
+    }
+  }, [startCandidateTransition]);
+  const handleRestoreMany = useCallback(
+    async (requirementsToRestore: RequirementRecord[]) => {
       try {
-        await restoreMutation.mutateAsync(requirement.id);
-        setSelectedId(requirement.id);
+        await bulkRestoreMutation.mutateAsync(requirementsToRestore.map((item) => item.id));
+        openCandidateTab();
         setDeletedOpen(false);
       } catch {
         // 保持管理弹窗打开，由表格顶部错误提示展示失败原因。
       }
     },
-    [restoreMutation],
+    [bulkRestoreMutation, openCandidateTab],
+  );
+  const handleRestore = useCallback(
+    async (requirement: RequirementRecord) => {
+      try {
+        await restoreMutation.mutateAsync(requirement);
+        if (requirement.deletedFromStatus === "candidate") {
+          openCandidateTab();
+          setCandidateSelectedId(requirement.id);
+        } else {
+          setSelectedId(requirement.id);
+        }
+        setDeletedOpen(false);
+      } catch {
+        // 保持管理弹窗打开，由表格顶部错误提示展示失败原因。
+      }
+    },
+    [restoreMutation, openCandidateTab],
   );
   const handleCopyDeleted = useCallback(
-    (requirement: RequirementRecord) => {
-      setCreateSeed({
-        key: `copy-${requirement.id}`,
-        values: buildRequirementCopySeed(requirement, activeChapterRequirements),
-      });
-      setDeletedOpen(false);
-      setCreateOpen(true);
+    async (requirement: RequirementRecord) => {
+      try {
+        const content = await requirementsApi.content(requirement.id);
+        setCreateSeed({
+          key: `copy-${requirement.id}`,
+          values: buildRequirementCopySeed(
+            { ...requirement, description: content.description },
+            activeChapterRequirements,
+          ),
+        });
+        setDeletedOpen(false);
+        setCreateOpen(true);
+      } catch {
+        // 正文加载失败由 API 客户端展示错误提示。
+      }
     },
     [activeChapterRequirements],
   );
   const handleCopyRequirement = useCallback(
-    (requirement: RequirementRecord, draft?: RequirementDraft) => {
-      setCreateSeed({
-        key: `copy-${requirement.id}`,
-        values: buildRequirementCopySeed(
-          requirement,
-          activeChapterRequirements,
-          draft ?? requirement,
-        ),
-      });
-      setCreateOpen(true);
+    async (requirement: RequirementRecord, draft?: RequirementDraft) => {
+      try {
+        const description =
+          draft?.description ?? (await requirementsApi.content(requirement.id)).description;
+        const copySource = draft ? { ...draft, description } : { ...requirement, description };
+        setCreateSeed({
+          key: `copy-${requirement.id}`,
+          values: buildRequirementCopySeed(
+            { ...requirement, description },
+            activeChapterRequirements,
+            copySource,
+          ),
+        });
+        setCreateOpen(true);
+      } catch {
+        // 正文加载失败由 API 客户端展示错误提示。
+      }
     },
     [activeChapterRequirements],
   );
@@ -311,29 +440,35 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const handleParseSRS = useCallback(
     async (sourceVersionId: string) => {
       try {
-        return await parseMutation.mutateAsync(sourceVersionId);
+        return await parseSRS(sourceVersionId);
       } catch {
         return undefined;
       }
     },
-    [parseMutation],
+    [parseSRS],
   );
   const handleCandidateConfirm = useCallback(
     async (ids: string[]) => {
-      await candidateStatusMutation.mutateAsync({ ids, action: "confirm" });
+      await changeCandidateStatus({ ids, action: "confirm" });
     },
-    [candidateStatusMutation],
+    [changeCandidateStatus],
   );
   const handleCandidateExclude = useCallback(
     async (ids: string[], reason: string) => {
-      await candidateStatusMutation.mutateAsync({ ids, action: "exclude", reason });
+      await changeCandidateStatus({ ids, action: "exclude", reason });
     },
-    [candidateStatusMutation],
+    [changeCandidateStatus],
+  );
+  const handleCandidateCleanNames = useCallback(
+    async (ids: string[]) => {
+      await cleanCandidateNames({ ids });
+    },
+    [cleanCandidateNames],
   );
   const handleCandidateUpdate = useCallback(
     async (id: string, payload: Omit<SaveRequirementPayload, "sourceVersionId">) =>
-      updateMutation.mutateAsync({ id, payload }),
-    [updateMutation],
+      updateRequirement({ id, payload }),
+    [updateRequirement],
   );
 
   if (workbenchQuery.isPending) return <QueryLoading label="正在加载确认需求" rows={8} />;
@@ -341,53 +476,25 @@ export function RequirementsLayout({ project }: { project: Project }) {
     return <QueryError title="确认需求加载失败" onRetry={() => workbenchQuery.refetch()} />;
   }
 
-  const workspaceTabs: ReactNode = (
-    <TabsList variant="default" className={styles.workspaceTabsList} aria-label="需求工作台视图">
-      <TabsTrigger value="confirmed" className={styles.workspaceTab}>
-        已确认需求
-      </TabsTrigger>
-      <TabsTrigger
-        value="candidate"
-        className={styles.workspaceTab}
-        aria-label={`待确认需求，自动解析有 ${candidateCount} 个需求未确认`}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className={styles.workspaceTabLabel}>
-              待确认需求
-              <span className={styles.candidateOrb} aria-hidden>
-                {candidateCount}
-              </span>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {candidateCount > 0
-              ? `自动解析有 ${candidateCount} 个需求未确认`
-              : "自动解析暂无待确认需求"}
-          </TooltipContent>
-        </Tooltip>
-      </TabsTrigger>
-    </TabsList>
-  );
-
   const tree = (
     <RequirementsTree
+      projectId={project.id}
       sources={sources}
-      requirements={workbench?.requirements ?? []}
+      requirements={requirements}
       toolbarTabs={workspaceTabs}
       selectedId={selectedRequirement?.id ?? ""}
       createdSignal={createdSignal}
       batchMode={batchMode}
       selectedIds={selectedIds}
-      onSelect={(requirement) => setSelectedId(requirement.id)}
-      onCreate={() => setCreateOpen(true)}
+      onSelect={handleSelectConfirmed}
+      onCreate={openCreateDialog}
       onCopy={handleCopyRequirement}
       onDelete={handleDeleteRequest}
       onToggleBatchMode={toggleBatchMode}
       onToggleRequirement={toggleRequirementSelected}
       onToggleSource={toggleSourceSelected}
-      onOpenBulkUpdate={() => setBulkUpdateOpen(true)}
-      onOpenBulkDelete={() => setBulkDeleteOpen(true)}
+      onOpenBulkUpdate={openBulkUpdateDialog}
+      onOpenBulkDelete={openBulkDeleteDialog}
       onClearSelection={clearSelection}
       onRegisterExitAnimation={registerTreeExitAnimation}
       naturalHeight={!wideLayout}
@@ -395,10 +502,10 @@ export function RequirementsLayout({ project }: { project: Project }) {
   );
   const hero = (
     <RequirementsHero
-      requirements={workbench?.requirements ?? []}
+      requirements={requirements}
       loading={workbenchQuery.isFetching}
-      onOpenDeleted={() => setDeletedOpen(true)}
-      onOpenBulkPaste={() => setBulkPasteOpen(true)}
+      onOpenDeleted={openRecycleBin}
+      onOpenBulkPaste={openBulkPasteDialog}
     />
   );
   const detail = selectedRequirement ? (
@@ -470,9 +577,11 @@ export function RequirementsLayout({ project }: { project: Project }) {
     return (
       <DeletedRequirementsDialog
         open={deletedOpen}
-        requirements={deletedRequirements}
+        requirements={recycleBinRequirements}
         sources={sources}
-        restoringId={restoreMutation.isPending ? (restoreMutation.variables ?? "") : ""}
+        restoringId={restoreMutation.isPending ? (restoreMutation.variables?.id ?? "") : ""}
+        bulkRestoring={bulkRestoreMutation.isPending}
+        bulkRestoreError={bulkRestoreMutation.error}
         error={restoreMutation.error}
         purgingId={purgeMutation.isPending ? (purgeMutation.variables?.id ?? "") : ""}
         purgeError={purgeMutation.error}
@@ -482,6 +591,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
           setDeletedOpen(open);
           if (!open) {
             restoreMutation.reset();
+            bulkRestoreMutation.reset();
             purgeMutation.reset();
             bulkPurgeMutation.reset();
             setPendingPurge(null);
@@ -489,6 +599,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
           }
         }}
         onRestore={handleRestore}
+        onRestoreMany={handleRestoreMany}
         onCopy={handleCopyDeleted}
         onShowAudit={setAuditRequirement}
         onPurge={setPendingPurge}
@@ -555,7 +666,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       <RequirementBulkUpdateDialog
         open={bulkUpdateOpen}
         requirements={selectedRequirements}
-        allRequirements={workbench?.requirements ?? []}
+        allRequirements={requirements}
         submitting={bulkUpdateMutation.isPending}
         error={bulkUpdateMutation.error}
         onOpenChange={(open) => {
@@ -653,13 +764,15 @@ export function RequirementsLayout({ project }: { project: Project }) {
           minSize="411px"
           maxSize="680px"
         >
-          <RequirementsCandidateTree
+          <LazyRequirementsCandidateTree
             sources={sources}
-            sections={workbench?.sections ?? []}
-            requirements={workbench?.requirements ?? []}
+            sections={sections}
+            requirements={requirements}
             toolbarTabs={workspaceTabs}
             selectedId={candidateSelectedId}
-            onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
+            onSelect={handleSelectCandidate}
+            excludedCount={excludedCandidateCount}
+            onOpenRecycleBin={openRecycleBin}
             naturalHeight={false}
           />
         </ResizablePanel>
@@ -668,17 +781,20 @@ export function RequirementsLayout({ project }: { project: Project }) {
           aria-label="调整待确认需求目录宽度"
         />
         <ResizablePanel id="requirements-candidate-right-panel" className={styles.panelFrame}>
-          <RequirementsCandidateWorkbench
+          <LazyRequirementsCandidateWorkbench
+            projectId={project.id}
             sources={sources}
-            requirements={workbench?.requirements ?? []}
+            requirements={requirements}
             selectedId={candidateSelectedId}
-            onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
+            onSelect={handleSelectCandidate}
             parsePending={parseMutation.isPending}
             statusPending={candidateStatusMutation.isPending}
             updatePending={updateMutation.isPending}
             onParse={handleParseSRS}
             onConfirm={handleCandidateConfirm}
             onExclude={handleCandidateExclude}
+            cleanNamesPending={bulkCleanNamesMutation.isPending}
+            onCleanNames={handleCandidateCleanNames}
             onUpdate={handleCandidateUpdate}
           />
         </ResizablePanel>
@@ -686,26 +802,31 @@ export function RequirementsLayout({ project }: { project: Project }) {
     </section>
   ) : (
     <section className={styles.workbench}>
-      <RequirementsCandidateTree
+      <LazyRequirementsCandidateTree
         sources={sources}
-        sections={workbench?.sections ?? []}
-        requirements={workbench?.requirements ?? []}
+        sections={sections}
+        requirements={requirements}
         toolbarTabs={workspaceTabs}
         selectedId={candidateSelectedId}
-        onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
+        onSelect={handleSelectCandidate}
+        excludedCount={excludedCandidateCount}
+        onOpenRecycleBin={openRecycleBin}
         naturalHeight
       />
-      <RequirementsCandidateWorkbench
+      <LazyRequirementsCandidateWorkbench
+        projectId={project.id}
         sources={sources}
-        requirements={workbench?.requirements ?? []}
+        requirements={requirements}
         selectedId={candidateSelectedId}
-        onSelect={(requirement) => setCandidateSelectedId(requirement.id)}
+        onSelect={handleSelectCandidate}
         parsePending={parseMutation.isPending}
         statusPending={candidateStatusMutation.isPending}
         updatePending={updateMutation.isPending}
         onParse={handleParseSRS}
         onConfirm={handleCandidateConfirm}
         onExclude={handleCandidateExclude}
+        cleanNamesPending={bulkCleanNamesMutation.isPending}
+        onCleanNames={handleCandidateCleanNames}
         onUpdate={handleCandidateUpdate}
       />
     </section>
@@ -715,14 +836,36 @@ export function RequirementsLayout({ project }: { project: Project }) {
     <>
       <Tabs
         className={styles.tabs}
+        data-panels-ready={panelsReady ? "true" : undefined}
         value={workbenchTab}
-        onValueChange={(value) => setWorkbenchTab(value as WorkbenchTab)}
+        onValueChange={(value) => {
+          if (value === "candidate") openCandidateTab();
+          else setWorkbenchTab(value as WorkbenchTab);
+        }}
       >
-        <TabsContent value="confirmed" className={styles.tabContent}>
+        <TabsContent
+          value="confirmed"
+          className={styles.tabContent}
+          forceMount
+          inert={workbenchTab !== "confirmed" ? true : undefined}
+        >
           {surface}
         </TabsContent>
-        <TabsContent value="candidate" className={styles.tabContent}>
-          {candidateSurface}
+        <TabsContent
+          value="candidate"
+          className={styles.tabContent}
+          forceMount
+          inert={workbenchTab !== "candidate" ? true : undefined}
+        >
+          <LazyChunkBoundary errorTitle="待确认需求加载失败">
+            <Suspense fallback={<QueryLoading label="正在加载待确认需求" rows={6} />}>
+              {candidateActivated && !isCandidatePending ? (
+                candidateSurface
+              ) : (
+                <QueryLoading label="正在加载待确认需求" rows={6} />
+              )}
+            </Suspense>
+          </LazyChunkBoundary>
         </TabsContent>
       </Tabs>
       {renderCreateDialog()}
@@ -751,4 +894,10 @@ function useWideLayout() {
   }, []);
 
   return wide;
+}
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    // 动态导入模块变更时不要保留旧 lazy 引用，直接整页失效重载。
+    import.meta.hot?.invalidate();
+  });
 }

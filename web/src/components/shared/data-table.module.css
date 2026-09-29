@@ -1,24 +1,30 @@
-.selectedRow {
-  animation: selectedRowIn 240ms cubic-bezier(0.32, 0.72, 0, 1);
+/* 表格窗口化渲染时的滚动容器：行由 virtualizer 决定，spacer 行撑起剩余高度。
+   高度默认撑满父容器（不留空白）。
+   滚动条与工作台其它内部滚动条保持一致：8px、直角、主题色滑块、浅色轨道。 */
+.scrollArea {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: color-mix(in srgb, var(--primary) 42%, var(--muted)) transparent;
+  scrollbar-width: thin;
 }
 
-@keyframes selectedRowIn {
-  0% {
-    background-color: transparent;
-    box-shadow: 0 0 0 0 transparent;
-  }
-  55% {
-    background-color: color-mix(in srgb, var(--primary) 11%, transparent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
-  }
-  100% {
-    background-color: color-mix(in srgb, var(--primary) 8%, transparent);
-    box-shadow: 0 0 0 0 transparent;
-  }
+.scrollArea::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .selectedRow {
-    animation: none;
-  }
+.scrollArea::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--muted) 42%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 44%, var(--muted));
+  border-radius: 0;
+}
+
+.scrollArea::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--primary) 62%, var(--muted));
 }

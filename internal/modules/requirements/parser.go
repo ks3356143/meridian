@@ -179,7 +179,7 @@ func buildParsedNodes(paragraphs []docxParagraph) []ParsedNode {
 		}
 		node := chapters[currentHeading]
 		node.Description = strings.Join(body, "\n")
-		node.PrimaryKind = inferPrimaryKind(node.Title + " " + node.Description)
+		node.PrimaryKind = inferPrimaryKind(node.Title)
 		node.IsRequirement = looksLikeRequirement(node.Title, node.Description)
 		chapters[currentHeading] = node
 		body = make([]string, 0)
@@ -233,12 +233,12 @@ func buildParsedNodes(paragraphs []docxParagraph) []ParsedNode {
 					node.Tags = []string{externalInterfaceTag}
 				}
 			}
-			node.PrimaryKind = inferPrimaryKind(node.Title + " " + node.Description)
+			node.PrimaryKind = inferPrimaryKind(node.Title)
 			nodes = append(nodes, node)
 			continue
 		}
 		if insideInterfaceChapter(orderedChapters, chapters, chapter) {
-			node.PrimaryKind = inferPrimaryKind(node.Title + " " + node.Description)
+			node.PrimaryKind = inferPrimaryKind(node.Title)
 			nodes = append(nodes, node)
 			continue
 		}
@@ -263,7 +263,7 @@ func buildParsedNodes(paragraphs []docxParagraph) []ParsedNode {
 		} else if !insideRequirementGroup(orderedChapters, chapters, chapter) {
 			node.IsRequirement = looksLikeRequirement(node.Title, node.Description)
 		}
-		node.PrimaryKind = inferPrimaryKind(node.Title + " " + node.Description)
+		node.PrimaryKind = inferPrimaryKind(node.Title)
 		nodes = append(nodes, node)
 	}
 	return nodes
@@ -430,7 +430,7 @@ func looksLikeRequirement(title string, description string) bool {
 		!strings.Contains(title, "约束") && !strings.Contains(title, "功能") {
 		return false
 	}
-	for _, marker := range []string{"应", "应当", "须", "确保", "能够", "至少", "不低于", "不高于"} {
+	for _, marker := range []string{"应", "应当", "须", "需要", "确保", "能够", "至少", "不低于", "不高于", "质量要求"} {
 		if strings.Contains(description, marker) {
 			return true
 		}
@@ -438,12 +438,16 @@ func looksLikeRequirement(title string, description string) bool {
 	return false
 }
 
-func inferPrimaryKind(text string) string {
-	text = strings.ToLower(text)
+// inferPrimaryKind 依据章节标题判定需求主类型。
+// 标题是 SRS 里稳定的类型信号（如“性能要求”“安全性需求”“外部接口需求”）；
+// 功能章节的描述常出现时间、接口、故障等实现词汇，不能作为类型依据。
+func inferPrimaryKind(title string) string {
+	text := strings.ToLower(title)
 	switch {
-	case strings.Contains(text, "性能") || strings.Contains(text, "时间") ||
-		strings.Contains(text, "周期") || strings.Contains(text, "内存") ||
-		strings.Contains(text, "吞吐") || strings.Contains(text, "延迟"):
+	case strings.Contains(text, "性能") || strings.Contains(text, "响应时间") ||
+		strings.Contains(text, "处理时间") || strings.Contains(text, "运行周期") ||
+		strings.Contains(text, "内存") || strings.Contains(text, "吞吐") ||
+		strings.Contains(text, "时延") || strings.Contains(text, "延迟"):
 		return KindPerformance
 	case strings.Contains(text, "接口") || strings.Contains(text, "通信") ||
 		strings.Contains(text, "总线") || strings.Contains(text, "协议"):

@@ -304,7 +304,7 @@ function areReceivedAssetRowPropsEqual(
   );
 }
 
-export function ReceivedAssetTable({
+function ReceivedAssetTableImpl({
   assets,
   draftPatches,
   selectedIds,
@@ -412,3 +412,17 @@ function canConfirmAsset(asset: ReceivedWorkObject): boolean {
     Boolean(asset.source.trim())
   );
 }
+// 行/表比较器只比较渲染输出字段；所有传入回调必须保持稳定引用（当前均来自 useCallback 或稳定 mutation 方法）。
+function areReceivedAssetTablePropsEqual(
+  previous: Parameters<typeof ReceivedAssetTableImpl>[0],
+  next: Parameters<typeof ReceivedAssetTableImpl>[0],
+) {
+  return (
+    previous.assets === next.assets &&
+    previous.draftPatches === next.draftPatches &&
+    previous.selectedIds === next.selectedIds &&
+    previous.loading === next.loading
+  );
+}
+
+export const ReceivedAssetTable = memo(ReceivedAssetTableImpl, areReceivedAssetTablePropsEqual);

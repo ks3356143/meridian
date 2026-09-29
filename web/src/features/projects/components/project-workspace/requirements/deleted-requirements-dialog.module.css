@@ -48,6 +48,18 @@
   gap: 0.35rem;
 }
 
+.restoreAction {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+  color: var(--primary);
+}
+
+.restoreAction:hover,
+.restoreAction:focus-visible {
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  color: var(--primary);
+}
+
 .deleteAllAction {
   border-color: color-mix(in srgb, var(--destructive) 25%, var(--border));
   color: var(--destructive);

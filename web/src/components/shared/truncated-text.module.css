@@ -1,0 +1,13 @@
+.wideTooltip {
+  line-height: 1.65;
+  max-width: min(52rem, calc(100vw - 2.5rem));
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.compactTooltip {
+  max-width: 18rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}

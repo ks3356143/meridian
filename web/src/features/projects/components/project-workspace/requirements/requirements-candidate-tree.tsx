@@ -1,9 +1,11 @@
-import { BookOpen, ChevronRight, FileText, Folder } from "lucide-react";
+import { BookOpen, ChevronRight, FileText, Folder, FolderOpen, Undo2 } from "lucide-react";
 import {
   createContext,
   useCallback,
+  memo,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -11,8 +13,10 @@ import {
 } from "react";
 import { Tree, type NodeRendererProps, type RowRendererProps, type TreeApi } from "react-arborist";
 import styles from "./requirements-tree.module.css";
-import { useRequirementTreeMotion } from "./use-requirement-tree-motion";
+import { TREE_BASE_OVERSCAN, useRequirementTreeMotion } from "./use-requirement-tree-motion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { TruncatedText } from "@/components/shared/truncated-text";
 import type {
   RequirementRecord,
   RequirementSection,
@@ -31,7 +35,7 @@ type CandidateTreeNode = {
   children: CandidateTreeNode[];
 };
 
-export function RequirementsCandidateTree({
+function RequirementsCandidateTreeImpl({
   sources,
   sections,
   requirements,
@@ -39,6 +43,8 @@ export function RequirementsCandidateTree({
   onSelect,
   naturalHeight,
   toolbarTabs,
+  excludedCount,
+  onOpenRecycleBin,
 }: {
   sources: RequirementSource[];
   sections: RequirementSection[];
@@ -47,6 +53,8 @@ export function RequirementsCandidateTree({
   onSelect: (requirement: RequirementRecord) => void;
   naturalHeight: boolean;
   toolbarTabs: ReactNode;
+  excludedCount: number;
+  onOpenRecycleBin: () => void;
 }) {
   const treeRef = useRef<TreeApi<CandidateTreeNode>>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -62,7 +70,7 @@ export function RequirementsCandidateTree({
   );
   const structureSignature = useMemo(() => getStructureSignature(nodes), [nodes]);
   const selectedTreeId = selectedId ? `requirement:${selectedId}` : "";
-  const { requestTreeToggle } = useRequirementTreeMotion<CandidateTreeNode>({
+  const { overscanBoost, requestTreeToggle } = useRequirementTreeMotion<CandidateTreeNode>({
     treeRef,
     shellRef,
     structureSignature,
@@ -70,6 +78,30 @@ export function RequirementsCandidateTree({
   });
 
   useEffect(() => {
+    const tree = treeRef.current;
+    if (!tree) return;
+
+    if (!selectedTreeId) {
+      if (tree.selectedIds.size > 0) tree.deselectAll();
+      return;
+    }
+
+    // 树内点击已在 renderRow 里完成选中，这里只处理外部选中（如点击右侧表格行）。
+    if (tree.isSelected(selectedTreeId)) return;
+    tree.setSelection({
+      ids: [selectedTreeId],
+      anchor: selectedTreeId,
+      mostRecent: selectedTreeId,
+    });
+    tree.openParents(selectedTreeId);
+    window.requestAnimationFrame(() => {
+      void tree.scrollTo(selectedTreeId, "center");
+    });
+  }, [selectedTreeId, treeRef]);
+
+  // 空状态分支不挂载树容器：解析完成后 nodes 由 0 变非空时才出现 shellRef，
+  // 依赖 nodes.length 重新测量，否则虚拟列表会停留在初始高度、下方出现空白。
+  useLayoutEffect(() => {
     if (naturalHeight) return;
     const element = shellRef.current;
     if (!element) return;
@@ -81,7 +113,7 @@ export function RequirementsCandidateTree({
     const observer = new ResizeObserver(updateHeight);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [naturalHeight]);
+  }, [naturalHeight, nodes.length]);
 
   const renderNode = useCallback(
     (props: NodeRendererProps<CandidateTreeNode>) => <CandidateTreeRow {...props} />,
@@ -95,7 +127,21 @@ export function RequirementsCandidateTree({
           <div className={styles.toolbar}>{toolbarTabs}</div>
           <div className={styles.content}>
             <div className={styles.empty}>
-              <p className="text-muted-foreground px-3 text-xs">暂无待确认需求章节</p>
+              <div className={styles.emptyState}>
+                <FolderOpen aria-hidden className={styles.emptyStateIcon} />
+                <p className={styles.emptyStateText}>暂无待确认需求章节</p>
+                {excludedCount > 0 ? (
+                  <div className={styles.emptyStateAction}>
+                    <p className={styles.emptyStateHint}>
+                      已排除 {excludedCount} 条需求，可随时撤回
+                    </p>
+                    <Button type="button" variant="outline" size="xs" onClick={onOpenRecycleBin}>
+                      <Undo2 data-icon="inline-start" aria-hidden />
+                      查看并撤回
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -150,7 +196,7 @@ export function RequirementsCandidateTree({
                 width="100%"
                 rowHeight={30}
                 indent={14}
-                overscanCount={12}
+                overscanCount={TREE_BASE_OVERSCAN + overscanBoost}
                 openByDefault
                 initialOpenState={{ [nodes[0].key]: true }}
                 idAccessor={(node) => node.key}
@@ -215,9 +261,7 @@ function CandidateTreeRowRenderer({
 function CandidateTreeRow({ node, style, dragHandle }: CandidateTreeRowProps) {
   const selectedId = useContext(candidateSelectedIdContext);
   const data = node.data;
-  const Icon = data.type === "source" ? BookOpen : data.type === "section" ? Folder : FileText;
   const requirementId = data.requirement?.id ?? "";
-  const guideCount = node.level;
 
   return (
     <div
@@ -230,6 +274,38 @@ function CandidateTreeRow({ node, style, dragHandle }: CandidateTreeRowProps) {
       data-selected={requirementId && requirementId === selectedId ? "true" : undefined}
       data-open={node.isOpen ? "true" : undefined}
     >
+      <CandidateRowContent
+        type={data.type}
+        title={data.title}
+        count={data.count}
+        hasChildren={data.children.length > 0}
+        guideCount={node.level}
+      />
+    </div>
+  );
+}
+
+/**
+ * 行的静态内容按原始值 memo：react-window 每次滚动都会重渲染窗口内的行，
+ * 内容不变时直接跳过，只留最外层 div 参与对账（选中/展开态走行上的 data-* 属性 + CSS）。
+ */
+const CandidateRowContent = memo(function CandidateRowContent({
+  type,
+  title,
+  count,
+  hasChildren,
+  guideCount,
+}: {
+  type: CandidateTreeNode["type"];
+  title: string;
+  count: number;
+  hasChildren: boolean;
+  guideCount: number;
+}) {
+  const Icon = type === "source" ? BookOpen : type === "section" ? Folder : FileText;
+
+  return (
+    <>
       <span className={styles.guides} aria-hidden>
         {Array.from({ length: guideCount }, (_, index) => (
           <span
@@ -240,7 +316,7 @@ function CandidateTreeRow({ node, style, dragHandle }: CandidateTreeRowProps) {
           />
         ))}
       </span>
-      {data.children.length > 0 ? (
+      {hasChildren ? (
         <span className={styles.chevron} aria-hidden>
           <ChevronRight />
         </span>
@@ -250,13 +326,15 @@ function CandidateTreeRow({ node, style, dragHandle }: CandidateTreeRowProps) {
       <span className={styles.icon} aria-hidden>
         <Icon />
       </span>
-      <span className={styles.title}>{data.title}</span>
-      {data.type !== "requirement" && data.count > 0 ? (
-        <Badge variant="outline">{data.count}</Badge>
+      <TruncatedText value={title} className={styles.title} />
+      {type !== "requirement" && count > 0 ? (
+        <Badge variant="primary" className={styles.countBadge}>
+          {count}
+        </Badge>
       ) : null}
-    </div>
+    </>
   );
-}
+});
 
 function getNaturalCandidateTreeHeight(nodes: CandidateTreeNode[]) {
   const countRows = (items: CandidateTreeNode[]): number =>
@@ -355,3 +433,4 @@ function toRequirementNode(requirement: RequirementRecord): CandidateTreeNode {
 function getStructureSignature(nodes: CandidateTreeNode[]): string {
   return nodes.map((node) => `${node.key}:${getStructureSignature(node.children)}`).join("|");
 }
+export const RequirementsCandidateTree = memo(RequirementsCandidateTreeImpl);

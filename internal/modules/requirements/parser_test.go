@@ -95,3 +95,63 @@ func TestParseDOCXOnlyExternalInterfaceIsRequirement(t *testing.T) {
 		t.Fatalf("外部接口应合并子章节和表格上下文: %+v", external.Description)
 	}
 }
+
+func TestLooksLikeRequirementQualityCategories(t *testing.T) {
+	cases := []struct {
+		name        string
+		title       string
+		description string
+		want        bool
+	}{
+		{name: "可靠性表格上下文", title: "可靠性需求", description: "配置项质量要求与措施表，见表 14。", want: true},
+		{name: "健壮性需要", title: "健壮性需求", description: "需要具备对页面输入的非法字符进行错误提示。", want: true},
+		{name: "无关章节", title: "研制过程说明", description: "本章描述研制流程。", want: false},
+	}
+	for _, item := range cases {
+		if got := looksLikeRequirement(item.title, item.description); got != item.want {
+			t.Fatalf("%s: looksLikeRequirement = %v, want %v", item.name, got, item.want)
+		}
+	}
+}
+
+func TestInferPrimaryKindTitleOnly(t *testing.T) {
+	cases := []struct {
+		title string
+		want  string
+	}{
+		{"性能要求", KindPerformance},
+		{"处理时间要求", KindPerformance},
+		{"CSCI外部接口需求", KindInterface},
+		{"外部接口数据", KindInterface},
+		{"安全性需求", KindSafety},
+		{"保密性和私密性需求", KindSafety},
+		{"可靠性需求", KindReliability},
+		{"[RQGN001-BCDXMBGL-001] BCD星指令参数管理", KindFunctional},
+		{"运行维护需求", KindFunctional},
+	}
+	for _, item := range cases {
+		if got := inferPrimaryKind(item.title); got != item.want {
+			t.Fatalf("inferPrimaryKind(%q) = %q, want %q", item.title, got, item.want)
+		}
+	}
+}
+
+func TestPrimaryKindIgnoresDescriptionKeywords(t *testing.T) {
+	paragraphs := []docxParagraph{
+		{style: "1", text: "功能需求", position: 1},
+		{style: "2", text: "[RQGN001-CMD-001] 指令参数管理", position: 2},
+		{text: "操作员设置指令间隔时间，通过接口调用发送数据，支持故障预案加载与恢复。", position: 3},
+	}
+	nodes := buildParsedNodes(paragraphs)
+	byChapter := make(map[string]ParsedNode, len(nodes))
+	for _, node := range nodes {
+		byChapter[node.ChapterNumber] = node
+	}
+	leaf, ok := byChapter["1.1"]
+	if !ok || !leaf.IsRequirement {
+		t.Fatalf("叶子功能需求应被识别: %+v", nodes)
+	}
+	if leaf.PrimaryKind != KindFunctional {
+		t.Fatalf("描述中的时间/接口/故障词汇不应影响类型判定: %+v", leaf)
+	}
+}

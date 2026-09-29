@@ -1,5 +1,14 @@
-import { Ban, CheckCircle2, PencilLine, RefreshCw, Search, SearchX } from "lucide-react";
-import { useDeferredValue, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  Ban,
+  CheckCircle2,
+  Eraser,
+  PencilLine,
+  RefreshCw,
+  Search,
+  SearchX,
+} from "lucide-react";
+import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import { createColumnHelper, useTable, type SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/components/shared/data-table";
 import { TruncatedText } from "@/components/shared/truncated-text";
@@ -15,6 +24,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -35,30 +52,39 @@ import type {
   SaveRequirementPayload,
 } from "@/features/requirements/types";
 import { RequirementCandidateEditDialog } from "./requirement-candidate-edit-dialog";
+import { useRequirementSearch } from "./use-requirement-search";
 import { requirementSourceLabel } from "./requirement-form";
 import styles from "./requirements-candidate-workbench.module.css";
 
 const features = managementTableFeatures;
+const CANDIDATE_TABLE_LEFT_ALIGNED_COLUMNS = [1, 2, 3, 4];
+const CANDIDATE_TABLE_VIRTUALIZED = { rowHeight: 45 };
+
 const columnHelper = createColumnHelper<typeof features, RequirementRecord>();
+const nameIdentifierPrefixPattern = /^\s*\[RQGN[^\]]+\]\s*/i;
 
 type RequirementsCandidateWorkbenchProps = {
+  projectId: string;
   sources: RequirementSource[];
   requirements: RequirementRecord[];
   selectedId: string;
   onSelect: (requirement: RequirementRecord) => void;
   parsePending: boolean;
   statusPending: boolean;
+  cleanNamesPending: boolean;
   updatePending: boolean;
   onParse: (sourceVersionId: string) => Promise<RequirementParseResult | undefined>;
   onConfirm: (ids: string[]) => Promise<void>;
   onExclude: (ids: string[], reason: string) => Promise<void>;
+  onCleanNames: (ids: string[]) => Promise<void>;
   onUpdate: (
     id: string,
     payload: Omit<SaveRequirementPayload, "sourceVersionId">,
   ) => Promise<RequirementRecord | undefined>;
 };
 
-export function RequirementsCandidateWorkbench({
+function RequirementsCandidateWorkbenchImpl({
+  projectId,
   sources,
   requirements,
   selectedId,
@@ -69,12 +95,15 @@ export function RequirementsCandidateWorkbench({
   onParse,
   onConfirm,
   onExclude,
+  cleanNamesPending,
+  onCleanNames,
   onUpdate,
 }: RequirementsCandidateWorkbenchProps) {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sorting, setSorting] = useState<SortingState>([{ id: "chapterNumber", desc: false }]);
   const [parseOpen, setParseOpen] = useState(false);
+  const [cleanNamesOpen, setCleanNamesOpen] = useState(false);
   const [excludeTarget, setExcludeTarget] = useState<{
     ids: string[];
     title: string;
@@ -82,6 +111,7 @@ export function RequirementsCandidateWorkbench({
   const [excludeReason, setExcludeReason] = useState("");
   const [editingRequirement, setEditingRequirement] = useState<RequirementRecord | null>(null);
   const deferredQuery = useDeferredValue(query);
+  const search = useRequirementSearch(projectId, deferredQuery);
   const [parseSourceId, setParseSourceId] = useState("");
 
   const candidates = useMemo(
@@ -103,12 +133,9 @@ export function RequirementsCandidateWorkbench({
   const filteredCandidates = useMemo(() => {
     if (!normalizedQuery) return candidates;
     return candidates.filter((requirement) => {
+      if (search.hitsById.has(requirement.id)) return true;
       const source = sourceById.get(requirement.sourceVersionId);
       return [
-        requirement.chapterNumber,
-        requirement.externalIdentifier,
-        requirement.name,
-        requirement.description,
         requirement.sourceAnchor,
         source ? requirementSourceLabel(source) : "",
         source?.version ?? "",
@@ -117,7 +144,21 @@ export function RequirementsCandidateWorkbench({
         .toLowerCase()
         .includes(normalizedQuery);
     });
-  }, [candidates, normalizedQuery, sourceById]);
+  }, [candidates, normalizedQuery, search.hitsById, sourceById]);
+
+  const handleRowActivate = useCallback(
+    (requirement: RequirementRecord) => onSelect(requirement),
+    [onSelect],
+  );
+  const emptyContent = useMemo(
+    () => (
+      <div className={styles.empty}>
+        <SearchX aria-hidden />
+        <p>{normalizedQuery ? "没有匹配的待确认需求" : "暂无待确认需求，可先解析 SRS"}</p>
+      </div>
+    ),
+    [normalizedQuery],
+  );
 
   const selectedIDSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedCandidates = useMemo(
@@ -127,6 +168,12 @@ export function RequirementsCandidateWorkbench({
   const allSelected =
     filteredCandidates.length > 0 && selectedCandidates.length === filteredCandidates.length;
   const someSelected = selectedCandidates.length > 0 && !allSelected;
+  const cleanableCandidates = useMemo(
+    () => selectedCandidates.filter((item) => nameIdentifierPrefixPattern.test(item.name.trim())),
+    [selectedCandidates],
+  );
+  const cleanNamePreview = cleanableCandidates.slice(0, 4);
+  const skippedCleanCount = selectedCandidates.length - cleanableCandidates.length;
 
   const columns = useMemo(
     () =>
@@ -167,6 +214,7 @@ export function RequirementsCandidateWorkbench({
         }),
         columnHelper.accessor("chapterNumber", {
           header: "章节",
+          // 章节号列宽由 requirements-candidate-workbench.module.css 固定为 7.5rem。
           cell: (info) => (
             <TruncatedText value={`§${info.getValue()}`} className="font-mono text-xs" />
           ),
@@ -188,11 +236,15 @@ export function RequirementsCandidateWorkbench({
             </div>
           ),
         }),
-        columnHelper.accessor("description", {
+        columnHelper.accessor((row) => row.descriptionExcerpt, {
+          id: "description",
           header: "原文描述",
           meta: { hiddenUntil: "lg" },
           enableSorting: false,
-          cell: (info) => <TruncatedText value={info.getValue() || "待补描述"} />,
+          // 只渲染服务端下发的 80 字摘要；正文不再进入列表，也不挂 Tooltip/Portal。
+          cell: (info) => (
+            <span className={styles.descriptionPreview}>{info.getValue() || "待补描述"}</span>
+          ),
         }),
         columnHelper.accessor(
           (row) => {
@@ -365,6 +417,16 @@ export function RequirementsCandidateWorkbench({
             type="button"
             variant="outline"
             size="xs"
+            disabled={statusPending || cleanNamesPending || cleanableCandidates.length === 0}
+            onClick={() => setCleanNamesOpen(true)}
+          >
+            <Eraser data-icon="inline-start" aria-hidden />
+            清理名称
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
             disabled={statusPending || selectedCandidates.length === 0}
             onClick={() => {
               setExcludeReason("");
@@ -384,14 +446,10 @@ export function RequirementsCandidateWorkbench({
         <DataTable
           table={table}
           selectedId={selectedId}
-          leftAlignedColumns={[1, 2, 3]}
-          onRowActivate={(requirement) => onSelect(requirement)}
-          emptyContent={
-            <div className={styles.empty}>
-              <SearchX aria-hidden />
-              <p>{normalizedQuery ? "没有匹配的待确认需求" : "暂无待确认需求，可先解析 SRS"}</p>
-            </div>
-          }
+          virtualized={CANDIDATE_TABLE_VIRTUALIZED}
+          leftAlignedColumns={CANDIDATE_TABLE_LEFT_ALIGNED_COLUMNS}
+          onRowActivate={handleRowActivate}
+          emptyContent={emptyContent}
         />
       </div>
 
@@ -400,7 +458,7 @@ export function RequirementsCandidateWorkbench({
           <AlertDialogHeader>
             <AlertDialogTitle>重新解析 SRS？</AlertDialogTitle>
             <AlertDialogDescription>
-              将直接替换当前来源的未确认候选章节；已确认、已排除和已替代记录保留不变。
+              将替换当前来源的未确认候选章节。已确认、已删除/已排除和已替代记录保留；已删除确认需求不会重新进入待确认列表，如需重建请先在“已删除需求”中彻底删除。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -473,6 +531,60 @@ export function RequirementsCandidateWorkbench({
         </AlertDialogContent>
       </AlertDialog>
 
+      <Dialog open={cleanNamesOpen} onOpenChange={setCleanNamesOpen}>
+        <DialogContent className={styles.cleanNamesDialog}>
+          <DialogHeader>
+            <DialogTitle>批量清理名称标识？</DialogTitle>
+            <DialogDescription>
+              将移除 <strong>{cleanableCandidates.length}</strong> 条名称开头的
+              <code>[RQGN...]</code> 前缀，需求标识字段保持不变。
+              {skippedCleanCount > 0 ? `另有 ${skippedCleanCount} 条已无前缀，将自动跳过。` : null}
+            </DialogDescription>
+          </DialogHeader>
+          <div className={styles.cleanNamePreview} aria-label="名称清理预览">
+            {cleanNamePreview.map((requirement) => (
+              <div key={requirement.id} className={styles.cleanNameRow}>
+                <span className={styles.cleanNameBefore}>{requirement.name}</span>
+                <ArrowRight className={styles.cleanNameArrow} aria-hidden />
+                <span className={styles.cleanNameAfter}>
+                  {requirement.name.replace(nameIdentifierPrefixPattern, "").trim()}
+                </span>
+              </div>
+            ))}
+            {cleanableCandidates.length > cleanNamePreview.length ? (
+              <p className={styles.cleanNameMore}>
+                其余 {cleanableCandidates.length - cleanNamePreview.length} 条也按相同规则清理。
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={cleanNamesPending}
+              onClick={() => setCleanNamesOpen(false)}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              disabled={cleanNamesPending || cleanableCandidates.length === 0}
+              onClick={async () => {
+                try {
+                  await onCleanNames(cleanableCandidates.map((item) => item.id));
+                  setCleanNamesOpen(false);
+                } catch {
+                  // API 客户端已展示错误，保留确认框供用户重试。
+                }
+              }}
+            >
+              <Eraser data-icon="inline-start" aria-hidden />
+              {cleanNamesPending ? "清理中..." : "确认清理"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <RequirementCandidateEditDialog
         key={editingRequirement?.id ?? "none"}
         requirement={editingRequirement}
@@ -485,3 +597,5 @@ export function RequirementsCandidateWorkbench({
     </section>
   );
 }
+
+export const RequirementsCandidateWorkbench = memo(RequirementsCandidateWorkbenchImpl);

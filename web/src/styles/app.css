@@ -92,8 +92,8 @@
 
 @theme inline {
   --font-sans:
-    "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei",
-    "PingFang SC", sans-serif;
+    "PingFang SC", "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Microsoft YaHei", sans-serif;
   --font-mono: "Cascadia Mono", Consolas, "SF Mono", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);

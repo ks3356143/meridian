@@ -2,7 +2,11 @@ import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { requirementsApi } from "@/features/requirements/api";
-import type { BulkPurgeRequirementsPayload } from "@/features/requirements/types";
+import type {
+  BulkCleanNamesPayload,
+  BulkPurgeRequirementsPayload,
+  RequirementRecord,
+} from "@/features/requirements/types";
 import type { Project } from "../../../types";
 
 export function useRequirementsWorkbench(project: Project) {
@@ -58,13 +62,33 @@ export function useRequirementsWorkbench(project: Project) {
   });
 
   const restoreMutation = useMutation({
-    mutationFn: (id: string) =>
+    mutationFn: (requirement: RequirementRecord) =>
       requirementsApi.changeStatus(project.id, {
-        ids: [id],
+        ids: [requirement.id],
         action: "restore",
       }),
-    onSuccess: () => {
-      toast.success("已恢复确认需求");
+    onSuccess: (_result, requirement) => {
+      toast.success(
+        requirement.deletedFromStatus === "candidate"
+          ? "已撤回排除，需求回到待确认队列"
+          : "已恢复确认需求",
+      );
+      return invalidate();
+    },
+  });
+
+  const bulkRestoreMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      requirementsApi.changeStatus(project.id, {
+        ids,
+        action: "restore",
+      }),
+    onSuccess: (result) => {
+      toast.success(
+        result.updatedCount === 1
+          ? "已撤回 1 条排除记录，回到待确认队列"
+          : `已撤回 ${result.updatedCount} 条排除记录，回到待确认队列`,
+      );
       return invalidate();
     },
   });
@@ -113,11 +137,24 @@ export function useRequirementsWorkbench(project: Project) {
     },
   });
 
+  const bulkCleanNamesMutation = useMutation({
+    mutationFn: (payload: BulkCleanNamesPayload) =>
+      requirementsApi.bulkCleanNames(project.id, payload),
+    onSuccess: (result) => {
+      toast.success(
+        result.updatedCount === 1
+          ? "已清理 1 条需求名称"
+          : `已清理 ${result.updatedCount} 条需求名称`,
+      );
+      return invalidate();
+    },
+  });
+
   const parseMutation = useMutation({
     mutationFn: (sourceVersionId: string) => requirementsApi.parse(project.id, sourceVersionId),
     onSuccess: (result) => {
       toast.success(
-        `解析完成：生成 ${result.candidateCount} 条待确认需求，匹配正式 ${result.officialMatchCount} 条，匹配排除 ${result.excludedMatchCount} 条`,
+        `解析完成：生成 ${result.candidateCount} 条待确认需求，匹配正式 ${result.officialMatchCount} 条，保留已排除 ${result.excludedMatchCount} 条`,
       );
       return invalidate();
     },
@@ -150,10 +187,12 @@ export function useRequirementsWorkbench(project: Project) {
     updateMutation,
     deleteMutation,
     restoreMutation,
+    bulkRestoreMutation,
     purgeMutation,
     bulkPurgeMutation,
     bulkUpdateMutation,
     bulkCreateMutation,
+    bulkCleanNamesMutation,
     parseMutation,
     candidateStatusMutation,
     invalidate,

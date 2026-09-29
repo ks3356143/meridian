@@ -33,6 +33,7 @@
 - 提示：统一使用 `sonner`。
 - 前端检查：`oxlint` + `oxfmt`，不使用 Prettier/ESLint。
 - Word：原始 DOCX 模板 + 结构化数据 + Go 渲染 OOXML。
+- 外部文档引擎：OfficeCLI（可选、非核心依赖、不常驻进程），只承担模板合并、OpenXML schema 校验和 DOCX 页面预览；边界、集成约定与前置验证见 [srs/03-技术路线.md](srs/03-技术路线.md)。
 
 ## 常用命令
 
@@ -65,6 +66,7 @@ npm run dev
 2. 前端在 `web/` 执行 `npm outdated`，检查全部 npm 依赖库，包含 React、Vite、React Router、Tailwind、TanStack、Radix、shadcn 相关依赖和构建工具等；有可用更新时升级到最新稳定版并更新 `package-lock.json`。React Router 相关包必须保持同一版本，不使用 `--force` 掩盖 peer dependency 冲突。
 3. 依赖发生变化后，后端至少执行 `go test ./... -count=1`、`go vet ./...` 和 `go build -o bin/chenmeridian.exe ./cmd/chenmeridian`；前端至少执行 `npm run check`。验证通过后再启动服务。
 4. 若最新版本与当前技术栈或运行环境不兼容，保留可用的最新兼容版本，并在汇报和当天跨会话记忆中记录未升级项、原因和后续处理条件。
+5. 同一时机必须检查 OfficeCLI 更新：用 `npm view @officecli/officecli version` 对比本机 `officecli --version`，有更新即升级到最新稳定版；升级后顺手过一遍 `officecli --help`、`officecli help docx`（`xlsx`/`pptx` 同理）和本地 skill 文件，把新增命令、快捷能力与版本变化记入 [srs/03-技术路线.md](srs/03-技术路线.md)。OfficeCLI 一旦接入文档生成链路，升级后必须补跑保真度回归（dump → 回放 → `validate` → 截图对比）再交付。
 5. 依赖检查结果和升级结果属于启动汇报内容；无更新时明确说明已检查，有更新时说明升级项和验证结果。
 
 ## Skills 更新提醒铁律
@@ -107,6 +109,8 @@ npm run dev
 
 能使用组件库组件的必须使用组件库不要手搓，手搓仅调整，能美化的都美化，前端布局和样式可以参考ui/ux pro max、frontend-design、taste-skills、garden-skills等
 
+**性能优先铁律**：任何前端页面、组件、表格、树、弹窗和动效先按生产构建测量性能；本地工具也不允许用“能用/数据少”代替流畅。若当前成熟方案或必要视觉效果无法压到流畅，必须提供明确加载态（Skeleton / spinner / `aria-busy` / 进度面板），禁止让已显示页面长时间冻结或无反馈。性能验收统一以 `npm run build` + `npm run preview` 为准，开发服务器只验证功能。
+
 1. 一定要美观好看，舒服
 1. 做前端时候一定要看 [srs/07-前端体验.md](srs/07-前端体验.md) 里面美化要求
 1. 组件自定义样式必须使用 Vite CSS Modules：组件样式写在同目录同名 `.module.css`，例如 `Button.tsx` 对应 `Button.module.css`；参考 [Vite CSS Modules](https://vite.dev/guide/features.html#css-modules)。
@@ -114,6 +118,7 @@ npm run dev
 1. 禁止把新增自定义视觉样式继续写入全局 CSS 大文件或散落在 TSX 长工具类里；Tailwind 只用于少量布局工具和 shadcn/Radix 既有组合，主题、变体、状态和业务视觉归 CSS Module。
 1. CSS Module 按组件职责拆分，选择器使用 camelCase 类名；跨组件第三方子元素用 `:global()`，禁止用标签选择器扩大影响面。
 1. 涉及 React 19 并发能力、渲染性能、重渲染、包体积或数据请求优化的，必须优先参考本机已安装技能 `react19-concurrent-patterns` 和 `build-web-apps:react-best-practices`，再结合 [srs/21-前端性能优化策略.md](srs/21-前端性能优化策略.md) 做测量、修改和验收。Next.js、RSC 等不适用于本项目 Vite SPA 的规则只作思路参考，不得机械套用。
+1. 涉及列表/详情数据分层、懒加载与加载态、表格与树虚拟化、富文本正文、图片资源的，必须先读 [srs/23-数据加载与渲染性能.md](srs/23-数据加载与渲染性能.md)；模块实施记录可查，但契约以该全局文件为准。
 
 ## 入口文档
 

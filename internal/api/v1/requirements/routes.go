@@ -34,6 +34,21 @@ func Register(api huma.API, service *requirementsservice.Service) {
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "search-requirements",
+		Method:      http.MethodGet,
+		Path:        "/api/v1/projects/{code}/requirements/search",
+		Summary:     "搜索软件需求",
+		Description: "在服务端搜索章节号、名称、标识、描述和标签；列表只返回命中 id、命中字段和摘要。",
+		Tags:        []string{"需求与追踪"},
+	}, func(ctx context.Context, input *SearchRequirementsInput) (*SearchRequirementsOutput, error) {
+		body, err := handler.service.SearchRequirements(ctx, input.Code, input.SourceVersionID, input.Query)
+		if err != nil {
+			return nil, toAPIError(err, "搜索软件需求失败")
+		}
+		return &SearchRequirementsOutput{Body: body}, nil
+	})
+
+	huma.Register(api, huma.Operation{
 		OperationID: "create-requirement-section",
 		Method:      http.MethodPost,
 		Path:        "/api/v1/projects/{code}/requirement-sections",
@@ -110,6 +125,24 @@ func Register(api huma.API, service *requirementsservice.Service) {
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "bulk-clean-candidate-names",
+		Method:      http.MethodPost,
+		Path:        "/api/v1/projects/{code}/requirements/bulk-clean-names",
+		Summary:     "批量清理待确认需求名称",
+		Description: "移除勾选的待确认需求名称开头的 [RQGN...] 标识前缀；事务内逐条更新并写审计。",
+		Tags:        []string{"需求与追踪"},
+	}, func(ctx context.Context, input *BulkCleanNamesInput) (*BulkCleanNamesOutput, error) {
+		body, err := handler.service.BulkCleanNames(ctx, requirementsservice.BulkCleanNamesInput{
+			ProjectCode: input.Code,
+			IDs:         input.Body.IDs,
+			OperatedBy:  currentUserID(ctx),
+		})
+		if err != nil {
+			return nil, toAPIError(err, "批量清理需求名称失败")
+		}
+		return &BulkCleanNamesOutput{Body: body}, nil
+	})
+	huma.Register(api, huma.Operation{
 		OperationID: "bulk-update-requirements",
 		Method:      http.MethodPost,
 		Path:        "/api/v1/projects/{code}/requirements/bulk-update",
@@ -184,6 +217,21 @@ func Register(api huma.API, service *requirementsservice.Service) {
 			return nil, toAPIError(err, "更新需求状态失败")
 		}
 		return &StatusActionOutput{Body: body}, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-requirement-content",
+		Method:      http.MethodGet,
+		Path:        "/api/v1/software-requirements/{id}/content",
+		Summary:     "读取软件需求正文",
+		Description: "按需求 id 返回完整描述正文，供详情和编辑按需加载；列表接口不返回该字段。",
+		Tags:        []string{"需求与追踪"},
+	}, func(ctx context.Context, input *RequirementContentInput) (*RequirementContentOutput, error) {
+		body, err := handler.service.RequirementContent(ctx, input.ID)
+		if err != nil {
+			return nil, toAPIError(err, "读取软件需求正文失败")
+		}
+		return &RequirementContentOutput{Body: body}, nil
 	})
 
 	huma.Register(api, huma.Operation{
@@ -277,6 +325,8 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error404NotFound("软件需求不存在")
 	case errors.Is(err, requirementsservice.ErrRequirementNotActive):
 		return huma.Error409Conflict("候选或正式需求才允许修改")
+	case errors.Is(err, requirementsservice.ErrRequirementNotCandidate):
+		return huma.Error409Conflict("仅待确认需求支持批量清理名称")
 	case errors.Is(err, requirementsservice.ErrRequirementNotDeleted):
 		return huma.Error409Conflict("仅从已确认需求删除的记录允许恢复")
 	case errors.Is(err, requirementsservice.ErrRequirementNotPurgeable):

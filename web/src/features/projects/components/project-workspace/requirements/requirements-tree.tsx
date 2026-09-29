@@ -24,6 +24,8 @@ import {
   useContext,
   useDeferredValue,
   useEffect,
+  useLayoutEffect,
+  memo,
   useMemo,
   useRef,
   useState,
@@ -50,7 +52,7 @@ import { Input } from "@/components/ui/input";
 import type { RequirementRecord, RequirementSource } from "@/features/requirements/types";
 import { RequirementShortcutsDialog } from "./requirement-shortcuts-dialog";
 import { requirementSourceLabel } from "./requirement-form";
-import { useRequirementTreeMotion } from "./use-requirement-tree-motion";
+import { TREE_BASE_OVERSCAN, useRequirementTreeMotion } from "./use-requirement-tree-motion";
 import { useRequirementHistory } from "./use-requirement-history";
 import {
   requirementSearchFieldLabels,
@@ -92,7 +94,8 @@ export type RequirementCreatedSignal = {
   focusTree: boolean;
 };
 
-export function RequirementsTree({
+function RequirementsTreeImpl({
+  projectId,
   sources,
   requirements,
   selectedId,
@@ -113,6 +116,7 @@ export function RequirementsTree({
   naturalHeight,
   toolbarTabs,
 }: {
+  projectId: string;
   sources: RequirementSource[];
   requirements: RequirementRecord[];
   selectedId: string;
@@ -165,7 +169,7 @@ export function RequirementsTree({
   );
   const visibleRequirements = useMemo(() => {
     if (completenessFilter === "missing-description") {
-      return officialRequirements.filter((requirement) => requirement.description.trim() === "");
+      return officialRequirements.filter((requirement) => !requirement.hasDescription);
     }
     if (completenessFilter === "pending-identifier") {
       return officialRequirements.filter(isRequirementIdentifierPending);
@@ -180,7 +184,7 @@ export function RequirementsTree({
     let missingDescription = 0;
     let pendingIdentifier = 0;
     for (const requirement of officialRequirements) {
-      if (requirement.description.trim() === "") missingDescription++;
+      if (!requirement.hasDescription) missingDescription++;
       if (isRequirementIdentifierPending(requirement)) pendingIdentifier++;
     }
     return {
@@ -204,10 +208,18 @@ export function RequirementsTree({
     .flatMap((source) => source.children.map((requirement) => requirement.key))
     .join("|");
   const deferredSearchQuery = useDeferredValue(searchState.query);
-  const search = useRequirementSearch(visibleRequirements, deferredSearchQuery);
+  const rawSearch = useRequirementSearch(projectId, deferredSearchQuery);
+  const search = useMemo(() => {
+    const hits = rawSearch.hits.filter((hit) => visibleRequirementsById.has(hit.id));
+    return {
+      ...rawSearch,
+      hits,
+      hitsById: new Map(hits.map((hit) => [hit.id, hit])),
+    };
+  }, [rawSearch, visibleRequirementsById]);
   const boundedSearchIndex = Math.min(Math.max(searchState.index, 0), search.hits.length - 1);
   const activeSearchHit = search.hits[boundedSearchIndex];
-  const activeSearchId = activeSearchHit?.requirement.id ?? "";
+  const activeSearchId = activeSearchHit?.id ?? "";
   const history = useRequirementHistory(selectedId, visibleRequirementsById);
   // 新建需求不在当前完整度筛选内时，回到“全部”口径（渲染期调整状态，避免在 effect 里同步 setState）。
   const createdSignalKey = createdSignal ? `${createdSignal.nonce}:${createdSignal.id}` : "";
@@ -295,15 +307,25 @@ export function RequirementsTree({
       }
 
       const hit = search.hits[nextIndex];
+      const requirement = visibleRequirementsById.get(hit.id);
+      if (!requirement) return;
       setSearchState({
         committed: nextCommitted,
         index: nextIndex,
         query: searchState.query,
       });
-      onSelect(hit.requirement);
-      scrollToRequirement(hit.requirement.id);
+      onSelect(requirement);
+      scrollToRequirement(hit.id);
     },
-    [boundedSearchIndex, onSelect, scrollToRequirement, search.hits, searchState, setSearchState],
+    [
+      boundedSearchIndex,
+      onSelect,
+      scrollToRequirement,
+      search.hits,
+      searchState,
+      setSearchState,
+      visibleRequirementsById,
+    ],
   );
 
   const goToHistory = useCallback(
@@ -315,7 +337,7 @@ export function RequirementsTree({
       scrollToRequirement(requirement.id);
 
       if (!searchState.query) return;
-      const hitIndex = search.hits.findIndex((hit) => hit.requirement.id === requirement.id);
+      const hitIndex = search.hits.findIndex((hit) => hit.id === requirement.id);
       if (hitIndex >= 0) {
         setSearchState({
           committed: true,
@@ -496,7 +518,11 @@ export function RequirementsTree({
               ) : null}
               <span className={styles.searchCount} role="status" aria-live="polite">
                 {searchState.query
-                  ? `${search.hits.length ? boundedSearchIndex + 1 : 0}/${search.hits.length}`
+                  ? search.error
+                    ? "搜索失败"
+                    : search.isSearching && !search.hits.length
+                      ? "搜索中…"
+                      : `${search.hits.length ? boundedSearchIndex + 1 : 0}/${search.hits.length}`
                   : ""}
               </span>
               <Button
@@ -576,6 +602,10 @@ export function RequirementsTree({
                   </span>
                   <TruncatedText value={activeSearchHit.excerpt} />
                 </>
+              ) : search.error ? (
+                <TruncatedText value="搜索失败，请重试" placeholder="搜索失败，请重试" />
+              ) : search.isSearching ? (
+                <TruncatedText value="搜索中…" placeholder="搜索中…" />
               ) : (
                 <TruncatedText value="无匹配需求" placeholder="无匹配需求" />
               )}
@@ -803,7 +833,7 @@ function ConfirmedTree({
   const rowHandlersRef = useRef({ onCopy, onDelete, onSelect });
   const [height, setHeight] = useState(360);
   const selectedTreeId = selectedId ? `requirement:${selectedId}` : "";
-  const { requestTreeToggle, requestTreeExit } = useRequirementTreeMotion({
+  const { overscanBoost, requestTreeToggle, requestTreeExit } = useRequirementTreeMotion({
     shellRef,
     structureSignature,
     treeRef,
@@ -818,7 +848,8 @@ function ConfirmedTree({
     rowHandlersRef.current = { onCopy, onDelete, onSelect };
   }, [onCopy, onDelete, onSelect]);
 
-  useEffect(() => {
+  // 与候选树同一原因：空状态不挂载树容器，nodes 变非空后需要重新测量高度。
+  useLayoutEffect(() => {
     if (naturalHeight) return;
 
     const element = shellRef.current;
@@ -831,7 +862,7 @@ function ConfirmedTree({
     const observer = new ResizeObserver(updateHeight);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [naturalHeight]);
+  }, [naturalHeight, nodes.length]);
 
   useEffect(() => {
     const tree = treeRef.current;
@@ -847,6 +878,10 @@ function ConfirmedTree({
       ids: [selectedTreeId],
       anchor: selectedTreeId,
       mostRecent: selectedTreeId,
+    });
+    tree.openParents(selectedTreeId);
+    window.requestAnimationFrame(() => {
+      void tree.scrollTo(selectedTreeId, "center");
     });
   }, [selectedTreeId, treeRef]);
 
@@ -939,7 +974,7 @@ function ConfirmedTree({
           width="100%"
           rowHeight={30}
           indent={14}
-          overscanCount={12}
+          overscanCount={TREE_BASE_OVERSCAN + overscanBoost}
           openByDefault
           initialOpenState={{ [nodes[0].key]: true }}
           idAccessor={(node) => node.key}
@@ -1053,7 +1088,7 @@ function ConfirmedTreeRow({
       data-node-type={data.type}
       data-node-id={node.id}
       data-tree-row="true"
-      data-incomplete={requirement && requirement.description.trim() === "" ? "true" : undefined}
+      data-incomplete={requirement && !requirement.hasDescription ? "true" : undefined}
       data-identifier-pending={
         requirement && isRequirementIdentifierPending(requirement) ? "true" : undefined
       }
@@ -1083,26 +1118,29 @@ function ConfirmedTreeRow({
         ))}
       </span>
       {rowState.batchMode ? (
-        <Checkbox
-          className={styles.rowCheck}
-          checked={data.type === "source" ? sourceCheckState : checked}
-          disabled={data.type === "source" && data.children.length === 0}
-          aria-label={
-            data.type === "source" ? `选择${data.title}下全部需求` : `选择需求 ${data.title}`
-          }
-          onClick={(event) => event.stopPropagation()}
-          onCheckedChange={(value) => {
-            if (data.type === "source") {
-              rowState.onToggleSource(
-                data.key.replace(/^source:/, ""),
-                value === true,
-                data.children.map((child) => child.requirement?.id ?? "").filter(Boolean),
-              );
-            } else if (requirementId) {
-              rowState.onToggleRequirement(requirementId, value === true);
+        data.type === "source" && data.children.length === 0 ? (
+          <span className={styles.rowCheckSpacer} aria-hidden />
+        ) : (
+          <Checkbox
+            className={styles.rowCheck}
+            checked={data.type === "source" ? sourceCheckState : checked}
+            aria-label={
+              data.type === "source" ? `选择${data.title}下全部需求` : `选择需求 ${data.title}`
             }
-          }}
-        />
+            onClick={(event) => event.stopPropagation()}
+            onCheckedChange={(value) => {
+              if (data.type === "source") {
+                rowState.onToggleSource(
+                  data.key.replace(/^source:/, ""),
+                  value === true,
+                  data.children.map((child) => child.requirement?.id ?? "").filter(Boolean),
+                );
+              } else if (requirementId) {
+                rowState.onToggleRequirement(requirementId, value === true);
+              }
+            }}
+          />
+        )
       ) : null}
       {data.children.length > 0 ? (
         <span
@@ -1137,13 +1175,17 @@ function ConfirmedTreeRow({
           </TooltipContent>
         </Tooltip>
       ) : null}
-      {data.type === "source" ? <Badge variant="outline">{data.count}</Badge> : null}
+      {data.type === "source" ? (
+        <Badge variant="primary" className={styles.countBadge}>
+          {data.count}
+        </Badge>
+      ) : null}
       {data.type === "source" && data.incompleteCount > 0 ? (
         <Badge variant="warning" className={styles.incompleteCountBadge}>
           待补 {data.incompleteCount}
         </Badge>
       ) : null}
-      {requirement && requirement.description.trim() === "" ? (
+      {requirement && !requirement.hasDescription ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <button
@@ -1214,7 +1256,7 @@ function buildConfirmedTree(
       (requirement) => requirement.sourceVersionId === source.id,
     );
     const incompleteCount = officialRequirements.filter(
-      (requirement) => requirement.description.trim() === "",
+      (requirement) => !requirement.hasDescription,
     ).length;
 
     return [
@@ -1229,7 +1271,7 @@ function buildConfirmedTree(
           type: "requirement" as const,
           title: `§${requirement.chapterNumber} ${requirement.name}`,
           count: 0,
-          incompleteCount: requirement.description.trim() === "" ? 1 : 0,
+          incompleteCount: requirement.hasDescription ? 0 : 1,
           requirement,
           children: [],
         })),
@@ -1237,3 +1279,4 @@ function buildConfirmedTree(
     ];
   });
 }
+export const RequirementsTree = memo(RequirementsTreeImpl);

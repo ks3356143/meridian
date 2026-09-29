@@ -1,7 +1,7 @@
 import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { flushSync } from "react-dom";
-import { useRef, useState, type ReactNode } from "react";
+
+import { startTransition, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -80,16 +80,13 @@ export function ProjectWorkspaceLayout({
   const handleSectionChange = (value: string) => {
     const section = NAV_SECTIONS.find((item) => item.value === value);
     if (!section) return;
-    navigate(prepareSection(section));
-  };
 
-  function prepareSection(section: (typeof NAV_SECTIONS)[number]) {
     const target = `/projects/${project.id}/workspace${section.path ? `/${section.path}` : ""}`;
     if (target !== location.pathname) {
-      flushSync(() => setPendingSection({ fromPath: location.pathname }));
+      startTransition(() => setPendingSection({ fromPath: location.pathname }));
     }
-    return target;
-  }
+    navigate(target);
+  };
 
   return (
     <div ref={containerRef} className="workspace-shell flex h-svh min-h-0 flex-col">
@@ -107,7 +104,6 @@ export function ProjectWorkspaceLayout({
                   key={section.value}
                   value={section.value}
                   className={styles.tabTrigger}
-                  onMouseDown={() => prepareSection(section)}
                 >
                   <section.icon className={styles.tabIcon} aria-hidden />
                   {section.label}

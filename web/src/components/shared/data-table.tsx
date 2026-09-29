@@ -1,149 +1,95 @@
-import { flexRender, type ReactTable } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import type { RowData } from "@tanstack/table-core";
-import { cn } from "cn";
-import { Button } from "@/components/ui/button";
-import { TruncatedText } from "@/components/shared/truncated-text";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useMemo, useRef, type ReactNode } from "react";
+import type { ReactTable } from "@tanstack/react-table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import styles from "./data-table.module.css";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTableHeader } from "./data-table-header";
+import { DataTableRow } from "./data-table-row";
+import type { DataTableRowData } from "./data-table-types";
 import type { ManagementTableFeatures } from "./table-features";
 
-export type ResponsiveBreakpoint = "lg" | "xl" | "wide";
+const DEFAULT_ROW_HEIGHT = 45;
+const DEFAULT_VIRTUAL_HEIGHT = 560;
+const DEFAULT_OVERSCAN = 8;
+const EMPTY_ALIGNED_COLUMNS: number[] = [];
 
-const responsiveHiddenClasses = {
-  lg: "hidden lg:table-cell",
-  xl: "hidden xl:table-cell",
-  wide: "hidden min-[1600px]:table-cell",
-} as const;
-
-type DataTableMeta = { hiddenUntil?: ResponsiveBreakpoint };
-
-export interface DataTableProps<TData extends RowData & { id: string }> {
+export interface DataTableProps<TData extends DataTableRowData> {
   table: ReactTable<ManagementTableFeatures, TData>;
   selectedId?: string;
   leftAlignedColumns?: number[];
   emptyContent?: ReactNode;
   onRowActivate?: (row: TData) => void;
-  rowClassName?: string;
+  /**
+   * 窗口化渲染：只渲染可视区内的行，用上下两个占位行撑起滚动高度。
+   * 保留真实 `<table>` 结构（表头/列宽/固定布局都不变），仅行数受控。
+   */
+  virtualized?: { rowHeight: number };
 }
 
-export function DataTable<TData extends RowData & { id: string }>({
+export function DataTable<TData extends DataTableRowData>({
   table,
   selectedId,
-  leftAlignedColumns = [],
+  leftAlignedColumns,
   emptyContent,
   onRowActivate,
-  rowClassName,
+  virtualized,
 }: DataTableProps<TData>) {
   const columnCount = table.getAllLeafColumns().length;
   const rows = table.getRowModel().rows;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const alignmentSignature = (leftAlignedColumns ?? EMPTY_ALIGNED_COLUMNS).join(",");
+  const alignedColumns = useMemo(
+    () => new Set(alignmentSignature ? alignmentSignature.split(",").map(Number) : []),
+    [alignmentSignature],
+  );
 
-  return (
+  // 行高固定（单元格统一单行省略），用 spacer 行把未渲染的行位撑起来。
+  // TanStack Virtual 官方 Hook 返回的对象天然不可 memo，React Compiler 会跳过本组件的 memo 化；
+  // 这是库的既定用法，且只在开启 virtualized 时生效。
+  // oxlint-disable-next-line react/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => virtualized?.rowHeight ?? DEFAULT_ROW_HEIGHT,
+    overscan: DEFAULT_OVERSCAN,
+    enabled: Boolean(virtualized),
+    initialRect: virtualized ? { width: 1200, height: DEFAULT_VIRTUAL_HEIGHT } : undefined,
+  });
+  const virtualItems = virtualized ? virtualizer.getVirtualItems() : [];
+  const firstItem = virtualItems[0];
+  const lastItem = virtualItems[virtualItems.length - 1];
+  const visibleRows =
+    virtualized && firstItem && lastItem ? rows.slice(firstItem.index, lastItem.index + 1) : rows;
+  const topSpacer = firstItem ? firstItem.start : 0;
+  const bottomSpacer = lastItem ? Math.max(0, virtualizer.getTotalSize() - lastItem.end) : 0;
+
+  const tableElement = (
     <Table className="w-full table-fixed border-collapse text-left text-[13px]">
-      <TableHeader>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id} className="bg-muted/60 border-border hover:bg-muted/60">
-            {headerGroup.headers.map((header) => {
-              const sorted = header.column.getIsSorted();
-              const meta = header.column.columnDef.meta as DataTableMeta | undefined;
-              return (
-                <TableHead
-                  key={header.id}
-                  aria-sort={
-                    sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none"
-                  }
-                  className={cn(
-                    "text-foreground border-border h-auto max-w-0 border-r px-3 py-2.5 text-center text-xs font-semibold last:border-r-0",
-                    meta?.hiddenUntil && responsiveHiddenClasses[meta.hiddenUntil],
-                  )}
-                >
-                  {header.column.getCanSort() ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      className="h-6 w-full min-w-0 justify-center px-1 text-xs font-semibold"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <TruncatedText
-                        value={String(
-                          flexRender(header.column.columnDef.header, header.getContext()),
-                        )}
-                        className="text-left text-xs"
-                      />
-                      {sorted === "asc" ? (
-                        <ArrowUp className="size-3 shrink-0" aria-hidden />
-                      ) : sorted === "desc" ? (
-                        <ArrowDown className="size-3 shrink-0" aria-hidden />
-                      ) : (
-                        <ChevronsUpDown className="size-3 shrink-0 opacity-45" aria-hidden />
-                      )}
-                    </Button>
-                  ) : (
-                    flexRender(header.column.columnDef.header, header.getContext())
-                  )}
-                </TableHead>
-              );
-            })}
-          </TableRow>
-        ))}
-      </TableHeader>
+      <DataTableHeader table={table} />
       <TableBody>
-        {rows.map((row) => {
-          const rowProps = onRowActivate
-            ? getActivatableRowProps(() => onRowActivate(row.original))
-            : {};
-          return (
-            <TableRow
-              key={row.id}
-              {...rowProps}
-              data-selected={selectedId === row.original.id ? "true" : undefined}
-              className={cn(
-                "group/row border-border transition-[background-color,box-shadow] hover:bg-primary/5",
-                selectedId === row.original.id && "bg-primary/8",
-                selectedId === row.original.id && styles.selectedRow,
-                onRowActivate &&
-                  "relative cursor-pointer focus-visible:bg-primary/8 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
-                rowClassName,
-              )}
-            >
-              {row.getAllCells().map((cell, index) => {
-                const meta = cell.column.columnDef.meta as DataTableMeta | undefined;
-                return (
-                  <TableCell
-                    key={cell.id}
-                    className={cn(
-                      "border-border relative max-w-0 border-r px-3 py-2.5 last:border-r-0",
-                      leftAlignedColumns.includes(index) ? "text-left" : "text-center",
-                      meta?.hiddenUntil && responsiveHiddenClasses[meta.hiddenUntil],
-                    )}
-                  >
-                    {onRowActivate && index === 0 ? (
-                      <span
-                        className={cn(
-                          "bg-primary absolute top-2 bottom-2 left-0 w-[3px] origin-center",
-                          selectedId === row.original.id
-                            ? "scale-y-100"
-                            : "scale-y-0 transition-transform duration-200 group-hover/row:scale-y-100 group-focus-visible/row:scale-y-100",
-                        )}
-                        aria-hidden
-                      />
-                    ) : null}
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-          );
-        })}
+        {topSpacer > 0 ? (
+          <TableRow aria-hidden className="border-0 hover:bg-transparent">
+            <TableCell colSpan={columnCount} style={{ height: topSpacer, padding: 0, border: 0 }} />
+          </TableRow>
+        ) : null}
+        {visibleRows.map((row) => (
+          <DataTableRow
+            key={row.id}
+            row={row}
+            active={selectedId === row.original.id}
+            onRowActivate={onRowActivate}
+            alignedColumns={alignedColumns}
+            renderVersion={table.options.columns}
+          />
+        ))}
+        {bottomSpacer > 0 ? (
+          <TableRow aria-hidden className="border-0 hover:bg-transparent">
+            <TableCell
+              colSpan={columnCount}
+              style={{ height: bottomSpacer, padding: 0, border: 0 }}
+            />
+          </TableRow>
+        ) : null}
         {rows.length === 0 && emptyContent ? (
           <TableRow className="hover:bg-transparent">
             <TableCell colSpan={columnCount} className="px-3 py-10">
@@ -154,19 +100,12 @@ export function DataTable<TData extends RowData & { id: string }>({
       </TableBody>
     </Table>
   );
-}
 
-function getActivatableRowProps(
-  onActivate: () => void,
-): Pick<ComponentPropsWithoutRef<"tr">, "onClick" | "onKeyDown" | "tabIndex"> {
-  return {
-    tabIndex: 0,
-    onClick: onActivate,
-    onKeyDown: (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        onActivate();
-      }
-    },
-  };
+  if (!virtualized) return tableElement;
+
+  return (
+    <div ref={scrollRef} className={styles.scrollArea} data-slot="data-table-scroll">
+      {tableElement}
+    </div>
+  );
 }

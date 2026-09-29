@@ -7,7 +7,9 @@
 }
 
 .tabs {
+  display: grid;
   gap: 0;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   min-width: 0;
@@ -118,13 +120,27 @@
 }
 
 .tabContent {
-  flex: 1 1 auto;
+  grid-area: 1 / 1;
   min-height: 0;
   min-width: 0;
 }
 
+/* 首屏默认单面板；首次切换到待确认需求时，data-panels-ready 必须与 tab
+   状态在同一批更新中生效，避免旧面板先 display:none 导致浮层参考元素脱离布局。 */
+.tabContent[data-state="inactive"] {
+  display: none;
+}
+
+.tabs[data-panels-ready] .tabContent[data-state="inactive"] {
+  display: block !important;
+  pointer-events: none;
+  visibility: hidden;
+}
+
 .tabContent[data-state="active"] {
   animation: workbenchViewIn 0.18s ease-out both;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes workbenchViewIn {

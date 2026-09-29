@@ -435,3 +435,21 @@
     justify-content: flex-start;
   }
 }
+
+.loadingSlot {
+  animation: detailLoadingReveal 1ms linear 250ms both;
+  opacity: 0;
+}
+
+@keyframes detailLoadingReveal {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingSlot {
+    animation: none;
+    opacity: 1;
+  }
+}
