@@ -21,6 +21,10 @@ type ParsedNode struct {
 	ExternalIdentifier string
 	Tags               []string
 	IsRequirement      bool
+	// Position 是该章节标题在全文档段落序列中的序号（1-based，含表格与内容控件内的段落）。
+	Position int
+	// EndPosition 是下一章节标题的序号（不含）；0 表示到文档末尾。
+	EndPosition int
 }
 
 type docxParagraph struct {
@@ -197,6 +201,7 @@ func buildParsedNodes(paragraphs []docxParagraph) []ParsedNode {
 				Title:         title,
 				ParentChapter: parentChapter(chapter),
 				SourceAnchor:  fmt.Sprintf("DOCX 段落 %d", paragraph.position),
+				Position:      paragraph.position,
 			}
 			chapters[chapter] = node
 			currentHeading = chapter
@@ -266,7 +271,28 @@ func buildParsedNodes(paragraphs []docxParagraph) []ParsedNode {
 		node.PrimaryKind = inferPrimaryKind(node.Title)
 		nodes = append(nodes, node)
 	}
+	assignChapterEndPositions(nodes)
 	return nodes
+}
+
+// assignChapterEndPositions 按文档顺序为每个章节标注正文区间终点。
+func assignChapterEndPositions(nodes []ParsedNode) {
+	ordered := make([]int, 0, len(nodes))
+	for index := range nodes {
+		if nodes[index].Position > 0 {
+			ordered = append(ordered, index)
+		}
+	}
+	sort.Slice(ordered, func(i, j int) bool {
+		return nodes[ordered[i]].Position < nodes[ordered[j]].Position
+	})
+	for position, index := range ordered {
+		end := 0
+		if position+1 < len(ordered) {
+			end = nodes[ordered[position+1]].Position
+		}
+		nodes[index].EndPosition = end
+	}
 }
 
 func externalInterfaceChapter(orderedChapters []string, chapters map[string]ParsedNode, chapter string) (string, bool) {

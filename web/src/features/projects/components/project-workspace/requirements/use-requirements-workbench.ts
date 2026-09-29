@@ -153,9 +153,12 @@ export function useRequirementsWorkbench(project: Project) {
   const parseMutation = useMutation({
     mutationFn: (sourceVersionId: string) => requirementsApi.parse(project.id, sourceVersionId),
     onSuccess: (result) => {
-      toast.success(
-        `解析完成：生成 ${result.candidateCount} 条待确认需求，匹配正式 ${result.officialMatchCount} 条，保留已排除 ${result.excludedMatchCount} 条`,
-      );
+      const summary = `解析完成：生成 ${result.candidateCount} 条待确认需求，匹配正式 ${result.officialMatchCount} 条，保留已排除 ${result.excludedMatchCount} 条`;
+      if (result.bodyBuildSkipped) {
+        toast.warning(`${summary}；正文块未生成，已降级为纯文本`);
+      } else {
+        toast.success(`${summary}，构建正文块 ${result.bodyBlockCount} 条`);
+      }
       return invalidate();
     },
   });

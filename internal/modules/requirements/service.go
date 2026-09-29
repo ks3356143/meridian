@@ -68,12 +68,31 @@ var (
 )
 
 type Service struct {
-	db   *gorm.DB
-	root string
+	db          *gorm.DB
+	root        string
+	bodyBuilder BodyBuilder
 }
 
 func NewService(db *gorm.DB, assetRoot string) *Service {
 	return &Service{db: db, root: assetRoot}
+}
+
+// RequirementBodyRange 描述一条需求正文在文档中的段落区间（1-based，End 不含）。
+type RequirementBodyRange struct {
+	RequirementID string
+	Start         int
+	End           int
+}
+
+// BodyBuilder 在解析完成后为需求生成结构化正文块（可选能力，见外部文档引擎口径）。
+type BodyBuilder interface {
+	BuildRequirementBodies(ctx context.Context, docxPath string, projectID string, specs []RequirementBodyRange, operatedBy string) (int, error)
+}
+
+// WithBodyBuilder 注入正文块构建器；未注入时解析只产出纯文本，属于允许的降级。
+func (s *Service) WithBodyBuilder(builder BodyBuilder) *Service {
+	s.bodyBuilder = builder
+	return s
 }
 
 type SourceRow struct {
@@ -164,10 +183,14 @@ type RequirementIdentifierPreviewResponse struct {
 }
 
 type ParseResult struct {
-	SectionCount       int `json:"sectionCount"`
-	CandidateCount     int `json:"candidateCount"`
-	OfficialMatchCount int `json:"officialMatchCount"`
-	ExcludedMatchCount int `json:"excludedMatchCount"`
+	SectionCount       int                    `json:"sectionCount"`
+	CandidateCount     int                    `json:"candidateCount"`
+	OfficialMatchCount int                    `json:"officialMatchCount"`
+	ExcludedMatchCount int                    `json:"excludedMatchCount"`
+	BodyBlockCount     int                    `json:"bodyBlockCount"`
+	BodyBuildSkipped   bool                   `json:"bodyBuildSkipped"`
+	BodyBuildError     string                 `json:"bodyBuildError,omitempty"`
+	Bodies             []RequirementBodyRange `json:"-"`
 }
 
 type CreateSectionInput struct {
@@ -1047,6 +1070,11 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 					return fmt.Errorf("更新候选需求失败: %w", updateErr)
 				}
 				result.CandidateCount++
+				result.Bodies = append(result.Bodies, RequirementBodyRange{
+					RequirementID: existing.ID,
+					Start:         node.Position,
+					End:           node.EndPosition,
+				})
 				continue
 			}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -1064,6 +1092,11 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 				return eventErr
 			}
 			result.CandidateCount++
+			result.Bodies = append(result.Bodies, RequirementBodyRange{
+				RequirementID: created.ID,
+				Start:         node.Position,
+				End:           node.EndPosition,
+			})
 		}
 		if err := cleanupParsedSections(tx, source.ID, parsedChapters); err != nil {
 			return err
@@ -1072,6 +1105,27 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 	})
 	if err != nil {
 		return ParseResult{}, err
+	}
+
+	// 正文块构建是可选能力：缺少构建器或外部引擎不可用时降级为纯文本，不阻断解析。
+	if len(result.Bodies) > 0 {
+		if s.bodyBuilder == nil {
+			result.BodyBuildSkipped = true
+		} else {
+			built, buildErr := s.bodyBuilder.BuildRequirementBodies(
+				ctx,
+				filepath.Join(s.root, filepath.FromSlash(source.StoragePath)),
+				source.ProjectID,
+				result.Bodies,
+				operatedBy,
+			)
+			if buildErr != nil {
+				result.BodyBuildSkipped = true
+				result.BodyBuildError = buildErr.Error()
+			} else {
+				result.BodyBlockCount = built
+			}
+		}
 	}
 	return result, nil
 }

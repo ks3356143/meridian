@@ -116,6 +116,11 @@ export interface RequirementParseResult {
   candidateCount: number;
   officialMatchCount: number;
   excludedMatchCount: number;
+  /** 解析时为需求构建的正文块数量（外部文档引擎可用时）。 */
+  bodyBlockCount: number;
+  /** 外部文档引擎不可用时为 true，正文降级为纯文本。 */
+  bodyBuildSkipped: boolean;
+  bodyBuildError?: string;
 }
 
 export interface BulkReplacePayload {
