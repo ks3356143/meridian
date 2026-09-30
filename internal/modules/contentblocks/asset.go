@@ -102,6 +102,12 @@ func (s *Service) RegisterAsset(
 		Where("project_id = ? AND sha256 = ?", projectID, sum).
 		First(&existing).Error
 	if err == nil {
+		if existing.Width == 0 && media.Width > 0 {
+			_ = s.db.WithContext(ctx).Model(&Asset{}).Where("id = ?", existing.ID).Updates(map[string]any{
+				"width":  media.Width,
+				"height": media.Height,
+			}).Error
+		}
 		return existing.ID, nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -121,6 +127,8 @@ func (s *Service) RegisterAsset(
 		MimeType:   media.MimeType,
 		FileExt:    media.Extension,
 		FileSize:   int64(len(media.Data)),
+		Width:      media.Width,
+		Height:     media.Height,
 		CreatedBy:  operator,
 		CreatedAt:  now,
 		UpdatedAt:  now,

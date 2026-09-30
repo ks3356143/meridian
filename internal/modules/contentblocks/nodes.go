@@ -12,7 +12,7 @@ const (
 	NodeParagraph   = "paragraph"
 	NodeText        = "text"
 	NodeHeading     = "heading"
-	NodeBulletList  = "bulletList"
+	NodeBulletList  = "bulletList" // 仅用于历史数据兼容读取，SanitizeDocument 会转换为 orderedList。
 	NodeOrderedList = "orderedList"
 	NodeListItem    = "listItem"
 	NodeTable       = "table"
@@ -20,10 +20,10 @@ const (
 	NodeTableHeader = "tableHeader"
 	NodeTableCell   = "tableCell"
 	NodeAssetImage  = "assetImage"
-	NodePageBreak   = "pagebreak"
+	NodePageBreak   = "pagebreak" // 仅用于历史数据兼容读取，保存时清洗。
 )
 
-// 行内标记白名单。
+// 行内标记白名单。需求正文只保留粗体。
 const (
 	MarkBold      = "bold"
 	MarkItalic    = "italic"
@@ -79,49 +79,51 @@ var allowedChildren = map[string]map[string]bool{
 	NodeDoc: {
 		NodeParagraph:   true,
 		NodeHeading:     true,
-		NodeBulletList:  true,
 		NodeOrderedList: true,
 		NodeTable:       true,
 		NodeAssetImage:  true,
-		NodePageBreak:   true,
 	},
 	NodeParagraph:   {NodeText: true},
 	NodeHeading:     {NodeText: true},
-	NodeBulletList:  {NodeListItem: true},
 	NodeOrderedList: {NodeListItem: true},
-	NodeListItem:    {NodeParagraph: true},
+	NodeListItem:    {NodeParagraph: true, NodeOrderedList: true},
 	NodeTable:       {NodeTableRow: true},
 	NodeTableRow:    {NodeTableHeader: true, NodeTableCell: true},
 	NodeTableHeader: {NodeParagraph: true},
 	NodeTableCell:   {NodeParagraph: true},
 	NodeText:        {},
 	NodeAssetImage:  {},
-	NodePageBreak:   {},
 }
 
 // minChildren 定义必须至少包含一个子节点的节点。
 var minChildren = map[string]int{
-	NodeBulletList:  1,
 	NodeOrderedList: 1,
 	NodeListItem:    1,
 	NodeTable:       1,
 	NodeTableRow:    1,
 }
 
-var allowedMarks = map[string]bool{
-	MarkBold:      true,
-	MarkItalic:    true,
-	MarkUnderline: true,
-}
+var allowedMarks = map[string]bool{MarkBold: true}
 
 var allowedAlign = map[string]bool{
 	"inherit": true, "left": true, "center": true, "right": true,
 	"justify": true, "both": true, "distribute": true,
 }
 
+var allowedTableAlign = map[string]bool{"left": true, "center": true, "right": true}
 var allowedValign = map[string]bool{"top": true, "center": true, "bottom": true}
 
-// ParseDocument 解析正文 JSON，并校验根节点类型。
+var allowedAttrs = map[string]map[string]bool{
+	NodeParagraph:   {"align": true, "firstLineIndent": true, "variant": true},
+	NodeHeading:     {"level": true, "align": true},
+	NodeOrderedList: {"style": true, "start": true},
+	NodeTable:       {"align": true},
+	NodeTableHeader: {"align": true, "valign": true, "colspan": true, "rowspan": true, "colwidth": true},
+	NodeTableCell:   {"align": true, "valign": true, "colspan": true, "rowspan": true, "colwidth": true},
+	NodeAssetImage:  {"assetId": true, "width": true, "height": true, "alt": true, "align": true},
+}
+
+// ParseDocument 解析正文 JSON，先清洗历史格式，再按当前白名单校验。
 func ParseDocument(data []byte) (Node, error) {
 	if len(strings.TrimSpace(string(data))) == 0 {
 		data = []byte(EmptyDocumentJSON)
@@ -130,6 +132,7 @@ func ParseDocument(data []byte) (Node, error) {
 	if err := json.Unmarshal(data, &root); err != nil {
 		return Node{}, fmt.Errorf("解析内容块 JSON 失败: %w", err)
 	}
+	root = SanitizeDocument(root)
 	if err := ValidateDocument(root); err != nil {
 		return Node{}, err
 	}
@@ -184,6 +187,16 @@ func validateNode(n Node, path string) error {
 
 func validateAttributes(n Node, path string) error {
 	switch n.Type {
+	case NodeParagraph:
+		if align, ok := stringAttr(n.Attrs, "align"); ok && !allowedAlign[align] {
+			return &ValidationError{Path: path, Msg: fmt.Sprintf("对齐值 %q 不受支持", align)}
+		}
+		if indent, ok := intAttr(n.Attrs, "firstLineIndent"); ok && indent != 0 && indent != 2 {
+			return &ValidationError{Path: path, Msg: "段落首行缩进只支持 0 或 2 字符"}
+		}
+		if variant, ok := stringAttr(n.Attrs, "variant"); ok && variant != "" && variant != "tableCaption" {
+			return &ValidationError{Path: path, Msg: fmt.Sprintf("段落语义 %q 不受支持", variant)}
+		}
 	case NodeHeading:
 		level, ok := intAttr(n.Attrs, "level")
 		if !ok {
@@ -195,9 +208,32 @@ func validateAttributes(n Node, path string) error {
 				Msg:  fmt.Sprintf("heading level 必须在 %d–%d 之间", MinHeadingLevel, MaxHeadingLevel),
 			}
 		}
+		if align, ok := stringAttr(n.Attrs, "align"); ok && !allowedAlign[align] {
+			return &ValidationError{Path: path, Msg: fmt.Sprintf("对齐值 %q 不受支持", align)}
+		}
 	case NodeOrderedList:
 		if style, ok := stringAttr(n.Attrs, "style"); ok && style != ListStyleOrderedParen && style != ListStyleLetterParen {
 			return &ValidationError{Path: path, Msg: fmt.Sprintf("列表形态 %q 不受支持", style)}
+		}
+		if start, ok := intAttr(n.Attrs, "start"); ok && start < 1 {
+			return &ValidationError{Path: path, Msg: "列表起始编号必须大于等于 1"}
+		}
+	case NodeTable:
+		if align, ok := stringAttr(n.Attrs, "align"); ok && !allowedTableAlign[align] {
+			return &ValidationError{Path: path, Msg: fmt.Sprintf("表格对齐值 %q 不受支持", align)}
+		}
+	case NodeTableHeader, NodeTableCell:
+		if align, ok := stringAttr(n.Attrs, "align"); ok && !allowedAlign[align] {
+			return &ValidationError{Path: path, Msg: fmt.Sprintf("对齐值 %q 不受支持", align)}
+		}
+		if valign, ok := stringAttr(n.Attrs, "valign"); ok && !allowedValign[valign] {
+			return &ValidationError{Path: path, Msg: fmt.Sprintf("垂直对齐值 %q 不受支持", valign)}
+		}
+		if span, ok := intAttr(n.Attrs, "colspan"); ok && span < 1 {
+			return &ValidationError{Path: path, Msg: "colspan 必须大于等于 1"}
+		}
+		if span, ok := intAttr(n.Attrs, "rowspan"); ok && span < 1 {
+			return &ValidationError{Path: path, Msg: "rowspan 必须大于等于 1"}
 		}
 	case NodeAssetImage:
 		if assetID, _ := stringAttr(n.Attrs, "assetId"); strings.TrimSpace(assetID) == "" {
@@ -205,15 +241,6 @@ func validateAttributes(n Node, path string) error {
 		}
 		if align, ok := stringAttr(n.Attrs, "align"); ok && !allowedAlign[align] {
 			return &ValidationError{Path: path, Msg: fmt.Sprintf("对齐值 %q 不受支持", align)}
-		}
-	case NodeTable, NodeTableHeader, NodeTableCell:
-		if align, ok := stringAttr(n.Attrs, "align"); ok && !allowedAlign[align] {
-			return &ValidationError{Path: path, Msg: fmt.Sprintf("对齐值 %q 不受支持", align)}
-		}
-	}
-	if n.Type == NodeTableHeader || n.Type == NodeTableCell {
-		if valign, ok := stringAttr(n.Attrs, "valign"); ok && !allowedValign[valign] {
-			return &ValidationError{Path: path, Msg: fmt.Sprintf("垂直对齐值 %q 不受支持", valign)}
 		}
 	}
 	for _, mark := range n.Marks {
@@ -232,6 +259,26 @@ func PlainText(root Node) string {
 	return strings.TrimSpace(plainTextOf(root))
 }
 
+// HasContent 判断正文是否包含可展示内容；图片和表格结构也算内容，不能只看纯文本。
+func HasContent(root Node) bool {
+	if strings.TrimSpace(PlainText(root)) != "" {
+		return true
+	}
+	return hasStructuredContent(root)
+}
+
+func hasStructuredContent(n Node) bool {
+	if n.Type == NodeAssetImage || n.Type == NodeTable {
+		return true
+	}
+	for _, child := range n.Content {
+		if hasStructuredContent(child) {
+			return true
+		}
+	}
+	return false
+}
+
 func plainTextOf(n Node) string {
 	switch n.Type {
 	case NodeText:
@@ -248,8 +295,6 @@ func plainTextOf(n Node) string {
 		return strings.Join(cells, "\t") + "\n"
 	case NodeListItem:
 		return joinInline(n)
-	case NodePageBreak:
-		return "\n"
 	default:
 		return joinInline(n)
 	}
@@ -290,4 +335,213 @@ func intAttr(attrs map[string]any, key string) (int, bool) {
 		return int(parsed), true
 	}
 	return 0, false
+}
+
+// SanitizeDocument 清洗历史数据和 Tiptap 输出中的非保留格式，保证保存结果符合当前契约。
+func SanitizeDocument(root Node) Node {
+	root.Content = sanitizeNodes(root.Content)
+	return root
+}
+
+func sanitizeNodes(nodes []Node) []Node {
+	if len(nodes) == 0 {
+		return nil
+	}
+	result := make([]Node, 0, len(nodes))
+	for _, node := range nodes {
+		if node.Type == NodePageBreak {
+			continue
+		}
+		if node.Type == NodeBulletList {
+			node.Type = NodeOrderedList
+			if node.Attrs == nil {
+				node.Attrs = map[string]any{}
+			}
+			if _, ok := stringAttr(node.Attrs, "style"); !ok {
+				node.Attrs["style"] = DefaultListStyle
+			}
+		}
+		node.Attrs = sanitizeAttrs(node.Type, node.Attrs)
+		node.Content = sanitizeNodes(node.Content)
+		if node.Type == NodeText {
+			marks := make([]Mark, 0, len(node.Marks))
+			for _, mark := range node.Marks {
+				if mark.Type == MarkBold {
+					marks = append(marks, mark)
+				}
+			}
+			node.Marks = marks
+		}
+		if node.Type == NodeParagraph {
+			normalizeParagraphAttrs(node.Attrs)
+		}
+		if node.Type == NodeOrderedList {
+			if node.Attrs == nil {
+				node.Attrs = map[string]any{"style": DefaultListStyle}
+			}
+		}
+		result = append(result, node)
+	}
+	return result
+}
+
+func sanitizeAttrs(nodeType string, attrs map[string]any) map[string]any {
+	if len(attrs) == 0 {
+		return nil
+	}
+	allowed := allowedAttrs[nodeType]
+	if len(allowed) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(attrs))
+	for key, value := range attrs {
+		if !allowed[key] || isZeroAttr(key, value) {
+			continue
+		}
+		switch key {
+		case "align":
+			normalized := normalizeAlign(value)
+			if normalized == "" || normalized == "inherit" {
+				continue
+			}
+			out[key] = normalized
+		case "variant":
+			if value == "tableCaption" {
+				out[key] = value
+			}
+		case "width", "height":
+			if text, ok := stringifyValue(value); ok && strings.TrimSpace(text) != "" {
+				out[key] = text
+			}
+		case "colwidth":
+			if widths, ok := sanitizeColumnWidths(value); ok {
+				out[key] = widths
+			}
+		case "colspan", "rowspan", "start", "firstLineIndent", "level":
+			if number, ok := intValue(value); ok {
+				out[key] = number
+			}
+		default:
+			out[key] = value
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func normalizeParagraphAttrs(attrs map[string]any) {
+	if attrs == nil {
+		return
+	}
+	if variant, ok := stringAttr(attrs, "variant"); !ok || variant != "tableCaption" {
+		delete(attrs, "variant")
+	}
+	if indent, ok := intAttr(attrs, "firstLineIndent"); !ok || indent != 2 {
+		delete(attrs, "firstLineIndent")
+	}
+	if align, ok := stringAttr(attrs, "align"); ok && (align == "center" || align == "right") {
+		delete(attrs, "firstLineIndent")
+	}
+	if variant, ok := stringAttr(attrs, "variant"); ok && variant == "tableCaption" {
+		attrs["align"] = "center"
+		delete(attrs, "firstLineIndent")
+	}
+	if len(attrs) == 0 {
+		return
+	}
+}
+
+func isZeroAttr(key string, value any) bool {
+	if value == nil {
+		return true
+	}
+	if text, ok := value.(string); ok && strings.TrimSpace(text) == "" {
+		return true
+	}
+	if number, ok := intValue(value); ok {
+		switch key {
+		case "firstLineIndent", "colspan", "rowspan", "start":
+			return number == 0 || number == 1 && key != "firstLineIndent"
+		}
+	}
+	return false
+}
+
+func normalizeAlign(value any) string {
+	text, ok := value.(string)
+	if !ok {
+		return ""
+	}
+	switch strings.ToLower(strings.TrimSpace(text)) {
+	case "start":
+		return "left"
+	case "end":
+		return "right"
+	case "both", "distribute":
+		return "justify"
+	case "inherit":
+		return ""
+	case "left", "center", "right", "justify":
+		return strings.ToLower(strings.TrimSpace(text))
+	default:
+		return ""
+	}
+}
+
+func intValue(value any) (int, bool) {
+	switch typed := value.(type) {
+	case float64:
+		return int(typed), true
+	case float32:
+		return int(typed), true
+	case int:
+		return typed, true
+	case int64:
+		return int(typed), true
+	case json.Number:
+		parsed, err := typed.Int64()
+		if err != nil {
+			return 0, false
+		}
+		return int(parsed), true
+	default:
+		return 0, false
+	}
+}
+
+func stringifyValue(value any) (string, bool) {
+	switch typed := value.(type) {
+	case string:
+		return typed, true
+	case float64:
+		return fmt.Sprintf("%.0f", typed), true
+	case int:
+		return fmt.Sprintf("%d", typed), true
+	default:
+		return "", false
+	}
+}
+
+func sanitizeColumnWidths(value any) ([]int, bool) {
+	items, ok := value.([]any)
+	if !ok {
+		if typed, ok := value.([]int); ok {
+			return typed, true
+		}
+		return nil, false
+	}
+	widths := make([]int, 0, len(items))
+	for _, item := range items {
+		number, ok := intValue(item)
+		if !ok || number <= 0 {
+			continue
+		}
+		widths = append(widths, number)
+	}
+	if len(widths) == 0 {
+		return nil, false
+	}
+	return widths, true
 }

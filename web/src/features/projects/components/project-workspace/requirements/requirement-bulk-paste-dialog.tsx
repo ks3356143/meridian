@@ -188,7 +188,6 @@ export function RequirementBulkPasteDialog({
           <Textarea
             id="bulk-paste-text"
             value={pasteText}
-            minRows={4}
             maxRows={8}
             placeholder={"4.1 | 指令响应功能 | 功能\n4.2 | 指令准确率 | 性能"}
             onChange={(event) => setPasteText(event.target.value)}

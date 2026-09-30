@@ -75,7 +75,6 @@ export function RequirementPurgeDialog({
           <Textarea
             id="requirement-purge-reason"
             value={reason}
-            minRows={3}
             maxRows={6}
             maxLength={500}
             autoComplete="off"

@@ -6,9 +6,10 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  line-height: 1.625;
+  line-height: 1.5;
+  min-height: 2rem;
   overflow-y: auto;
-  padding: 0.5rem 0.625rem;
+  padding: 0.25rem 0.5rem;
   resize: none;
   transition:
     border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),

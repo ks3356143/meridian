@@ -278,7 +278,6 @@ function CandidateEditForm({
         <Textarea
           id="candidate-description"
           value={draft.description}
-          minRows={5}
           maxRows={10}
           placeholder="保留原文描述；表格与图片暂以占位文本展示。"
           onChange={(event) => update("description", event.target.value)}

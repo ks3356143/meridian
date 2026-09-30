@@ -127,8 +127,13 @@ func TestRequirementBodyBlockFlow(t *testing.T) {
 
 	// 读回一致。
 	reloaded := readRequirementBody(t, handler, token, requirement.ID, http.StatusOK)
-	if len(reloaded.Doc.Content) != len(document["content"].([]any)) {
+	if len(reloaded.Doc.Content) != len(document["content"].([]any))-1 {
 		t.Fatalf("读回的块数量不一致: %d", len(reloaded.Doc.Content))
+	}
+	for _, block := range reloaded.Doc.Content {
+		if block.Type == "pagebreak" {
+			t.Fatal("保存后不应保留分页符")
+		}
 	}
 	if reloaded.PlainText != saved.PlainText {
 		t.Fatalf("读回纯文本不一致: %q != %q", reloaded.PlainText, saved.PlainText)

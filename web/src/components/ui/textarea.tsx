@@ -5,7 +5,7 @@ import styles from "./Textarea.module.css";
 
 function Textarea({
   className,
-  minRows = 4,
+  minRows = 1,
   maxRows = 10,
   ...props
 }: React.ComponentProps<typeof TextareaAutosize>) {

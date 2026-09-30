@@ -29,12 +29,12 @@ func TestConvertBodyBuildsAllowedDocument(t *testing.T) {
 			run("软件应", map[string]any{"bold": true}),
 			run("支持参数配置。", nil),
 		),
-		// 无序列表两项
+		// 无序列表按“只保留有序列表”规则转换。
 		paragraph("第一项", "List Paragraph", map[string]any{"numId": "7", "listStyle": "bullet", "numFmt": "bullet"}),
 		paragraph("第二项", "List Paragraph", map[string]any{"numId": "7", "listStyle": "bullet", "numFmt": "bullet"}),
-		// 有序列表一项（字母括号）
+		// 有序列表一项（字母括号）。
 		paragraph("甲项", "List Paragraph", map[string]any{"numId": "9", "listStyle": "ordered", "numFmt": "lowerLetter"}),
-		// 表格：首行表头
+		// 表格：首行表头。
 		{
 			Type: "table",
 			Children: []officecli.Node{
@@ -42,14 +42,13 @@ func TestConvertBodyBuildsAllowedDocument(t *testing.T) {
 				{Type: "row", Children: []officecli.Node{cell(paragraph("V1.10", "Normal", nil)), cell(paragraph("版本号", "Normal", nil))}},
 			},
 		},
-		// 图片段落
+		// 图片段落。
 		paragraph("", "Normal", map[string]any{"align": "center"}, officecli.Node{
 			Type:   "picture",
 			Format: map[string]any{"relId": "rId5", "width": "12.0cm", "height": "6.0cm"},
 		}),
-		// 内容控件包一层
+		// 内容控件包一层。
 		{Type: "sdt", Children: []officecli.Node{paragraph("控件内段落", "Normal", nil)}},
-		// 无关节点应被忽略
 		{Type: "bookmark"},
 	}
 
@@ -74,7 +73,7 @@ func TestConvertBodyBuildsAllowedDocument(t *testing.T) {
 	for _, block := range result.Doc.Content {
 		kinds = append(kinds, block.Type)
 	}
-	want := []string{NodeHeading, NodeParagraph, NodeBulletList, NodeOrderedList, NodeTable, NodeAssetImage, NodeParagraph}
+	want := []string{NodeHeading, NodeParagraph, NodeOrderedList, NodeOrderedList, NodeTable, NodeAssetImage, NodeParagraph}
 	if strings.Join(kinds, ",") != strings.Join(want, ",") {
 		t.Fatalf("块序列不符合预期: %v", kinds)
 	}
@@ -87,12 +86,12 @@ func TestConvertBodyBuildsAllowedDocument(t *testing.T) {
 		t.Fatalf("列表文本丢失: %q", PlainText(result.Doc))
 	}
 
-	bullet := result.Doc.Content[2]
-	if len(bullet.Content) != 2 {
-		t.Fatalf("无序列表应合并两项，实际 %d", len(bullet.Content))
+	firstList := result.Doc.Content[2]
+	if len(firstList.Content) != 2 || firstList.Type != NodeOrderedList {
+		t.Fatalf("无序列表应转换为有序列表并合并两项: %+v", firstList)
 	}
 	ordered := result.Doc.Content[3]
-	if style, _ := stringAttr(ordered.Attrs, "style"); style != ListStyleLetterParen {
+	if style, _ := stringAttr(ordered.Attrs, "style"); style != ListStyleOrderedParen {
 		t.Fatalf("字母列表形态错误: %+v", ordered.Attrs)
 	}
 
@@ -111,6 +110,96 @@ func TestConvertBodyBuildsAllowedDocument(t *testing.T) {
 	}
 	if width, _ := stringAttr(image.Attrs, "width"); width != "12.0cm" {
 		t.Fatalf("图片宽度未写入: %+v", image.Attrs)
+	}
+}
+
+func TestConvertBodyBuildsNestedOrderedList(t *testing.T) {
+	body := []officecli.Node{
+		paragraph("一级一", "List Paragraph", map[string]any{"numId": "7", "numLevel": "0"}),
+		paragraph("二级一", "List Paragraph", map[string]any{"numId": "7", "numLevel": "1"}),
+		paragraph("二级二", "List Paragraph", map[string]any{"numId": "7", "numLevel": "1"}),
+		paragraph("一级二", "List Paragraph", map[string]any{"numId": "7", "numLevel": "0"}),
+	}
+	result := ConvertBody(body, ImportOptions{})
+	if len(result.Doc.Content) != 1 {
+		t.Fatalf("应产出一个顶层有序列表，实际 %d", len(result.Doc.Content))
+	}
+	root := result.Doc.Content[0]
+	if root.Type != NodeOrderedList || len(root.Content) != 2 {
+		t.Fatalf("顶层列表不正确: %+v", root)
+	}
+	firstItem := root.Content[0]
+	if len(firstItem.Content) != 2 || firstItem.Content[1].Type != NodeOrderedList {
+		t.Fatalf("一级项下应有二级有序列表: %+v", firstItem)
+	}
+	if len(firstItem.Content[1].Content) != 2 {
+		t.Fatalf("二级列表应有两项: %+v", firstItem.Content[1])
+	}
+}
+
+func TestConvertBodyKeepsParagraphAlignmentAndIndent(t *testing.T) {
+	body := []officecli.Node{
+		paragraph("正文", "Normal", map[string]any{"align": "left", "firstLineChars": float64(200)}),
+		paragraph("居中", "Normal", map[string]any{"align": "center", "firstLineChars": float64(200)}),
+	}
+	result := ConvertBody(body, ImportOptions{})
+	left := result.Doc.Content[0]
+	if align, _ := stringAttr(left.Attrs, "align"); align != "left" {
+		t.Fatalf("段落对齐未保留: %+v", left.Attrs)
+	}
+	if indent, _ := intAttr(left.Attrs, "firstLineIndent"); indent != 2 {
+		t.Fatalf("段落首行缩进未识别: %+v", left.Attrs)
+	}
+	center := result.Doc.Content[1]
+	if _, ok := center.Attrs["firstLineIndent"]; ok {
+		t.Fatalf("居中段落不应保留首行缩进: %+v", center.Attrs)
+	}
+}
+
+func TestConvertBodyTableUsesFirstRowMetadata(t *testing.T) {
+	table := officecli.Node{
+		Type:   "table",
+		Format: map[string]any{"firstRow": false},
+		Children: []officecli.Node{
+			{Type: "row", Children: []officecli.Node{cell(paragraph("无表头", "Normal", nil))}},
+		},
+	}
+	result := ConvertBody([]officecli.Node{table}, ImportOptions{HeaderRow: true})
+	if got := result.Doc.Content[0].Content[0].Content[0].Type; got != NodeTableCell {
+		t.Fatalf("firstRow=false 时不应强制表头，实际 %s", got)
+	}
+}
+
+func TestConvertBodyIdentifiesTableCaption(t *testing.T) {
+	body := []officecli.Node{
+		paragraph("表1-1 参数说明", "Normal", map[string]any{"align": "center"}),
+	}
+	result := ConvertBody(body, ImportOptions{})
+	if variant, _ := stringAttr(result.Doc.Content[0].Attrs, "variant"); variant != "tableCaption" {
+		t.Fatalf("表题语义未识别: %+v", result.Doc.Content[0].Attrs)
+	}
+}
+
+func TestConvertBodyTableColspanAndVerticalMerge(t *testing.T) {
+	table := officecli.Node{
+		Type: "table",
+		Children: []officecli.Node{
+			{Type: "row", Children: []officecli.Node{
+				{Type: "cell", Format: map[string]any{"colspan": float64(2), "vmerge": "restart"}, Children: []officecli.Node{paragraph("合并", "Normal", nil)}},
+			}},
+			{Type: "row", Children: []officecli.Node{
+				{Type: "cell", Format: map[string]any{"vmerge": "continue"}, Children: []officecli.Node{paragraph("", "Normal", nil)}},
+				{Type: "cell", Format: map[string]any{"vmerge": "continue"}, Children: []officecli.Node{paragraph("", "Normal", nil)}},
+			}},
+		},
+	}
+	result := ConvertBody([]officecli.Node{table}, ImportOptions{})
+	cell := result.Doc.Content[0].Content[0].Content[0]
+	if colspan, _ := intAttr(cell.Attrs, "colspan"); colspan != 2 {
+		t.Fatalf("colspan 未保留: %+v", cell.Attrs)
+	}
+	if rowspan, _ := intAttr(cell.Attrs, "rowspan"); rowspan != 2 {
+		t.Fatalf("vmerge 应转换为 rowspan=2: %+v", cell.Attrs)
 	}
 }
 
@@ -170,8 +259,8 @@ func TestConvertBodyTextMarks(t *testing.T) {
 	if len(content[0].Marks) != 1 || content[0].Marks[0].Type != MarkBold {
 		t.Fatalf("加粗标记丢失: %+v", content[0])
 	}
-	if len(content[2].Marks) != 1 || content[2].Marks[0].Type != MarkUnderline {
-		t.Fatalf("下划线标记丢失: %+v", content[2])
+	if len(content[1].Marks) != 0 || len(content[2].Marks) != 0 {
+		t.Fatalf("斜体与下划线应被降级为普通文本: %+v %+v", content[1], content[2])
 	}
 	if len(content[3].Marks) != 0 {
 		t.Fatalf("普通文本不应有标记: %+v", content[3])

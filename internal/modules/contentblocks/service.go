@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -135,13 +134,15 @@ func (s *Service) RequirementBody(ctx context.Context, requirementID string) (Bo
 	if err != nil {
 		return BodyResponse{}, fmt.Errorf("需求正文块数据非法: %w", err)
 	}
+	doc = SanitizeDocument(doc)
+	plainText := PlainText(doc)
 	return BodyResponse{
 		RequirementID: ref.ID,
 		Doc:           doc,
-		PlainText:     block.PlainText,
+		PlainText:     plainText,
 		Origin:        block.Origin,
 		AuthoringMode: block.AuthoringMode,
-		HasContent:    strings.TrimSpace(block.PlainText) != "",
+		HasContent:    HasContent(doc),
 		UpdatedAt:     block.UpdatedAt.Format(time.RFC3339),
 	}, nil
 }
@@ -159,6 +160,7 @@ func (s *Service) SaveRequirementBody(
 	if err != nil {
 		return BodyResponse{}, err
 	}
+	doc = SanitizeDocument(doc)
 	if err := ValidateDocument(doc); err != nil {
 		return BodyResponse{}, err
 	}
@@ -188,7 +190,7 @@ func (s *Service) SaveRequirementBody(
 		PlainText:     plainText,
 		Origin:        origin,
 		AuthoringMode: authoringMode,
-		HasContent:    strings.TrimSpace(plainText) != "",
+		HasContent:    HasContent(doc),
 		UpdatedAt:     now.Format(time.RFC3339),
 	}, nil
 }

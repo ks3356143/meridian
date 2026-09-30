@@ -487,7 +487,6 @@ export function RequirementCreateDialog({
               <Textarea
                 id="requirement-description"
                 value={values.description}
-                minRows={5}
                 maxRows={12}
                 placeholder="留空保存为待补描述；补全前不能关联测试项。"
                 aria-describedby="requirement-description-hint"

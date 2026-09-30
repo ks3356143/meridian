@@ -503,7 +503,6 @@ function RequirementsCandidateWorkbenchImpl({
               id="candidate-exclude-reason"
               value={excludeReason}
               maxLength={500}
-              minRows={3}
               maxRows={6}
               disabled={statusPending}
               onChange={(event) => setExcludeReason(event.target.value)}

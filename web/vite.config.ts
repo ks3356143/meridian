@@ -27,9 +27,7 @@ function lucideDeepImports(): Plugin {
   for (const path of readdirSync(sourceRoot, { recursive: true, encoding: "utf8" })) {
     if (!/\.(?:ts|tsx)$/.test(path)) continue;
     const content = readFileSync(join(sourceRoot, path), "utf8");
-    const lucideImports = content.matchAll(
-      /import\s+\{([^}]+)\}\s+from\s+["']lucide-react["'];?/g,
-    );
+    const lucideImports = content.matchAll(/import\s+\{([^}]+)\}\s+from\s+["']lucide-react["'];?/g);
     for (const [, namedSource] of lucideImports) {
       for (const rawName of namedSource.split(",")) {
         const specifier = rawName.trim();
@@ -82,6 +80,31 @@ function lucideDeepImports(): Plugin {
   };
 }
 
+function deferTiptapHmr(): Plugin {
+  const guardedFiles = [
+    /[\\/]requirements[\\/]body[\\/]/,
+    /[\\/]requirements[\\/]requirement-detail\.tsx$/,
+    /[\\/]requirements[\\/]requirements-layout\.tsx$/,
+  ];
+
+  return {
+    name: "chenmeridian:defer-tiptap-hmr",
+    enforce: "post",
+    handleHotUpdate(context) {
+      if (!guardedFiles.some((pattern) => pattern.test(context.file))) return;
+      context.server.ws.send({
+        type: "custom",
+        event: "chenmeridian:reload-after-dialog",
+        data: { file: context.file },
+      });
+      for (const module of context.modules) {
+        context.server.moduleGraph.invalidateModule(module);
+      }
+      return [];
+    },
+  };
+}
+
 export default defineConfig({
   build: {
     rollupOptions: {
@@ -96,7 +119,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [lucideDeepImports(), react(), tailwindcss()],
+  plugins: [lucideDeepImports(), deferTiptapHmr(), react(), tailwindcss()],
   optimizeDeps: {
     entries: ["index.html", "src/**/*.ts", "src/**/*.tsx"],
   },

@@ -25,6 +25,8 @@ type MediaFile struct {
 	Data      []byte
 	Extension string
 	MimeType  string
+	Width     int
+	Height    int
 }
 
 // SkippedMedia 记录被跳过的媒体及原因。

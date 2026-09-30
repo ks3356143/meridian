@@ -70,7 +70,6 @@ export function RequirementDeleteDialog({
           <Textarea
             id="requirement-delete-reason"
             value={reason}
-            minRows={3}
             maxRows={6}
             maxLength={500}
             autoComplete="off"

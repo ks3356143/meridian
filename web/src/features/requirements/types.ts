@@ -176,3 +176,49 @@ export interface RequirementEvent {
   operatedByName: string;
   operatedAt: string;
 }
+
+export type RequirementBlockNodeType =
+  | "doc"
+  | "paragraph"
+  | "text"
+  | "heading"
+  | "bulletList"
+  | "orderedList"
+  | "listItem"
+  | "table"
+  | "tableRow"
+  | "tableHeader"
+  | "tableCell"
+  | "assetImage"
+  | "pagebreak";
+
+export interface RequirementBlockMark {
+  type: "bold" | "italic" | "underline";
+  attrs?: Record<string, unknown>;
+}
+
+export interface RequirementBlockNode {
+  type: RequirementBlockNodeType;
+  attrs?: Record<string, unknown>;
+  content?: RequirementBlockNode[];
+  text?: string;
+  marks?: RequirementBlockMark[];
+}
+
+export interface RequirementBodyResponse {
+  requirementId: string;
+  doc: RequirementBlockNode;
+  plainText: string;
+  origin: "manual" | "auto_draft" | "imported";
+  authoringMode: "auto" | "manual" | "mixed";
+  hasContent: boolean;
+  updatedAt: string;
+}
+
+export interface RequirementAsset {
+  id: string;
+  mimeType: string;
+  width: number;
+  height: number;
+  fileSize: number;
+}

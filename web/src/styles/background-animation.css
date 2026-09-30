@@ -1,0 +1,9 @@
+/*
+ * 页面切到后台或浏览器失焦时暂停 CSS 动画，避免无限装饰动画在后台继续占用
+ * 合成帧预算；返回前台后浏览器会从当前进度恢复，不改变动画定义。
+ */
+html[data-background-animation-paused="true"] *,
+html[data-background-animation-paused="true"] *::before,
+html[data-background-animation-paused="true"] *::after {
+  animation-play-state: paused !important;
+}

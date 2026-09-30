@@ -86,7 +86,6 @@ export function DeletedRequirementsPurgeDialog({
           <Textarea
             id="deleted-requirements-purge-reason"
             value={reason}
-            minRows={3}
             maxRows={6}
             maxLength={500}
             autoComplete="off"

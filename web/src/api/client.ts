@@ -176,3 +176,25 @@ export async function uploadRequest<T>(
     xhr.send(body);
   });
 }
+
+export async function requestBlob(path: string, signal?: AbortSignal): Promise<Blob> {
+  const headers = new Headers();
+  const token = useAuthStore.getState().token;
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const response = await fetch(path, { headers, signal });
+  if (!response.ok) {
+    let problem: HumaProblem = {};
+    try {
+      problem = (await response.json()) as HumaProblem;
+    } catch {
+      problem = {};
+    }
+    const detail = problem.detail || problem.title || fallbackMessage(response.status);
+    if (response.status === 401) {
+      useAuthStore.getState().clear();
+    }
+    throw new ApiError(response.status, problem.title || fallbackMessage(response.status), detail);
+  }
+  return response.blob();
+}

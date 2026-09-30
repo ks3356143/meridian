@@ -31,17 +31,20 @@ export interface ButtonVariantOptions {
   variant?: ButtonVariant | null;
   size?: ButtonSize | null;
   className?: string;
+  sheen?: boolean;
 }
 
 export function buttonVariants({
   variant = "default",
   size = "default",
   className,
+  sheen = false,
 }: ButtonVariantOptions = {}) {
   return cn(
     styles.button,
     variant ? buttonVariantClasses[variant] : undefined,
     size ? buttonSizeClasses[size] : undefined,
+    sheen ? styles.sheen : undefined,
     className,
   );
 }
@@ -57,6 +60,7 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  sheen = false,
   asChild = false,
   disableRipple = false,
   children,
@@ -100,7 +104,7 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={buttonVariants({ variant, size, className })}
+      className={buttonVariants({ variant, size, className, sheen })}
       onPointerDown={handlePointerDown}
       disabled={disabled}
       {...props}

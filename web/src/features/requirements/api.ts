@@ -1,4 +1,4 @@
-import { request } from "@/api/client";
+import { request, uploadRequest } from "@/api/client";
 import type {
   BulkCreateRequirementPayload,
   BulkCreateRequirementResult,
@@ -10,6 +10,9 @@ import type {
   RequirementsWorkbenchSnapshot,
   RequirementIdentifierPreview,
   RequirementContent,
+  RequirementAsset,
+  RequirementBlockNode,
+  RequirementBodyResponse,
   RequirementSearchResult,
   RequirementStatusPayload,
   RequirementEvent,
@@ -22,6 +25,28 @@ export const requirementsApi = {
     request<RequirementsWorkbenchSnapshot>("GET", `/api/v1/projects/${projectId}/requirements`),
   content: (requirementId: string) =>
     request<RequirementContent>("GET", `/api/v1/software-requirements/${requirementId}/content`),
+  blocks: (requirementId: string) =>
+    request<RequirementBodyResponse>(
+      "GET",
+      `/api/v1/software-requirements/${requirementId}/blocks`,
+    ),
+  saveBlocks: (
+    requirementId: string,
+    doc: RequirementBlockNode,
+    origin: RequirementBodyResponse["origin"] = "manual",
+    authoringMode: RequirementBodyResponse["authoringMode"] = "manual",
+  ) =>
+    request<RequirementBodyResponse>(
+      "PUT",
+      `/api/v1/software-requirements/${requirementId}/blocks`,
+      {},
+      { doc, origin, authoringMode },
+    ),
+  uploadAsset: (projectId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return uploadRequest<RequirementAsset>(`/api/v1/projects/${projectId}/assets`, formData);
+  },
   search: (projectId: string, query: string, sourceVersionId = "") => {
     const params = new URLSearchParams({ q: query });
     if (sourceVersionId) params.set("sourceVersionId", sourceVersionId);

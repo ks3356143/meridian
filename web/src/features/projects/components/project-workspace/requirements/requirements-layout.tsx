@@ -3,6 +3,7 @@ import {
   lazy,
   Suspense,
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -12,6 +13,16 @@ import {
 import styles from "./requirements-layout.module.css";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { LazyChunkBoundary } from "@/components/shared/retryable-lazy";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -98,6 +109,9 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const [isCandidatePending, startCandidateTransition] = useTransition();
   const candidateActivatedRef = useRef(false);
   const [candidateSelectedId, setCandidateSelectedId] = useState("");
+  const [pendingSelect, setPendingSelect] = useState<RequirementRecord | null>(null);
+  const bodyDirtyRef = useRef(false);
+
   const [pendingDelete, setPendingDelete] = useState<{
     requirement: RequirementRecord;
     hasUnsavedChanges: boolean;
@@ -138,9 +152,22 @@ export function RequirementsLayout({ project }: { project: Project }) {
       officialRequirements[0],
     [officialRequirements, selectedId],
   );
+  // 树选中必须走紧急更新；详情内容允许稍后提交，避免富文本详情和 Tiptap
+  // 编辑器跟着左侧高亮一起重渲染，造成点击切换时的主线程卡顿。
+  const deferredSelectedId = useDeferredValue(selectedId);
+  const detailRequirement = useMemo(() => {
+    const targetId = deferredSelectedId || selectedRequirement?.id;
+    return (
+      officialRequirements.find((requirement) => requirement.id === targetId) ?? selectedRequirement
+    );
+  }, [deferredSelectedId, officialRequirements, selectedRequirement]);
   const selectedSource = useMemo(
     () => sources.find((source) => source.id === selectedRequirement?.sourceVersionId),
     [selectedRequirement?.sourceVersionId, sources],
+  );
+  const detailSource = useMemo(
+    () => sources.find((source) => source.id === detailRequirement?.sourceVersionId),
+    [detailRequirement?.sourceVersionId, sources],
   );
   const selectedRequirements = useMemo(() => {
     const selectedIDSet = new Set(selectedIds);
@@ -154,9 +181,25 @@ export function RequirementsLayout({ project }: { project: Project }) {
     [requirements],
   );
   const sections = useMemo(() => workbench?.sections ?? [], [workbench]);
-  const handleSelectConfirmed = useCallback((requirement: RequirementRecord) => {
-    setSelectedId(requirement.id);
+  const handleSelectConfirmed = useCallback(
+    (requirement: RequirementRecord) => {
+      if (bodyDirtyRef.current && selectedId && selectedId !== requirement.id) {
+        setPendingSelect(requirement);
+        return;
+      }
+      setSelectedId(requirement.id);
+    },
+    [selectedId],
+  );
+  const handleBodyDirtyChange = useCallback((dirty: boolean) => {
+    bodyDirtyRef.current = dirty;
   }, []);
+  const confirmPendingSelect = useCallback(() => {
+    if (!pendingSelect) return;
+    bodyDirtyRef.current = false;
+    setSelectedId(pendingSelect.id);
+    setPendingSelect(null);
+  }, [pendingSelect]);
   const handleSelectCandidate = useCallback((requirement: RequirementRecord) => {
     setCandidateSelectedId(requirement.id);
   }, []);
@@ -508,14 +551,15 @@ export function RequirementsLayout({ project }: { project: Project }) {
       onOpenBulkPaste={openBulkPasteDialog}
     />
   );
-  const detail = selectedRequirement ? (
+  const detail = detailRequirement ? (
     <RequirementDetail
-      key={selectedRequirement.id}
-      requirement={selectedRequirement}
-      source={selectedSource}
+      projectCode={project.id}
+      requirement={detailRequirement}
+      source={detailSource}
       onUpdate={handleUpdate}
       onDelete={handleDeleteRequest}
       onCopy={handleCopyRequirement}
+      onBodyDirtyChange={handleBodyDirtyChange}
     />
   ) : (
     <section className={styles.detailShell} aria-label="需求详情容器">
@@ -877,6 +921,25 @@ export function RequirementsLayout({ project }: { project: Project }) {
       {renderBulkUpdateDialog()}
       {renderBulkDeleteDialog()}
       {renderBulkPasteDialog()}
+      <AlertDialog
+        open={Boolean(pendingSelect)}
+        onOpenChange={(open) => {
+          if (!open) setPendingSelect(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>正文尚未保存</AlertDialogTitle>
+            <AlertDialogDescription>
+              当前“测试项的需求描述”有未保存修改，切换需求后会丢失这些修改。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>继续编辑</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPendingSelect}>放弃修改并切换</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

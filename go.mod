@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mozillazg/go-pinyin v0.21.0
 	golang.org/x/crypto v0.57.0
+	golang.org/x/image v0.46.0
 	gorm.io/gorm v1.31.2
 )
 

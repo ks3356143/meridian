@@ -1,6 +1,7 @@
 package contentblocks
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 type ImportOptions struct {
 	// AssetIDForRelID 把文档内 relId 映射成已落库的资源 id；返回空字符串表示跳过该图片。
 	AssetIDForRelID func(relID string) string
-	// HeaderRow 为真时把表格首行转成 tableHeader。
+	// HeaderRow 是缺少表格 firstRow 元数据时的兜底；真实文档优先读表格自身的 firstRow。
 	HeaderRow bool
 }
 
@@ -27,33 +28,33 @@ func ConvertBody(body []officecli.Node, options ImportOptions) ImportResult {
 	flat := make([]officecli.Node, 0, len(body))
 	flattenBody(body, &flat)
 
-	var pending *listGroup
+	pendingNumID := ""
+	pendingList := make([]listEntry, 0)
 	for _, node := range flat {
 		switch node.Type {
 		case "table":
-			converter.flushList(&pending)
+			converter.flushList(&pendingNumID, &pendingList)
 			if table, ok := converter.convertTable(node); ok {
 				converter.blocks = append(converter.blocks, table)
 			}
 		default:
 			converted := converter.convertParagraph(node)
 			if converted.list != nil {
-				if pending != nil && pending.kind == *converted.list {
-					pending.items = append(pending.items, converted.item)
-				} else {
-					converter.flushList(&pending)
-					pending = &listGroup{kind: *converted.list, items: []Node{converted.item}}
+				if pendingNumID != converted.list.numID {
+					converter.flushList(&pendingNumID, &pendingList)
+					pendingNumID = converted.list.numID
 				}
+				pendingList = append(pendingList, listEntry{level: converted.list.level, item: converted.item})
 			} else {
-				converter.flushList(&pending)
+				converter.flushList(&pendingNumID, &pendingList)
+				if converted.block != nil {
+					converter.blocks = append(converter.blocks, *converted.block)
+				}
+				converter.blocks = append(converter.blocks, converted.images...)
 			}
-			if converted.block != nil {
-				converter.blocks = append(converter.blocks, *converted.block)
-			}
-			converter.blocks = append(converter.blocks, converted.images...)
 		}
 	}
-	converter.flushList(&pending)
+	converter.flushList(&pendingNumID, &pendingList)
 
 	return ImportResult{
 		Doc:     Node{Type: NodeDoc, Content: converter.blocks},
@@ -67,36 +68,96 @@ type converter struct {
 	skipped []SkippedMedia
 }
 
-type listKind struct {
-	ordered bool
-	style   string
-}
-
-type listGroup struct {
-	kind  listKind
-	items []Node
-}
-
 type paragraphResult struct {
 	block  *Node
 	images []Node
-	list   *listKind
+	list   *listMarker
 	item   Node
 }
 
-func (c *converter) flushList(group **listGroup) {
-	if group == nil || *group == nil {
+type listMarker struct {
+	numID string
+	level int
+	item  Node
+}
+
+type listEntry struct {
+	level int
+	item  Node
+}
+
+type listTree struct {
+	Node  Node
+	Items []*listItemTree
+}
+
+type listItemTree struct {
+	Node     Node
+	Children *listTree
+}
+
+type rowCellAnchor struct {
+	row  int
+	cell int
+}
+
+var tableCaptionPattern = regexp.MustCompile(`^表\s*\d+(?:\s*[-－—]\s*\d+)?\s+.+$`)
+
+func (c *converter) flushList(numID *string, entries *[]listEntry) {
+	if len(*entries) == 0 {
+		*numID = ""
 		return
 	}
-	current := *group
-	nodeType := NodeBulletList
-	attrs := map[string]any(nil)
-	if current.kind.ordered {
-		nodeType = NodeOrderedList
-		attrs = map[string]any{"style": current.kind.style}
+	c.blocks = append(c.blocks, buildOrderedList(*entries))
+	*entries = nil
+	*numID = ""
+}
+
+func buildOrderedList(entries []listEntry) Node {
+	root := &listTree{Node: Node{Type: NodeOrderedList, Attrs: map[string]any{"style": DefaultListStyle}}}
+	stack := []*listTree{root}
+	lastItems := make([]*listItemTree, 1)
+
+	for _, entry := range entries {
+		target := entry.level + 1
+		if target < 1 {
+			target = 1
+		}
+		if target > len(stack)+1 {
+			target = len(stack) + 1
+		}
+		for target > len(stack) {
+			parent := lastItems[len(lastItems)-1]
+			if parent == nil {
+				break
+			}
+			child := &listTree{Node: Node{Type: NodeOrderedList, Attrs: map[string]any{"style": DefaultListStyle}}}
+			parent.Children = child
+			stack = append(stack, child)
+			lastItems = append(lastItems, nil)
+		}
+		if target < len(stack) {
+			stack = stack[:target]
+			lastItems = lastItems[:target]
+		}
+		current := stack[len(stack)-1]
+		item := &listItemTree{Node: entry.item}
+		current.Items = append(current.Items, item)
+		lastItems[len(lastItems)-1] = item
 	}
-	c.blocks = append(c.blocks, Node{Type: nodeType, Attrs: attrs, Content: current.items})
-	*group = nil
+	return listTreeToNode(root)
+}
+
+func listTreeToNode(tree *listTree) Node {
+	node := tree.Node
+	for _, item := range tree.Items {
+		itemNode := item.Node
+		if item.Children != nil {
+			itemNode.Content = append(itemNode.Content, listTreeToNode(item.Children))
+		}
+		node.Content = append(node.Content, itemNode)
+	}
+	return node
 }
 
 // flattenBody 解包内容控件，展平成有序的段落与表格序列。
@@ -123,9 +184,9 @@ func (c *converter) convertParagraph(node officecli.Node) paragraphResult {
 	}
 
 	if numID := strings.TrimSpace(node.String("numId")); numID != "" {
-		kind := listKindFor(node)
+		level, _ := node.Float("numLevel")
 		item := Node{Type: NodeListItem, Content: []Node{{Type: NodeParagraph, Content: inline}}}
-		return paragraphResult{list: &kind, item: item, images: images}
+		return paragraphResult{list: &listMarker{numID: numID, level: int(level)}, item: item, images: images}
 	}
 
 	// 纯图片段落不产出空段落，只产出图片块；图片被跳过时整段丢弃，避免留下空行。
@@ -133,7 +194,11 @@ func (c *converter) convertParagraph(node officecli.Node) paragraphResult {
 		return paragraphResult{images: images}
 	}
 	return paragraphResult{
-		block:  &Node{Type: NodeParagraph, Content: inline},
+		block: &Node{
+			Type:    NodeParagraph,
+			Attrs:   paragraphAttrs(node, textFromInline(inline)),
+			Content: inline,
+		},
 		images: images,
 	}
 }
@@ -213,30 +278,58 @@ func (c *converter) convertPicture(node officecli.Node, paragraph officecli.Node
 	if height := strings.TrimSpace(node.String("height")); height != "" {
 		attrs["height"] = height
 	}
-	if align := strings.TrimSpace(paragraph.String("align")); align == "left" || align == "right" {
-		attrs["sourceAlign"] = align
+	if align := normalizeTextAlign(paragraph.String("align")); align == "left" || align == "right" || align == "center" {
+		attrs["align"] = align
 	}
 	return Node{Type: NodeAssetImage, Attrs: attrs}, true
 }
 
 func (c *converter) convertTable(node officecli.Node) (Node, bool) {
-	table := Node{Type: NodeTable, Attrs: map[string]any{"align": "center"}}
+	tableAlign := normalizeTableAlign(node.String("align"))
+	if tableAlign == "" {
+		tableAlign = "center"
+	}
+	table := Node{Type: NodeTable, Attrs: map[string]any{"align": tableAlign}}
+
+	headerRow := c.options.HeaderRow
+	if firstRow, ok := node.Format["firstRow"].(bool); ok {
+		headerRow = firstRow
+	}
+
+	anchors := map[int]rowCellAnchor{}
 	rowIndex := 0
 	for _, row := range node.Children {
 		if row.Type != "row" {
 			continue
 		}
 		rowNode := Node{Type: NodeTableRow}
-		isHeader := c.options.HeaderRow && rowIndex == 0
+		logicalCol := 0
+		updated := map[rowCellAnchor]bool{}
 		for _, cell := range row.Children {
 			if cell.Type != "cell" {
 				continue
 			}
+			colspan := 1
+			if span, ok := cell.Float("colspan"); ok && int(span) > 1 {
+				colspan = int(span)
+			}
+			vmerge := strings.ToLower(strings.TrimSpace(cell.String("vmerge")))
+			if vmerge == "continue" {
+				for col := logicalCol; col < logicalCol+colspan; col++ {
+					if anchor, ok := anchors[col]; ok && !updated[anchor] {
+						setRowSpan(&table.Content[anchor.row].Content[anchor.cell], currentRowSpan(table.Content, anchor)+1)
+						updated[anchor] = true
+					}
+				}
+				logicalCol += colspan
+				continue
+			}
+
 			cellType := NodeTableCell
-			if isHeader {
+			if headerRow && rowIndex == 0 {
 				cellType = NodeTableHeader
 			}
-			cellNode := Node{Type: cellType}
+			cellNode := Node{Type: cellType, Attrs: tableCellAttrs(cell, cellType, colspan)}
 			for _, child := range cell.Children {
 				if child.Type != "paragraph" {
 					continue
@@ -247,7 +340,17 @@ func (c *converter) convertTable(node officecli.Node) (Node, bool) {
 			if len(cellNode.Content) == 0 {
 				cellNode.Content = []Node{{Type: NodeParagraph}}
 			}
+			cellIndex := len(rowNode.Content)
 			rowNode.Content = append(rowNode.Content, cellNode)
+
+			for col := logicalCol; col < logicalCol+colspan; col++ {
+				if vmerge == "restart" {
+					anchors[col] = rowCellAnchor{row: rowIndex, cell: cellIndex}
+				} else {
+					delete(anchors, col)
+				}
+			}
+			logicalCol += colspan
 		}
 		if len(rowNode.Content) == 0 {
 			continue
@@ -259,6 +362,50 @@ func (c *converter) convertTable(node officecli.Node) (Node, bool) {
 		return Node{}, false
 	}
 	return table, true
+}
+
+func tableCellAttrs(cell officecli.Node, cellType string, colspan int) map[string]any {
+	attrs := map[string]any{}
+	if cellType == NodeTableHeader {
+		attrs["align"] = "center"
+		attrs["valign"] = "center"
+	} else {
+		if align := normalizeTextAlign(cell.String("align")); align != "" {
+			attrs["align"] = align
+		} else {
+			attrs["align"] = "left"
+		}
+		if valign := strings.ToLower(strings.TrimSpace(cell.String("valign"))); allowedValign[valign] {
+			attrs["valign"] = valign
+		} else {
+			attrs["valign"] = "center"
+		}
+	}
+	if colspan > 1 {
+		attrs["colspan"] = colspan
+	}
+	return attrs
+}
+
+func currentRowSpan(rows []Node, anchor rowCellAnchor) int {
+	if anchor.row < 0 || anchor.row >= len(rows) || anchor.cell < 0 || anchor.cell >= len(rows[anchor.row].Content) {
+		return 1
+	}
+	span, ok := intAttr(rows[anchor.row].Content[anchor.cell].Attrs, "rowspan")
+	if !ok || span < 1 {
+		return 1
+	}
+	return span
+}
+
+func setRowSpan(cell *Node, span int) {
+	if span <= 1 {
+		return
+	}
+	if cell.Attrs == nil {
+		cell.Attrs = map[string]any{}
+	}
+	cell.Attrs["rowspan"] = span
 }
 
 // headingLevel 从 "heading 2" 之类的样式名推导标题层级，并收敛到 2–4。
@@ -283,31 +430,109 @@ func headingLevel(styleName string) (int, bool) {
 	return level, true
 }
 
-func listKindFor(node officecli.Node) listKind {
-	listStyle := strings.ToLower(strings.TrimSpace(node.String("listStyle")))
-	numFmt := strings.ToLower(strings.TrimSpace(node.String("numFmt")))
-	if listStyle == "bullet" || numFmt == "bullet" {
-		return listKind{ordered: false}
+func paragraphAttrs(node officecli.Node, text string) map[string]any {
+	attrs := map[string]any{}
+	if tableCaptionPattern.MatchString(strings.TrimSpace(text)) {
+		attrs["variant"] = "tableCaption"
+		attrs["align"] = "center"
+		return attrs
 	}
-	style := ListStyleOrderedParen
-	if numFmt == "lowerletter" || numFmt == "upperletter" || numFmt == "lowerroman" || numFmt == "upperroman" {
-		style = ListStyleLetterParen
+	align := normalizeTextAlign(node.String("align"))
+	if align != "" {
+		attrs["align"] = align
 	}
-	return listKind{ordered: true, style: style}
+	if align != "center" && align != "right" && paragraphHasTwoCharFirstLineIndent(node) {
+		attrs["firstLineIndent"] = 2
+	}
+	if len(attrs) == 0 {
+		return nil
+	}
+	return attrs
 }
 
-func marksFromFormat(format map[string]any) []Mark {
-	marks := make([]Mark, 0, 3)
-	if flag, ok := format["bold"].(bool); ok && flag {
-		marks = append(marks, Mark{Type: MarkBold})
+func paragraphHasTwoCharFirstLineIndent(node officecli.Node) bool {
+	if chars, ok := node.Float("firstLineChars"); ok && chars >= 200 {
+		return true
 	}
-	if flag, ok := format["italic"].(bool); ok && flag {
-		marks = append(marks, Mark{Type: MarkItalic})
+	indent := parsePoints(node.String("firstLineIndent"))
+	if indent <= 0 {
+		return false
 	}
-	if style, ok := format["underline"].(string); ok && style != "" && style != "none" {
-		marks = append(marks, Mark{Type: MarkUnderline})
+	if font := effectiveFontSizePoints(node); font > 0 && indent/font >= 1.5 {
+		return true
 	}
-	return marks
+	return indent >= 18
+}
+
+func effectiveFontSizePoints(node officecli.Node) float64 {
+	for _, key := range []string{"effective.size", "size", "markRPr.size"} {
+		if points := parsePoints(node.String(key)); points > 0 {
+			return points
+		}
+	}
+	return 0
+}
+
+func parsePoints(raw string) float64 {
+	raw = strings.ToLower(strings.TrimSpace(raw))
+	if raw == "" {
+		return 0
+	}
+	re := regexp.MustCompile(`^([0-9]+(?:\.[0-9]+)?)\s*(pt|px|cm|mm|in)?$`)
+	match := re.FindStringSubmatch(raw)
+	if len(match) != 3 {
+		return 0
+	}
+	value, err := strconv.ParseFloat(match[1], 64)
+	if err != nil {
+		return 0
+	}
+	switch match[2] {
+	case "px":
+		return value * 72 / 96
+	case "cm":
+		return value * 72 / 2.54
+	case "mm":
+		return value * 72 / 25.4
+	case "in":
+		return value * 72
+	default:
+		return value
+	}
+}
+
+func normalizeTextAlign(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "start":
+		return "left"
+	case "end":
+		return "right"
+	case "both", "distribute":
+		return "justify"
+	case "left", "center", "right", "justify":
+		return strings.ToLower(strings.TrimSpace(raw))
+	default:
+		return ""
+	}
+}
+
+func normalizeTableAlign(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "left", "center", "right":
+		return strings.ToLower(strings.TrimSpace(raw))
+	default:
+		return ""
+	}
+}
+
+func textFromInline(inline []Node) string {
+	var b strings.Builder
+	for _, node := range inline {
+		if node.Type == NodeText {
+			b.WriteString(node.Text)
+		}
+	}
+	return b.String()
 }
 
 func firstNonEmpty(values ...string) string {
@@ -317,4 +542,11 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func marksFromFormat(format map[string]any) []Mark {
+	if flag, ok := format["bold"].(bool); ok && flag {
+		return []Mark{{Type: MarkBold}}
+	}
+	return nil
 }
