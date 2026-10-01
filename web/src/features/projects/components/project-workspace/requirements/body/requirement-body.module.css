@@ -280,29 +280,6 @@ th.tableCell {
   text-align: center;
 }
 
-.pageBreak {
-  align-items: center;
-  color: color-mix(in srgb, var(--muted-foreground) 78%, transparent);
-  display: flex;
-  font-size: 0.66rem;
-  gap: 0.45rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.pageBreak::before,
-.pageBreak::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--border) 88%, var(--primary)),
-    transparent
-  );
-  content: "";
-  flex: 1 1 auto;
-  height: 1px;
-}
-
 .empty {
   align-items: center;
   color: var(--muted-foreground);
