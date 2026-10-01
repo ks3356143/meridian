@@ -34,10 +34,10 @@
 
 .toolbarGroup {
   align-items: center;
-  border-right: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
   display: inline-flex;
-  gap: 0.3rem;
-  padding-right: 0.38rem;
+  gap: 0.32rem;
+  padding-right: 0.45rem;
 }
 
 .toolbarGroup:last-child {
@@ -45,11 +45,13 @@
   padding-right: 0;
 }
 
+/* 分类做绿色 TAG：和可点击按钮明确区分。颜色由 Badge variant=primary 提供，这里只收紧尺寸。 */
 .toolbarGroupLabel {
-  color: var(--muted-foreground);
   font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  height: 1.05rem;
+  letter-spacing: 0.02em;
+  padding-inline: 0.28rem;
   white-space: nowrap;
 }
 
@@ -179,10 +181,12 @@
 }
 
 .proseMirror h4 {
+  color: color-mix(in srgb, var(--foreground) 82%, var(--muted-foreground));
   font-size: 12pt;
 }
 
 .proseMirror ol {
+  list-style-type: decimal;
   margin: 0 0 0.72rem;
   padding-left: 2.2rem;
 }
@@ -197,19 +201,31 @@
 }
 
 .proseMirror li::marker {
-  color: color-mix(in srgb, var(--primary) 76%, var(--muted-foreground));
-  content: counter(list-item) "） ";
+  color: color-mix(in srgb, var(--primary) 72%, var(--muted-foreground));
   font-weight: 700;
+}
+
+.proseMirror ol[data-list-style="ordered-paren"] > li::marker {
+  content: counter(list-item) "） ";
+}
+
+.proseMirror ol[data-list-style="letter-paren"] > li::marker {
+  content: counter(list-item, lower-alpha) "） ";
 }
 
 .proseMirror table {
   border-collapse: collapse;
   font-size: 10.5pt;
+  line-height: 1.55;
   margin: 0.55rem auto 0.7rem;
   max-width: 100%;
   min-width: 60%;
   table-layout: auto;
   width: fit-content;
+}
+
+.proseMirror table[data-colwidth="true"] {
+  min-width: 0;
 }
 
 .proseMirror table[data-align="left"] {
@@ -224,14 +240,14 @@
 
 .proseMirror th,
 .proseMirror td {
-  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--foreground));
-  min-width: 4.5rem;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, var(--foreground));
+  min-width: 4.6rem;
   padding: 0.28rem 0.38rem;
   vertical-align: middle;
 }
 
 .proseMirror th {
-  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
   font-family: "SimHei", "Microsoft YaHei", sans-serif;
   font-weight: 700;
   text-align: center;
@@ -248,8 +264,12 @@
   text-indent: 0;
 }
 
-.proseMirror .selectedCell::after {
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
+/* 单元格选中态：selectedCell 由 prosemirror-tables 注入，是全局类名，
+   必须用 :global() 否则会被 CSS Module 哈希成另一个名字，样式永远不生效。
+   底色 + 内描边让拖拽/Shift 选择一眼可见。 */
+.proseMirror :global(.selectedCell)::after {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 68%, transparent);
   content: "";
   inset: 0;
   pointer-events: none;
@@ -272,6 +292,14 @@
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
+}
+
+.imageNode[data-align="left"] {
+  align-items: flex-start;
+}
+
+.imageNode[data-align="right"] {
+  align-items: flex-end;
 }
 
 .imageNode:hover,

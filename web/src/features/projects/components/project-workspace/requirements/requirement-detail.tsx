@@ -28,7 +28,7 @@ import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -57,6 +57,7 @@ import {
   type RequirementDraft,
 } from "./requirement-form";
 import { materializeAssetImages } from "./body/requirement-body-assets";
+import type { RequirementBodyEditorHandle } from "./body/requirement-body-editor";
 import styles from "./requirement-detail.module.css";
 
 const LazyRequirementBody = lazy(() =>
@@ -155,15 +156,13 @@ function RequirementDetailForm({
   const contentDescription =
     detail.mode === "text" ? detail.content.description : detail.body.plainText;
   const bodyBaselineDoc = useMemo(
-    () =>
-      detail.mode === "blocks" ? cloneBodyDoc(detail.body.doc) : textToBodyDoc(contentDescription),
-    [contentDescription, detail],
+    () => (detail.mode === "blocks" ? detail.body.doc : textToBodyDoc(contentDescription)),
+    [contentDescription, detail.body.doc, detail.mode],
   );
   const hasBody = (bodyBaselineDoc.content?.length ?? 0) > 0;
   const [draft, setDraft] = useState(() => toDraft(requirement, contentDescription));
   const [baseline, setBaseline] = useState(() => toDraft(requirement, contentDescription));
   const [saveState, setSaveState] = useState<"saved" | "editing" | "saving" | "error">("saved");
-  const [bodyDoc, setBodyDoc] = useState(() => cloneBodyDoc(bodyBaselineDoc));
   const [bodyEditBaselineDoc, setBodyEditBaselineDoc] = useState(() =>
     cloneBodyDoc(bodyBaselineDoc),
   );
@@ -176,12 +175,14 @@ function RequirementDetailForm({
   const [bodyEditorMounted, setBodyEditorMounted] = useState(false);
   const [bodyEditorSession, setBodyEditorSession] = useState(0);
   const bodyDialogRef = useRef<HTMLDialogElement>(null);
+  const bodyEditorHandleRef = useRef<RequirementBodyEditorHandle | null>(null);
   const bodyEditBaselineDocRef = useRef(bodyEditBaselineDoc);
   const bodyDirtyRef = useRef(false);
   const bodyEditingRef = useRef(false);
   const bodyBusyRef = useRef(false);
   const bodyCanSave =
-    bodyEditing && (bodyDirty || (detail.mode === "text" && (bodyDoc.content?.length ?? 0) > 0));
+    bodyEditing &&
+    (bodyDirty || (detail.mode === "text" && (bodyEditBaselineDoc.content?.length ?? 0) > 0));
   const bodyBusy = bodySaving || bodyRefreshing;
   const bodyRefreshVisible = bodyRefreshing || detailRefreshing;
 
@@ -223,7 +224,6 @@ function RequirementDetailForm({
     setBaseline(nextDraft);
     bodyEditBaselineDocRef.current = nextBodyBaseline;
     setBodyEditBaselineDoc(nextBodyBaseline);
-    setBodyDoc(cloneBodyDoc(nextBodyBaseline));
     setBodyDirty(false);
     bodyDirtyRef.current = false;
     bodyEditingRef.current = false;
@@ -308,36 +308,18 @@ function RequirementDetailForm({
       setSaveState("error");
     }
   }, [detail, dirty, draft, onUpdate, queryClient, requirement]);
-  const handleBodyChange = useCallback(
-    (next: RequirementBlockNode) => {
-      if (!bodyEditingRef.current || bodyBusyRef.current) return;
-      setBodyDoc(next);
-      const nextDirty = JSON.stringify(next) !== JSON.stringify(bodyEditBaselineDocRef.current);
-      bodyDirtyRef.current = nextDirty;
-      setBodyDirty(nextDirty);
-      onBodyDirtyChange?.(nextDirty);
-    },
-    [onBodyDirtyChange],
-  );
-  const handleBodyEditorReady = useCallback(
-    (next: RequirementBlockNode) => {
-      if (!bodyEditingRef.current || bodyBusyRef.current || bodyDirtyRef.current) return;
-      const normalized = cloneBodyDoc(next);
-      bodyEditBaselineDocRef.current = normalized;
-      setBodyEditBaselineDoc(normalized);
-      setBodyDoc(cloneBodyDoc(normalized));
-      bodyDirtyRef.current = false;
-      setBodyDirty(false);
-      onBodyDirtyChange?.(false);
-    },
-    [onBodyDirtyChange],
-  );
+  // ponytail: 首次编辑即标记 dirty，不逐键对比全文；用户改回原文也按 dirty 处理。
+  const handleBodyChange = useCallback(() => {
+    if (!bodyEditingRef.current || bodyBusyRef.current || bodyDirtyRef.current) return;
+    bodyDirtyRef.current = true;
+    setBodyDirty(true);
+    onBodyDirtyChange?.(true);
+  }, [onBodyDirtyChange]);
 
   const startBodyEditing = () => {
     const nextBaseline = cloneBodyDoc(bodyBaselineDoc);
     bodyEditBaselineDocRef.current = nextBaseline;
     setBodyEditBaselineDoc(nextBaseline);
-    setBodyDoc(cloneBodyDoc(nextBaseline));
     bodyDirtyRef.current = false;
     setBodyDirty(false);
     setBodyError("");
@@ -349,7 +331,6 @@ function RequirementDetailForm({
   };
 
   const closeBodyEditor = () => {
-    setBodyDoc(cloneBodyDoc(bodyBaselineDoc));
     bodyDirtyRef.current = false;
     setBodyDirty(false);
     setBodyError("");
@@ -397,8 +378,9 @@ function RequirementDetailForm({
     setBodySaving(true);
     setBodyError("");
     try {
+      const currentDoc = bodyEditorHandleRef.current?.getDoc() ?? bodyEditBaselineDocRef.current;
       const [prepared] = await Promise.all([
-        materializeAssetImages(bodyDoc, projectCode),
+        materializeAssetImages(currentDoc, projectCode),
         new Promise((resolve) => window.setTimeout(resolve, 450)),
       ]);
       const saved = await requirementsApi.saveBlocks(
@@ -415,8 +397,7 @@ function RequirementDetailForm({
         updatedAt: saved.updatedAt,
       };
       bodyEditBaselineDocRef.current = savedDoc;
-      setBodyEditBaselineDoc(cloneBodyDoc(savedDoc));
-      setBodyDoc(cloneBodyDoc(savedDoc));
+      setBodyEditBaselineDoc(savedDoc);
       bodyDirtyRef.current = false;
       setBodyDirty(false);
       onBodyDirtyChange?.(false);
@@ -672,10 +653,7 @@ function RequirementDetailForm({
           aria-label="测试项的需求描述"
         >
           <header className={styles.descriptionHeader}>
-            <div>
-              <h4>测试项的需求描述</h4>
-              <p>支持段落缩进与对齐、表格、多级有序列表和图片；仅保留粗体。</p>
-            </div>
+            <FieldTitle>测试项的需求描述</FieldTitle>
             <div className={styles.descriptionActions}>
               {bodyRefreshVisible ? (
                 <span className={styles.descriptionRefresh} role="status" aria-live="polite">
@@ -765,13 +743,13 @@ function RequirementDetailForm({
                 }
               >
                 <LazyRequirementBodyEditor
-                  doc={bodyDoc}
+                  doc={bodyEditBaselineDoc}
                   projectCode={projectCode}
                   session={bodyEditorSession}
                   focusOnOpen={bodyEditing}
                   busy={bodyBusy}
+                  handleRef={bodyEditorHandleRef}
                   onChange={handleBodyChange}
-                  onReady={handleBodyEditorReady}
                 />
               </Suspense>
             ) : null}

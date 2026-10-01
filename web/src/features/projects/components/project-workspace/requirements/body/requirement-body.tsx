@@ -1,5 +1,5 @@
 import { ImageOff, Loader2, ScanText } from "lucide-react";
-import { memo, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { requestBlob } from "@/api/client";
 import type { RequirementBlockNode } from "@/features/requirements/types";
@@ -98,8 +98,9 @@ function ParagraphBlock({ block }: { block: RequirementBlockNode }) {
 
 function ListBlock({ block }: { block: RequirementBlockNode }) {
   const style = readStringAttr(block.attrs, "style") || "ordered-paren";
+  const start = readNumberAttr(block.attrs, "start");
   return (
-    <ol className={styles.list} data-list-style={style}>
+    <ol className={styles.list} data-list-style={style} start={start > 1 ? start : undefined}>
       {(block.content ?? []).map((item, index) => (
         <ListItemBlock key={index} item={item} />
       ))}
@@ -125,15 +126,31 @@ function ListItemBlock({ item }: { item: RequirementBlockNode }) {
 
 function TableBlock({ block }: { block: RequirementBlockNode }) {
   const rows = block.content ?? [];
-  const headerRows = rows.filter(
-    (row) =>
-      (row.content ?? []).length > 0 &&
-      (row.content ?? []).every((cell) => cell.type === "tableHeader"),
-  );
-  const bodyRows = rows.filter((row) => !headerRows.includes(row));
+  const headerRows: RequirementBlockNode[] = [];
+  const bodyRows: RequirementBlockNode[] = [];
+  for (const row of rows) {
+    const cells = row.content ?? [];
+    if (cells.length > 0 && cells.every((cell) => cell.type === "tableHeader")) {
+      headerRows.push(row);
+    } else {
+      bodyRows.push(row);
+    }
+  }
+  const colwidths = readColumnWidths(rows[0]);
   return (
     <div className={styles.tableWrap}>
-      <table className={styles.table} data-align={readStringAttr(block.attrs, "align") || "center"}>
+      <table
+        className={styles.table}
+        data-align={readStringAttr(block.attrs, "align") || "center"}
+        data-colwidth={colwidths ? "true" : undefined}
+      >
+        {colwidths ? (
+          <colgroup>
+            {colwidths.map((width, index) => (
+              <col key={index} style={{ width: `${width}px` }} />
+            ))}
+          </colgroup>
+        ) : null}
         {headerRows.length > 0 ? (
           <thead>
             {headerRows.map((row, rowIndex) => (
@@ -199,11 +216,12 @@ function AssetImageBlock({
     return style;
   }, [aspectRatio, width]);
 
+  const thumbnailWidth = resolveThumbnailWidth(width);
   const assetQuery = useQuery({
-    queryKey: ["requirement-asset", projectCode, assetId, 320],
+    queryKey: ["requirement-asset", projectCode, assetId, thumbnailWidth],
     queryFn: ({ signal }) =>
       requestBlob(
-        `/api/v1/projects/${encodeURIComponent(projectCode)}/assets/${encodeURIComponent(assetId ?? "")}?w=320`,
+        `/api/v1/projects/${encodeURIComponent(projectCode)}/assets/${encodeURIComponent(assetId ?? "")}?w=${thumbnailWidth}`,
         signal,
       ),
     enabled: Boolean(assetId),
@@ -229,7 +247,7 @@ function AssetImageBlock({
   const showFallback = !assetId || failed || assetQuery.isError;
 
   return (
-    <figure className={styles.figure}>
+    <figure className={styles.figure} data-align={readImageAlign(block.attrs) || undefined}>
       <div
         className={styles.imageFrame}
         style={frameStyle}
@@ -265,9 +283,8 @@ function InlineContent({ content }: { content?: RequirementBlockNode[] }) {
 }
 
 function TextRun({ node }: { node: RequirementBlockNode }) {
-  const bold = (node.marks ?? []).some((mark) => mark.type === "bold");
-  const content: ReactNode = bold ? <strong>{node.text ?? ""}</strong> : (node.text ?? "");
-  return <span>{content}</span>;
+  const text = node.text ?? "";
+  return (node.marks ?? []).some((mark) => mark.type === "bold") ? <strong>{text}</strong> : text;
 }
 
 function EmptyBody() {
@@ -277,6 +294,27 @@ function EmptyBody() {
       <p>暂无正文内容，点击“编辑正文”录入。</p>
     </div>
   );
+}
+
+// 列宽来自 DOCX 的 w:gridCol；存在时按 Word 的列宽渲染，缺失时交回 auto 布局。
+function readColumnWidths(row: RequirementBlockNode | undefined) {
+  const widths: number[] = [];
+  for (const cell of row?.content ?? []) {
+    const span = Math.max(1, readNumberAttr(cell.attrs, "colspan"));
+    const colwidth = Array.isArray(cell.attrs?.colwidth) ? cell.attrs.colwidth : [];
+    for (let index = 0; index < span; index += 1) {
+      const width = Number(colwidth[index]);
+      if (!Number.isFinite(width) || width <= 0) return undefined;
+      widths.push(width);
+    }
+  }
+  return widths.length > 0 ? widths : undefined;
+}
+
+// 图片对齐：左 / 中 / 右；缺省按居中渲染。
+function readImageAlign(attrs: Record<string, unknown> | undefined) {
+  const align = readStringAttr(attrs, "align").toLowerCase();
+  return align === "left" || align === "right" || align === "center" ? align : "";
 }
 
 function readStringAttr(attrs: Record<string, unknown> | undefined, key: string) {
@@ -303,6 +341,14 @@ function clampHeadingLevel(value: number) {
 function sanitizeCssLength(value: string) {
   const match = value.match(/^(\d+(?:\.\d+)?)(cm|mm|in|pt|px)$/i);
   return match ? `${match[1]}${match[2].toLowerCase()}` : "";
+}
+
+// 缩略图按显示宽度取档，避免 12cm 图被 320px 缩略图放大糊掉。
+function resolveThumbnailWidth(value: string) {
+  const pixels = parseCssLength(value);
+  if (pixels > 640) return 960;
+  if (pixels > 320) return 640;
+  return 320;
 }
 
 function readAspectRatio(attrs: Record<string, unknown> | undefined) {

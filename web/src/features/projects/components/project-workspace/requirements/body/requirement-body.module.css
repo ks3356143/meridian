@@ -29,12 +29,12 @@
 
 .heading[data-level="3"] {
   color: color-mix(in srgb, var(--primary) 78%, var(--foreground));
-  font-size: 0.89rem;
+  font-size: 12pt;
 }
 
 .heading[data-level="4"] {
   color: color-mix(in srgb, var(--foreground) 82%, var(--muted-foreground));
-  font-size: 0.83rem;
+  font-size: 12pt;
 }
 
 .paragraph {
@@ -87,6 +87,7 @@
   font-size: 12pt;
   gap: 0.18rem;
   line-height: 1.8;
+  list-style-type: decimal;
   margin: 0;
   padding-left: 2.2rem;
 }
@@ -107,8 +108,15 @@
 
 .listItem::marker {
   color: color-mix(in srgb, var(--primary) 72%, var(--muted-foreground));
-  content: counter(list-item) "） ";
   font-weight: 700;
+}
+
+.list[data-list-style="ordered-paren"] > .listItem::marker {
+  content: counter(list-item) "） ";
+}
+
+.list[data-list-style="letter-paren"] > .listItem::marker {
+  content: counter(list-item, lower-alpha) "） ";
 }
 
 .listParagraph {
@@ -141,6 +149,11 @@
   min-width: 60%;
   table-layout: auto;
   width: fit-content;
+}
+
+/* 有 DOCX 列宽时按列宽渲染，不再被 60% 最小宽度拉伸，保持与编辑器一致。 */
+.table[data-colwidth="true"] {
+  min-width: 0;
 }
 
 .table[data-align="left"] {
@@ -202,6 +215,14 @@ th.tableCell {
   flex-direction: column;
   gap: 0.3rem;
   margin: 0;
+}
+
+.figure[data-align="left"] {
+  align-items: flex-start;
+}
+
+.figure[data-align="right"] {
+  align-items: flex-end;
 }
 
 .imageFrame {

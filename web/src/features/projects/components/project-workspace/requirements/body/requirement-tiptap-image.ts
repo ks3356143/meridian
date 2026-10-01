@@ -1,144 +1,12 @@
-import { Extension, mergeAttributes, Node, type NodeViewRendererProps } from "@tiptap/core";
-import { Bold } from "@tiptap/extension-bold";
-import { Document } from "@tiptap/extension-document";
-import { Heading } from "@tiptap/extension-heading";
-import { ListItem, ListKeymap, OrderedList } from "@tiptap/extension-list";
-import { Paragraph } from "@tiptap/extension-paragraph";
-import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table";
-import { Text } from "@tiptap/extension-text";
+import { mergeAttributes, Node, type NodeViewRendererProps } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Plugin } from "@tiptap/pm/state";
 import type { EditorView, NodeView } from "@tiptap/pm/view";
 import { requestBlob } from "@/api/client";
 import type { RequirementAsset } from "@/features/requirements/types";
-import { normalizePastedHTML } from "./requirement-tiptap-paste";
 import styles from "./requirement-body-editor.module.css";
 
-const pastedFirstLineIndent = new WeakMap<Element, number>();
-
-declare module "@tiptap/core" {
-  interface Commands<ReturnType> {
-    requirementParagraph: {
-      setParagraphAlign: (align: "left" | "center" | "right" | "justify" | null) => ReturnType;
-      setParagraphFirstLineIndent: (indent: 0 | 2) => ReturnType;
-      toggleTableCaption: () => ReturnType;
-    };
-  }
-}
-
-export const RequirementParagraph = Paragraph.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      align: {
-        default: null,
-        parseHTML: (element) => {
-          const rawAlign = element.getAttribute("data-align") ?? "";
-          const [baseAlign, ...flags] = rawAlign.split("+");
-          if (flags.includes("indent2")) {
-            pastedFirstLineIndent.set(element, 2);
-          }
-          const styleAlign = element instanceof HTMLElement ? element.style.textAlign : "";
-          return normalizeAlign(baseAlign || styleAlign) || null;
-        },
-        renderHTML: (attributes) => {
-          const align = normalizeAlign(String(attributes.align ?? ""));
-          return align ? { "data-align": align, style: `text-align: ${align}` } : {};
-        },
-      },
-      firstLineIndent: {
-        default: 0,
-        parseHTML: (element) => {
-          const carriedIndent = pastedFirstLineIndent.get(element);
-          if (carriedIndent === 2) return 2;
-          const dataIndent = element.getAttribute("data-first-line-indent");
-          if (dataIndent === "2") return 2;
-          const textIndent = element instanceof HTMLElement ? element.style.textIndent : "";
-          return /^2(?:\.0+)?em$/i.test(textIndent) ? 2 : 0;
-        },
-        renderHTML: (attributes) =>
-          Number(attributes.firstLineIndent) === 2
-            ? { "data-first-line-indent": "2", style: "text-indent: 2em" }
-            : {},
-      },
-      variant: {
-        default: null,
-        parseHTML: (element) => element.getAttribute("data-variant") || null,
-        renderHTML: (attributes) =>
-          attributes.variant === "tableCaption" ? { "data-variant": "tableCaption" } : {},
-      },
-    };
-  },
-  addCommands() {
-    return {
-      ...this.parent?.(),
-      setParagraphAlign:
-        (align) =>
-        ({ commands }) =>
-          commands.updateAttributes(this.name, {
-            align,
-            ...(align === "center" || align === "right" ? { firstLineIndent: 0 } : {}),
-          }),
-      setParagraphFirstLineIndent:
-        (firstLineIndent) =>
-        ({ commands }) =>
-          commands.updateAttributes(this.name, { firstLineIndent }),
-      toggleTableCaption:
-        () =>
-        ({ editor, commands }) => {
-          const isCaption = editor.getAttributes(this.name).variant === "tableCaption";
-          return commands.updateAttributes(this.name, {
-            variant: isCaption ? null : "tableCaption",
-            ...(isCaption ? {} : { align: "center", firstLineIndent: 0 }),
-          });
-        },
-    };
-  },
-});
-
-export const RequirementOrderedList = OrderedList.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      style: {
-        default: "ordered-paren",
-        parseHTML: (element) => element.getAttribute("data-list-style") || "ordered-paren",
-        renderHTML: (attributes) => ({ "data-list-style": attributes.style || "ordered-paren" }),
-      },
-    };
-  },
-});
-
-export const RequirementTable = Table.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      align: {
-        default: "center",
-        parseHTML: (element) =>
-          normalizeTableAlign(
-            element.getAttribute("data-align") ?? element.getAttribute("align"),
-          ) || "center",
-        renderHTML: (attributes) => ({
-          "data-align": normalizeTableAlign(String(attributes.align ?? "")) || "center",
-        }),
-      },
-    };
-  },
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        view: (editorView) => {
-          syncTableAlignment(editorView.dom, editorView.state.doc);
-          return {
-            update: (view) => syncTableAlignment(view.dom, view.state.doc),
-          };
-        },
-      }),
-    ];
-  },
-});
-
+// 图片内容块扩展：schema、NodeView（替换/删除/加载占位）与对齐归一化。
+// 与表格/段落扩展分开，便于富文本复用时按需裁剪。
 type AssetImageOptions = {
   projectCode: string;
   upload: (file: File) => Promise<RequirementAsset>;
@@ -265,16 +133,20 @@ class AssetImageNodeView implements NodeView {
     this.actions.append(this.fileInput, replaceButton, deleteButton);
     this.dom.append(this.actions);
     this.render();
+    this.syncAlign();
   }
 
   update(node: ProseMirrorNode) {
     if (node.type !== this.node.type) return false;
     const previous = this.node;
     this.node = node;
+    this.syncAlign();
     const imageChanged =
       previous.attrs.assetId !== node.attrs.assetId ||
       previous.attrs.src !== node.attrs.src ||
-      previous.attrs.alt !== node.attrs.alt;
+      previous.attrs.alt !== node.attrs.alt ||
+      previous.attrs.width !== node.attrs.width ||
+      previous.attrs.height !== node.attrs.height;
     if (imageChanged) this.render();
     return true;
   }
@@ -292,6 +164,12 @@ class AssetImageNodeView implements NodeView {
     this.events.abort();
     this.loadController?.abort();
     if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+  }
+
+  private syncAlign() {
+    const align = normalizeImageAlign(this.node.attrs.align);
+    if (align) this.dom.dataset.align = align;
+    else delete this.dom.dataset.align;
   }
 
   private handleReplaceClick = () => {
@@ -365,6 +243,10 @@ class AssetImageNodeView implements NodeView {
     const img = document.createElement("img");
     img.src = src;
     img.alt = typeof this.node.attrs.alt === "string" ? this.node.attrs.alt : "需求正文图片";
+    // 按存储宽度渲染，与只读正文一致；否则会按缩略图原始像素铺满弹窗。
+    img.style.width = typeof this.node.attrs.width === "string" ? this.node.attrs.width : "auto";
+    img.style.height = "auto";
+    img.style.maxWidth = "100%";
     img.addEventListener(
       "error",
       () => {
@@ -387,53 +269,13 @@ class AssetImageNodeView implements NodeView {
   }
 }
 
-export const RequirementPasteCleanup = Extension.create({
-  name: "requirementPasteCleanup",
-  transformPastedHTML(html) {
-    return normalizePastedHTML(html);
-  },
-});
-
-export { Bold, Document, Heading, ListItem, ListKeymap, TableCell, TableHeader, TableRow, Text };
-
-function syncTableAlignment(dom: HTMLElement, document: ProseMirrorNode) {
-  const alignments: string[] = [];
-  document.descendants((node) => {
-    if (node.type.name === "table") {
-      alignments.push(normalizeTableAlign(String(node.attrs.align ?? "")) || "center");
-    }
-    return true;
-  });
-  dom.querySelectorAll("table").forEach((table, index) => {
-    table.setAttribute("data-align", alignments[index] ?? "center");
-  });
-}
-
-function normalizeAlign(raw: string) {
+function normalizeImageAlign(raw: unknown) {
+  if (typeof raw !== "string") return "";
   switch (raw.trim().toLowerCase()) {
-    case "start":
-      return "left";
-    case "end":
-      return "right";
-    case "both":
-    case "distribute":
-      return "justify";
     case "left":
     case "center":
     case "right":
-    case "justify":
       return raw.trim().toLowerCase();
-    default:
-      return "";
-  }
-}
-
-function normalizeTableAlign(raw: string | null) {
-  switch ((raw ?? "").trim().toLowerCase()) {
-    case "left":
-    case "center":
-    case "right":
-      return raw?.trim().toLowerCase() ?? "";
     default:
       return "";
   }

@@ -309,25 +309,12 @@
 }
 
 .descriptionHeader {
-  align-items: flex-start;
+  align-items: center;
   border-bottom: 1px solid var(--border);
   display: flex;
   gap: 0.75rem;
   justify-content: space-between;
   padding: 0.55rem 0.65rem;
-}
-
-.descriptionHeader h4 {
-  color: var(--foreground);
-  font-size: 0.78rem;
-  font-weight: 760;
-}
-
-.descriptionHeader p {
-  color: var(--muted-foreground);
-  font-size: 0.66rem;
-  line-height: 1.4;
-  margin-top: 0.15rem;
 }
 
 .descriptionActions {
