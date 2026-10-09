@@ -66,19 +66,10 @@
   text-indent: 2em;
 }
 
+/* 题注（表题 / 图题）的排版与间距由 .surface（requirement-body-content.module.css）统一提供。 */
 .paragraph[data-align="center"],
-.paragraph[data-align="right"],
-.paragraph[data-variant="tableCaption"] {
+.paragraph[data-align="right"] {
   text-indent: 0;
-}
-
-.paragraph[data-variant="tableCaption"] {
-  color: var(--foreground);
-  font-family: "SimHei", "Microsoft YaHei", sans-serif;
-  font-size: 10.5pt;
-  font-weight: 700;
-  margin: 0.12rem 0 0.28rem;
-  text-align: center;
 }
 
 .list {
@@ -140,36 +131,8 @@
   border: 1px solid var(--border);
 }
 
-.table {
-  border-collapse: collapse;
-  font-size: 10.5pt;
-  line-height: 1.55;
-  margin-inline: auto;
-  max-width: 100%;
-  min-width: 60%;
-  table-layout: auto;
-  width: fit-content;
-}
-
-/* 有 DOCX 列宽时按列宽渲染，不再被 60% 最小宽度拉伸，保持与编辑器一致。 */
-.table[data-colwidth="true"] {
-  min-width: 0;
-}
-
-.table[data-align="left"] {
-  margin-inline: 0 auto;
-}
-
-.table[data-align="right"] {
-  margin-inline: auto 0;
-}
-
-.tableCell {
-  border: 1px solid color-mix(in srgb, var(--border) 88%, var(--foreground));
-  min-width: 4.6rem;
-  padding: 0.28rem 0.38rem;
-  vertical-align: middle;
-}
+/* 表格与单元格的边框/字号/列宽口径由 .surface 统一提供；
+   这里只保留预览特有：单元格文本对齐（后端存的 align）与表头下边框加粗。 */
 
 .tableCell[data-align="left"] {
   text-align: left;
@@ -197,11 +160,7 @@
 }
 
 th.tableCell {
-  background: color-mix(in srgb, var(--primary) 7%, var(--card));
   border-bottom-width: 2px;
-  font-family: "SimHei", "Microsoft YaHei", sans-serif;
-  font-size: 10.5pt;
-  font-weight: 700;
 }
 
 .tableParagraph {

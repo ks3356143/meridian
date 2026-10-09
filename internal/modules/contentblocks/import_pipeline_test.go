@@ -63,9 +63,9 @@ func TestImportFromDocxRegistersImages(t *testing.T) {
 		t.Fatalf("资源缺少存储键: %+v", asset)
 	}
 
-	// EMF 与外部链接图片应被记录为跳过，而不是静默丢失。
-	if len(result.Skipped) != 2 {
-		t.Fatalf("应记录 2 项跳过资源，实际 %+v", result.Skipped)
+	// 只有外部链接会被跳过：EMF/WMF 作为资源保留（浏览器不预览，Word 生成侧按原格式嵌入）。
+	if len(result.Skipped) != 1 || result.Skipped[0].RelID != "rId3" {
+		t.Fatalf("只应记录外部链接这一项跳过资源，实际 %+v", result.Skipped)
 	}
 }
 

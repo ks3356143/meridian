@@ -1,9 +1,19 @@
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { NodeSelection, TextSelection } from "@tiptap/pm/state";
 import type { useEditor } from "@tiptap/react";
+import type { RequirementBlockNode } from "@/features/requirements/types";
 
 // 编辑器工具栏的领域操作（表格表头规则、原子节点插入位置等）。
 // 抽成独立模块以便富文本在其它业务域复用时共用同一套行为。
+
+// 正文以表格 / 图片收尾时光标落不到块后（PM 的点击坐标会解析到块内文字），载入时补一个空段落。
+// 代价：保存后正文末尾多一个空段落（2026-10-09 用户确认可接受）。
+export function ensureTrailingParagraph(doc: RequirementBlockNode): RequirementBlockNode {
+  const content = doc.content ?? [];
+  const last = content[content.length - 1];
+  if (!last || (last.type !== "table" && last.type !== "assetImage")) return doc;
+  return { ...doc, content: [...content, { type: "paragraph" }] };
+}
 
 // 图片等原子节点被整体选中（NodeSelection）时，直接插入内容会被 replaceSelectionWith
 // 替换掉原节点（例如"点图片后插表格/传图片"会删除图片）。统一先把光标折叠到节点之后的

@@ -180,6 +180,26 @@ func TestConvertBodyIdentifiesTableCaption(t *testing.T) {
 	}
 }
 
+func TestConvertBodyIdentifiesFigureCaption(t *testing.T) {
+	body := []officecli.Node{
+		paragraph("图3-1 内部接口关系", "Normal", map[string]any{"align": "left"}),
+		paragraph("图 3 内部接口关系", "Normal", nil),
+		paragraph("图片说明", "Normal", nil),
+	}
+	result := ConvertBody(body, ImportOptions{})
+	for index := 0; index < 2; index++ {
+		if variant, _ := stringAttr(result.Doc.Content[index].Attrs, "variant"); variant != "figureCaption" {
+			t.Fatalf("图题语义未识别(%d): %+v", index, result.Doc.Content[index].Attrs)
+		}
+		if align, _ := stringAttr(result.Doc.Content[index].Attrs, "align"); align != "center" {
+			t.Fatalf("图题应居中(%d): %+v", index, result.Doc.Content[index].Attrs)
+		}
+	}
+	if variant, _ := stringAttr(result.Doc.Content[2].Attrs, "variant"); variant != "" {
+		t.Fatalf("普通段落不应被判为图题: %+v", result.Doc.Content[2].Attrs)
+	}
+}
+
 func TestConvertBodyTableColspanAndVerticalMerge(t *testing.T) {
 	table := officecli.Node{
 		Type: "table",
@@ -200,6 +220,78 @@ func TestConvertBodyTableColspanAndVerticalMerge(t *testing.T) {
 	}
 	if rowspan, _ := intAttr(cell.Attrs, "rowspan"); rowspan != 2 {
 		t.Fatalf("vmerge 应转换为 rowspan=2: %+v", cell.Attrs)
+	}
+}
+
+func TestConvertBodyWritesLogicalColumnWidths(t *testing.T) {
+	table := officecli.Node{
+		Type:   "table",
+		Format: map[string]any{"firstRow": true, "colWidths": "3095dxa,1027dxa,2973dxa,1404dxa"},
+		Children: []officecli.Node{
+			{Type: "row", Children: []officecli.Node{
+				{Type: "cell", Format: map[string]any{"colspan": float64(2), "width": "4122dxa"}, Children: []officecli.Node{paragraph("合并首格", "Normal", nil)}},
+				{Type: "cell", Format: map[string]any{"colspan": float64(2), "width": "4377dxa"}, Children: []officecli.Node{paragraph("合并次格", "Normal", nil)}},
+			}},
+			{Type: "row", Children: []officecli.Node{
+				cell(paragraph("一", "Normal", nil)),
+				cell(paragraph("二", "Normal", nil)),
+				cell(paragraph("三", "Normal", nil)),
+				cell(paragraph("四", "Normal", nil)),
+			}},
+		},
+	}
+	result := ConvertBody([]officecli.Node{table}, ImportOptions{})
+	if err := ValidateDocument(result.Doc); err != nil {
+		t.Fatalf("带列宽的结果应通过白名单校验: %v", err)
+	}
+	rows := result.Doc.Content[0].Content
+	first := rows[0].Content[0]
+	if first.Type != NodeTableHeader {
+		t.Fatalf("首行应为表头，实际 %s", first.Type)
+	}
+	merged, _ := first.Attrs["colwidth"].([]int)
+	if len(merged) != 2 || merged[0] != 206 || merged[1] != 68 {
+		t.Fatalf("合并单元格列宽应按 colspan 展开成逻辑列: %+v", first.Attrs)
+	}
+	second, _ := rows[0].Content[1].Attrs["colwidth"].([]int)
+	if len(second) != 2 || second[0] != 198 || second[1] != 94 {
+		t.Fatalf("第二个合并单元格列宽错误: %+v", second)
+	}
+	last, _ := rows[1].Content[3].Attrs["colwidth"].([]int)
+	if len(last) != 1 || last[0] != 94 {
+		t.Fatalf("普通单元格应取所在逻辑列宽: %+v", rows[1].Content[3].Attrs)
+	}
+}
+
+func TestConvertBodyDropsColumnWidthsWhenGridMismatch(t *testing.T) {
+	// grid 只有两列，数据行却需要三列 → 整表不写列宽。
+	table := officecli.Node{
+		Type:   "table",
+		Format: map[string]any{"colWidths": "1000dxa,2000dxa"},
+		Children: []officecli.Node{
+			{Type: "row", Children: []officecli.Node{
+				cell(paragraph("一", "Normal", nil)),
+				cell(paragraph("二", "Normal", nil)),
+				cell(paragraph("三", "Normal", nil)),
+			}},
+		},
+	}
+	result := ConvertBody([]officecli.Node{table}, ImportOptions{})
+	for _, row := range result.Doc.Content[0].Content {
+		for _, cell := range row.Content {
+			if _, ok := cell.Attrs["colwidth"]; ok {
+				t.Fatalf("列数与 grid 对不上时不应写列宽: %+v", cell.Attrs)
+			}
+		}
+	}
+
+	// 完全没有 grid 时同样交回 auto 布局。
+	plain := officecli.Node{Type: "table", Children: []officecli.Node{
+		{Type: "row", Children: []officecli.Node{cell(paragraph("一", "Normal", nil)), cell(paragraph("二", "Normal", nil))}},
+	}}
+	plainResult := ConvertBody([]officecli.Node{plain}, ImportOptions{})
+	if _, ok := plainResult.Doc.Content[0].Content[0].Content[0].Attrs["colwidth"]; ok {
+		t.Fatalf("无 grid 时不应写列宽")
 	}
 }
 

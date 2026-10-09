@@ -67,8 +67,7 @@ func (s *Service) BuildRequirementBodies(
 		if len(converted.Doc.Content) == 0 {
 			continue
 		}
-		// 解析阶段不覆盖解析器产出的摘要，只落正文块。
-		if err := s.saveBody(ctx, projectID, spec.RequirementID, converted.Doc, OriginImported, AuthoringAuto, operator, false); err != nil {
+		if err := s.saveBody(ctx, projectID, spec.RequirementID, converted.Doc, OriginImported, AuthoringAuto, operator); err != nil {
 			return built, err
 		}
 		built++
@@ -76,7 +75,7 @@ func (s *Service) BuildRequirementBodies(
 	return built, nil
 }
 
-// saveBody 写入正文块；syncDescription 为真时同步需求摘要。
+// saveBody 写入正文块。
 func (s *Service) saveBody(
 	ctx context.Context,
 	projectID string,
@@ -85,7 +84,6 @@ func (s *Service) saveBody(
 	origin string,
 	authoringMode string,
 	operator string,
-	syncDescription bool,
 ) error {
 	if err := ValidateDocument(doc); err != nil {
 		return err
@@ -93,5 +91,5 @@ func (s *Service) saveBody(
 	if strings.TrimSpace(projectID) == "" || strings.TrimSpace(ownerID) == "" {
 		return errors.New("内容块拥有者信息不完整")
 	}
-	return s.persist(ctx, projectID, ownerID, doc, origin, authoringMode, operator, syncDescription)
+	return s.persist(ctx, projectID, ownerID, doc, origin, authoringMode, operator)
 }

@@ -1,0 +1,29 @@
+.title {
+  align-items: center;
+  color: var(--foreground);
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 720;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.title::before {
+  background: var(--section-tone, var(--primary));
+  border-radius: 999px;
+  content: "";
+  flex: 0 0 auto;
+  height: 0.9rem;
+  /* flex 只居中盒子；汉字墨迹重心比盒子中心高约 0.04em，上移后上下出头相等 */
+  transform: translateY(-0.04em);
+  width: 2px;
+}
+
+.lg {
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.lg::before {
+  height: 1.1rem;
+}

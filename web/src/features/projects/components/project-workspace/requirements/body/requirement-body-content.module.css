@@ -1,0 +1,62 @@
+/* 正文内容面共用规格：只读预览与编辑器共用同一份题注排版与表格几何口径。
+   两个容器各自加 .surface 类接入本文件；容器特有的差异（滚动容器、上下留白、
+   单元格对齐机制、选中态、表头下边框）留在各自的 .module.css，避免同一口径两处维护。 */
+
+/* 题注：表题在表格上方、图题在图片下方，居中、黑体五号、无首行缩进 */
+.surface p[data-variant="tableCaption"],
+.surface p[data-variant="figureCaption"] {
+  color: var(--foreground);
+  font-family: "SimHei", "Microsoft YaHei", sans-serif;
+  font-size: 10.5pt;
+  font-weight: 700;
+  text-align: center;
+  text-indent: 0;
+}
+
+/* 表题在图题方向相反的一侧留更大间距；预览与编辑器同值，保证所见即所得 */
+.surface p[data-variant="tableCaption"] {
+  margin: 0.12rem 0 0.28rem;
+}
+
+.surface p[data-variant="figureCaption"] {
+  margin: 0.28rem 0 0.12rem;
+}
+
+.surface table {
+  border-collapse: collapse;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  margin-inline: auto;
+  max-width: 100%;
+  min-width: 60%;
+  table-layout: auto;
+  width: fit-content;
+}
+
+/* 有 DOCX 列宽时按列宽渲染，不再被 60% 最小宽度拉伸 */
+.surface table[data-colwidth="true"] {
+  min-width: 0;
+}
+
+.surface table[data-align="left"] {
+  margin-inline: 0 auto;
+}
+
+.surface table[data-align="right"] {
+  margin-inline: auto 0;
+}
+
+.surface th,
+.surface td {
+  border: 1px solid color-mix(in srgb, var(--border) 88%, var(--foreground));
+  min-width: 4.6rem;
+  padding: 0.28rem 0.38rem;
+  vertical-align: middle;
+}
+
+.surface th {
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
+  font-family: "SimHei", "Microsoft YaHei", sans-serif;
+  font-weight: 700;
+  text-align: center;
+}

@@ -26,9 +26,10 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Badge } from "@/components/ui/badge";
+import { SectionTitle } from "@/components/ui/section-title";
 import { Button } from "@/components/ui/button";
 
-import { Field, FieldError, FieldLabel, FieldTitle } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -174,6 +175,9 @@ function RequirementDetailForm({
   const [bodyDiscardOpen, setBodyDiscardOpen] = useState(false);
   const [bodyEditorMounted, setBodyEditorMounted] = useState(false);
   const [bodyEditorSession, setBodyEditorSession] = useState(0);
+  const [descriptionStuck, setDescriptionStuck] = useState(false);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+  const descriptionSentinelRef = useRef<HTMLDivElement>(null);
   const bodyDialogRef = useRef<HTMLDialogElement>(null);
   const bodyEditorHandleRef = useRef<RequirementBodyEditorHandle | null>(null);
   const bodyEditBaselineDocRef = useRef(bodyEditBaselineDoc);
@@ -213,6 +217,18 @@ function RequirementDetailForm({
       dialog.close();
     }
   }, [bodyEditing]);
+  // 哨兵滚出正文滚动容器即表示卡片头已吸顶；用观察器避免逐帧滚动计算
+  useEffect(() => {
+    const root = bodyScrollRef.current;
+    const sentinel = descriptionSentinelRef.current;
+    if (!root || !sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setDescriptionStuck(!entry.isIntersecting),
+      { root },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
   const initializedDetailRef = useRef("");
   useEffect(() => {
     if (detailPending || detailError) return;
@@ -540,7 +556,7 @@ function RequirementDetailForm({
         </div>
       </header>
 
-      <div className={styles.body} onBlur={saveDraft}>
+      <div ref={bodyScrollRef} className={styles.body} onBlur={saveDraft}>
         <div className={styles.grid}>
           <Field data-invalid={errors.chapterNumber ? true : undefined}>
             <FieldLabel htmlFor="detail-chapter">
@@ -652,8 +668,14 @@ function RequirementDetailForm({
           aria-busy={bodyRefreshVisible ? true : undefined}
           aria-label="测试项的需求描述"
         >
-          <header className={styles.descriptionHeader}>
-            <FieldTitle>测试项的需求描述</FieldTitle>
+          <div ref={descriptionSentinelRef} className={styles.descriptionSentinel} aria-hidden />
+          <header
+            className={styles.descriptionHeader}
+            data-stuck={descriptionStuck ? "true" : undefined}
+          >
+            <SectionTitle as="h4" className={styles.descriptionTitle}>
+              测试项的需求描述
+            </SectionTitle>
             <div className={styles.descriptionActions}>
               {bodyRefreshVisible ? (
                 <span className={styles.descriptionRefresh} role="status" aria-live="polite">
@@ -664,7 +686,7 @@ function RequirementDetailForm({
               <Button
                 type="button"
                 size="sm"
-                variant="default"
+                variant={descriptionStuck ? "outline" : "default"}
                 sheen
                 disabled={bodyRefreshVisible || bodyBusy}
                 onClick={startBodyEditing}

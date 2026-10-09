@@ -3,6 +3,8 @@ import { memo, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { requestBlob } from "@/api/client";
 import type { RequirementBlockNode } from "@/features/requirements/types";
+import { vectorImageNotice } from "./requirement-body-assets";
+import contentStyles from "./requirement-body-content.module.css";
 import styles from "./requirement-body.module.css";
 
 type RequirementBodyProps = {
@@ -19,7 +21,11 @@ function RequirementBodyImpl({ doc, projectCode }: RequirementBodyProps) {
 
   return (
     <section className={styles.frame} aria-label="需求正文">
-      <div className={styles.viewport} role="document" aria-label="结构化需求正文">
+      <div
+        className={`${styles.viewport} ${contentStyles.surface}`}
+        role="document"
+        aria-label="结构化需求正文"
+      >
         {blocks.map((block, index) => (
           <div key={`${block.type}-${index}`} className={styles.block}>
             <RequirementBlock block={block} projectCode={projectCode} />
@@ -137,16 +143,19 @@ function TableBlock({ block }: { block: RequirementBlockNode }) {
     }
   }
   const colwidths = readColumnWidths(rows[0]);
+  // 无 DOCX 列宽时按内容估算初始列宽，避免 auto 布局把长文本列挤成一条。
+  const autoWidths = colwidths ? undefined : estimateColumnWidths(rows);
+  const columnWidths = colwidths ?? autoWidths;
   return (
     <div className={styles.tableWrap}>
       <table
         className={styles.table}
         data-align={readStringAttr(block.attrs, "align") || "center"}
-        data-colwidth={colwidths ? "true" : undefined}
+        data-colwidth={colwidths ? "true" : autoWidths ? "auto" : undefined}
       >
-        {colwidths ? (
+        {columnWidths ? (
           <colgroup>
-            {colwidths.map((width, index) => (
+            {columnWidths.map((width, index) => (
               <col key={index} style={{ width: `${width}px` }} />
             ))}
           </colgroup>
@@ -244,7 +253,8 @@ function AssetImageBlock({
     return () => URL.revokeObjectURL(url);
   }, [assetQuery.data]);
 
-  const showFallback = !assetId || failed || assetQuery.isError;
+  const vectorNotice = vectorImageNotice(assetQuery.data?.type ?? "");
+  const showFallback = !assetId || failed || assetQuery.isError || Boolean(vectorNotice);
 
   return (
     <figure className={styles.figure} data-align={readImageAlign(block.attrs) || undefined}>
@@ -256,7 +266,7 @@ function AssetImageBlock({
         {showFallback ? (
           <span className={styles.imageFallback}>
             <ImageOff aria-hidden />
-            <span>{assetId ? "图片加载失败" : "图片资源缺失"}</span>
+            <span>{vectorNotice ?? (assetId ? "图片加载失败" : "图片资源缺失")}</span>
           </span>
         ) : objectUrl ? (
           <img src={objectUrl} alt={alt} decoding="async" onError={() => setFailed(true)} />
@@ -311,6 +321,51 @@ function readColumnWidths(row: RequirementBlockNode | undefined) {
   return widths.length > 0 ? widths : undefined;
 }
 
+// 无列宽时的初始列宽估算：按列内最长文本的半角宽度分配列宽（中日韩字形按 2 个单位）。
+// 原“长短文本 8 字符阈值”不再用于判对齐，改为这里的列宽下限；长列封顶避免一列吃掉整表。
+const AUTO_COLUMN_MIN_UNITS = 8;
+const AUTO_COLUMN_MAX_UNITS = 40;
+const AUTO_COLUMN_UNIT_PX = 7; // 五号字 10.5pt 下半角字符宽约 7px
+const AUTO_COLUMN_PADDING_PX = 14; // 单元格左右内边距 + 边框
+
+function estimateColumnWidths(rows: RequirementBlockNode[]) {
+  const units: number[] = [];
+  for (const row of rows) {
+    // shortcut: 含纵向合并的行无法按行推算逻辑列，跳过该行，估算仍取其余行的最大值。
+    if ((row.content ?? []).some((cell) => readNumberAttr(cell.attrs, "rowspan") > 1)) continue;
+    let column = 0;
+    for (const cell of row.content ?? []) {
+      const span = Math.max(1, readNumberAttr(cell.attrs, "colspan"));
+      const share = estimateTextUnits(readCellText(cell)) / span;
+      for (let index = 0; index < span; index += 1) {
+        units[column + index] = Math.max(units[column + index] ?? 0, share);
+      }
+      column += span;
+    }
+  }
+  if (units.length === 0) return undefined;
+  const widths = Array.from({ length: units.length }, (_, index) => {
+    const unit = Math.min(
+      AUTO_COLUMN_MAX_UNITS,
+      Math.max(AUTO_COLUMN_MIN_UNITS, Math.round(units[index] ?? 0)),
+    );
+    return unit * AUTO_COLUMN_UNIT_PX + AUTO_COLUMN_PADDING_PX;
+  });
+  return widths.some((width) => width > 0) ? widths : undefined;
+}
+
+function estimateTextUnits(text: string) {
+  let units = 0;
+  for (const char of text) units += /[\u2e80-\uffef]/.test(char) ? 2 : 1;
+  return units;
+}
+
+function readCellText(cell: RequirementBlockNode) {
+  return (cell.content ?? [])
+    .flatMap((block) => block.content ?? [])
+    .map((node) => node.text ?? "")
+    .join(" ");
+}
 // 图片对齐：左 / 中 / 右；缺省按居中渲染。
 function readImageAlign(attrs: Record<string, unknown> | undefined) {
   const align = readStringAttr(attrs, "align").toLowerCase();

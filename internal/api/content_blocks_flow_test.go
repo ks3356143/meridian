@@ -139,7 +139,7 @@ func TestRequirementBodyBlockFlow(t *testing.T) {
 		t.Fatalf("读回纯文本不一致: %q != %q", reloaded.PlainText, saved.PlainText)
 	}
 
-	// 摘要桥接：列表接口按 Step 1 契约只回摘要，应已同步为正文纯文本。
+	// 正文块是权威源：列表摘要、详情正文与搜索都直读 content_blocks.plain_text。
 	workbench := listRequirementsWorkbench(t, handler, token, projectCode)
 	var syncedExcerpt string
 	var syncedHasDescription bool
@@ -150,7 +150,26 @@ func TestRequirementBodyBlockFlow(t *testing.T) {
 		}
 	}
 	if !syncedHasDescription || !strings.Contains(syncedExcerpt, "5.1 指令参数管理") {
-		t.Fatalf("需求摘要未同步正文纯文本: hasDescription=%v excerpt=%q", syncedHasDescription, syncedExcerpt)
+		t.Fatalf("列表摘要未按正文块回显: hasDescription=%v excerpt=%q", syncedHasDescription, syncedExcerpt)
+	}
+	if content := getRequirementContentTest(t, handler, token, requirement.ID); !strings.Contains(content.Description, "5.1 指令参数管理") {
+		t.Fatalf("详情正文未按正文块回显: %q", content.Description)
+	}
+	if search := searchRequirementsTest(t, handler, token, projectCode, "5.1 指令参数管理"); search.Total == 0 || search.Items[0].ID != requirement.ID {
+		t.Fatalf("按正文块搜索未命中: %+v", search)
+	}
+	// 过渡桥接已撤除：清空登记描述后，正文仍由正文块提供。
+	putRequirement(t, handler, token, requirement.ID, map[string]any{
+		"sectionId":          requirement.SectionID,
+		"chapterNumber":      requirement.ChapterNumber,
+		"externalIdentifier": requirement.ExternalIdentifier,
+		"name":               requirement.Name,
+		"description":        "",
+		"primaryKind":        requirement.PrimaryKind,
+		"tags":               requirement.Tags,
+	})
+	if cleared := getRequirementContentTest(t, handler, token, requirement.ID); !strings.Contains(cleared.Description, "5.1 指令参数管理") {
+		t.Fatalf("清空登记描述后正文仍应来自正文块: %q", cleared.Description)
 	}
 
 	// 未登记节点应被拒绝。

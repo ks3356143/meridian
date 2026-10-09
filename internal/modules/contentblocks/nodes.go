@@ -110,6 +110,9 @@ var allowedAlign = map[string]bool{
 	"justify": true, "both": true, "distribute": true,
 }
 
+// 段落语义：表题在表格上方、图题在图片下方，两者都居中且不参与首行缩进。
+var allowedParagraphVariants = map[string]bool{"tableCaption": true, "figureCaption": true}
+
 var allowedTableAlign = map[string]bool{"left": true, "center": true, "right": true}
 var allowedValign = map[string]bool{"top": true, "center": true, "bottom": true}
 
@@ -194,7 +197,7 @@ func validateAttributes(n Node, path string) error {
 		if indent, ok := intAttr(n.Attrs, "firstLineIndent"); ok && indent != 0 && indent != 2 {
 			return &ValidationError{Path: path, Msg: "段落首行缩进只支持 0 或 2 字符"}
 		}
-		if variant, ok := stringAttr(n.Attrs, "variant"); ok && variant != "" && variant != "tableCaption" {
+		if variant, ok := stringAttr(n.Attrs, "variant"); ok && variant != "" && !allowedParagraphVariants[variant] {
 			return &ValidationError{Path: path, Msg: fmt.Sprintf("段落语义 %q 不受支持", variant)}
 		}
 	case NodeHeading:
@@ -406,8 +409,8 @@ func sanitizeAttrs(nodeType string, attrs map[string]any) map[string]any {
 			}
 			out[key] = normalized
 		case "variant":
-			if value == "tableCaption" {
-				out[key] = value
+			if variant, ok := stringifyValue(value); ok && allowedParagraphVariants[variant] {
+				out[key] = variant
 			}
 		case "width", "height":
 			if text, ok := stringifyValue(value); ok && strings.TrimSpace(text) != "" {
@@ -435,7 +438,8 @@ func normalizeParagraphAttrs(attrs map[string]any) {
 	if attrs == nil {
 		return
 	}
-	if variant, ok := stringAttr(attrs, "variant"); !ok || variant != "tableCaption" {
+	variant, hasVariant := stringAttr(attrs, "variant")
+	if !hasVariant || !allowedParagraphVariants[variant] {
 		delete(attrs, "variant")
 	}
 	if indent, ok := intAttr(attrs, "firstLineIndent"); !ok || indent != 2 {
@@ -444,7 +448,7 @@ func normalizeParagraphAttrs(attrs map[string]any) {
 	if align, ok := stringAttr(attrs, "align"); ok && (align == "center" || align == "right") {
 		delete(attrs, "firstLineIndent")
 	}
-	if variant, ok := stringAttr(attrs, "variant"); ok && variant == "tableCaption" {
+	if allowedParagraphVariants[variant] {
 		attrs["align"] = "center"
 		delete(attrs, "firstLineIndent")
 	}

@@ -53,3 +53,14 @@ async function materializeAssetImage(node: RequirementBlockNode, projectCode: st
   };
   delete node.attrs.src;
 }
+// 浏览器不能解码的矢量图格式；正文按 MIME 降级为占位提示，Word 生成侧仍按原格式嵌入。
+const VECTOR_IMAGE_LABELS: Record<string, string> = {
+  "image/emf": "EMF",
+  "image/wmf": "WMF",
+};
+
+/** 矢量图占位文案；非矢量图返回 null。 */
+export function vectorImageNotice(mimeType: string): string | null {
+  const label = VECTOR_IMAGE_LABELS[mimeType.toLowerCase()];
+  return label ? `矢量图（${label}）无法在网页预览，请在 Word 中查看` : null;
+}

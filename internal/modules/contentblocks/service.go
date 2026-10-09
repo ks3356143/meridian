@@ -178,7 +178,7 @@ func (s *Service) SaveRequirementBody(
 		return BodyResponse{}, fmt.Errorf("创作方式 %q 不受支持", authoringMode)
 	}
 
-	if err := s.persist(ctx, ref.ProjectID, ref.ID, doc, origin, authoringMode, operator, true); err != nil {
+	if err := s.persist(ctx, ref.ProjectID, ref.ID, doc, origin, authoringMode, operator); err != nil {
 		return BodyResponse{}, err
 	}
 	plainText := PlainText(doc)
@@ -207,7 +207,7 @@ func (s *Service) loadRequirement(ctx context.Context, requirementID string) (re
 	return ref, nil
 }
 
-// persist 写入正文块；syncDescription 为真时同步需求摘要（过渡桥接）。
+// persist 写入正文块。正文块是正文的权威源，不再回写 software_requirements.description。
 func (s *Service) persist(
 	ctx context.Context,
 	projectID string,
@@ -216,7 +216,6 @@ func (s *Service) persist(
 	origin string,
 	authoringMode string,
 	operator string,
-	syncDescription bool,
 ) error {
 	bodyJSON, err := MarshalDocument(doc)
 	if err != nil {
@@ -264,16 +263,5 @@ func (s *Service) persist(
 		return fmt.Errorf("保存需求正文块失败: %w", err)
 	}
 
-	if !syncDescription {
-		return nil
-	}
-	// 过渡桥接：列表摘要与搜索仍读取 software_requirements.description。
-	// 正文块成为唯一权威源后，应改为直接取 content_blocks.plain_text 并移除此同步。
-	if err := s.db.WithContext(ctx).
-		Model(&requirementRef{}).
-		Where("id = ?", ownerID).
-		Updates(map[string]any{"description": plainText, "updated_at": now}).Error; err != nil {
-		return fmt.Errorf("同步需求摘要失败: %w", err)
-	}
 	return nil
 }

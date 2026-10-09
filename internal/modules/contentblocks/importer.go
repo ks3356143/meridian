@@ -1,6 +1,7 @@
 package contentblocks
 
 import (
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -101,7 +102,14 @@ type rowCellAnchor struct {
 	cell int
 }
 
-var tableCaptionPattern = regexp.MustCompile(`^表\s*\d+(?:\s*[-－—]\s*\d+)?\s+.+$`)
+// 题注识别：表题在表格上方、图题在图片下方，两者都居中且不参与首行缩进。
+var paragraphCaptionPatterns = []struct {
+	Variant string
+	Pattern *regexp.Regexp
+}{
+	{Variant: "tableCaption", Pattern: regexp.MustCompile(`^表\s*\d+(?:\s*[-－—]\s*\d+)?\s+.+$`)},
+	{Variant: "figureCaption", Pattern: regexp.MustCompile(`^图\s*\d+(?:\s*[-－—]\s*\d+)?\s+.+$`)},
+}
 
 func (c *converter) flushList(numID *string, entries *[]listEntry) {
 	if len(*entries) == 0 {
@@ -291,6 +299,10 @@ func (c *converter) convertTable(node officecli.Node) (Node, bool) {
 	}
 	table := Node{Type: NodeTable, Attrs: map[string]any{"align": tableAlign}}
 
+	// 列宽真源是 w:tblGrid：换算成 px 后按 colspan 展开成逻辑列写进单元格；
+	// 列数与单元格跨度对不上就整表不写，交给前端 auto 布局。
+	columnWidths := tableColumnWidths(node)
+
 	headerRow := c.options.HeaderRow
 	if firstRow, ok := node.Format["firstRow"].(bool); ok {
 		headerRow = firstRow
@@ -309,10 +321,7 @@ func (c *converter) convertTable(node officecli.Node) (Node, bool) {
 			if cell.Type != "cell" {
 				continue
 			}
-			colspan := 1
-			if span, ok := cell.Float("colspan"); ok && int(span) > 1 {
-				colspan = int(span)
-			}
+			colspan := cellSpan(cell)
 			vmerge := strings.ToLower(strings.TrimSpace(cell.String("vmerge")))
 			if vmerge == "continue" {
 				for col := logicalCol; col < logicalCol+colspan; col++ {
@@ -329,7 +338,11 @@ func (c *converter) convertTable(node officecli.Node) (Node, bool) {
 			if headerRow && rowIndex == 0 {
 				cellType = NodeTableHeader
 			}
-			cellNode := Node{Type: cellType, Attrs: tableCellAttrs(cell, cellType, colspan)}
+			cellAttrs := tableCellAttrs(cell, cellType, colspan)
+			if slice, ok := columnWidthSlice(columnWidths, logicalCol, colspan); ok {
+				cellAttrs["colwidth"] = slice
+			}
+			cellNode := Node{Type: cellType, Attrs: cellAttrs}
 			for _, child := range cell.Children {
 				if child.Type != "paragraph" {
 					continue
@@ -387,6 +400,68 @@ func tableCellAttrs(cell officecli.Node, cellType string, colspan int) map[strin
 	return attrs
 }
 
+func cellSpan(cell officecli.Node) int {
+	if span, ok := cell.Float("colspan"); ok && int(span) > 1 {
+		return int(span)
+	}
+	return 1
+}
+
+// tableColumnWidths 读取表格 w:tblGrid 列宽（dxa → px）；列数与单元格跨度对不上时返回空。
+func tableColumnWidths(node officecli.Node) []int {
+	raw := strings.TrimSpace(node.String("colWidths"))
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	widths := make([]int, 0, len(parts))
+	for _, part := range parts {
+		points := parsePoints(part)
+		if points <= 0 {
+			return nil
+		}
+		widths = append(widths, pointsToPixels(points))
+	}
+	if len(widths) != tableLogicalColumns(node) {
+		return nil
+	}
+	return widths
+}
+
+// tableLogicalColumns 统计表格逻辑列数，合并单元格按 colspan 展开。
+func tableLogicalColumns(node officecli.Node) int {
+	columns := 0
+	for _, row := range node.Children {
+		if row.Type != "row" {
+			continue
+		}
+		span := 0
+		for _, cell := range row.Children {
+			if cell.Type == "cell" {
+				span += cellSpan(cell)
+			}
+		}
+		if span > columns {
+			columns = span
+		}
+	}
+	return columns
+}
+
+// columnWidthSlice 取单元格覆盖的逻辑列宽；超出 grid 时返回 false。
+func columnWidthSlice(widths []int, start, span int) ([]int, bool) {
+	if span < 1 || start < 0 || start+span > len(widths) {
+		return nil, false
+	}
+	slice := make([]int, span)
+	copy(slice, widths[start:start+span])
+	return slice, true
+}
+
+func pointsToPixels(points float64) int {
+	return int(math.Round(points * 96 / 72))
+}
+
 func currentRowSpan(rows []Node, anchor rowCellAnchor) int {
 	if anchor.row < 0 || anchor.row >= len(rows) || anchor.cell < 0 || anchor.cell >= len(rows[anchor.row].Content) {
 		return 1
@@ -432,10 +507,13 @@ func headingLevel(styleName string) (int, bool) {
 
 func paragraphAttrs(node officecli.Node, text string) map[string]any {
 	attrs := map[string]any{}
-	if tableCaptionPattern.MatchString(strings.TrimSpace(text)) {
-		attrs["variant"] = "tableCaption"
-		attrs["align"] = "center"
-		return attrs
+	trimmed := strings.TrimSpace(text)
+	for _, caption := range paragraphCaptionPatterns {
+		if caption.Pattern.MatchString(trimmed) {
+			attrs["variant"] = caption.Variant
+			attrs["align"] = "center"
+			return attrs
+		}
 	}
 	align := normalizeTextAlign(node.String("align"))
 	if align != "" {
@@ -478,7 +556,7 @@ func parsePoints(raw string) float64 {
 	if raw == "" {
 		return 0
 	}
-	re := regexp.MustCompile(`^([0-9]+(?:\.[0-9]+)?)\s*(pt|px|cm|mm|in)?$`)
+	re := regexp.MustCompile(`^([0-9]+(?:\.[0-9]+)?)\s*(pt|px|cm|mm|in|dxa|twip)?$`)
 	match := re.FindStringSubmatch(raw)
 	if len(match) != 3 {
 		return 0
@@ -496,6 +574,8 @@ func parsePoints(raw string) float64 {
 		return value * 72 / 25.4
 	case "in":
 		return value * 72
+	case "dxa", "twip":
+		return value / 20
 	default:
 		return value
 	}

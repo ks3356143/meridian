@@ -3,6 +3,7 @@ import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type { EditorView, NodeView } from "@tiptap/pm/view";
 import { requestBlob } from "@/api/client";
 import type { RequirementAsset } from "@/features/requirements/types";
+import { vectorImageNotice } from "./requirement-body-assets";
 import styles from "./requirement-body-editor.module.css";
 
 // 图片内容块扩展：schema、NodeView（替换/删除/加载占位）与对齐归一化。
@@ -229,6 +230,11 @@ class AssetImageNodeView implements NodeView {
     void requestBlob(path, controller.signal)
       .then((blob) => {
         if (this.destroyed || controller.signal.aborted) return;
+        const vectorNotice = vectorImageNotice(blob.type);
+        if (vectorNotice) {
+          this.showPlaceholder(vectorNotice);
+          return;
+        }
         this.objectUrl = URL.createObjectURL(blob);
         this.renderImage(this.objectUrl);
       })

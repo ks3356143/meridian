@@ -2,6 +2,7 @@ import { CircleDashed, CircleCheck, Type } from "lucide-react";
 import { useState } from "react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
+import { SectionTitle } from "@/components/ui/section-title";
 import { Button } from "@/components/ui/button";
 
 export type WorkspaceTone = "primary" | "info" | "warning" | "danger" | "chart" | "success";
@@ -82,7 +83,9 @@ export function WorkspaceModulePlaceholder({
           >
             <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-base leading-none font-semibold">{currentBlock.label}</h3>
+                <SectionTitle as="h3" size="lg" className="leading-none">
+                  {currentBlock.label}
+                </SectionTitle>
                 <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
                   {currentBlock.content}
                 </p>
@@ -115,10 +118,9 @@ export function WorkspaceModulePlaceholder({
               className="flex min-w-0 flex-col gap-2 rounded-sm border p-3"
             >
               <div className="flex items-start justify-between gap-2">
-                <h3 className="flex min-w-0 items-center gap-2 text-xs font-semibold">
-                  <span data-module-marker aria-hidden />
+                <SectionTitle as="h3" className="min-w-0">
                   <span className="truncate">{block.label}</span>
-                </h3>
+                </SectionTitle>
                 <Badge
                   variant={
                     block.status === "待录入"

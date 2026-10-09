@@ -1,4 +1,13 @@
-const TABLE_CAPTION_PATTERN = /^表\s*\d+(?:\s*[-－—]\s*\d+)?\s+.+$/;
+import {
+  hasWordListStyle,
+  normalizePastedTables,
+  removeListMarkerSpans,
+} from "./requirement-tiptap-paste-word";
+
+const CAPTION_PATTERNS: Array<{ variant: string; pattern: RegExp }> = [
+  { variant: "tableCaption", pattern: /^表\s*\d+(?:\s*[-－—]\s*\d+)?\s+.+$/ },
+  { variant: "figureCaption", pattern: /^图\s*\d+(?:\s*[-－—]\s*\d+)?\s+.+$/ },
+];
 const INDENT_PATTERN = /text-indent\s*:\s*(-?[\d.]+)\s*(pt|px|em|cm|mm|in)/i;
 const ALIGN_PATTERN = /text-align\s*:\s*([^;]+)/i;
 const WORD_LIST_LEVEL_PATTERN = /level\s*(\d+)/i;
@@ -13,6 +22,7 @@ const KEEP_ATTRIBUTES = new Set([
   "height",
   "colspan",
   "rowspan",
+  "colwidth",
 ]);
 
 export function normalizePastedHTML(html: string) {
@@ -22,6 +32,7 @@ export function normalizePastedHTML(html: string) {
   removeUnsupportedElements(root);
   unwrapUnsupportedInline(root);
   normalizeElements(parsed, root);
+  normalizePastedTables(root);
   convertWordLists(root);
   convertUnorderedLists(root);
   stripUnsupportedAttributes(root);
@@ -94,20 +105,30 @@ function normalizeBlockElement(element: Element) {
   }
 
   const text = element.textContent?.trim() ?? "";
-  if (TABLE_CAPTION_PATTERN.test(text)) {
-    element.setAttribute("data-variant", "tableCaption");
+  // Word 题注（表 N … / 图 N …）的编号不是列表项编号：去掉纯数字标记后按题注处理，避免粘成 “1）”。
+  const bareText = stripLeadingNumber(text);
+  const captionVariant =
+    CAPTION_PATTERNS.find((item) => item.pattern.test(bareText))?.variant ??
+    (element.classList.contains("MsoCaption") ? "tableCaption" : null);
+
+  if (captionVariant) {
+    removeListMarkerSpans(element, true);
+    element.setAttribute("data-variant", captionVariant);
     element.setAttribute("data-align", "center");
     element.removeAttribute("data-first-line-indent");
   }
 
-  if (hasWordListStyle(element, style)) {
+  // 单元格内不允许列表（后端白名单 tableCell/tableHeader 只放行 paragraph），
+  // 编号改由 materializeCellNumbers 按列序补字面数字；其余 Word 编号段落才转列表。
+  if (hasWordListStyle(element, style) && !element.closest("td, th") && !captionVariant) {
     element.setAttribute("data-list-level", String(readWordListLevel(style)));
-    element.querySelectorAll("span").forEach((span) => {
-      if ((span.getAttribute("style") ?? "").toLowerCase().includes("mso-list:ignore")) {
-        span.remove();
-      }
-    });
+    removeListMarkerSpans(element);
   }
+}
+
+// 题注正文里可能带上列表编号前缀（“2. 表 7 …”），判定表题前先剥掉。
+function stripLeadingNumber(text: string) {
+  return text.replace(/^\s*(?:\d+|[a-zA-Z])\s*[.．、,，)）]\s*/, "").trim();
 }
 
 function convertWordLists(root: Element) {
@@ -177,10 +198,6 @@ function stripUnsupportedAttributes(root: Element) {
       if (!KEEP_ATTRIBUTES.has(name)) element.removeAttribute(attribute.name);
     });
   });
-}
-
-function hasWordListStyle(element: Element, style: string) {
-  return style.toLowerCase().includes("mso-list") || element.classList.contains("MsoListParagraph");
 }
 
 function readWordListLevel(style: string) {

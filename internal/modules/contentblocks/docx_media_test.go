@@ -53,8 +53,8 @@ func TestExtractDocumentMedia(t *testing.T) {
 	if err != nil {
 		t.Fatalf("抽媒体失败: %v", err)
 	}
-	if len(extraction.Files) != 1 {
-		t.Fatalf("应抽出 1 张受支持图片，实际 %d", len(extraction.Files))
+	if len(extraction.Files) != 2 {
+		t.Fatalf("应抽出 2 张图片（PNG 与 EMF），实际 %d", len(extraction.Files))
 	}
 	file := extraction.Files[0]
 	if file.RelID != "rId1" || file.PartName != "word/media/image1.png" {
@@ -66,8 +66,13 @@ func TestExtractDocumentMedia(t *testing.T) {
 	if !bytes.HasPrefix(file.Data, []byte{0x89, 0x50, 0x4E, 0x47}) {
 		t.Fatalf("图片字节不正确: %v", file.Data)
 	}
-	if len(extraction.Skipped) != 2 {
-		t.Fatalf("应跳过 2 项（EMF 与外部链接），实际 %d: %+v", len(extraction.Skipped), extraction.Skipped)
+	// EMF/WMF 必须原样保留：浏览器不能预览，但 Word 生成侧要按原格式嵌入。
+	vector := extraction.Files[1]
+	if vector.PartName != "word/media/image2.emf" || vector.MimeType != "image/emf" {
+		t.Fatalf("矢量图应作为资源保留: %+v", vector)
+	}
+	if len(extraction.Skipped) != 1 {
+		t.Fatalf("应跳过 1 项（外部链接），实际 %d: %+v", len(extraction.Skipped), extraction.Skipped)
 	}
 }
 

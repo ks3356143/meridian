@@ -1,4 +1,4 @@
-import { Extension } from "@tiptap/core";
+import { Extension, type CommandProps } from "@tiptap/core";
 import { Bold } from "@tiptap/extension-bold";
 import { Document } from "@tiptap/extension-document";
 import { Heading } from "@tiptap/extension-heading";
@@ -6,7 +6,7 @@ import { ListItem, ListKeymap, OrderedList } from "@tiptap/extension-list";
 import { Paragraph } from "@tiptap/extension-paragraph";
 import { Table, TableCell, TableHeader, TableRow, TableView } from "@tiptap/extension-table";
 import { Text } from "@tiptap/extension-text";
-import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { Fragment, Slice, type Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type { EditorView } from "@tiptap/pm/view";
 import { normalizePastedHTML } from "./requirement-tiptap-paste";
 
@@ -18,6 +18,7 @@ declare module "@tiptap/core" {
       setParagraphAlign: (align: "left" | "center" | "right" | "justify" | null) => ReturnType;
       setParagraphFirstLineIndent: (indent: 0 | 2) => ReturnType;
       toggleTableCaption: () => ReturnType;
+      toggleFigureCaption: () => ReturnType;
     };
   }
 }
@@ -61,7 +62,7 @@ export const RequirementParagraph = Paragraph.extend({
         default: null,
         parseHTML: (element) => element.getAttribute("data-variant") || null,
         renderHTML: (attributes) =>
-          attributes.variant === "tableCaption" ? { "data-variant": "tableCaption" } : {},
+          attributes.variant ? { "data-variant": String(attributes.variant) } : {},
       },
     };
   },
@@ -79,15 +80,8 @@ export const RequirementParagraph = Paragraph.extend({
         (firstLineIndent) =>
         ({ commands }) =>
           commands.updateAttributes(this.name, { firstLineIndent }),
-      toggleTableCaption:
-        () =>
-        ({ editor, commands }) => {
-          const isCaption = editor.getAttributes(this.name).variant === "tableCaption";
-          return commands.updateAttributes(this.name, {
-            variant: isCaption ? null : "tableCaption",
-            ...(isCaption ? {} : { align: "center", firstLineIndent: 0 }),
-          });
-        },
+      toggleTableCaption: () => captionToggle("tableCaption"),
+      toggleFigureCaption: () => captionToggle("figureCaption"),
     };
   },
 });
@@ -151,11 +145,14 @@ export const RequirementTable = Table.extend({
   },
 });
 
-// ponytail: Tiptap 的单元格只有 align，没有 valign；补齐后编辑器保存不会丢掉模型里的垂直对齐。
+// 与后端白名单对齐：tableCell / tableHeader 下只允许 paragraph，
+// 否则用户把列表或图片放进单元格时编辑期不报错、保存才失败。
 export const RequirementTableCell = TableCell.extend({
+  content: "paragraph+",
   addAttributes() {
     return {
       ...this.parent?.(),
+      // ponytail: Tiptap 的单元格只有 align，没有 valign；补齐后编辑器保存不会丢掉模型里的垂直对齐。
       valign: {
         default: null,
         parseHTML: (element) =>
@@ -172,6 +169,7 @@ export const RequirementTableCell = TableCell.extend({
 });
 
 export const RequirementTableHeader = TableHeader.extend({
+  content: "paragraph+",
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -196,6 +194,30 @@ export const RequirementPasteCleanup = Extension.create({
     return normalizePastedHTML(html);
   },
 });
+
+// 粘贴收尾处理，两件事都只能在 slice 上做：
+// 1. 表题独立成段——ProseMirror 把首块并入上一段时会沿用原段属性，表题属性会被丢掉；
+// 2. 贴到正文末尾且结尾是表格/图片时补一个空段落——否则光标落不到块后面，用户没法在表后换行。
+export function shapePastedSlice(slice: Slice, view: EditorView) {
+  const last = slice.content.lastChild;
+  const schema = last?.type.schema;
+  const doc = view.state.doc;
+  let lastBlockStart = 1;
+  for (let index = 0; index < doc.childCount - 1; index += 1)
+    lastBlockStart += doc.child(index).nodeSize;
+  // 文末最后一块是表格/图片时，选区也落在块“里面”，只能靠“选区在最后一块内”判断。
+  const atDocEnd = doc.childCount > 0 && view.state.selection.to >= lastBlockStart;
+  const needsTrailing = last != null && !last.isTextblock && schema && atDocEnd;
+  const paragraph = needsTrailing ? schema.nodes.paragraph?.createAndFill() : null;
+
+  const shaped = paragraph
+    ? new Slice(slice.content.append(Fragment.from(paragraph)), slice.openStart, 0)
+    : slice;
+  const first = shaped.content.firstChild;
+  return shaped.openStart > 0 && isCaptionVariant(first?.attrs.variant)
+    ? new Slice(shaped.content, 0, shaped.openEnd)
+    : shaped;
+}
 
 export { Bold, Document, Heading, ListItem, ListKeymap, TableRow, Text };
 
@@ -256,4 +278,19 @@ function normalizeTableAlign(raw: string | null) {
     default:
       return "";
   }
+}
+
+// 题注段落（表题/图题）在粘贴与属性更新上共用一套逻辑。
+function captionToggle(variant: "tableCaption" | "figureCaption") {
+  return ({ editor, commands }: CommandProps) => {
+    const current = editor.getAttributes("paragraph").variant;
+    return commands.updateAttributes("paragraph", {
+      variant: current === variant ? null : variant,
+      ...(current === variant ? {} : { align: "center", firstLineIndent: 0 }),
+    });
+  };
+}
+
+function isCaptionVariant(value: unknown): boolean {
+  return value === "tableCaption" || value === "figureCaption";
 }

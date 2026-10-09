@@ -975,6 +975,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
 }
 
 [data-module-card] {
+  --section-tone: var(--module-tone);
   border-color: color-mix(in srgb, var(--module-tone) 20%, transparent);
   background: color-mix(in srgb, var(--module-tone) 5%, var(--card));
   transition:
@@ -987,12 +988,4 @@ main.workspace-route::-webkit-scrollbar-thumb {
   border-color: color-mix(in srgb, var(--module-tone) 36%, transparent);
   background: color-mix(in srgb, var(--module-tone) 9%, var(--card));
   box-shadow: 0 5px 12px -10px color-mix(in srgb, var(--module-tone) 52%, transparent);
-}
-
-[data-module-marker] {
-  background: var(--module-tone);
-  width: 3px;
-  height: 0.875rem;
-  box-shadow: 8px 0 0 -2px color-mix(in srgb, var(--module-tone) 34%, transparent);
-  flex: none;
 }

@@ -39,6 +39,7 @@ export type RequirementBodyToolbarState = {
   align: string;
   firstLineIndent: number;
   caption: boolean;
+  figureCaption: boolean;
   orderedList: boolean;
   table: boolean;
   tableAlign: string;
@@ -102,6 +103,13 @@ export function RequirementBodyToolbar({
           onClick={() => editor.chain().focus().toggleTableCaption().run()}
         >
           表题
+        </ToolbarButton>
+        <ToolbarButton
+          label="图题"
+          active={state.figureCaption}
+          onClick={() => editor.chain().focus().toggleFigureCaption().run()}
+        >
+          图题
         </ToolbarButton>
       </ToolbarGroup>
 

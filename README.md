@@ -54,6 +54,12 @@ cd web
 npm run check
 ```
 
+文档（整理 srs/ 或 docs/ 后校验链接）：
+
+```powershell
+pwsh scripts/check-md-links.ps1
+```
+
 ## 文档入口
 
 - 需求与工程约定：[srs/README.md](srs/README.md)

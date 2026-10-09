@@ -1,11 +1,15 @@
 import { memo, useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { UndoRedo } from "@tiptap/extensions";
+import { Gapcursor, UndoRedo } from "@tiptap/extensions";
 import { EditorState } from "@tiptap/pm/state";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { requirementsApi } from "@/features/requirements/api";
 import type { RequirementBlockNode } from "@/features/requirements/types";
-import { currentRowIsHeaderRow, insertAfterNodeSelection } from "./requirement-body-editor-utils";
+import {
+  currentRowIsHeaderRow,
+  ensureTrailingParagraph,
+  insertAfterNodeSelection,
+} from "./requirement-body-editor-utils";
 import { RequirementBodyToolbar } from "./requirement-body-toolbar";
 import {
   Bold,
@@ -16,6 +20,7 @@ import {
   RequirementOrderedList,
   RequirementParagraph,
   RequirementPasteCleanup,
+  shapePastedSlice,
   RequirementTable,
   RequirementTableCell,
   RequirementTableHeader,
@@ -23,6 +28,7 @@ import {
   Text,
 } from "./requirement-tiptap-extensions";
 import { AssetImage } from "./requirement-tiptap-image";
+import contentStyles from "./requirement-body-content.module.css";
 import styles from "./requirement-body-editor.module.css";
 
 // ponytail: 文档 JSON 只在保存时读取，避免每次输入都序列化整篇正文。
@@ -59,7 +65,7 @@ function RequirementBodyEditorImpl({
   }, [onChange]);
 
   useEffect(() => {
-    docRef.current = doc;
+    docRef.current = ensureTrailingParagraph(doc);
   }, [doc]);
 
   const editor = useEditor(
@@ -70,6 +76,8 @@ function RequirementBodyEditorImpl({
         RequirementParagraph,
         Bold,
         UndoRedo,
+        // 表格/图片独占正文时，靠 GapCursor 把光标落到块外，否则点空白只能落进单元格。
+        Gapcursor,
         Heading.configure({ levels: [2, 3, 4] }),
         RequirementOrderedList,
         ListItem,
@@ -86,12 +94,13 @@ function RequirementBodyEditorImpl({
         }),
         RequirementPasteCleanup,
       ],
-      content: doc,
+      content: ensureTrailingParagraph(doc),
       editorProps: {
         attributes: {
-          class: styles.proseMirror,
+          class: `${styles.proseMirror} ${contentStyles.surface}`,
           spellcheck: "false",
         },
+        transformPasted: shapePastedSlice,
       },
       onUpdate: () => {
         if (suppressUpdateRef.current) {
@@ -162,6 +171,7 @@ function RequirementBodyEditorImpl({
         align: String(currentEditor.getAttributes("paragraph").align ?? ""),
         firstLineIndent: Number(currentEditor.getAttributes("paragraph").firstLineIndent ?? 0),
         caption: currentEditor.getAttributes("paragraph").variant === "tableCaption",
+        figureCaption: currentEditor.getAttributes("paragraph").variant === "figureCaption",
         orderedList: currentEditor.isActive("orderedList"),
         table: currentEditor.isActive("table"),
         tableAlign: String(currentEditor.getAttributes("table").align ?? "center"),

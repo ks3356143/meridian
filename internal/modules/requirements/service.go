@@ -2,12 +2,10 @@ package requirements
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 
@@ -318,7 +316,11 @@ func (s *Service) Workbench(ctx context.Context, projectCode string, sourceVersi
 		return WorkbenchResponse{}, fmt.Errorf("查询软件需求失败: %w", err)
 	}
 	sortRequirements(requirements)
-	requirementResponses := toRequirementResponses(requirements)
+	bodyTexts, err := s.bodyPlainTexts(ctx, projectID)
+	if err != nil {
+		return WorkbenchResponse{}, err
+	}
+	requirementResponses := toRequirementResponses(requirements, bodyTexts)
 	if err := s.attachDeletionMetadata(ctx, projectID, requirements, requirementResponses); err != nil {
 		return WorkbenchResponse{}, err
 	}
@@ -700,7 +702,9 @@ func (s *Service) UpdateRequirement(ctx context.Context, input UpdateRequirement
 		}
 		nextTestTaskStatus := current.TestItemTaskStatus
 		if current.Status == StatusOfficial {
-			nextTestTaskStatus = resolveTestItemTaskStatus(StatusOfficial, description)
+			// 正文块是权威源：description 只服务还没落块的解析数据。
+			effective := effectiveDescription(bodyPlainTextWith(ctx, tx, current.ID), description)
+			nextTestTaskStatus = resolveTestItemTaskStatus(StatusOfficial, effective)
 		}
 		if nextTestTaskStatus != current.TestItemTaskStatus {
 			if taskErr := tx.Model(&Requirement{}).Where("id = ?", current.ID).
@@ -757,7 +761,8 @@ func (s *Service) ChangeStatus(ctx context.Context, input StatusActionInput) (St
 					continue
 				}
 				now := time.Now()
-				nextTestTaskStatus := resolveTestItemTaskStatus(StatusOfficial, current.Description)
+				// 正文块是权威源：确认后按正文判断测试项创建资格。
+				nextTestTaskStatus := resolveTestItemTaskStatus(StatusOfficial, effectiveDescription(bodyPlainTextWith(ctx, tx, current.ID), current.Description))
 				if err := tx.Model(&Requirement{}).Where("id = ?", current.ID).Updates(map[string]any{
 					"status":                StatusOfficial,
 					"test_item_task_status": nextTestTaskStatus,
@@ -790,7 +795,7 @@ func (s *Service) ChangeStatus(ctx context.Context, input StatusActionInput) (St
 				}
 
 				nextStatus := latestDelete.FromStatus
-				nextTestTaskStatus := resolveTestItemTaskStatus(nextStatus, current.Description)
+				nextTestTaskStatus := resolveTestItemTaskStatus(nextStatus, effectiveDescription(bodyPlainTextWith(ctx, tx, current.ID), current.Description))
 				detail := "恢复为已确认需求"
 				if nextStatus == StatusCandidate {
 					detail = "撤回排除，恢复为待确认需求"
@@ -1130,46 +1135,6 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 	return result, nil
 }
 
-func cleanupParsedSections(tx *gorm.DB, sourceVersionID string, parsedChapters map[string]bool) error {
-	var stale []Section
-	if err := tx.Where("source_version_id = ? AND origin = ?", sourceVersionID, OriginParsed).
-		Find(&stale).Error; err != nil {
-		return fmt.Errorf("查询待清理解析章节失败: %w", err)
-	}
-	removable := make(map[string]bool)
-	for _, section := range stale {
-		if !parsedChapters[section.ChapterNumber] {
-			removable[section.ID] = true
-		}
-	}
-
-	for len(removable) > 0 {
-		deleted := false
-		for sectionID := range removable {
-			var childCount, requirementCount int64
-			if err := tx.Model(&Section{}).Where("parent_id = ?", sectionID).Count(&childCount).Error; err != nil {
-				return fmt.Errorf("检查解析章节子级失败: %w", err)
-			}
-			if err := tx.Model(&Requirement{}).Where("section_id = ?", sectionID).
-				Count(&requirementCount).Error; err != nil {
-				return fmt.Errorf("检查解析章节需求失败: %w", err)
-			}
-			if childCount > 0 || requirementCount > 0 {
-				continue
-			}
-			if err := tx.Delete(&Section{}, "id = ?", sectionID).Error; err != nil {
-				return fmt.Errorf("清理已移除章节失败: %w", err)
-			}
-			delete(removable, sectionID)
-			deleted = true
-		}
-		if !deleted {
-			return nil
-		}
-	}
-	return nil
-}
-
 func (s *Service) findProject(ctx context.Context, projectCode string) (string, error) {
 	var project struct {
 		ID string `gorm:"column:id"`
@@ -1232,86 +1197,6 @@ func (s *Service) findSource(ctx context.Context, projectCode string, sourceVers
 		}
 	}
 	return SourceRow{}, ErrSourceNotFound
-}
-
-func resolveParentID(tx *gorm.DB, source SourceRow, parentID string, chapter string) (*string, error) {
-	expectedParentChapter := parentChapter(chapter)
-	if expectedParentChapter == "" {
-		return nil, nil
-	}
-	if strings.TrimSpace(parentID) != "" {
-		var parent Section
-		if err := tx.Where("id = ? AND source_version_id = ?", parentID, source.ID).
-			First(&parent).Error; err != nil {
-			return nil, ErrParentMissing
-		}
-		if parent.ChapterNumber != expectedParentChapter {
-			return nil, ErrParentMissing
-		}
-		return &parent.ID, nil
-	}
-
-	return findOptionalParentID(tx, source.ID, expectedParentChapter)
-}
-
-func findOptionalParentID(tx *gorm.DB, sourceVersionID string, chapter string) (*string, error) {
-	parent, err := findSectionByChapter(tx, sourceVersionID, chapter)
-	if errors.Is(err, ErrParentMissing) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &parent.ID, nil
-}
-
-func findSectionByChapter(tx *gorm.DB, sourceVersionID string, chapter string) (Section, error) {
-	var section Section
-	err := tx.Where("source_version_id = ? AND chapter_number = ?", sourceVersionID, chapter).
-		First(&section).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return Section{}, ErrParentMissing
-	}
-	if err != nil {
-		return Section{}, fmt.Errorf("查询父章节失败: %w", err)
-	}
-	return section, nil
-}
-
-func createSectionInTx(
-	tx *gorm.DB,
-	projectID string,
-	sourceVersionID string,
-	parentID *string,
-	chapter string,
-	title string,
-	origin string,
-	sourceAnchor string,
-	operatedBy string,
-) (Section, error) {
-	var count int64
-	if err := tx.Model(&Section{}).
-		Where("source_version_id = ? AND chapter_number = ?", sourceVersionID, chapter).
-		Count(&count).Error; err != nil {
-		return Section{}, fmt.Errorf("检查章节冲突失败: %w", err)
-	}
-	if count > 0 {
-		return Section{}, ErrSectionExists
-	}
-	sectionID, err := id.New()
-	if err != nil {
-		return Section{}, err
-	}
-	now := time.Now()
-	section := Section{
-		ID: sectionID, ProjectID: projectID, SourceVersionID: sourceVersionID, ParentID: parentID,
-		ChapterNumber: chapter, Title: title, Origin: origin, SourceAnchor: sourceAnchor,
-		CreatedBy: operatedBy, CreatedAt: now, UpdatedAt: now,
-	}
-	if err := tx.Create(&section).Error; err != nil {
-		return Section{}, fmt.Errorf("保存需求章节失败: %w", err)
-	}
-	return section, nil
 }
 
 func createRequirementInTx(
@@ -1435,17 +1320,6 @@ func latestExcludeEvent(tx *gorm.DB, requirementID string) (*Event, error) {
 		return nil, fmt.Errorf("查询需求删除记录失败: %w", err)
 	}
 	return &event, nil
-}
-
-func validatePurgeReason(raw string) error {
-	reason := strings.TrimSpace(raw)
-	if reason == "" {
-		return ErrPurgeReasonRequired
-	}
-	if len([]rune(reason)) > 500 {
-		return ErrReasonTooLong
-	}
-	return nil
 }
 
 func ensureRestorableRequirement(tx *gorm.DB, requirement *Requirement) error {
@@ -1577,50 +1451,6 @@ func requirementCodeSeed(name string) string {
 	return seed.String()
 }
 
-func resolveOrCreateRequirementSection(
-	tx *gorm.DB,
-	source SourceRow,
-	requestSectionID string,
-	chapter string,
-	name string,
-	origin string,
-	sourceAnchor string,
-	operatedBy string,
-) (Section, error) {
-	expectedParent := parentChapter(chapter)
-	var parentID *string
-
-	if strings.TrimSpace(requestSectionID) != "" {
-		var requested Section
-		if err := tx.Where("id = ? AND source_version_id = ?", requestSectionID, source.ID).
-			First(&requested).Error; err != nil {
-			return Section{}, ErrSectionNotFound
-		}
-		if requested.ChapterNumber == chapter {
-			return requested, nil
-		}
-		if expectedParent == "" || requested.ChapterNumber != expectedParent {
-			return Section{}, ErrSectionNotFound
-		}
-		parentID = &requested.ID
-	} else if expectedParent != "" {
-		parent, parentErr := findOptionalParentID(tx, source.ID, expectedParent)
-		if parentErr != nil {
-			return Section{}, parentErr
-		}
-		parentID = parent
-	}
-
-	if existing, err := findSectionByChapter(tx, source.ID, chapter); err == nil {
-		return existing, nil
-	} else if !errors.Is(err, ErrParentMissing) {
-		return Section{}, err
-	}
-	return createSectionInTx(
-		tx, source.ProjectID, source.ID, parentID, chapter, name, origin, sourceAnchor, operatedBy,
-	)
-}
-
 func createEvent(
 	tx *gorm.DB,
 	projectID string,
@@ -1641,267 +1471,4 @@ func createEvent(
 		FromStatus: fromStatus, ToStatus: toStatus, Detail: detail, OperatedBy: operatedBy,
 		OperatedAt: now, CreatedAt: now, UpdatedAt: now,
 	}).Error
-}
-
-func validateSection(chapter string, title string) (string, string, error) {
-	chapter = strings.TrimSpace(chapter)
-	title = strings.TrimSpace(title)
-	if !chapterPattern.MatchString(chapter) {
-		return "", "", ErrChapterInvalid
-	}
-	if title == "" {
-		return "", "", fmt.Errorf("章节标题不能为空")
-	}
-	if len([]rune(title)) > 240 {
-		return "", "", fmt.Errorf("章节标题最多 240 个字符")
-	}
-	return chapter, title, nil
-}
-
-func validateRequirement(chapter string, name string, description string) (string, string, string, error) {
-	chapter = strings.TrimSpace(chapter)
-	name = strings.TrimSpace(name)
-	description = strings.TrimSpace(description)
-	if !chapterPattern.MatchString(chapter) {
-		return "", "", "", ErrChapterInvalid
-	}
-	if name == "" {
-		return "", "", "", fmt.Errorf("需求名称不能为空")
-	}
-	if len([]rune(name)) > 240 {
-		return "", "", "", fmt.Errorf("需求名称最多 240 个字符")
-	}
-	return chapter, name, description, nil
-}
-
-func validateBulkRequirement(
-	chapter string,
-	name string,
-	description string,
-) (string, string, string, error) {
-	return validateRequirement(chapter, name, description)
-}
-
-func validatePrimaryKind(kind string) error {
-	switch kind {
-	case KindFunctional, KindPerformance, KindInterface, KindSafety, KindReliability, KindOther:
-		return nil
-	default:
-		return ErrInvalidKind
-	}
-}
-
-func normalizeSecondaryKinds(primaryKind string, values []string) ([]string, error) {
-	orders := map[string]int{
-		KindFunctional: 0, KindPerformance: 1, KindInterface: 2,
-		KindSafety: 3, KindReliability: 4, KindOther: 5,
-	}
-	seen := make(map[string]bool, len(values))
-	result := make([]string, 0, len(values))
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		_, valid := orders[value]
-		if !valid {
-			return nil, ErrInvalidSecondaryKind
-		}
-		if value == primaryKind {
-			return nil, ErrSecondaryKindRepeat
-		}
-		if seen[value] {
-			continue
-		}
-		seen[value] = true
-		result = append(result, value)
-	}
-	sort.Slice(result, func(i int, j int) bool { return orders[result[i]] < orders[result[j]] })
-	return result, nil
-}
-
-func normalizeTags(values []string) []string {
-	seen := make(map[string]bool)
-	result := make([]string, 0, len(values))
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value == "" || seen[value] {
-			continue
-		}
-		if len([]rune(value)) > 32 {
-			value = string([]rune(value)[:32])
-		}
-		seen[value] = true
-		result = append(result, value)
-	}
-	if len(result) > 12 {
-		result = result[:12]
-	}
-	return result
-}
-
-func marshalTags(values []string) string {
-	if len(values) == 0 {
-		return "[]"
-	}
-	data, err := json.Marshal(values)
-	if err != nil {
-		return "[]"
-	}
-	return string(data)
-}
-
-func originLabel(origin string) string {
-	if origin == OriginParsed {
-		return "解析候选"
-	}
-	return "手动正式"
-}
-
-func parseTags(value string) []string {
-	return normalizeTags(parseStringArray(value))
-}
-
-func parseSecondaryKinds(value string) []string {
-	values, _ := normalizeSecondaryKinds("", parseStringArray(value))
-	return values
-}
-
-func parseStringArray(value string) []string {
-	var result []string
-	if err := json.Unmarshal([]byte(value), &result); err != nil {
-		return []string{}
-	}
-	return result
-}
-
-func dereference(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
-}
-
-func sortSections(sections []Section) {
-	sort.Slice(sections, func(i int, j int) bool {
-		return compareChapter(sections[i].ChapterNumber, sections[j].ChapterNumber) < 0
-	})
-}
-
-func sortRequirements(requirements []Requirement) {
-	sort.Slice(requirements, func(i int, j int) bool {
-		return compareChapter(requirements[i].ChapterNumber, requirements[j].ChapterNumber) < 0
-	})
-}
-
-func toSourceResponses(rows []SourceRow) []SourceResponse {
-	result := make([]SourceResponse, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, SourceResponse{
-			ID: row.ID, ObjectKind: row.ObjectKind, ObjectName: row.ObjectName, Version: row.Version,
-			FileType: row.FileType, OriginalName: row.OriginalName,
-			HasLocalFile: row.StoragePath != "", ParseState: parseState(row),
-			UpdatedAt: row.UpdatedAt.Format(time.RFC3339),
-		})
-	}
-	return result
-}
-
-func parseState(row SourceRow) string {
-	if row.ObjectKind != "srs" {
-		return "manual"
-	}
-	if row.StoragePath == "" {
-		return "manual"
-	}
-	if hasDocxExtension(row.StoragePath) {
-		return "ready"
-	}
-	if strings.EqualFold(filepath.Ext(row.StoragePath), ".doc") {
-		return "convert"
-	}
-	return "register"
-}
-
-// requirementSectionScope 计算测试作业面章节：手工章节、承载候选/正式需求的章节及其祖先。
-// 其余解析章节保留为全文参考目录，不进入作业树。
-func requirementSectionScope(sections []Section, requirements []Requirement) map[string]bool {
-	byID := make(map[string]Section, len(sections))
-	for _, section := range sections {
-		byID[section.ID] = section
-	}
-	scope := make(map[string]bool, len(sections))
-	for _, section := range sections {
-		if section.Origin == OriginManual {
-			scope[section.ID] = true
-		}
-	}
-	for _, requirement := range requirements {
-		if requirement.Status != StatusCandidate && requirement.Status != StatusOfficial {
-			continue
-		}
-		if requirement.SectionID == nil {
-			continue
-		}
-		for sectionID := *requirement.SectionID; sectionID != ""; {
-			section, exists := byID[sectionID]
-			if !exists {
-				break
-			}
-			scope[sectionID] = true
-			if section.ParentID == nil {
-				break
-			}
-			sectionID = *section.ParentID
-		}
-	}
-	return scope
-}
-
-func toSectionResponses(sections []Section, scope map[string]bool) []SectionResponse {
-	result := make([]SectionResponse, 0, len(sections))
-	for _, section := range sections {
-		response := toSectionResponse(section)
-		response.InScope = scope[section.ID]
-		result = append(result, response)
-	}
-	return result
-}
-
-func toSectionResponse(section Section) SectionResponse {
-	return SectionResponse{
-		ID: section.ID, ParentID: dereference(section.ParentID),
-		SourceVersionID: section.SourceVersionID, ChapterNumber: section.ChapterNumber,
-		Title: section.Title, Origin: section.Origin, SourceAnchor: section.SourceAnchor,
-		CreatedAt: section.CreatedAt.Format(time.RFC3339), UpdatedAt: section.UpdatedAt.Format(time.RFC3339),
-	}
-}
-
-func toRequirementResponses(requirements []Requirement) []RequirementResponse {
-	result := make([]RequirementResponse, 0, len(requirements))
-	for _, requirement := range requirements {
-		result = append(result, toRequirementListResponse(requirement))
-	}
-	return result
-}
-
-func toRequirementResponse(requirement Requirement) RequirementResponse {
-	return RequirementResponse{
-		ID: requirement.ID, SourceVersionID: requirement.SourceVersionID,
-		SectionID: dereference(requirement.SectionID), ChapterNumber: requirement.ChapterNumber,
-		ExternalIdentifier: requirement.ExternalIdentifier, Name: requirement.Name,
-		IdentifierAutoGenerated: requirement.IdentifierAutoGenerated,
-		Description:             requirement.Description, DescriptionExcerpt: buildDescriptionExcerpt(requirement.Description, descriptionExcerptLimit),
-		HasDescription: strings.TrimSpace(requirement.Description) != "",
-		PrimaryKind:    requirement.PrimaryKind,
-		SecondaryKinds: parseSecondaryKinds(requirement.SecondaryKinds),
-		Tags:           parseTags(requirement.Tags), Origin: requirement.Origin,
-		SourceAnchor: requirement.SourceAnchor, Status: requirement.Status,
-		TestItemTaskStatus: requirement.TestItemTaskStatus,
-		CreatedAt:          requirement.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:          requirement.UpdatedAt.Format(time.RFC3339),
-	}
-}
-func toRequirementListResponse(requirement Requirement) RequirementResponse {
-	result := toRequirementResponse(requirement)
-	result.Description = ""
-	result.DescriptionExcerpt = buildDescriptionExcerpt(requirement.Description, descriptionExcerptLimit)
-	return result
 }

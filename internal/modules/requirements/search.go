@@ -65,9 +65,15 @@ func (s *Service) SearchRequirements(
 	}
 	sortRequirements(requirements)
 
+	bodyTexts, err := s.bodyPlainTexts(ctx, projectID)
+	if err != nil {
+		return RequirementSearchResult{}, err
+	}
+
 	items := make([]RequirementSearchHit, 0)
 	for _, requirement := range requirements {
-		fields, excerpt := matchRequirementSearch(requirement, normalizedQuery)
+		description := effectiveDescription(bodyTexts[requirement.ID], requirement.Description)
+		fields, excerpt := matchRequirementSearch(requirement, description, normalizedQuery)
 		if len(fields) == 0 {
 			continue
 		}
@@ -81,7 +87,7 @@ func (s *Service) SearchRequirements(
 	return RequirementSearchResult{Items: items, Total: len(items)}, nil
 }
 
-func matchRequirementSearch(requirement Requirement, query string) ([]string, string) {
+func matchRequirementSearch(requirement Requirement, description string, query string) ([]string, string) {
 	fields := make([]string, 0, 5)
 	chapterQuery := strings.TrimPrefix(query, "§")
 	chapterNumber := strings.ToLower(requirement.ChapterNumber)
@@ -92,7 +98,7 @@ func matchRequirementSearch(requirement Requirement, query string) ([]string, st
 	if strings.Contains(strings.ToLower(requirement.Name), query) {
 		fields = append(fields, "name")
 	}
-	if strings.Contains(strings.ToLower(requirement.Description), query) {
+	if strings.Contains(strings.ToLower(description), query) {
 		fields = append(fields, "description")
 	}
 	if strings.Contains(strings.ToLower(requirement.ExternalIdentifier), query) {
@@ -104,14 +110,14 @@ func matchRequirementSearch(requirement Requirement, query string) ([]string, st
 	if len(fields) == 0 {
 		return fields, ""
 	}
-	return fields, buildRequirementSearchExcerpt(requirement, query, fields)
+	return fields, buildRequirementSearchExcerpt(requirement, description, query, fields)
 }
 
-func buildRequirementSearchExcerpt(requirement Requirement, query string, fields []string) string {
+func buildRequirementSearchExcerpt(requirement Requirement, description string, query string, fields []string) string {
 	var source string
 	switch {
 	case containsSearchField(fields, "description"):
-		source = requirement.Description
+		source = description
 	case containsSearchField(fields, "name"):
 		source = requirement.Name
 	case containsSearchField(fields, "chapter"):

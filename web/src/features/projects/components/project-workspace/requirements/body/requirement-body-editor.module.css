@@ -52,6 +52,8 @@
   height: 1.05rem;
   letter-spacing: 0.02em;
   padding-inline: 0.28rem;
+  /* 中文字形墨迹天然偏上，补 1px 顶内边距做视觉居中。 */
+  padding-top: 1px;
   white-space: nowrap;
 }
 
@@ -117,6 +119,41 @@
   min-height: 100%;
   outline: none;
   overflow-wrap: anywhere;
+  /* 表格/图片贴顶时，上方要留一段可点击留白，GapCursor 才能落到第一个块之前。 */
+  padding-top: 0.5rem;
+}
+
+/* 表格/图片这类封闭块独占正文时，GapCursor 是块外的唯一落点；补齐可见光标样式。 */
+.proseMirror :global(.ProseMirror-gapcursor) {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+}
+
+.proseMirror:global(.ProseMirror-focused) :global(.ProseMirror-gapcursor) {
+  display: block;
+}
+
+.proseMirror :global(.ProseMirror-gapcursor::after) {
+  animation: gapCursorBlink 1.1s steps(2, start) infinite;
+  border-top: 1.5px solid var(--primary);
+  content: "";
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 1.1rem;
+}
+
+@keyframes gapCursorBlink {
+  to {
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proseMirror :global(.ProseMirror-gapcursor::after) {
+    animation: none;
+  }
 }
 
 .proseMirror > *:first-child {
@@ -148,19 +185,10 @@
   text-indent: 2em;
 }
 
+/* 题注（表题 / 图题）的排版与间距由 .surface（requirement-body-content.module.css）统一提供。 */
 .proseMirror p[data-align="center"],
-.proseMirror p[data-align="right"],
-.proseMirror p[data-variant="tableCaption"] {
+.proseMirror p[data-align="right"] {
   text-indent: 0;
-}
-
-.proseMirror p[data-variant="tableCaption"] {
-  color: var(--foreground);
-  font-family: "SimHei", "Microsoft YaHei", sans-serif;
-  font-size: 10.5pt;
-  font-weight: 700;
-  margin: 0.15rem 0 0.35rem;
-  text-align: center;
 }
 
 .proseMirror h2,
@@ -213,44 +241,10 @@
   content: counter(list-item, lower-alpha) "） ";
 }
 
+/* 表格与单元格的边框/字号/列宽口径由 .surface 统一提供；
+   编辑器特有：表格上下留白（预览侧由 .tableWrap 承担）与单元格默认左对齐。 */
 .proseMirror table {
-  border-collapse: collapse;
-  font-size: 10.5pt;
-  line-height: 1.55;
-  margin: 0.55rem auto 0.7rem;
-  max-width: 100%;
-  min-width: 60%;
-  table-layout: auto;
-  width: fit-content;
-}
-
-.proseMirror table[data-colwidth="true"] {
-  min-width: 0;
-}
-
-.proseMirror table[data-align="left"] {
-  margin-left: 0;
-  margin-right: auto;
-}
-
-.proseMirror table[data-align="right"] {
-  margin-left: auto;
-  margin-right: 0;
-}
-
-.proseMirror th,
-.proseMirror td {
-  border: 1px solid color-mix(in srgb, var(--border) 88%, var(--foreground));
-  min-width: 4.6rem;
-  padding: 0.28rem 0.38rem;
-  vertical-align: middle;
-}
-
-.proseMirror th {
-  background: color-mix(in srgb, var(--primary) 7%, var(--card));
-  font-family: "SimHei", "Microsoft YaHei", sans-serif;
-  font-weight: 700;
-  text-align: center;
+  margin-block: 0.55rem 0.7rem;
 }
 
 .proseMirror td {

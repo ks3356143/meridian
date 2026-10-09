@@ -9,13 +9,17 @@ import (
 	"strings"
 )
 
-// 首批支持的图片类型，见《附件模型》。
+// 支持的图片类型，见《附件模型》。
+// EMF/WMF 是矢量图：浏览器不能渲染，但必须原样落库——Word 生成侧可直接嵌入，
+// Web 侧按 MIME 降级为“矢量图无法预览”占位（见《数据加载与渲染性能》风险 3）。
 var supportedMediaTypes = map[string]string{
 	".png":  "image/png",
 	".jpg":  "image/jpeg",
 	".jpeg": "image/jpeg",
 	".webp": "image/webp",
 	".gif":  "image/gif",
+	".emf":  "image/emf",
+	".wmf":  "image/wmf",
 }
 
 // MediaFile 是从 DOCX 里抽出的内嵌媒体。
