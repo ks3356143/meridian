@@ -9,6 +9,9 @@
   font-weight: 500;
   justify-content: center;
   line-height: 1.25rem;
+  /* 光学补偿：CJK 字形视觉重心比行盒中心高约 0.5px（用户全局反馈"文字靠上"）。
+     顶内边距 +1px 让文字视觉效果居中；图标用 margin-bottom 抵消，保持几何居中；纯图标尺寸置 0。 */
+  padding-top: var(--btn-text-shift, 1px);
   outline: none;
   overflow: hidden;
   position: relative;
@@ -25,10 +28,12 @@
 }
 
 .button svg {
+  flex-shrink: 0;
   height: 1rem;
+  /* 图标光学对齐：CJK 文字行盒整体下移后，图标再上移 1px 与文字墨迹对齐（图标中心回到按钮中心）。 */
+  margin-bottom: var(--btn-icon-shift, 2px);
   pointer-events: none;
   width: 1rem;
-  flex-shrink: 0;
 }
 
 .button:focus-visible {
@@ -214,6 +219,8 @@
 .sizeIconXs,
 .sizeIconSm,
 .sizeIconLg {
+  --btn-text-shift: 0px;
+  --btn-icon-shift: 0px;
   padding: 0;
 }
 

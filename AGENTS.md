@@ -29,6 +29,7 @@
 - 路由：使用 `createBrowserRouter` 和 `RouterProvider`；页面用 lazy route，目录使用传统 `web/src`。
 - 状态与数据：Zustand + TanStack Query + TanStack Table。
 - 动效：GSAP + `@gsap/react`，动画必须尊重 reduced motion。
+- 拖拽排序：`@dnd-kit/core` + `@dnd-kit/sortable`（内置键盘传感器与无障碍，禁止手搓拖拽）。
 - 主题：默认浅色，支持深浅色切换。
 - 提示：统一使用 `sonner`。
 - 前端检查：`oxlint` + `oxfmt`，不使用 Prettier/ESLint。

@@ -1,0 +1,337 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* 树是虚拟滚动容器：槽位常驻，展开/收起不会让右侧行内容横向跳动。 */
+  scrollbar-gutter: stable;
+}
+
+.tree {
+  outline: none;
+  scrollbar-gutter: stable;
+}
+
+.tree:focus-visible {
+  outline: none;
+}
+
+.rowHost {
+  border-left: 2px solid transparent;
+  cursor: default;
+  height: 100%;
+  transition: background-color 0.16s ease;
+}
+
+.rowHost:hover {
+  background: color-mix(in srgb, var(--info) 6%, transparent);
+}
+
+.rowHost[data-kind="group"] {
+  background: color-mix(in srgb, var(--muted-foreground) 4%, transparent);
+  font-weight: 640;
+}
+
+/* 类型分组图标跟随类别色相（老项目里四种静态类型各自成组）。 */
+.rowHost[data-kind="group"][data-tone="green"] .icon {
+  color: var(--primary);
+}
+
+.rowHost[data-kind="group"][data-tone="blue"] .icon {
+  color: var(--info);
+}
+
+.rowHost[data-kind="group"][data-tone="amber"] .icon {
+  color: var(--warning);
+}
+
+.rowHost[data-kind="group"][data-tone="violet"] .icon {
+  color: var(--chart-5);
+}
+
+.rowHost[data-kind="group"][data-tone="cyan"] .icon {
+  color: var(--chart-2);
+}
+
+.rowHost[data-kind="group"][data-tone="red"] .icon {
+  color: color-mix(in srgb, var(--chart-4) 90%, var(--destructive));
+}
+
+.rowHost[data-kind="item"] {
+  cursor: pointer;
+}
+
+.rowHost[data-kind="case"] {
+  cursor: pointer;
+}
+
+.rowSelected {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.rowHost[data-incomplete="true"] {
+  border-left-color: color-mix(in srgb, var(--destructive) 80%, transparent);
+}
+
+.row {
+  align-items: center;
+  display: flex;
+  gap: 0.32rem;
+  height: 100%;
+  padding-right: 0.55rem;
+  white-space: nowrap;
+}
+
+.twisty {
+  align-items: center;
+  color: color-mix(in srgb, var(--muted-foreground) 78%, transparent);
+  display: inline-flex;
+  flex: none;
+  height: 1rem;
+  justify-content: center;
+  width: 1rem;
+}
+
+.twistyIcon {
+  height: 0.72rem;
+  transition: transform 0.18s ease;
+  width: 0.72rem;
+}
+
+.twisty[data-open="true"] .twistyIcon {
+  transform: rotate(90deg);
+}
+
+.leafDot {
+  background: color-mix(in srgb, var(--border) 92%, transparent);
+  border-radius: 50%;
+  height: 3px;
+  width: 3px;
+}
+
+.icon {
+  color: color-mix(in srgb, var(--muted-foreground) 82%, transparent);
+  flex: none;
+  height: 0.82rem;
+  width: 0.82rem;
+}
+
+.caseDot {
+  border-radius: 50%;
+  flex: none;
+  height: 7px;
+  width: 7px;
+}
+
+.caseDot[data-status="passed"] {
+  background: var(--success);
+}
+
+.caseDot[data-status="failed"] {
+  background: var(--destructive);
+}
+
+.caseDot[data-status="pending"] {
+  background: color-mix(in srgb, var(--muted-foreground) 62%, transparent);
+}
+
+.ident {
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+}
+
+.label {
+  flex: 1 1 auto;
+  font-size: 0.78rem;
+  min-width: 0;
+  /* 光学居中：行盒整体下移 0.25px（块级加内边距会被父级重新居中，取半量）。 */
+  padding-top: 0.5px;
+}
+
+.count[data-tone="green"] {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+}
+
+.count[data-tone="blue"] {
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+  color: color-mix(in srgb, var(--info) 88%, var(--foreground));
+}
+
+.count[data-tone="amber"] {
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: color-mix(in srgb, var(--warning) 88%, var(--foreground));
+}
+
+.count[data-tone="violet"] {
+  background: color-mix(in srgb, var(--chart-5) 14%, transparent);
+  color: color-mix(in srgb, var(--chart-5) 90%, var(--foreground));
+}
+
+.count[data-tone="cyan"] {
+  background: color-mix(in srgb, var(--chart-2) 14%, transparent);
+  color: color-mix(in srgb, var(--chart-2) 90%, var(--foreground));
+}
+
+.count[data-tone="red"] {
+  background: color-mix(in srgb, var(--chart-4) 14%, transparent);
+  color: color-mix(in srgb, var(--chart-4) 92%, var(--foreground));
+}
+
+/* 徽章统一尺度：小字号 + 足量内边距（文字不贴边框），30px 行内依然轻；四种状态徽章共用。
+   顶部 1px 光学补偿：line-height:1 时 CJK 字形视觉重心偏上，不加会贴顶边框。 */
+.count,
+.typeChip,
+.implicitChip,
+.incomplete {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  font-size: 0.52rem;
+  height: 0.95rem;
+  line-height: 1;
+  padding: 1px 0.3rem 0;
+  white-space: nowrap;
+}
+
+.count {
+  background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+  border-radius: 2px;
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+}
+
+.toneDot {
+  border-radius: 50%;
+  box-shadow: 0 0 8px -1px currentcolor;
+  flex: none;
+  height: 6px;
+  width: 6px;
+}
+
+.toneDot[data-tone="green"] {
+  background: var(--primary);
+  color: color-mix(in srgb, var(--primary) 70%, transparent);
+}
+
+.toneDot[data-tone="blue"] {
+  background: var(--info);
+  color: color-mix(in srgb, var(--info) 70%, transparent);
+}
+
+.toneDot[data-tone="amber"] {
+  background: var(--warning);
+  color: color-mix(in srgb, var(--warning) 70%, transparent);
+}
+
+.toneDot[data-tone="violet"] {
+  background: var(--chart-5);
+  color: color-mix(in srgb, var(--chart-5) 70%, transparent);
+}
+
+.toneDot[data-tone="cyan"] {
+  background: var(--chart-2);
+  color: color-mix(in srgb, var(--chart-2) 70%, transparent);
+}
+
+.toneDot[data-tone="red"] {
+  background: color-mix(in srgb, var(--chart-4) 90%, var(--destructive));
+  color: color-mix(in srgb, var(--chart-4) 70%, transparent);
+}
+
+.typeChip {
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 26%, transparent);
+  border-radius: 2px;
+  color: color-mix(in srgb, var(--info) 86%, var(--foreground));
+}
+
+.typeChip[data-tone="green"] {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+  color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+}
+
+.typeChip[data-tone="amber"] {
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 32%, transparent);
+  color: color-mix(in srgb, var(--warning) 88%, var(--foreground));
+}
+
+.typeChip[data-tone="violet"] {
+  background: color-mix(in srgb, var(--chart-5) 12%, transparent);
+  border-color: color-mix(in srgb, var(--chart-5) 32%, transparent);
+  color: color-mix(in srgb, var(--chart-5) 90%, var(--foreground));
+}
+
+.typeChip[data-tone="cyan"] {
+  background: color-mix(in srgb, var(--chart-2) 12%, transparent);
+  border-color: color-mix(in srgb, var(--chart-2) 32%, transparent);
+  color: color-mix(in srgb, var(--chart-2) 90%, var(--foreground));
+}
+
+.typeChip[data-tone="red"] {
+  background: color-mix(in srgb, var(--chart-4) 12%, transparent);
+  border-color: color-mix(in srgb, var(--chart-4) 32%, transparent);
+  color: color-mix(in srgb, var(--chart-4) 92%, var(--foreground));
+}
+
+.implicitChip {
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--warning) 52%, transparent);
+  border-radius: 2px;
+  color: color-mix(in srgb, var(--warning) 90%, var(--foreground));
+}
+
+.incomplete {
+  animation: incompleteGlow 2.6s ease-in-out infinite;
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 46%, transparent);
+  border-radius: 2px;
+  color: color-mix(in srgb, var(--warning) 92%, var(--foreground));
+}
+
+@keyframes incompleteGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px -4px color-mix(in srgb, var(--warning) 80%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 12px -3px color-mix(in srgb, var(--warning) 95%, transparent);
+  }
+}
+
+.caseStatus {
+  flex: none;
+  font-size: 0.6rem;
+  white-space: nowrap;
+}
+
+.caseStatus[data-status="passed"] {
+  color: var(--success);
+}
+
+.caseStatus[data-status="failed"] {
+  color: var(--destructive);
+}
+
+.caseStatus[data-status="pending"] {
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twistyIcon {
+    transition: none;
+  }
+
+  .rowHost {
+    transition: none;
+  }
+
+  .incomplete {
+    animation: none;
+  }
+}

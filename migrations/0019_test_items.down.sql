@@ -1,0 +1,14 @@
+DROP TABLE IF EXISTS round_test_cases;
+DROP TABLE IF EXISTS round_test_items;
+DROP TABLE IF EXISTS test_rounds;
+DROP INDEX IF EXISTS idx_requirement_test_items_item;
+DROP TABLE IF EXISTS requirement_test_items;
+DROP TABLE IF EXISTS test_case_steps;
+DROP INDEX IF EXISTS idx_test_cases_item;
+DROP TABLE IF EXISTS test_cases;
+DROP TABLE IF EXISTS test_sub_items;
+DROP INDEX IF EXISTS idx_test_items_container;
+DROP TABLE IF EXISTS test_items;
+DROP INDEX IF EXISTS idx_test_item_folders_container;
+DROP TABLE IF EXISTS test_item_folders;
+DROP TABLE IF EXISTS test_item_types;

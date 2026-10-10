@@ -1,0 +1,554 @@
+package testitems
+
+import (
+	"context"
+	"errors"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"chenmeridian/internal/database"
+	"chenmeridian/migrations"
+)
+
+func newTestService(t *testing.T) (*Service, string) {
+	t.Helper()
+
+	db, err := database.Open(filepath.Join(t.TempDir(), "meridian.db"))
+	if err != nil {
+		t.Fatalf("打开测试数据库失败: %v", err)
+	}
+	t.Cleanup(func() {
+		if sqlDB, closeErr := db.DB(); closeErr == nil {
+			_ = sqlDB.Close()
+		}
+	})
+	if err := database.Migrate(db, migrations.FS); err != nil {
+		t.Fatalf("执行迁移失败: %v", err)
+	}
+
+	projectID := "test-project-001"
+	if err := db.Exec(`
+INSERT INTO users (id, username, display_name, password_hash, created_at, updated_at)
+VALUES ('user-1', 'tester', '测试员', 'hash', datetime('now'), datetime('now'))`).Error; err != nil {
+		t.Fatalf("写入测试用户失败: %v", err)
+	}
+	if err := db.Exec(`
+INSERT INTO projects (id, code, name, nature, platform, software_type, classification, security_level, organization, owner_id, status, created_at, updated_at)
+VALUES (?, 'R99999', '单元测试项目', '鉴定测评', 'CPU/非嵌', '新研', '内部', 'C', '测试单位', 'user-1', '编制大纲中', datetime('now'), datetime('now'))`,
+		projectID).Error; err != nil {
+		t.Fatalf("写入测试项目失败: %v", err)
+	}
+	return NewService(db), projectID
+}
+
+func TestEnsureRoundIsIdempotent(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	first, err := service.EnsureRound(ctx, projectID)
+	if err != nil {
+		t.Fatalf("创建第 1 轮失败: %v", err)
+	}
+	if first.RoundNumber != 1 || first.Name != "第 1 轮" || first.RoundType != "initial" {
+		t.Fatalf("第 1 轮默认值不正确: %+v", first)
+	}
+
+	second, err := service.EnsureRound(ctx, projectID)
+	if err != nil {
+		t.Fatalf("重复创建第 1 轮失败: %v", err)
+	}
+	if second.ID != first.ID {
+		t.Fatalf("重复调用不应创建新轮次: %s != %s", second.ID, first.ID)
+	}
+}
+
+func TestTypeDictionarySeeded(t *testing.T) {
+	service, _ := newTestService(t)
+	types, err := service.ListTypes(context.Background())
+	if err != nil {
+		t.Fatalf("读取类型字典失败: %v", err)
+	}
+	if len(types) != 24 {
+		t.Fatalf("类型字典应为 24 类，实际 %d", len(types))
+	}
+	if types[0].Code != "DC" || types[0].OutputOrder != 1 {
+		t.Fatalf("类型排序不正确: %+v", types[0])
+	}
+	for _, item := range types {
+		if item.Code == "SA" {
+			if item.PlatformScope != "cpu" {
+				t.Fatalf("SA 应仅适用于 CPU：%+v", item)
+			}
+			if item.DefaultAdequacy == "" || item.DefaultPassCriteria == "" {
+				t.Fatalf("SA 套话未预置：%+v", item)
+			}
+		}
+	}
+}
+
+func TestCreateTestItemGeneratesIdentifierAndDefaults(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	created, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID,
+		TypeCode:  "SU",
+		Name:      "BCD星指令参数管理",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	if created.Suffix != "BCDX" {
+		t.Fatalf("后缀应为名称拼音首字母前 4 位，实际 %q", created.Suffix)
+	}
+	if created.Identifier != "XQ_SU_BCDX" {
+		t.Fatalf("标识不正确: %q", created.Identifier)
+	}
+	if created.Adequacy == "" || created.PassCriteria == "" {
+		t.Fatalf("套话应按类型预填: %+v", created)
+	}
+	if created.Priority != "中" {
+		t.Fatalf("默认优先级应为中: %+v", created)
+	}
+}
+
+func TestCreateTestItemSuffixConflictAdjusts(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	first, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数查询",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	second, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数查询",
+	})
+	if err != nil {
+		t.Fatalf("创建同后缀测试项失败: %v", err)
+	}
+	if second.Suffix == first.Suffix {
+		t.Fatalf("同后缀应自动调整为唯一值: %q", second.Suffix)
+	}
+}
+
+func TestStaticTypeRejectsRequirementLink(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	created, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "DC", Name: "文档审查",
+	})
+	if err != nil {
+		t.Fatalf("创建静态测试项失败: %v", err)
+	}
+	cases, err := service.ListCases(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("查询壳用例失败: %v", err)
+	}
+	if len(cases) != 1 {
+		t.Fatalf("静态测试项应自动带 1 条壳用例，实际 %d", len(cases))
+	}
+
+	err = service.LinkRequirement(ctx, projectID, created.ID, "requirement-1")
+	if err != ErrStaticNoRequirementLink {
+		t.Fatalf("静态测试项关联需求应被拒绝，实际 %v", err)
+	}
+}
+
+func TestCaseRenumberAfterDelete(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数管理",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	first, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	second, err := service.CreateCase(ctx, item.ID, "参数新增")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	if second.Identifier != "YL_SU_CSGL_002" {
+		t.Fatalf("用例标识不正确: %q", second.Identifier)
+	}
+
+	if err := service.DeleteCase(ctx, first.ID); err != nil {
+		t.Fatalf("删除用例失败: %v", err)
+	}
+	cases, err := service.ListCases(ctx, item.ID)
+	if err != nil {
+		t.Fatalf("查询用例失败: %v", err)
+	}
+	if len(cases) != 1 || cases[0].Seq != 1 || cases[0].Identifier != "YL_SU_CSGL_001" {
+		t.Fatalf("删除后应重排序号与标识: %+v", cases)
+	}
+}
+
+func TestCaseStatusFollowsSteps(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数管理",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	step1, err := service.CreateStep(ctx, itemCase.ID, "列表显示匹配参数")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	step2, err := service.CreateStep(ctx, itemCase.ID, "提示无匹配数据")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+
+	passValue := "pass"
+	if _, err := service.UpdateStep(ctx, step1.ID, UpdateStepInput{Passed: &passValue}); err != nil {
+		t.Fatalf("更新步骤失败: %v", err)
+	}
+	updated, err := service.GetCase(ctx, itemCase.ID)
+	if err != nil {
+		t.Fatalf("查询用例失败: %v", err)
+	}
+	if updated.Status != "pending" {
+		t.Fatalf("存在未执行步骤时应为 pending，实际 %q", updated.Status)
+	}
+
+	if _, err := service.UpdateStep(ctx, step2.ID, UpdateStepInput{Passed: &passValue}); err != nil {
+		t.Fatalf("更新步骤失败: %v", err)
+	}
+	updated, _ = service.GetCase(ctx, itemCase.ID)
+	if updated.Status != "passed" {
+		t.Fatalf("全部通过应为 passed，实际 %q", updated.Status)
+	}
+
+	failValue := "fail"
+	if _, err := service.UpdateStep(ctx, step2.ID, UpdateStepInput{Passed: &failValue}); err != nil {
+		t.Fatalf("更新步骤失败: %v", err)
+	}
+	updated, _ = service.GetCase(ctx, itemCase.ID)
+	if updated.Status != "failed" {
+		t.Fatalf("存在未通过应为 failed，实际 %q", updated.Status)
+	}
+}
+
+func TestSubItemNumberingAndMove(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数管理",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	first, _ := service.CreateSubItem(ctx, item.ID, "参数查询正常功能")
+	second, _ := service.CreateSubItem(ctx, item.ID, "参数新增正常功能")
+	if first.Seq != 1 || second.Seq != 2 {
+		t.Fatalf("子项序号不正确: %d %d", first.Seq, second.Seq)
+	}
+
+	if err := service.MoveSubItem(ctx, second.ID, 0); err != nil {
+		t.Fatalf("移动子项失败: %v", err)
+	}
+	items, err := service.ListSubItems(ctx, item.ID)
+	if err != nil {
+		t.Fatalf("查询子项失败: %v", err)
+	}
+	if items[0].ID != second.ID || items[0].Seq != 1 || items[1].Seq != 2 {
+		t.Fatalf("移动后应重排序号: %+v", items)
+	}
+
+	if err := service.DeleteSubItem(ctx, second.ID); err != nil {
+		t.Fatalf("删除子项失败: %v", err)
+	}
+	items, _ = service.ListSubItems(ctx, item.ID)
+	if len(items) != 1 || items[0].Seq != 1 {
+		t.Fatalf("删除后应重排: %+v", items)
+	}
+}
+
+func TestSuffixChangeRenumbersCaseIdentifiers(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数管理",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	if _, err := service.CreateCase(ctx, item.ID, "参数查询"); err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+
+	newSuffix := "CSGL"
+	updated, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{Suffix: &newSuffix})
+	if err != nil {
+		t.Fatalf("更新后缀失败: %v", err)
+	}
+	if updated.Identifier != "XQ_SU_CSGL" {
+		t.Fatalf("标识应随后缀更新: %q", updated.Identifier)
+	}
+	cases, _ := service.ListCases(ctx, item.ID)
+	if len(cases) != 1 || cases[0].Identifier != "YL_SU_CSGL_001" {
+		t.Fatalf("用例标识应同步重排: %+v", cases)
+	}
+}
+
+func TestCountItemChildren(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数管理",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	if _, err := service.CreateSubItem(ctx, item.ID, "参数查询正常功能"); err != nil {
+		t.Fatalf("创建子项失败: %v", err)
+	}
+	if _, err := service.CreateSubItem(ctx, item.ID, "参数新增正常功能"); err != nil {
+		t.Fatalf("创建子项失败: %v", err)
+	}
+
+	counts, err := service.CountItemChildren(ctx, projectID)
+	if err != nil {
+		t.Fatalf("统计子级计数失败: %v", err)
+	}
+	if counts[item.ID].SubItemCount != 2 || counts[item.ID].RequirementCount != 0 {
+		t.Fatalf("计数不正确: %+v", counts[item.ID])
+	}
+	if counts[item.ID].IncompleteSubItemCount != 2 {
+		t.Fatalf("空操作步骤/通过准则的子项应计入不完善: %+v", counts[item.ID])
+	}
+}
+
+func TestStaticTypeUniquenessAndImplicitFlag(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	if _, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "DC", Name: "文档审查",
+	}); err != nil {
+		t.Fatalf("创建第一个 DC 失败: %v", err)
+	}
+	if _, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "DC", Name: "文档审查二",
+	}); !errors.Is(err, ErrStaticTypeExists) {
+		t.Fatalf("同类型静态测试项应被拒绝，实际 %v", err)
+	}
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "隐含需求项", ImplicitRequirement: true,
+	})
+	if err != nil {
+		t.Fatalf("创建隐含需求测试项失败: %v", err)
+	}
+	if !item.ImplicitRequirement {
+		t.Fatalf("隐含需求标记未落库: %+v", item)
+	}
+
+	implicit := false
+	updated, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{ImplicitRequirement: &implicit})
+	if err != nil {
+		t.Fatalf("更新隐含需求标记失败: %v", err)
+	}
+	if updated.ImplicitRequirement {
+		t.Fatalf("隐含需求标记应可取消: %+v", updated)
+	}
+}
+
+func TestImplicitRequirementMutualExclusion(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "互斥校验项",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+
+	// 先建一条需求与关联
+	requirementID := "req-implicit-1"
+	if err := service.db.Exec(`
+INSERT INTO work_objects (id, project_id, object_kind, name, created_at, updated_at)
+VALUES ('wo-1', ?, 'srs', '需求规格说明', datetime('now'), datetime('now'))`, projectID).Error; err != nil {
+		t.Fatalf("写入工作对象失败: %v", err)
+	}
+	if err := service.db.Exec(`
+INSERT INTO work_object_versions (id, project_id, work_object_id, version, platform, status, source, received_at, receive_mode, created_at, updated_at)
+VALUES ('wov-1', ?, 'wo-1', 'V1.0', 'common', 'confirmed', '研制方', '2026-10-10', 'email', datetime('now'), datetime('now'))`,
+		projectID).Error; err != nil {
+		t.Fatalf("写入工作对象版本失败: %v", err)
+	}
+	if err := service.db.Exec(`
+INSERT INTO software_requirements (id, project_id, source_version_id, chapter_number, external_identifier, name, description, primary_kind, tags, origin, source_anchor, status, created_at, updated_at)
+VALUES (?, ?, 'wov-1', '4.1', '', '参数管理', '应有参数管理功能', 'functional', '[]', 'manual', '', 'official', datetime('now'), datetime('now'))`,
+		requirementID, projectID).Error; err != nil {
+		t.Fatalf("写入需求失败: %v", err)
+	}
+	if err := service.LinkRequirement(ctx, projectID, item.ID, requirementID); err != nil {
+		t.Fatalf("关联需求失败: %v", err)
+	}
+
+	implicit := true
+	if _, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{ImplicitRequirement: &implicit}); !errors.Is(err, ErrImplicitWithRequirement) {
+		t.Fatalf("已关联需求时应拒绝隐含需求，实际 %v", err)
+	}
+
+	if err := service.UnlinkRequirement(ctx, item.ID, requirementID); err != nil {
+		t.Fatalf("解除关联失败: %v", err)
+	}
+	if _, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{ImplicitRequirement: &implicit}); err != nil {
+		t.Fatalf("解除关联后应允许隐含需求: %v", err)
+	}
+	if err := service.LinkRequirement(ctx, projectID, item.ID, requirementID); !errors.Is(err, ErrImplicitWithRequirement) {
+		t.Fatalf("隐含需求开启时应拒绝再关联，实际 %v", err)
+	}
+}
+
+func TestStaticItemDefaultTestMethod(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	dc, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "DC", Name: "文档审查",
+	})
+	if err != nil {
+		t.Fatalf("创建 DC 测试项失败: %v", err)
+	}
+	subs, err := service.ListSubItems(ctx, dc.ID)
+	if err != nil {
+		t.Fatalf("查询子项失败: %v", err)
+	}
+	if len(subs) != 1 || subs[0].Name != "文档审查" {
+		t.Fatalf("静态项应带 1 条默认子项（名称取类型默认）: %+v", subs)
+	}
+	if !strings.Contains(subs[0].Ops, "文档齐套性审查单") {
+		t.Fatalf("默认子项操作步骤应写入类型默认测试方法: %q", subs[0].Ops)
+	}
+	if !strings.Contains(subs[0].Expected, "文文一致、文实相符") {
+		t.Fatalf("默认子项通过准则不对: %q", subs[0].Expected)
+	}
+	if dc.Description != "依据测评大纲附录A中规定的文档审查要求，对被测软件交付的文档进行审查，验证文档的齐套性、规范性、准确性和一致性。" {
+		t.Fatalf("测试项描述应取类型默认描述: %q", dc.Description)
+	}
+
+	// 懒补齐：删掉默认子项后再进工作台应补回，且幂等
+	if err := service.DeleteSubItem(ctx, subs[0].ID); err != nil {
+		t.Fatalf("删除子项失败: %v", err)
+	}
+	if err := service.EnsureStaticItemDefaults(ctx, projectID); err != nil {
+		t.Fatalf("懒补齐失败: %v", err)
+	}
+	if err := service.EnsureStaticItemDefaults(ctx, projectID); err != nil {
+		t.Fatalf("懒补齐二次调用失败: %v", err)
+	}
+	subs, _ = service.ListSubItems(ctx, dc.ID)
+	if len(subs) != 1 {
+		t.Fatalf("懒补齐应恰好补 1 条，实际 %d", len(subs))
+	}
+
+	// 用户改过内容的静态项不再补
+	customName := "自定义方法"
+	if _, err := service.UpdateSubItem(ctx, subs[0].ID, UpdateSubItemInput{Name: &customName}); err != nil {
+		t.Fatalf("更新子项失败: %v", err)
+	}
+	if err := service.EnsureStaticItemDefaults(ctx, projectID); err != nil {
+		t.Fatalf("懒补齐第三次调用失败: %v", err)
+	}
+	subs, _ = service.ListSubItems(ctx, dc.ID)
+	if len(subs) != 1 || subs[0].Name != "自定义方法" {
+		t.Fatalf("已有子项的静态项不应被覆盖: %+v", subs)
+	}
+}
+
+func TestChangeTestItemType(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数管理",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	if _, err := service.CreateCase(ctx, item.ID, "参数查询"); err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+
+	// 文件夹按类型归属：跨类型后自动移出，避免在树上消失
+	folder, err := service.CreateFolder(ctx, CreateFolderInput{ProjectID: projectID, TypeCode: "SU", Name: "功能组"})
+	if err != nil {
+		t.Fatalf("创建文件夹失败: %v", err)
+	}
+	if _, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{FolderID: &folder.ID}); err != nil {
+		t.Fatalf("移入文件夹失败: %v", err)
+	}
+
+	// 动态 -> 动态：标识与用例编号一起换类型
+	ioType := "IO"
+	updated, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{TypeCode: &ioType})
+	if err != nil {
+		t.Fatalf("改类型失败: %v", err)
+	}
+	if updated.Identifier != "XQ_IO_CSGL" || updated.TypeCode != "IO" {
+		t.Fatalf("标识未随类型更新: %+v", updated)
+	}
+	if updated.FolderID != nil {
+		t.Fatalf("跨类型后应自动移出旧类型文件夹: %+v", *updated.FolderID)
+	}
+	cases, _ := service.ListCases(ctx, item.ID)
+	if len(cases) != 1 || cases[0].Identifier != "YL_IO_CSGL_001" {
+		t.Fatalf("用例编号未随类型重排: %+v", cases)
+	}
+
+	// 动态 -> 静态：套话未被改过时跟随新类型，隐含需求清零
+	dcType := "DC"
+	converted, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{TypeCode: &dcType})
+	if err != nil {
+		t.Fatalf("改为静态类型失败: %v", err)
+	}
+	if converted.Identifier != "XQ_DC_CSGL" {
+		t.Fatalf("静态标识不正确: %s", converted.Identifier)
+	}
+	if converted.Adequacy != "对所有被测软件文档按照文档检查单逐项进行审查。" {
+		t.Fatalf("套话未跟随新类型: %q", converted.Adequacy)
+	}
+	if converted.ImplicitRequirement {
+		t.Fatalf("静态测试项不应保留隐含需求标记")
+	}
+
+	// 静态四类（DC/SA/CR/CW）类型锁定：静态项不允许再改类型
+	suType := "SU"
+	if _, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{TypeCode: &suType}); !errors.Is(err, ErrStaticTypeLocked) {
+		t.Fatalf("静态测试项改类型应被拒绝，实际 %v", err)
+	}
+
+	// 同类静态第二个应被拒绝
+	other, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "另一个功能项",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	if _, err := service.UpdateTestItem(ctx, other.ID, UpdateTestItemInput{TypeCode: &dcType}); !errors.Is(err, ErrStaticTypeExists) {
+		t.Fatalf("同类型静态第二个应被拒绝，实际 %v", err)
+	}
+}

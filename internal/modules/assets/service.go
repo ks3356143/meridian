@@ -639,7 +639,7 @@ func (s *Service) Withdraw(ctx context.Context, input LifecycleInput) (WorkObjec
 		var supersedeEvent LifecycleEvent
 		err := tx.
 			Where("action = ? AND replacement_version_id = ?", "supersede", current.ID).
-			Order("operated_at DESC").
+			Order("operated_at DESC, rowid DESC").
 			First(&supersedeEvent).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
@@ -793,7 +793,7 @@ func (s *Service) Lifecycle(ctx context.Context, versionID string) ([]LifecycleE
 	var events []LifecycleEvent
 	if err := s.db.WithContext(ctx).
 		Where("work_object_version_id = ?", versionID).
-		Order("operated_at DESC, created_at DESC").
+		Order("operated_at DESC, created_at DESC, rowid DESC").
 		Find(&events).Error; err != nil {
 		return nil, fmt.Errorf("查询生命周期记录失败: %w", err)
 	}

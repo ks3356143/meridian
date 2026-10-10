@@ -1,0 +1,114 @@
+/* 关联需求选择器：按来源文档分组的结果列表。 */
+.linkPopover {
+  padding: 0.5rem;
+  width: 26rem;
+}
+
+/* 老项目 dot 口径：6px 圆点 + 文字，按钮不带图标。 */
+.btnDot {
+  border-radius: 50%;
+  flex: none;
+  height: 6px;
+  width: 6px;
+}
+
+.btnDot[data-tone="green"] {
+  background: var(--primary);
+  box-shadow: 0 0 6px -1px color-mix(in srgb, var(--primary) 85%, transparent);
+}
+
+.btnDot[data-tone="amber"] {
+  background: var(--warning);
+  box-shadow: 0 0 6px -1px color-mix(in srgb, var(--warning) 85%, transparent);
+}
+
+.linkSearch {
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  border: 1px solid var(--input);
+  border-radius: 2px;
+  font-size: 0.74rem;
+  outline: none;
+  padding: 0.3rem 0.45rem;
+  width: 100%;
+}
+
+.linkSearch:focus,
+.linkSearch:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+  outline: none;
+}
+
+.linkResults {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.linkGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.linkGroupTitle {
+  color: color-mix(in srgb, var(--info) 86%, var(--foreground));
+  font-size: 0.66rem;
+  padding: 0.15rem 0.35rem;
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--popover, var(--card)) 92%, transparent);
+  white-space: nowrap;
+}
+
+.linkResult {
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.3rem 0.35rem;
+  text-align: left;
+  transition: background-color 0.16s ease;
+}
+
+.linkResult:hover {
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+}
+
+.linkResultChapter {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.linkResultName {
+  font-size: 0.74rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 与详情同源：选择器触发器按钮与弱化文字。 */
+.linkButton {
+  flex: none;
+  white-space: nowrap;
+}
+
+.muted {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  font-size: 0.72rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linkResult {
+    transition: none;
+  }
+}

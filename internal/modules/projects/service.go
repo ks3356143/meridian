@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/id"
+	"chenmeridian/internal/modules/testitems"
 	"chenmeridian/internal/modules/users"
 )
 
@@ -267,6 +268,11 @@ func (s *Service) Create(ctx context.Context, input CreateProjectInput) (Project
 			UpdatedAt:      now,
 		}).Error; err != nil {
 			return fmt.Errorf("创建项目失败: %w", err)
+		}
+
+		// 第 1 轮随项目创建（历史项目在首次进入测试项页时懒补齐）。
+		if err := testitems.EnsureFirstRound(ctx, tx, projectID); err != nil {
+			return err
 		}
 
 		languageIDs, err := resolveDictionaryItems(ctx, tx, "language", uniqueStrings(input.Languages))

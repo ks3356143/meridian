@@ -1,0 +1,235 @@
+/* 测试方法（子项卡片）：紧凑卡片 + 5 色循环色条 + 拖拽手柄；状态反馈沿用荧光语言。 */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  /* 与同表编辑单元格文字同一缩进基准：1px 边框 + 0.4rem 内边距；
+     计数、工具条、卡片、空态提示都从这里起。 */
+  padding: 0.3rem 0 0.3rem calc(0.4rem + 1px);
+}
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.count {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  font-size: 0.7rem;
+  margin-right: auto;
+}
+
+.toolButton {
+  flex: none;
+}
+
+.empty {
+  color: color-mix(in srgb, var(--muted-foreground) 90%, transparent);
+  font-size: 0.72rem;
+  padding: 0.3rem 0.4rem 0.3rem 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.card {
+  align-items: stretch;
+  background: color-mix(in srgb, var(--card) 97%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.3rem;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.card:hover {
+  background: color-mix(in srgb, var(--primary) 4%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 26%, var(--border));
+}
+
+/* 拖拽中：抬升 + 主色柔光（只动光晕与描边，不做缩放位移）。 */
+.card[data-dragging="true"] {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 26%, transparent),
+    0 0 18px -6px color-mix(in srgb, var(--primary) 60%, transparent);
+  cursor: grabbing;
+  z-index: 1;
+}
+
+/* 5 色循环色条 */
+.bar {
+  border-radius: 2px;
+  flex: none;
+  width: 4px;
+}
+
+.card[data-tone="green"] .bar {
+  background: var(--primary);
+}
+
+.card[data-tone="blue"] .bar {
+  background: var(--info);
+}
+
+.card[data-tone="amber"] .bar {
+  background: var(--warning);
+}
+
+.card[data-tone="violet"] .bar {
+  background: var(--chart-5);
+}
+
+.card[data-tone="cyan"] .bar {
+  background: var(--chart-2);
+}
+
+.handle {
+  align-items: center;
+  border-radius: 2px;
+  color: color-mix(in srgb, var(--muted-foreground) 68%, transparent);
+  cursor: grab;
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  touch-action: none;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease;
+  width: 1.1rem;
+}
+
+.handle:hover,
+.handle:focus-visible {
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  color: color-mix(in srgb, var(--info) 88%, var(--foreground));
+}
+
+.handle svg {
+  height: 0.85rem;
+  width: 0.85rem;
+}
+
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.head {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.ident {
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+.nameCell {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 0.3rem;
+  opacity: 0.72;
+  transition: opacity 0.16s ease;
+}
+
+.card:hover .actions,
+.card:focus-within .actions {
+  opacity: 1;
+}
+
+.generateButton svg,
+.iconButton svg {
+  height: 0.8rem;
+  width: 0.8rem;
+}
+
+/* 纯图标小方框：① 不参与文字光学补偿（图标几何居中，否则看着偏上）；
+   ② 带语义底色，和卡片五个色条同源（复制=信息蓝，删除=危险红）。 */
+.iconButton {
+  --btn-text-shift: 0px;
+  --btn-icon-shift: 0px;
+  background: color-mix(in srgb, var(--info) 11%, transparent);
+  border-color: color-mix(in srgb, var(--info) 28%, transparent);
+  color: color-mix(in srgb, var(--info) 88%, var(--foreground));
+  padding: 0 0.35rem;
+}
+
+.iconButton:hover {
+  background: color-mix(in srgb, var(--info) 18%, transparent);
+  border-color: color-mix(in srgb, var(--info) 48%, transparent);
+  color: color-mix(in srgb, var(--info) 96%, var(--foreground));
+}
+
+.iconButton[data-variant="danger"] {
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 28%, transparent);
+  color: color-mix(in srgb, var(--destructive) 88%, var(--foreground));
+}
+
+.iconButton[data-variant="danger"]:hover {
+  background: color-mix(in srgb, var(--destructive) 17%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 48%, transparent);
+  color: var(--destructive);
+}
+
+/* 操作步骤 | 通过准则：双栏对照（老项目口径），窄屏堆叠。 */
+.stepsRow {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 0.15rem;
+}
+
+.stepsCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.stepsLabel {
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  font-size: 0.62rem;
+  padding-left: calc(0.4rem + 1px);
+  /* 光学补偿：CJK 字形视觉重心偏上 ~0.5px。 */
+  padding-top: 1px;
+}
+
+@media (max-width: 900px) {
+  .stepsRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .handle,
+  .actions {
+    transition: none;
+  }
+}

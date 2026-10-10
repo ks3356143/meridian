@@ -1,0 +1,91 @@
+.trigger {
+  height: 2rem;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.trigger[data-placeholder="true"] {
+  color: color-mix(in srgb, var(--muted-foreground) 80%, transparent);
+}
+
+.triggerValue {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.triggerIcon {
+  color: color-mix(in srgb, var(--muted-foreground) 82%, transparent);
+  flex: none;
+  height: 0.85rem;
+  width: 0.85rem;
+}
+
+.popover {
+  padding: 0.4rem;
+  width: min(34rem, calc(100vw - 3rem));
+}
+
+.list {
+  max-height: 22rem;
+}
+
+.grid {
+  display: grid;
+  gap: 2px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.option {
+  min-width: 0;
+}
+
+.optionCode {
+  color: color-mix(in srgb, var(--primary) 90%, var(--foreground));
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.optionName {
+  flex: 1 1 auto;
+  font-size: 0.76rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionTone {
+  border-radius: 50%;
+  flex: none;
+  height: 6px;
+  width: 6px;
+}
+
+.optionTone[data-tone="green"] {
+  background: var(--primary);
+}
+
+.optionTone[data-tone="blue"] {
+  background: var(--info);
+}
+
+.optionTone[data-tone="amber"] {
+  background: var(--warning);
+}
+
+.optionTone[data-tone="violet"] {
+  background: var(--chart-5);
+}
+
+.optionTone[data-tone="cyan"] {
+  background: var(--chart-2);
+}
+
+.optionTone[data-tone="red"] {
+  background: color-mix(in srgb, var(--chart-4) 90%, var(--destructive));
+}

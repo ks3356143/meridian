@@ -1,0 +1,49 @@
+/* 空态 / 占位提示条：左 3px 竖线 + 6% 轻底；色相跟语义走，只做静态提示不再叠加动效。 */
+
+.hint {
+  align-items: center;
+  border: 1px solid transparent;
+  border-left-width: 3px;
+  border-radius: 2px;
+  display: flex;
+  gap: 0.5rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.body {
+  flex: 1 1 auto;
+  font-size: 0.72rem;
+  min-width: 0;
+}
+
+.action {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  gap: 0.3rem;
+}
+
+/* 可留空 / 暂无内容：中性灰，只比正文弱一档，保证"看得见" */
+.hint[data-tone="muted"] {
+  background: color-mix(in srgb, var(--muted-foreground) 6%, transparent);
+  border-color: color-mix(in srgb, var(--muted-foreground) 16%, transparent);
+  border-left-color: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 96%, var(--foreground));
+}
+
+/* 待补充 / 建议动作：琥珀 */
+.hint[data-tone="amber"] {
+  background: color-mix(in srgb, var(--warning) 7%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 22%, transparent);
+  border-left-color: color-mix(in srgb, var(--warning) 62%, transparent);
+  color: color-mix(in srgb, var(--warning) 88%, var(--foreground));
+}
+
+/* 操作引导：信息蓝 */
+.hint[data-tone="info"] {
+  background: color-mix(in srgb, var(--info) 6%, transparent);
+  border-color: color-mix(in srgb, var(--info) 20%, transparent);
+  border-left-color: color-mix(in srgb, var(--info) 58%, transparent);
+  color: color-mix(in srgb, var(--info) 86%, var(--foreground));
+}

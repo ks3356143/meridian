@@ -12,12 +12,14 @@ import (
 	"chenmeridian/internal/api/v1/health"
 	projectapi "chenmeridian/internal/api/v1/projects"
 	requirementapi "chenmeridian/internal/api/v1/requirements"
+	testitemapi "chenmeridian/internal/api/v1/testitems"
 	userapi "chenmeridian/internal/api/v1/users"
 	assetservice "chenmeridian/internal/modules/assets"
 	contentblockservice "chenmeridian/internal/modules/contentblocks"
 	"chenmeridian/internal/modules/officecli"
 	projectservice "chenmeridian/internal/modules/projects"
 	requirementservice "chenmeridian/internal/modules/requirements"
+	testitemservice "chenmeridian/internal/modules/testitems"
 	userservice "chenmeridian/internal/modules/users"
 )
 
@@ -39,5 +41,6 @@ func Register(api huma.API, deps Dependencies) {
 		blocks: contentBlockService,
 		source: officecli.NewClient(""),
 	}))
+	testitemapi.Register(api, testitemservice.NewService(deps.DB))
 	userapi.Register(api, userservice.NewService(deps.DB), projectservice.NewService(deps.DB), deps.Auth)
 }
