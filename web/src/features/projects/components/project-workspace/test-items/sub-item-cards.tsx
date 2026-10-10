@@ -262,17 +262,20 @@ function SortableCard({
             </Button>
           </div>
         </div>
-        <EditableCell
-          value={sub.description}
-          label="子项描述"
-          placeholder="点击填写子项描述（可留空）"
-          bordered
-          multiline
-          onSave={(next) => onUpdate(id, { description: next })}
-        />
+        <div className={styles.descCol}>
+          <span className={styles.fieldLabel}>测试子项描述</span>
+          <EditableCell
+            value={sub.description}
+            label="子项描述"
+            placeholder="点击填写子项描述（可留空）"
+            bordered
+            multiline
+            onSave={(next) => onUpdate(id, { description: next })}
+          />
+        </div>
         <div className={styles.stepsRow}>
           <div className={styles.stepsCol}>
-            <span className={styles.stepsLabel}>操作步骤</span>
+            <span className={styles.fieldLabel}>操作步骤</span>
             <EditableCell
               value={sub.ops}
               label="操作步骤"
@@ -284,7 +287,7 @@ function SortableCard({
             />
           </div>
           <div className={styles.stepsCol}>
-            <span className={styles.stepsLabel}>通过准则</span>
+            <span className={styles.fieldLabel}>通过准则</span>
             <EditableCell
               value={sub.expected}
               label="通过准则"

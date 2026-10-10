@@ -537,7 +537,9 @@ func (s *Service) CountItemChildren(ctx context.Context, projectID string) (map[
 	}
 	if err := s.db.WithContext(ctx).Table("test_sub_items AS sub").
 		Select(`sub.test_item_id AS test_item_id, COUNT(*) AS total,
-			SUM(CASE WHEN TRIM(COALESCE(sub.ops, '')) = '' OR TRIM(COALESCE(sub.expected, '')) = '' THEN 1 ELSE 0 END) AS incomplete`).
+			SUM(CASE WHEN TRIM(COALESCE(sub.ops, ''), ' ' || char(9) || char(10) || char(13)) = ''
+				OR TRIM(COALESCE(sub.expected, ''), ' ' || char(9) || char(10) || char(13)) = ''
+				THEN 1 ELSE 0 END) AS incomplete`).
 		Joins("JOIN test_items AS item ON item.id = sub.test_item_id").
 		Where("item.project_id = ?", projectID).
 		Group("sub.test_item_id").

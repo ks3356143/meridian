@@ -197,6 +197,12 @@
   color: var(--destructive);
 }
 
+/* 子项描述：带标签的单列（标签行与双栏标签同一套字号/间距）。 */
+.descCol {
+  display: flex;
+  flex-direction: column;
+}
+
 /* 操作步骤 | 通过准则：双栏对照（老项目口径），窄屏堆叠。 */
 .stepsRow {
   display: grid;
@@ -212,11 +218,12 @@
   min-width: 0;
 }
 
-.stepsLabel {
+/* 字段标签：子项描述 / 操作步骤 / 通过准则共用（展示态方框上方一行小字）。 */
+.fieldLabel {
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
   font-size: 0.62rem;
   padding-left: calc(0.4rem + 1px);
-  /* 光学补偿：CJK 字形视觉重心偏上 ~0.5px。 */
+  /* 光学居中：CJK 字形视觉重心偏上 ~0.5px，顶部补 1px。 */
   padding-top: 1px;
 }
 
