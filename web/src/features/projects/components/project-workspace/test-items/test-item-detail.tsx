@@ -200,20 +200,26 @@ function TestItemDetailPanelInner({
     element.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   };
 
-  const patch = async (payload: UpdateTestItemPayload) => {
+  // 保存动作统一出口：上报 saving/saved/error，并给"保存中"一个最短展示时长（本地库几毫秒完成，转圈才看得见）。
+  const withSavePhase = async <T,>(action: () => Promise<T>): Promise<T> => {
     reportPhase("saving");
     const startedAt = performance.now();
     try {
-      await onPatch(payload);
-      // 本地库保存往往几毫秒完成，给"保存中"一个最短展示时长，转圈才看得见。
+      const result = await action();
       const elapsed = performance.now() - startedAt;
       if (elapsed < 420) await new Promise((resolve) => setTimeout(resolve, 420 - elapsed));
       reportPhase("saved");
+      return result;
     } catch (error) {
       reportPhase("error");
       throw error;
     }
   };
+
+  const patch = (payload: UpdateTestItemPayload) => withSavePhase(() => onPatch(payload));
+  // 子项字段编辑走同一保存相位：否则芯片从「待自动保存」直接跳「已自动保存」，没有转圈（2026-10-12 用户反馈）。
+  const patchSubItem = (id: string, payload: UpdateSubItemPayload) =>
+    withSavePhase(() => onUpdateSubItem(id, payload));
 
   const tracked = detail.requirements.length > 0 || item.implicitRequirement;
   // 测试方法完善口径：至少 1 个子项，且每个子项的操作步骤与通过准则都已填写（老项目逐栏口径）。
@@ -298,6 +304,7 @@ function TestItemDetailPanelInner({
                   <Progress
                     value={Math.round((completeness.done / Math.max(completeness.total, 1)) * 100)}
                     className={styles.completenessBar}
+                    data-tone={complete ? "full" : "warn"}
                   />
                   {item.implicitRequirement ? (
                     <span className={styles.implicitNote}>
@@ -583,7 +590,7 @@ function TestItemDetailPanelInner({
                     itemIdentifier={item.identifier}
                     subItems={detail.subItems}
                     onCreate={onCreateSubItem}
-                    onUpdate={onUpdateSubItem}
+                    onUpdate={patchSubItem}
                     onDelete={onDeleteSubItem}
                     onDuplicate={onDuplicateSubItem}
                     onMove={onMoveSubItem}
@@ -641,7 +648,15 @@ function TestItemDetailPanelInner({
                 data-tone={passRate === 0 ? "empty" : passRate >= 100 ? "full" : "part"}
               />
               <span className={styles.caseRateDetail}>
-                通过 {passedCount} · 未通过 {failedCount} · 未执行 {pendingCount}
+                <span className={styles.rateItem} data-tone="passed">
+                  通过 {passedCount}
+                </span>
+                <span className={styles.rateItem} data-tone="failed">
+                  未通过 {failedCount}
+                </span>
+                <span className={styles.rateItem} data-tone="pending">
+                  未执行 {pendingCount}
+                </span>
               </span>
             </div>
           </header>

@@ -62,13 +62,25 @@
 }
 
 .accordionSource {
-  background: color-mix(in srgb, var(--info) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
-  color: color-mix(in srgb, var(--info) 88%, var(--foreground));
+  /* 来源默认中性灰：避免与追踪关系的蓝 chip 连片（悬停 / 展开时再提亮）。 */
+  background: color-mix(in srgb, var(--muted-foreground) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
   flex: none;
   font-size: 0.62rem;
   padding: 0 0.28rem;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
   white-space: nowrap;
+}
+
+.accordionHead:hover .accordionSource,
+.accordion[data-open="true"] .accordionSource {
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+  border-color: color-mix(in srgb, var(--info) 30%, transparent);
+  color: color-mix(in srgb, var(--info) 88%, var(--foreground));
 }
 
 .accordionChapter {
@@ -170,7 +182,8 @@
 @media (prefers-reduced-motion: reduce) {
   .accordionHead,
   .accordionBody,
-  .accordionChevron {
+  .accordionChevron,
+  .accordionSource {
     transition: none;
   }
 

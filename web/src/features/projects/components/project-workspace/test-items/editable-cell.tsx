@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "cn";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,21 @@ import { Textarea } from "@/components/ui/textarea";
 import styles from "./editable-cell.module.css";
 
 type SavePhase = "idle" | "saving" | "saved";
+
+const LEADING_INDEX = /^[（(]?\d{1,3}[）)、.．]\s*/;
+
+/** 按非空行统一行首编号为「1、2、3、」；已有编号（1、1)（1）1. 等变体）先剥掉再重排（幂等）。 */
+function normalizeNumbering(value: string): string {
+  let index = 0;
+  return value
+    .split(/\r?\n/)
+    .map((line) => {
+      if (line.trim() === "") return line;
+      index += 1;
+      return `${index}、${line.replace(LEADING_INDEX, "")}`;
+    })
+    .join("\n");
+}
 
 /**
  * 把鼠标点击位置换算成显示文本里的字符偏移（点击点落在文本节点上才有效）。
@@ -26,6 +41,12 @@ function caretOffsetFromPoint(clientX: number, clientY: number): number | null {
   return null;
 }
 
+/** 供外部（子项卡的「自动编号」按钮）程序化改值并走同一条保存链路。 */
+export type EditableCellHandle = {
+  /** 归一化行首编号（1、2、3、）；空内容或无需变化时返回 false。 */
+  applyNumbering: () => boolean;
+};
+
 export function EditableCell({
   value,
   label,
@@ -36,7 +57,10 @@ export function EditableCell({
   onSave,
   onPhase,
   className,
+  ref,
 }: {
+  /** React 19 ref 直传：暴露 applyNumbering（自动编号按钮）。 */
+  ref?: React.Ref<EditableCellHandle>;
   value: string;
   label: string;
   placeholder?: string;
@@ -209,16 +233,7 @@ export function EditableCell({
     beginEditing();
   };
 
-  const commit = async () => {
-    if (cancelledRef.current) {
-      cancelledRef.current = false;
-      return;
-    }
-    const next = draftRef.current.trim();
-    setEditing(false);
-    endEditing();
-    if (next === value) return;
-
+  const save = async (next: string) => {
     setPhase("saving");
     try {
       await onSave(next);
@@ -229,6 +244,35 @@ export function EditableCell({
       setPhase("idle");
     }
   };
+
+  const commit = async () => {
+    if (cancelledRef.current) {
+      cancelledRef.current = false;
+      return;
+    }
+    const next = draftRef.current.trim();
+    setEditing(false);
+    endEditing();
+    if (next === value) return;
+    await save(next);
+  };
+
+  // 自动编号：与失焦保存同一条链路；保存中跳过，避免和 blur 保存竞态。
+  const applyNumbering = () => {
+    if (phase === "saving") return false;
+    const source = editing ? draftRef.current : value;
+    if (source.trim() === "") return false;
+    const next = normalizeNumbering(source).trim();
+    if (next === source.trim()) return false;
+    draftRef.current = next;
+    const editor = editorRef.current;
+    if (editor) editor.value = next;
+    setDraft(next);
+    void save(next);
+    return true;
+  };
+
+  useImperativeHandle(ref, () => ({ applyNumbering }));
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (event.key === "Escape") {

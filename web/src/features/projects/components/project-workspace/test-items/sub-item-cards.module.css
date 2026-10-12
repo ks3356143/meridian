@@ -227,6 +227,49 @@
   padding-top: 1px;
 }
 
+.fieldLabelRow {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 自动编号按钮：字段级操作长在字段头上（老项目「自动编号」口径）；虚线描边提升可发现性，悬停主色柔光闪光。 */
+.numberButton {
+  align-items: center;
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 42%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.2rem;
+  justify-content: center;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+  width: 1.2rem;
+}
+
+.numberButton:hover {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 48%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 0 14px -2px color-mix(in srgb, var(--primary) 50%, transparent);
+  color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+}
+
+.numberButton svg {
+  height: 0.72rem;
+  width: 0.72rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .numberButton {
+    transition: none;
+  }
+}
+
 @media (max-width: 900px) {
   .stepsRow {
     grid-template-columns: 1fr;

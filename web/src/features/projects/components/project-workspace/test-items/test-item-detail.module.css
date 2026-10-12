@@ -385,6 +385,15 @@
   height: 0.28rem;
 }
 
+/* 进度条颜色跟语义走：未完善琥珀、已完善绿（与缺口 chip 同色相）。 */
+.completenessBar[data-tone="warn"] :global([data-slot="progress-indicator"]) {
+  background: color-mix(in srgb, var(--warning) 85%, transparent);
+}
+
+.completenessBar[data-tone="full"] :global([data-slot="progress-indicator"]) {
+  background: var(--success);
+}
+
 .missingChips {
   display: flex;
   flex-wrap: wrap;
@@ -645,7 +654,8 @@
 .linkArea {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  /* 按钮行与 chip 行收紧一档，两行更成一组。 */
+  gap: 0.2rem;
   /* 与编辑单元格文字起始位置对齐：0.4rem padding + 1px 边框。 */
   padding: 0.3rem 0.4rem 0.3rem calc(0.4rem + 1px);
 }
@@ -885,9 +895,39 @@
 }
 
 .caseRateDetail {
+  align-items: center;
   color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
+  display: inline-flex;
   font-size: 0.68rem;
+  gap: 0.45rem;
   white-space: nowrap;
+}
+
+/* 统计色点图例：与行首状态色条、状态 chip 同色相，读数不用回头映射。 */
+.rateItem {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.26rem;
+}
+
+.rateItem::before {
+  border-radius: 50%;
+  content: "";
+  flex: none;
+  height: 6px;
+  width: 6px;
+}
+
+.rateItem[data-tone="passed"]::before {
+  background: color-mix(in srgb, var(--success) 80%, transparent);
+}
+
+.rateItem[data-tone="failed"]::before {
+  background: color-mix(in srgb, var(--destructive) 80%, transparent);
+}
+
+.rateItem[data-tone="pending"]::before {
+  background: color-mix(in srgb, var(--muted-foreground) 40%, transparent);
 }
 
 .caseTable {

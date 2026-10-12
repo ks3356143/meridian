@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -18,12 +18,12 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Copy, CopyPlus, GripVertical, ListPlus, Plus, Trash2 } from "lucide-react";
+import { Copy, CopyPlus, GripVertical, ListOrdered, ListPlus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyHint } from "@/components/shared/empty-hint";
 import type { UpdateSubItemPayload } from "@/features/test-items/api";
 import type { TestSubItemRecord } from "@/features/test-items/types";
-import { EditableCell } from "./editable-cell";
+import { EditableCell, type EditableCellHandle } from "./editable-cell";
 import styles from "./sub-item-cards.module.css";
 
 const BAR_TONES = ["green", "blue", "amber", "violet", "cyan"] as const;
@@ -200,6 +200,8 @@ const SortableCard = memo(function SortableCardImpl({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
   });
+  const opsCellRef = useRef<EditableCellHandle>(null);
+  const expectedCellRef = useRef<EditableCellHandle>(null);
 
   return (
     <div
@@ -290,8 +292,31 @@ const SortableCard = memo(function SortableCardImpl({
         </div>
         <div className={styles.stepsRow}>
           <div className={styles.stepsCol}>
-            <span className={styles.fieldLabel}>操作步骤</span>
+            <div className={styles.fieldLabelRow}>
+              <span className={styles.fieldLabel}>操作步骤</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className={styles.numberButton}
+                    aria-label="操作步骤自动编号"
+                    onMouseDown={(event) => {
+                      // mousedown 阶段拦截：不让编辑框失焦，避免和失焦保存竞态。
+                      event.preventDefault();
+                      opsCellRef.current?.applyNumbering();
+                    }}
+                    onClick={(event) => {
+                      if (event.detail === 0) opsCellRef.current?.applyNumbering();
+                    }}
+                  >
+                    <ListOrdered aria-hidden />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">自动编号</TooltipContent>
+              </Tooltip>
+            </div>
             <EditableCell
+              ref={opsCellRef}
               value={sub.ops}
               label="操作步骤"
               placeholder="1、请在此录入..."
@@ -303,8 +328,30 @@ const SortableCard = memo(function SortableCardImpl({
             />
           </div>
           <div className={styles.stepsCol}>
-            <span className={styles.fieldLabel}>通过准则</span>
+            <div className={styles.fieldLabelRow}>
+              <span className={styles.fieldLabel}>通过准则</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className={styles.numberButton}
+                    aria-label="通过准则自动编号"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      expectedCellRef.current?.applyNumbering();
+                    }}
+                    onClick={(event) => {
+                      if (event.detail === 0) expectedCellRef.current?.applyNumbering();
+                    }}
+                  >
+                    <ListOrdered aria-hidden />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">自动编号</TooltipContent>
+              </Tooltip>
+            </div>
             <EditableCell
+              ref={expectedCellRef}
               value={sub.expected}
               label="通过准则"
               placeholder="1、预期结果..."
