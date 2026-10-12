@@ -3,7 +3,6 @@
 
 .accordion {
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  border-radius: 2px;
   overflow: hidden;
   transition:
     box-shadow 0.2s ease,
@@ -13,6 +12,16 @@
 .accordion[data-open="true"] {
   border-color: color-mix(in srgb, var(--primary) 30%, transparent);
   box-shadow: 0 0 18px -12px color-mix(in srgb, var(--primary) 80%, transparent);
+}
+
+/* 展开反馈：左侧信息蓝色条 + 标题提色（2026-10-12 美化轮）。 */
+.accordion[data-open="true"] .accordionHead {
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--info) 85%, transparent);
+}
+
+.accordion[data-open="true"] .accordionName {
+  color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+  font-weight: 640;
 }
 
 .accordionHead {
@@ -35,9 +44,17 @@
 .accordionChevron {
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
   flex: none;
-  height: 0.72rem;
-  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
-  width: 0.72rem;
+  height: 0.78rem;
+  margin-left: 0.45rem;
+  transition:
+    color 0.18s ease,
+    transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+  width: 0.78rem;
+}
+
+/* 悬停整行时箭头提一档色，提示这里可点。 */
+.accordionHead:hover .accordionChevron {
+  color: color-mix(in srgb, var(--primary) 80%, var(--foreground));
 }
 
 .accordion[data-open="true"] .accordionChevron {
@@ -47,7 +64,6 @@
 .accordionSource {
   background: color-mix(in srgb, var(--info) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
-  border-radius: 2px;
   color: color-mix(in srgb, var(--info) 88%, var(--foreground));
   flex: none;
   font-size: 0.62rem;
@@ -75,13 +91,6 @@
   white-space: nowrap;
 }
 
-.accordionHint {
-  color: color-mix(in srgb, var(--muted-foreground) 82%, transparent);
-  flex: none;
-  font-size: 0.64rem;
-  white-space: nowrap;
-}
-
 /* 展开用 grid-template-rows 过渡，行高变化有动效且不打断滚动 */
 .accordionBody {
   display: grid;
@@ -97,6 +106,43 @@
   overflow: hidden;
 }
 
+/* 加载态容器：与正文同内边距，骨架不贴边。 */
+/* 加载态：居中 spin + 文案，位置稳定不跳动。 */
+.accordionLoading {
+  align-items: center;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.72rem;
+  gap: 0.45rem;
+  justify-content: center;
+  min-height: 6rem;
+  padding: 0.9rem 0.45rem;
+}
+
+.accordionSpinner {
+  animation: accordionSpin 0.9s linear infinite;
+  color: color-mix(in srgb, var(--primary) 72%, var(--muted-foreground));
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+@keyframes accordionSpin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* 结构化正文（表格 / 图片）：沿用正文块排版，超长时内部滚动。 */
+.accordionRich {
+  border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+  max-height: 22rem;
+  overflow-y: auto;
+  padding: 0.4rem 0.45rem 0.6rem;
+  scrollbar-gutter: stable;
+}
+
 .accordionText {
   border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
   color: color-mix(in srgb, var(--foreground) 90%, transparent);
@@ -107,6 +153,13 @@
   padding: 0.4rem 0.45rem;
   scrollbar-gutter: stable;
   white-space: pre-wrap;
+
+  transition: opacity 0.26s ease;
+  opacity: 0;
+}
+
+.accordion[data-open="true"] .accordionText {
+  opacity: 1;
 }
 
 .requirementMissing {
@@ -114,16 +167,14 @@
   font-size: 0.7rem;
 }
 
-/* 与详情同源的弱化文字。 */
-.muted {
-  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
-  font-size: 0.72rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .accordionHead,
   .accordionBody,
   .accordionChevron {
     transition: none;
+  }
+
+  .accordionSpinner {
+    animation: none;
   }
 }

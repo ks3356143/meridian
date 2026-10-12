@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,10 +39,12 @@ export function ChangeItemTypeDialog({
   onSubmit: (typeCode: string) => Promise<unknown>;
 }) {
   const [nextTypeCode, setNextTypeCode] = useState("");
-
-  useEffect(() => {
+  // 打开时重置选择：用官方“渲染期调整状态”模式，避免 effect 里同步 setState。
+  const [lastOpen, setLastOpen] = useState(open);
+  if (open !== lastOpen) {
+    setLastOpen(open);
     if (open) setNextTypeCode("");
-  }, [open]);
+  }
 
   const usedStatic = useMemo(() => new Set(usedStaticCodes), [usedStaticCodes]);
   const availableTypes = useMemo(

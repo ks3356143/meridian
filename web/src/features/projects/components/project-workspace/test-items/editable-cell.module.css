@@ -6,7 +6,6 @@
 /* 焦点柔光画在单元格的绝对定位伪元素上：不占宽高、不参与布局。
    口径对齐老项目——边框变色 + 一层 3px / 12% 柔光，绝不再画第二根实线（否则就是双边框）。 */
 .cell::after {
-  border-radius: 3px;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
   content: "";
   inset: 0;
@@ -49,7 +48,6 @@
   background: transparent;
   /* 与编辑态输入框同样带 1px 边框（透明），两者盒模型完全一致，切换不改变行高。 */
   border: 1px solid transparent;
-  border-radius: 2px;
   cursor: text;
   display: flex;
   /* 行高用整数像素：textarea 的 scrollHeight 是整数，小数行高会带来 0.5px 行高差；
@@ -114,7 +112,6 @@
    这里用更高优先级 + !important 压掉，只留 1px 主色边框 + 3px / 12% 柔光（老项目口径）。 */
 .editor {
   border: 1px solid var(--input) !important;
-  border-radius: 2px !important;
   box-shadow: none !important;
   font-size: 0.76rem;
   line-height: 18px;

@@ -1,5 +1,14 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
-import { AlertTriangle, CheckCircle2, CloudUpload, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  Info,
+  CheckCircle2,
+  CloudUpload,
+  Loader2,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -75,6 +84,7 @@ function TestItemDetailPanelInner({
 }) {
   const item = detail.item;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const jumpSpyLockRef = useRef(false);
   const [activeSection, setActiveSection] = useState<string>(SECTION_BASIC);
   const isStatic = type?.isStatic ?? false;
 
@@ -90,7 +100,7 @@ function TestItemDetailPanelInner({
   const savingCountRef = useRef(0);
   const failedRef = useRef(false);
   // 保存状态按测试项 id 记录：切换测试项时旧状态自然失效，不需要额外 effect 重置。
-  const syncSaveState = () => {
+  const syncSaveState = useCallback(() => {
     setSaveStateFor({
       id: item.id,
       state:
@@ -102,22 +112,25 @@ function TestItemDetailPanelInner({
               ? "error"
               : "saved",
     });
-  };
-  const reportPhase = (phase: "editing-start" | "editing-end" | "saving" | "saved" | "error") => {
-    if (phase === "editing-start") editingCountRef.current += 1;
-    else if (phase === "editing-end")
-      editingCountRef.current = Math.max(0, editingCountRef.current - 1);
-    else if (phase === "saving") savingCountRef.current += 1;
-    else if (phase === "saved") {
-      savingCountRef.current = Math.max(0, savingCountRef.current - 1);
-      failedRef.current = false;
-      setSaveChipKey((current) => current + 1);
-    } else if (phase === "error") {
-      savingCountRef.current = Math.max(0, savingCountRef.current - 1);
-      failedRef.current = true;
-    }
-    syncSaveState();
-  };
+  }, [item.id]);
+  const reportPhase = useCallback(
+    (phase: "editing-start" | "editing-end" | "saving" | "saved" | "error") => {
+      if (phase === "editing-start") editingCountRef.current += 1;
+      else if (phase === "editing-end")
+        editingCountRef.current = Math.max(0, editingCountRef.current - 1);
+      else if (phase === "saving") savingCountRef.current += 1;
+      else if (phase === "saved") {
+        savingCountRef.current = Math.max(0, savingCountRef.current - 1);
+        failedRef.current = false;
+        setSaveChipKey((current) => current + 1);
+      } else if (phase === "error") {
+        savingCountRef.current = Math.max(0, savingCountRef.current - 1);
+        failedRef.current = true;
+      }
+      syncSaveState();
+    },
+    [syncSaveState],
+  );
 
   // 切换测试项时在绘制前回到顶部，避免"先画新项再滚回去"造成的滚动条跳动。
   useLayoutEffect(() => {
@@ -150,6 +163,8 @@ function TestItemDetailPanelInner({
     const container = scrollRef.current;
     if (!container) return;
     const handleScroll = () => {
+      // 点击分区后亮住不动，直到用户自己滚动/按键才交还位置推断。
+      if (jumpSpyLockRef.current) return;
       const offset = container.scrollTop + 96;
       let current: string = SECTION_BASIC;
       for (const section of SECTION_LINKS) {
@@ -158,14 +173,29 @@ function TestItemDetailPanelInner({
       }
       setActiveSection(current);
     };
+    const releaseJumpLock = () => {
+      jumpSpyLockRef.current = false;
+    };
     container.addEventListener("scroll", handleScroll, { passive: true });
+    // 只认用户自己的滚轮/触摸/按键：程序化 smooth 滚动期间保持"点谁亮谁"。
+    container.addEventListener("wheel", releaseJumpLock, { passive: true });
+    container.addEventListener("touchstart", releaseJumpLock, { passive: true });
+    container.addEventListener("keydown", releaseJumpLock);
     handleScroll();
-    return () => container.removeEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      container.removeEventListener("wheel", releaseJumpLock);
+      container.removeEventListener("touchstart", releaseJumpLock);
+      container.removeEventListener("keydown", releaseJumpLock);
+      jumpSpyLockRef.current = false;
+    };
   }, [item.id]);
 
   const jumpTo = (id: string) => {
     const element = document.getElementById(id);
     if (!element) return;
+    setActiveSection(id);
+    jumpSpyLockRef.current = true;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     element.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   };
@@ -245,7 +275,7 @@ function TestItemDetailPanelInner({
           <div className={styles.heroSide}>
             <Button
               type="button"
-              variant="destructive"
+              variant="outline"
               size="xs"
               className={styles.deleteButton}
               onClick={onRequestDelete}
@@ -290,7 +320,10 @@ function TestItemDetailPanelInner({
                   )}
                 </>
               ) : (
-                <span className={styles.muted}>静态测试项进度见静态流程</span>
+                <span className={styles.staticNote}>
+                  <Info aria-hidden />
+                  静态测试项进度见静态流程
+                </span>
               )}
             </div>
           </div>
@@ -512,7 +545,11 @@ function TestItemDetailPanelInner({
                       ) : (
                         <div className={styles.requirementList}>
                           {detail.requirements.map((reference) => (
-                            <RequirementAccordion key={reference.id} reference={reference} />
+                            <RequirementAccordion
+                              key={reference.id}
+                              reference={reference}
+                              projectCode={projectId}
+                            />
                           ))}
                         </div>
                       )}
@@ -551,6 +588,7 @@ function TestItemDetailPanelInner({
                     onDuplicate={onDuplicateSubItem}
                     onMove={onMoveSubItem}
                     onGenerateCase={onCreateCase}
+                    onPhase={reportPhase}
                   />
                 </td>
               </tr>
@@ -597,7 +635,11 @@ function TestItemDetailPanelInner({
               >
                 通过率 {passRate}%
               </span>
-              <Progress value={passRate} className={styles.caseProgress} />
+              <Progress
+                value={passRate}
+                className={styles.caseProgress}
+                data-tone={passRate === 0 ? "empty" : passRate >= 100 ? "full" : "part"}
+              />
               <span className={styles.caseRateDetail}>
                 通过 {passedCount} · 未通过 {failedCount} · 未执行 {pendingCount}
               </span>
@@ -630,7 +672,7 @@ function TestItemDetailPanelInner({
               </thead>
               <tbody>
                 {detail.cases.map((record) => (
-                  <tr key={record.id}>
+                  <tr key={record.id} data-status={record.status}>
                     <td className={styles.caseIdent}>{record.identifier}</td>
                     <td>{record.name}</td>
                     <td>

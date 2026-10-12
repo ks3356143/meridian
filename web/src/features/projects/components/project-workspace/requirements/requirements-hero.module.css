@@ -205,7 +205,6 @@
   align-items: center;
   background: color-mix(in srgb, var(--destructive) 10%, var(--card));
   border: 1px solid color-mix(in srgb, var(--destructive) 30%, var(--border));
-  border-radius: 2px;
   box-shadow: 0 3px 9px -8px color-mix(in srgb, var(--destructive) 70%, transparent);
   color: var(--destructive);
   display: inline-flex;

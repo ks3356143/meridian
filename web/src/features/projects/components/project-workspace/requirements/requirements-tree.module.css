@@ -300,7 +300,6 @@
   align-items: center;
   background: color-mix(in srgb, var(--primary) 6%, var(--card));
   border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border));
-  border-radius: 2px;
   color: var(--foreground);
   display: inline-flex;
   font-family: var(--font-mono);
@@ -508,7 +507,6 @@
 .row {
   align-items: center;
   border: 1px solid transparent;
-  border-radius: 2px;
   color: var(--foreground);
   display: flex;
   font-size: 12px;
@@ -953,7 +951,6 @@
     linear-gradient(90deg, color-mix(in srgb, var(--info) 7%, transparent), transparent 62%),
     color-mix(in srgb, var(--card) 91%, transparent);
   border: 1px solid color-mix(in srgb, var(--info) 26%, var(--border));
-  border-radius: 2px;
   bottom: 0.35rem;
   box-shadow:
     inset 2px 0 0 color-mix(in srgb, var(--info) 72%, transparent),
@@ -971,7 +968,6 @@
 .batchCount {
   background: color-mix(in srgb, var(--info) 10%, var(--card));
   border: 1px solid color-mix(in srgb, var(--info) 25%, var(--border));
-  border-radius: 2px;
   color: var(--info);
   font-size: 0.72rem;
   font-weight: 400;

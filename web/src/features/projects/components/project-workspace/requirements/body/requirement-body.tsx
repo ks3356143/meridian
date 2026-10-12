@@ -1,5 +1,5 @@
 import { ImageOff, Loader2, ScanText } from "lucide-react";
-import { memo, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { requestBlob } from "@/api/client";
 import type { RequirementBlockNode } from "@/features/requirements/types";
@@ -226,6 +226,29 @@ function AssetImageBlock({
   }, [aspectRatio, width]);
 
   const thumbnailWidth = resolveThumbnailWidth(width);
+  // 性能：图片进入视口才开始拉取（配合展开才挂载的容器，收起状态零请求）。
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const element = frameRef.current;
+    if (!element || !assetId) return;
+    if (typeof IntersectionObserver === "undefined") {
+      // oxlint-disable-next-line react/set-state-in-effect -- 无 IntersectionObserver 环境直接视为可见，兜底同步一次。
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [assetId]);
   const assetQuery = useQuery({
     queryKey: ["requirement-asset", projectCode, assetId, thumbnailWidth],
     queryFn: ({ signal }) =>
@@ -233,14 +256,15 @@ function AssetImageBlock({
         `/api/v1/projects/${encodeURIComponent(projectCode)}/assets/${encodeURIComponent(assetId ?? "")}?w=${thumbnailWidth}`,
         signal,
       ),
-    enabled: Boolean(assetId),
+    enabled: Boolean(assetId) && inView,
     staleTime: Infinity,
     gcTime: 10 * 60 * 1000,
     retry: false,
   });
 
   const [objectUrl, setObjectUrl] = useState<string>();
-  const [failed, setFailed] = useState(false);
+  // 失败按 assetId 记账：同一实例被复用到另一张图时，不会带着上一张图的失败态。
+  const [failedAssetId, setFailedAssetId] = useState("");
   useEffect(() => {
     if (!assetQuery.data) {
       // oxlint-disable-next-line react/set-state-in-effect -- object URL 必须在副作用中创建并随查询结果生命周期回收。
@@ -249,19 +273,20 @@ function AssetImageBlock({
     }
     const url = URL.createObjectURL(assetQuery.data);
     setObjectUrl(url);
-    setFailed(false);
     return () => URL.revokeObjectURL(url);
   }, [assetQuery.data]);
 
   const vectorNotice = vectorImageNotice(assetQuery.data?.type ?? "");
-  const showFallback = !assetId || failed || assetQuery.isError || Boolean(vectorNotice);
+  const showFallback =
+    !assetId || failedAssetId === assetId || assetQuery.isError || Boolean(vectorNotice);
 
   return (
     <figure className={styles.figure} data-align={readImageAlign(block.attrs) || undefined}>
       <div
+        ref={frameRef}
         className={styles.imageFrame}
         style={frameStyle}
-        data-state={showFallback ? "fallback" : "ready"}
+        data-state={showFallback ? "fallback" : objectUrl ? "ready" : "loading"}
       >
         {showFallback ? (
           <span className={styles.imageFallback}>
@@ -269,7 +294,12 @@ function AssetImageBlock({
             <span>{vectorNotice ?? (assetId ? "图片加载失败" : "图片资源缺失")}</span>
           </span>
         ) : objectUrl ? (
-          <img src={objectUrl} alt={alt} decoding="async" onError={() => setFailed(true)} />
+          <img
+            src={objectUrl}
+            alt={alt}
+            decoding="async"
+            onError={() => setFailedAssetId(assetId ?? "")}
+          />
         ) : (
           <span className={styles.imageLoading} aria-busy="true">
             <Loader2 aria-hidden />

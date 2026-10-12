@@ -42,7 +42,6 @@
 .roundChip {
   background: color-mix(in srgb, var(--primary) 9%, transparent);
   border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
-  border-radius: 2px;
   color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
   flex: none;
   font-size: 0.68rem;
@@ -66,7 +65,6 @@
   align-items: center;
   background: color-mix(in srgb, var(--muted-foreground) 9%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  border-radius: 2px;
   color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
   display: inline-flex;
   flex: none;

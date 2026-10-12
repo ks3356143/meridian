@@ -83,12 +83,15 @@ export function Component() {
     { scope: containerRef },
   );
 
-  const today = new Date().toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
+  // 日期只在挂载时计算一次：渲染期不调用 Date（React purity），跨天刷新页面自然更新。
+  const [today] = useState(() =>
+    new Date().toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long",
+    }),
+  );
 
   if (projectsQuery.isPending) {
     return <QueryLoading label="正在加载项目列表" rows={7} />;

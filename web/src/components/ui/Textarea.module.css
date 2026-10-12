@@ -1,7 +1,6 @@
 .textarea {
   background: color-mix(in srgb, var(--card) 80%, transparent);
   border: 1px solid var(--input);
-  border-radius: 2px;
   color: var(--foreground);
   display: block;
   font-size: 0.875rem;

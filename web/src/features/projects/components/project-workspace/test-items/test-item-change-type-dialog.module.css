@@ -11,7 +11,6 @@
 
 .title::before {
   background: var(--info);
-  border-radius: 2px;
   box-shadow: 0 0 10px -1px color-mix(in srgb, var(--info) 70%, transparent);
   content: "";
   height: 1rem;
@@ -47,7 +46,6 @@
   align-items: center;
   background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  border-radius: 2px;
   display: inline-flex;
   flex: none;
   font-size: 0.74rem;
@@ -106,7 +104,6 @@
 .preview {
   background: color-mix(in srgb, var(--info) 6%, transparent);
   border: 1px dashed color-mix(in srgb, var(--info) 34%, transparent);
-  border-radius: 2px;
   padding: 0.55rem 0.65rem;
 }
 

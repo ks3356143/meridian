@@ -199,7 +199,6 @@
 
 .count {
   background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
-  border-radius: 2px;
   color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
 }
 
@@ -244,7 +243,6 @@
 .typeChip {
   background: color-mix(in srgb, var(--info) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--info) 26%, transparent);
-  border-radius: 2px;
   color: color-mix(in srgb, var(--info) 86%, var(--foreground));
 }
 
@@ -281,7 +279,6 @@
 .implicitChip {
   background: color-mix(in srgb, var(--warning) 12%, transparent);
   border: 1px dashed color-mix(in srgb, var(--warning) 52%, transparent);
-  border-radius: 2px;
   color: color-mix(in srgb, var(--warning) 90%, var(--foreground));
 }
 
@@ -289,7 +286,6 @@
   animation: incompleteGlow 2.6s ease-in-out infinite;
   background: color-mix(in srgb, var(--warning) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--warning) 46%, transparent);
-  border-radius: 2px;
   color: color-mix(in srgb, var(--warning) 92%, var(--foreground));
 }
 

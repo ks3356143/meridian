@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useCallback, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -33,7 +33,7 @@ function subItemIdentifier(itemIdentifier: string, seq: number) {
 }
 
 /** 测试方法（子项卡片）：拖拽排序、行内编辑、复制/删除、1:1 生成用例。 */
-export function SubItemCards({
+export const SubItemCards = memo(function SubItemCardsImpl({
   itemIdentifier,
   subItems,
   onCreate,
@@ -42,6 +42,7 @@ export function SubItemCards({
   onDuplicate,
   onMove,
   onGenerateCase,
+  onPhase,
 }: {
   itemIdentifier: string;
   subItems: TestSubItemRecord[];
@@ -51,6 +52,8 @@ export function SubItemCards({
   onDuplicate: (id: string) => Promise<unknown>;
   onMove: (id: string, targetIndex: number) => Promise<unknown>;
   onGenerateCase: (name: string) => Promise<unknown>;
+  /** 上报子项编辑/保存相位，供详情右上角自动保存状态芯片显示。 */
+  onPhase?: (phase: "editing-start" | "editing-end" | "saving" | "saved" | "error") => void;
 }) {
   const [creating, setCreating] = useState(false);
   const [pendingId, setPendingId] = useState("");
@@ -59,18 +62,21 @@ export function SubItemCards({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const from = subItems.findIndex((sub) => sub.id === active.id);
-    const to = subItems.findIndex((sub) => sub.id === over.id);
-    if (from < 0 || to < 0) return;
-    const nextOrder = arrayMove(subItems, from, to);
-    const targetIndex = nextOrder.findIndex((sub) => sub.id === active.id);
-    void onMove(String(active.id), targetIndex);
-  };
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const from = subItems.findIndex((sub) => sub.id === active.id);
+      const to = subItems.findIndex((sub) => sub.id === over.id);
+      if (from < 0 || to < 0) return;
+      const nextOrder = arrayMove(subItems, from, to);
+      const targetIndex = nextOrder.findIndex((sub) => sub.id === active.id);
+      void onMove(String(active.id), targetIndex);
+    },
+    [onMove, subItems],
+  );
 
-  const handleCreate = async () => {
+  const handleCreate = useCallback(async () => {
     setCreating(true);
     try {
       // 空名新建：卡片直接进入待填状态（红色脉冲），由用户当场命名。
@@ -78,20 +84,23 @@ export function SubItemCards({
     } finally {
       setCreating(false);
     }
-  };
+  }, [onCreate]);
 
-  const handleGenerate = async (sub: TestSubItemRecord) => {
-    if (sub.name.trim() === "") {
-      toast.error("请先填写子项名称，再生成用例");
-      return;
-    }
-    setPendingId(sub.id);
-    try {
-      await onGenerateCase(sub.name.trim());
-    } finally {
-      setPendingId("");
-    }
-  };
+  const handleGenerate = useCallback(
+    async (sub: TestSubItemRecord) => {
+      if (sub.name.trim() === "") {
+        toast.error("请先填写子项名称，再生成用例");
+        return;
+      }
+      setPendingId(sub.id);
+      try {
+        await onGenerateCase(sub.name.trim());
+      } finally {
+        setPendingId("");
+      }
+    },
+    [onGenerateCase],
+  );
 
   return (
     <div className={styles.wrap}>
@@ -152,7 +161,8 @@ export function SubItemCards({
                     onUpdate={onUpdate}
                     onDelete={onDelete}
                     onDuplicate={onDuplicate}
-                    onGenerate={() => void handleGenerate(sub)}
+                    onGenerate={handleGenerate}
+                    onPhase={onPhase}
                   />
                 ))}
               </div>
@@ -162,9 +172,9 @@ export function SubItemCards({
       )}
     </div>
   );
-}
+});
 
-function SortableCard({
+const SortableCard = memo(function SortableCardImpl({
   id,
   index,
   identifier,
@@ -174,6 +184,7 @@ function SortableCard({
   onDelete,
   onDuplicate,
   onGenerate,
+  onPhase,
 }: {
   id: string;
   index: number;
@@ -183,7 +194,8 @@ function SortableCard({
   onUpdate: (id: string, payload: UpdateSubItemPayload) => Promise<unknown>;
   onDelete: (id: string) => Promise<unknown>;
   onDuplicate: (id: string) => Promise<unknown>;
-  onGenerate: () => void;
+  onGenerate: (sub: TestSubItemRecord) => void;
+  onPhase?: (phase: "editing-start" | "editing-end" | "saving" | "saved" | "error") => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -217,8 +229,10 @@ function SortableCard({
               value={sub.name}
               label="子项名称"
               placeholder="点击填写子项名称"
+              bordered
               missing={sub.name.trim() === ""}
               onSave={(next) => onUpdate(id, { name: next })}
+              onPhase={onPhase}
             />
           </div>
           <div className={styles.actions}>
@@ -228,7 +242,7 @@ function SortableCard({
               variant="outline"
               className={styles.generateButton}
               disabled={generating}
-              onClick={onGenerate}
+              onClick={() => void onGenerate(sub)}
             >
               <ListPlus aria-hidden />
               生成用例
@@ -271,6 +285,7 @@ function SortableCard({
             bordered
             multiline
             onSave={(next) => onUpdate(id, { description: next })}
+            onPhase={onPhase}
           />
         </div>
         <div className={styles.stepsRow}>
@@ -284,6 +299,7 @@ function SortableCard({
               multiline
               missing={sub.ops.trim() === ""}
               onSave={(next) => onUpdate(id, { ops: next })}
+              onPhase={onPhase}
             />
           </div>
           <div className={styles.stepsCol}>
@@ -296,10 +312,11 @@ function SortableCard({
               multiline
               missing={sub.expected.trim() === ""}
               onSave={(next) => onUpdate(id, { expected: next })}
+              onPhase={onPhase}
             />
           </div>
         </div>
       </div>
     </div>
   );
-}
+});

@@ -85,7 +85,6 @@
   --parse-active-inset: color-mix(in srgb, var(--primary) 12%, transparent);
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
-  border-radius: 2px;
   color: var(--foreground);
   font-weight: 650;
   letter-spacing: 0.015em;
@@ -281,7 +280,6 @@
 .cleanNamePreview {
   background: color-mix(in srgb, var(--muted) 34%, transparent);
   border: 1px solid var(--border);
-  border-radius: 2px;
   display: grid;
   gap: 0.45rem;
   max-height: 13rem;
