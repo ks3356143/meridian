@@ -1,0 +1,417 @@
+/* 用例详情（切片 5a）：Word 表格观感，直角、无圆角，与测试项详情同一套设计语言。 */
+.panel {
+  background: color-mix(in srgb, var(--card) 97%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Hero 与测试项详情同口径：主色渐变底、区块下边框、标识信息蓝放大一档。 */
+.hero {
+  align-items: flex-start;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 6%, transparent), transparent 68%),
+    color-mix(in srgb, var(--card) 97%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  justify-content: space-between;
+  padding: 1rem 1.1rem 0.85rem;
+}
+
+.heroMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.heroIdent {
+  color: color-mix(in srgb, var(--info) 90%, var(--foreground));
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.heroTitleRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+/* 主题绿竖线：与详情 Hero、用例概况卡同一个视觉锚点。 */
+.titleBar {
+  background: var(--primary);
+  box-shadow: 0 0 10px -1px var(--primary);
+  display: inline-block;
+  height: 1.05rem;
+  width: 3px;
+}
+
+.heroTitle {
+  font-size: 1.14rem;
+  font-weight: 760;
+  line-height: 1.3;
+  margin: 0;
+  min-width: 0;
+}
+
+.statusChip {
+  align-items: center;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 620;
+  gap: 0.3rem;
+  padding: 1px 0.4rem 0;
+}
+
+.statusChip[data-status="passed"] {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 42%, transparent);
+  color: var(--success);
+}
+
+.statusChip[data-status="failed"] {
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 40%, transparent);
+  color: var(--destructive);
+}
+
+.statusChip[data-status="pending"] {
+  background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+}
+
+.heroMeta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.parentChip {
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+/* 撤销口径提示：一句话说明 Ctrl+Z 的作用域，避免用户以为能撤销整轮操作。 */
+.undoHint {
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  font-size: 0.68rem;
+  margin: 0 0 0.5rem;
+}
+
+/* 表格内浮：与测试项详情同口径（卡内留白，表格自带边框与轻阴影）。 */
+.body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem 1.1rem 1rem;
+  scrollbar-gutter: stable;
+}
+
+.sheet {
+  background: color-mix(in srgb, var(--card) 97%, transparent);
+  border-collapse: collapse;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* 行标签列：浅灰底、居中加粗、上下居中（测试项详情 itemTable 同口径）。 */
+.sheet th[scope="row"] {
+  background: color-mix(in srgb, var(--muted-foreground) 7%, var(--card));
+  border: 1px solid var(--border);
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  font-size: 0.72rem;
+  font-weight: 640;
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 158px;
+}
+
+.sheet td {
+  border: 1px solid var(--border);
+  font-size: 0.76rem;
+  padding: 0.2rem 0.25rem;
+  vertical-align: middle;
+}
+
+.execDate {
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
+.placeholderChip {
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 32%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  display: inline-flex;
+  font-size: 0.7rem;
+  padding: 1px 0.4rem 0;
+}
+
+/* 用例标识：随测试项与顺序自动重排（SRS 24/01），只读。 */
+.identValue {
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  padding-left: 0.3rem;
+}
+
+/* 人员栏位：只读显示姓名，指派下拉随切片 5c。 */
+.personChip {
+  color: color-mix(in srgb, var(--foreground) 92%, transparent);
+  font-size: 0.74rem;
+  padding-left: 0.3rem;
+}
+
+/* 追踪关系继承所属测试项，只读：chip 口径同测试项详情，去掉解除按钮。 */
+.reqRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  row-gap: 0.3rem;
+}
+
+.reqChip {
+  align-items: center;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 26%, transparent);
+  display: inline-flex;
+  flex: none;
+  gap: 0.3rem;
+  max-width: 24rem;
+  padding: 0.08rem 0.3rem;
+}
+
+.reqSource {
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
+  color: color-mix(in srgb, var(--info) 88%, var(--foreground));
+  flex: none;
+  font-size: 0.62rem;
+  max-width: 9rem;
+  overflow: hidden;
+  padding: 1px 0.25rem 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reqChapter {
+  color: color-mix(in srgb, var(--primary) 90%, var(--foreground));
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.reqName {
+  color: color-mix(in srgb, var(--foreground) 92%, transparent);
+  font-size: 0.72rem;
+  min-width: 0;
+}
+
+.reqEmpty {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  font-size: 0.72rem;
+}
+
+.stepsToolbar {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+}
+
+.stepsHint {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  font-size: 0.68rem;
+}
+
+/* 固定列宽：宽屏下不能让「通过 / 行操作」两列被内容拉宽，否则中间会空出一大片。 */
+.stepsTable {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* 列头与内容对齐：序号 / 通过两列居中，预期结果左对齐。 */
+.stepsTable th {
+  background: color-mix(in srgb, var(--muted-foreground) 7%, var(--card));
+  border: 1px solid var(--border);
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  font-size: 0.7rem;
+  font-weight: 620;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.stepsTable th:nth-child(1),
+.stepsTable th:nth-child(3) {
+  text-align: center;
+}
+
+/* 列宽：序号 / 通过 / 行操作固定，预期结果吃掉剩余宽度，避免「通过」后面出现大片空白。 */
+.stepsTable th:nth-child(1),
+.stepsTable td:nth-child(1) {
+  width: 2.6rem;
+}
+
+.stepsTable th:nth-child(3),
+.stepsTable td:nth-child(3) {
+  width: 6rem;
+}
+
+.stepsTable th:nth-child(4),
+.stepsTable td:nth-child(4) {
+  width: 7.5rem;
+}
+
+.stepsTable td {
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  font-size: 0.74rem;
+  padding: 0.3rem 0.5rem;
+  vertical-align: middle;
+}
+
+.stepsTable td:nth-child(3) {
+  text-align: center;
+}
+
+/* 行首状态色条：与用例行同口径（通过绿 / 未通过红 / 未执行灰）。 */
+.stepsTable tbody tr[data-status="pass"] td:first-child {
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--success) 80%, transparent);
+}
+
+.stepsTable tbody tr[data-status="fail"] td:first-child {
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--destructive) 80%, transparent);
+}
+
+.stepsTable tbody tr[data-status="none"] td:first-child {
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--muted-foreground) 40%, transparent);
+}
+
+.stepSeq {
+  color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-align: center;
+  vertical-align: middle;
+  width: 2.6rem;
+}
+
+.passButton {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 1px 0.45rem 0;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+  white-space: nowrap;
+}
+
+.passButton[data-status="pass"] {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 42%, transparent);
+  color: var(--success);
+}
+
+.passButton[data-status="fail"] {
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 40%, transparent);
+  color: var(--destructive);
+}
+
+.passButton:hover {
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+}
+
+.stepActions {
+  display: flex;
+  gap: 0.15rem;
+  justify-content: center;
+}
+
+.stepAction {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.35rem;
+  justify-content: center;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease;
+  width: 1.35rem;
+}
+
+.stepAction svg {
+  height: 0.8rem;
+  width: 0.8rem;
+}
+
+.stepAction:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 32%, transparent);
+  color: var(--primary);
+}
+
+.stepAction[data-variant="destructive"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 32%, transparent);
+  color: var(--destructive);
+}
+
+.stepAction:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.stepAction:focus-visible,
+.passButton:focus-visible {
+  outline: 1px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.visuallyHidden {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.dangerAction {
+  background: var(--destructive);
+  color: var(--primary-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .passButton,
+  .stepAction {
+    transition: none;
+  }
+}

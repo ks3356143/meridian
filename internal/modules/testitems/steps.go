@@ -175,6 +175,21 @@ func (s *Service) DuplicateStep(ctx context.Context, stepID string) (CaseStep, e
 		if err := tx.Where("id = ?", stepID).First(&source).Error; err != nil {
 			return ErrNotFound
 		}
+		var steps []CaseStep
+		if err := tx.Where("test_case_id = ?", source.TestCaseID).
+			Order("sort_order asc, created_at asc").Find(&steps).Error; err != nil {
+			return fmt.Errorf("查询用例步骤失败: %w", err)
+		}
+		position := -1
+		for index, step := range steps {
+			if step.ID == stepID {
+				position = index + 1
+				break
+			}
+		}
+		if position < 0 {
+			return ErrNotFound
+		}
 		stepIDNew, err := id.New()
 		if err != nil {
 			return err
@@ -183,10 +198,11 @@ func (s *Service) DuplicateStep(ctx context.Context, stepID string) (CaseStep, e
 		created = CaseStep{
 			ID:         stepIDNew,
 			TestCaseID: source.TestCaseID,
-			Seq:        source.Seq + 1,
+			// 先写成负数占位：seq 上有 UNIQUE(test_case_id, seq)，直接写正数会和下方步骤撞。
+			Seq:        -(len(steps) + 1),
 			ExpectText: source.ExpectText,
 			Passed:     "none",
-			SortOrder:  source.SortOrder + 1,
+			SortOrder:  len(steps),
 			CreatedAt:  now,
 			UpdatedAt:  now,
 		}
@@ -194,20 +210,11 @@ func (s *Service) DuplicateStep(ctx context.Context, stepID string) (CaseStep, e
 			return fmt.Errorf("复制用例步骤失败: %w", err)
 		}
 
-		var steps []CaseStep
-		if err := tx.Where("test_case_id = ?", source.TestCaseID).
-			Order("sort_order asc, created_at asc").Find(&steps).Error; err != nil {
-			return fmt.Errorf("查询用例步骤失败: %w", err)
-		}
-		ordered := make([]string, 0, len(steps))
+		ordered := make([]string, 0, len(steps)+1)
 		for _, step := range steps {
 			if step.ID != created.ID {
 				ordered = append(ordered, step.ID)
 			}
-		}
-		position := source.SortOrder + 1
-		if position > len(ordered) {
-			position = len(ordered)
 		}
 		ordered = append(ordered[:position], append([]string{created.ID}, ordered[position:]...)...)
 		for index, idValue := range ordered {

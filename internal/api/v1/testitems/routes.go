@@ -252,6 +252,35 @@ func registerItems(api huma.API, handler *Handler) {
 		}
 		return &struct{}{}, nil
 	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "duplicate-test-item",
+		Method:      http.MethodPost,
+		Path:        "/api/v1/test-items/{id}/duplicate",
+		Summary:     "复制新增测试项",
+		Description: "复制内容字段与测试子项，标识按「-副本」重新生成；追踪关系不复制，静态类型不允许复制。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *ItemIDInput) (*ItemOutput, error) {
+		item, err := handler.service.DuplicateItem(ctx, input.ID)
+		if err != nil {
+			return nil, toAPIError(err, "复制测试项失败")
+		}
+		return &ItemOutput{Body: item}, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "move-test-item",
+		Method:      http.MethodPost,
+		Path:        "/api/v1/test-items/{id}/move",
+		Summary:     "移动测试项",
+		Description: "拖拽落位：移到同类型文件夹或类型根目录，并重排容器内顺序。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *MoveItemInput) (*struct{}, error) {
+		if err := handler.service.MoveItem(ctx, input.ID, input.Body.FolderID, input.Body.TargetIndex); err != nil {
+			return nil, toAPIError(err, "移动测试项失败")
+		}
+		return &struct{}{}, nil
+	})
 }
 
 type UpdateItemInput struct {
@@ -284,6 +313,25 @@ type FolderOutput struct {
 	Body testitemsservice.Folder
 }
 
+type MoveItemInput struct {
+	ID   string `path:"id"`
+	Body struct {
+		FolderID    *string `json:"folderId" doc:"目标文件夹 id；null 表示移到类型根目录"`
+		TargetIndex int     `json:"targetIndex" doc:"目标容器内的落点序号"`
+	}
+}
+
+type FolderIDInput struct {
+	ID string `path:"id" doc:"文件夹 id"`
+}
+
+type UpdateFolderInput struct {
+	ID   string `path:"id"`
+	Body struct {
+		Name string `json:"name"`
+	}
+}
+
 func registerFolders(api huma.API, handler *Handler) {
 	huma.Register(api, huma.Operation{
 		OperationID: "create-test-item-folder",
@@ -307,6 +355,35 @@ func registerFolders(api huma.API, handler *Handler) {
 			return nil, toAPIError(err, "新建文件夹失败")
 		}
 		return &FolderOutput{Body: folder}, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "update-test-item-folder",
+		Method:      http.MethodPatch,
+		Path:        "/api/v1/test-item-folders/{id}",
+		Summary:     "重命名文件夹",
+		Description: "只改名称；类型归属与排序不变。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *UpdateFolderInput) (*FolderOutput, error) {
+		folder, err := handler.service.UpdateFolder(ctx, input.ID, input.Body.Name)
+		if err != nil {
+			return nil, toAPIError(err, "重命名文件夹失败")
+		}
+		return &FolderOutput{Body: folder}, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "delete-test-item-folder",
+		Method:      http.MethodDelete,
+		Path:        "/api/v1/test-item-folders/{id}",
+		Summary:     "删除文件夹",
+		Description: "文件夹内测试项移到同类型根目录，不删除测试项。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *FolderIDInput) (*struct{}, error) {
+		if err := handler.service.DeleteFolder(ctx, input.ID); err != nil {
+			return nil, toAPIError(err, "删除文件夹失败")
+		}
+		return &struct{}{}, nil
 	})
 }
 
@@ -334,6 +411,12 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("该测试项已关联需求，不能改为静态测试项（请先解除关联）")
 	case errors.Is(err, testitemsservice.ErrStaticTypeLocked):
 		return huma.Error400BadRequest("静态测试项的类型不可修改")
+	case errors.Is(err, testitemsservice.ErrStaticTypeDuplicate):
+		return huma.Error400BadRequest("静态测试项不支持复制新增，请用「新增测试项」按类型创建")
+	case errors.Is(err, testitemsservice.ErrFolderMismatch):
+		return huma.Error400BadRequest("目标文件夹与测试项类型不一致")
+	case errors.Is(err, testitemsservice.ErrSuffixExhausted):
+		return huma.Error400BadRequest("名称前缀相同的测试项过多，标识自动生成失败；请在「新增测试项」里手工指定标识后缀")
 	case errors.Is(err, testitemsservice.ErrImplicitWithRequirement):
 		return huma.Error400BadRequest("已关联需求的测试项不能标记为隐含需求（先解除关联）")
 	case errors.Is(err, testitemsservice.ErrStaticTypeExists):

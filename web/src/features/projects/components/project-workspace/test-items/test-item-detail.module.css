@@ -1029,3 +1029,95 @@
     animation: none;
   }
 }
+
+/* 用例行：行名可点（回定位到树），行尾动作按钮平时隐身，hover / 键盘聚焦时亮起。 */
+.caseRowName {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  transition: color 0.16s ease;
+}
+
+.caseRowName:hover,
+.caseRowName:focus-visible {
+  color: var(--primary);
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.caseRowActions {
+  display: flex;
+  gap: 0.15rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.caseRowAction {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.35rem;
+  justify-content: center;
+  opacity: 0;
+  padding: 0;
+  transition:
+    opacity 0.16s ease,
+    color 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease;
+  width: 1.35rem;
+}
+
+.caseRowAction svg {
+  height: 0.8rem;
+  width: 0.8rem;
+}
+
+.caseTable tbody tr:hover .caseRowAction,
+.caseRowAction:focus-visible {
+  opacity: 1;
+}
+
+.caseRowAction:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 32%, transparent);
+  color: var(--primary);
+}
+
+.caseRowAction:focus-visible {
+  outline: 1px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* 树里选中的用例：整行弱绿底 + 左侧色条加深，和树的选中态对齐。 */
+.caseTable tbody tr[data-active="true"] td {
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+}
+
+.caseTable tbody tr[data-active="true"] td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.visuallyHidden {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caseRowName,
+  .caseRowAction {
+    transition: none;
+  }
+}

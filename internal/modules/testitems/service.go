@@ -31,10 +31,16 @@ var (
 	ErrSwitchToStaticWithLinks = errors.New("已关联需求，不能改为静态测试项，请先解除关联")
 	// ErrStaticTypeLocked 静态测试项（DC/SA/CR/CW）的类型不可修改。
 	ErrStaticTypeLocked = errors.New("静态测试项的类型不可修改")
+	// ErrStaticTypeDuplicate 静态测试项不允许复制新增（同类静态每轮只能建一个）。
+	ErrStaticTypeDuplicate = errors.New("静态测试项不支持复制新增，请用「新增测试项」按类型创建")
 	// ErrRequirementIncomplete 需求描述待补全，暂不能建立关联。
 	ErrRequirementIncomplete = errors.New("需求描述待补全，暂不能关联")
 	// ErrProjectNotFound 项目不存在。
 	ErrProjectNotFound = errors.New("项目不存在")
+	// ErrFolderMismatch 目标文件夹与测试项类型不一致。
+	ErrFolderMismatch = errors.New("目标文件夹与测试项类型不一致")
+	// ErrSuffixExhausted 名称拼音前缀相同的测试项过多，后缀自动生成空间用尽（3 位前缀 + 36 种尾字符）。
+	ErrSuffixExhausted = errors.New("名称前缀相同的测试项过多，标识自动生成失败，请手工指定标识后缀")
 )
 
 // FindProjectID 按项目标识（RXXXXX）解析项目 id。
@@ -524,6 +530,8 @@ type ItemCounts struct {
 	RequirementCount int `json:"requirementCount"`
 	// IncompleteSubItemCount：操作步骤或通过准则为空的子项数（测试方法完善度、树徽章"未完善"共用）。
 	IncompleteSubItemCount int `json:"incompleteSubItemCount"`
+	// SubItemNames：子项名称（树搜索按子项名匹配用）。
+	SubItemNames []string `json:"subItemNames"`
 }
 
 // CountItemChildren 按测试项统计子项数与关联需求数（树徽章、必填提醒与完善度提示共用）。
@@ -567,6 +575,25 @@ func (s *Service) CountItemChildren(ctx context.Context, projectID string) (map[
 	for _, row := range linkRows {
 		entry := counts[row.TestItemID]
 		entry.RequirementCount = row.Total
+		counts[row.TestItemID] = entry
+	}
+
+	// 子项名称（树搜索按子项名匹配；按子项排序输出，供工作台一次下发）。
+	var nameRows []struct {
+		TestItemID string
+		Name       string
+	}
+	if err := s.db.WithContext(ctx).Table("test_sub_items AS sub").
+		Select("sub.test_item_id AS test_item_id, sub.name AS name").
+		Joins("JOIN test_items AS item ON item.id = sub.test_item_id").
+		Where("item.project_id = ?", projectID).
+		Order("sub.test_item_id, sub.sort_order, sub.seq").
+		Scan(&nameRows).Error; err != nil {
+		return nil, fmt.Errorf("读取测试子项名称失败: %w", err)
+	}
+	for _, row := range nameRows {
+		entry := counts[row.TestItemID]
+		entry.SubItemNames = append(entry.SubItemNames, row.Name)
 		counts[row.TestItemID] = entry
 	}
 
@@ -738,4 +765,201 @@ func (s *Service) ListFolders(ctx context.Context, projectID string) ([]Folder, 
 		return nil, fmt.Errorf("查询文件夹失败: %w", err)
 	}
 	return folders, nil
+}
+
+// UpdateFolder 重命名文件夹（类型归属与排序不变）。
+func (s *Service) UpdateFolder(ctx context.Context, folderID string, name string) (Folder, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return Folder{}, ErrNameRequired
+	}
+	var updated Folder
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("id = ?", folderID).First(&updated).Error; err != nil {
+			return ErrNotFound
+		}
+		now := time.Now()
+		if err := tx.Model(&Folder{}).Where("id = ?", folderID).Updates(map[string]any{
+			"name":       trimmed,
+			"updated_at": now,
+		}).Error; err != nil {
+			return fmt.Errorf("重命名文件夹失败: %w", err)
+		}
+		updated.Name = trimmed
+		updated.UpdatedAt = now
+		return nil
+	})
+	if err != nil {
+		return Folder{}, err
+	}
+	return updated, nil
+}
+
+// DeleteFolder 删除文件夹：其下测试项移到同类型根目录（folder_id 置空），不删除测试项。
+func (s *Service) DeleteFolder(ctx context.Context, folderID string) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var folder Folder
+		if err := tx.Where("id = ?", folderID).First(&folder).Error; err != nil {
+			return ErrNotFound
+		}
+		if err := tx.Model(&TestItem{}).Where("folder_id = ?", folderID).Updates(map[string]any{
+			"folder_id":  nil,
+			"updated_at": time.Now(),
+		}).Error; err != nil {
+			return fmt.Errorf("移出文件夹内测试项失败: %w", err)
+		}
+		if err := tx.Where("id = ?", folderID).Delete(&Folder{}).Error; err != nil {
+			return fmt.Errorf("删除文件夹失败: %w", err)
+		}
+		return nil
+	})
+}
+
+// MoveItem 拖拽落位：移到同类型文件夹（folderID 为 nil 表示类型根目录），并重排该容器内顺序。
+func (s *Service) MoveItem(ctx context.Context, itemID string, folderID *string, targetIndex int) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var item TestItem
+		if err := tx.Where("id = ?", itemID).First(&item).Error; err != nil {
+			return ErrNotFound
+		}
+		if folderID != nil {
+			var folder Folder
+			if err := tx.Where("id = ?", *folderID).First(&folder).Error; err != nil {
+				return ErrNotFound
+			}
+			if folder.ProjectID != item.ProjectID || folder.TypeCode != item.TypeCode {
+				return ErrFolderMismatch
+			}
+		}
+		if err := tx.Model(&TestItem{}).Where("id = ?", itemID).Updates(map[string]any{
+			"folder_id":  folderID,
+			"updated_at": time.Now(),
+		}).Error; err != nil {
+			return fmt.Errorf("移动测试项失败: %w", err)
+		}
+
+		query := tx.Where("project_id = ? AND type_code = ?", item.ProjectID, item.TypeCode)
+		if folderID == nil {
+			query = query.Where("folder_id IS NULL")
+		} else {
+			query = query.Where("folder_id = ?", *folderID)
+		}
+		var siblings []TestItem
+		if err := query.Order("sort_order asc, created_at asc").Find(&siblings).Error; err != nil {
+			return fmt.Errorf("查询同容器测试项失败: %w", err)
+		}
+		ordered := make([]string, 0, len(siblings))
+		for _, sibling := range siblings {
+			if sibling.ID != itemID {
+				ordered = append(ordered, sibling.ID)
+			}
+		}
+		if targetIndex < 0 {
+			targetIndex = 0
+		}
+		if targetIndex > len(ordered) {
+			targetIndex = len(ordered)
+		}
+		ordered = append(ordered[:targetIndex], append([]string{itemID}, ordered[targetIndex:]...)...)
+
+		now := time.Now()
+		for index, siblingID := range ordered {
+			if err := tx.Model(&TestItem{}).Where("id = ?", siblingID).Updates(map[string]any{
+				"sort_order": index,
+				"updated_at": now,
+			}).Error; err != nil {
+				return fmt.Errorf("重排测试项失败: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
+// DuplicateItem 复制新增测试项：复制内容字段与子项，标识按"-副本"重新生成；副本紧跟在原件之后。
+// 追踪关系与"隐含需求"标记不复制（新项需要自己的追踪决策）；静态类型不允许复制。
+func (s *Service) DuplicateItem(ctx context.Context, testItemID string) (TestItem, error) {
+	var created TestItem
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var source TestItem
+		if err := tx.Where("id = ?", testItemID).First(&source).Error; err != nil {
+			return ErrNotFound
+		}
+		itemType, err := findItemType(tx, source.TypeCode)
+		if err != nil {
+			return err
+		}
+		if itemType.IsStatic {
+			return ErrStaticTypeDuplicate
+		}
+		suffix, _, err := uniqueItemSuffix(tx, source.ProjectID, source.TypeCode, source.Name+"-副本")
+		if err != nil {
+			return err
+		}
+		itemID, err := id.New()
+		if err != nil {
+			return err
+		}
+		now := time.Now()
+		created = TestItem{
+			ID:           itemID,
+			ProjectID:    source.ProjectID,
+			TypeCode:     source.TypeCode,
+			Identifier:   testItemIdentifier(source.TypeCode, suffix),
+			Suffix:       suffix,
+			Name:         source.Name + "-副本",
+			Priority:     source.Priority,
+			FolderID:     source.FolderID,
+			SortOrder:    source.SortOrder + 1,
+			Description:  source.Description,
+			Adequacy:     source.Adequacy,
+			PassCriteria: source.PassCriteria,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}
+		if err := tx.Create(&created).Error; err != nil {
+			return fmt.Errorf("复制测试项失败: %w", err)
+		}
+		moveQuery := tx.Model(&TestItem{}).
+			Where("project_id = ? AND type_code = ? AND id <> ? AND sort_order > ?",
+				source.ProjectID, source.TypeCode, itemID, source.SortOrder)
+		if source.FolderID == nil {
+			moveQuery = moveQuery.Where("folder_id IS NULL")
+		} else {
+			moveQuery = moveQuery.Where("folder_id = ?", *source.FolderID)
+		}
+		if err := moveQuery.Update("sort_order", gorm.Expr("sort_order + 1")).Error; err != nil {
+			return fmt.Errorf("调整复制项排序失败: %w", err)
+		}
+		var subs []SubItem
+		if err := tx.Where("test_item_id = ?", source.ID).
+			Order("sort_order asc, created_at asc").Find(&subs).Error; err != nil {
+			return fmt.Errorf("查询测试子项失败: %w", err)
+		}
+		for index, sub := range subs {
+			subID, err := id.New()
+			if err != nil {
+				return err
+			}
+			copied := SubItem{
+				ID:          subID,
+				TestItemID:  itemID,
+				Seq:         index + 1,
+				Name:        sub.Name,
+				Description: sub.Description,
+				Ops:         sub.Ops,
+				Expected:    sub.Expected,
+				SortOrder:   index,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+			if err := tx.Create(&copied).Error; err != nil {
+				return fmt.Errorf("复制测试子项失败: %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return TestItem{}, err
+	}
+	return created, nil
 }

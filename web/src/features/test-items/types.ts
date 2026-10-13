@@ -79,6 +79,19 @@ export interface TestCaseRecord {
   updatedAt: string;
 }
 
+export interface CaseStepRecord {
+  id: string;
+  testCaseId: string;
+  seq: number;
+  /** 预期结果（纯文本）；操作步骤与实际结果两列随切片 5b 接入富文本。 */
+  expectText: string;
+  /** 通过状态：none 未执行 / pass 通过 / fail 未通过。 */
+  passed: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TestRoundRecord {
   id: string;
   projectId: string;
@@ -111,6 +124,8 @@ export interface TestItemCounts {
   requirementCount: number;
   /** 操作步骤或通过准则为空的子项数：>0 视为"测试方法未完善"。 */
   incompleteSubItemCount: number;
+  /** 子项名称（树搜索按子项名匹配；无子项时为 null）。 */
+  subItemNames?: string[] | null;
 }
 
 export interface TestItemsWorkspace {

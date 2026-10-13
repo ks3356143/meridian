@@ -282,21 +282,35 @@
   color: color-mix(in srgb, var(--warning) 90%, var(--foreground));
 }
 
+/* 呼吸光晕画在 ::after 上，只动 opacity：100 行列表里每行 box-shadow 动画会让
+   样式重算/重绘持续跑（4x CPU 实测占 Task 时长约 12%），改成合成层动画后代价归零，
+   视觉与原来一致（srs/07 的"荧光呼吸"保留）。 */
 .incomplete {
-  animation: incompleteGlow 2.6s ease-in-out infinite;
   background: color-mix(in srgb, var(--warning) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--warning) 46%, transparent);
   color: color-mix(in srgb, var(--warning) 92%, var(--foreground));
+  position: relative;
+}
+
+.incomplete::after {
+  animation: incompleteGlow 2.6s ease-in-out infinite;
+  box-shadow: 0 0 12px -3px color-mix(in srgb, var(--warning) 95%, transparent);
+  content: "";
+  inset: 0;
+  opacity: 0.4;
+  pointer-events: none;
+  position: absolute;
+  will-change: opacity;
 }
 
 @keyframes incompleteGlow {
   0%,
   100% {
-    box-shadow: 0 0 6px -4px color-mix(in srgb, var(--warning) 80%, transparent);
+    opacity: 0.4;
   }
 
   50% {
-    box-shadow: 0 0 12px -3px color-mix(in srgb, var(--warning) 95%, transparent);
+    opacity: 1;
   }
 }
 
@@ -327,7 +341,35 @@
     transition: none;
   }
 
-  .incomplete {
+  .incomplete::after {
     animation: none;
+  }
+}
+
+/* 行内重命名：与行同高、直角，聚焦时荧光边框；不改变行高避免列表跳动。 */
+.renameInput {
+  background: var(--background);
+  border: 1px solid color-mix(in srgb, var(--primary) 58%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--foreground);
+  flex: 1 1 auto;
+  font: inherit;
+  height: 1.5rem;
+  min-width: 0;
+  outline: none;
+  padding: 0 0.35rem;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.renameInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .renameInput {
+    transition: none;
   }
 }

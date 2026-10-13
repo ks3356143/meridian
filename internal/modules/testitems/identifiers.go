@@ -77,7 +77,7 @@ func uniqueItemSuffix(tx *gorm.DB, projectID string, typeCode string, name strin
 			return candidate, true, nil
 		}
 	}
-	return "", false, fmt.Errorf("测试项标识自动生成失败，请手工指定后缀")
+	return "", false, ErrSuffixExhausted
 }
 
 func itemSuffixFree(tx *gorm.DB, projectID string, typeCode string, suffix string) (bool, error) {

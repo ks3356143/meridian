@@ -1,19 +1,23 @@
 import { useCallback, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type {
   CreateTestItemFolderPayload,
   CreateTestItemPayload,
+  UpdateCasePayload,
   UpdateSubItemPayload,
   UpdateTestItemPayload,
 } from "@/features/test-items/api";
 import { testItemsApi } from "@/features/test-items/api";
 import type {
+  TestCaseRecord,
   TestItemDetail,
   TestItemRecord,
+  TestItemsWorkspace,
   TestSubItemRecord,
 } from "@/features/test-items/types";
 import type { Project } from "../../../types";
+import { placeCase, placeTestItem } from "./test-items-tree-model";
 
 function applyItemPatch(item: TestItemRecord, payload: UpdateTestItemPayload): TestItemRecord {
   const next = { ...item };
@@ -53,12 +57,19 @@ export function useTestItemsWorkbench(project: Project) {
     queryKey: detailKey(selectedId),
     queryFn: () => testItemsApi.detail(selectedId),
     enabled: selectedId !== "",
+    // 切换测试项时保留上一份详情、原地更新（骨架屏不再闪一次）：与需求详情同口径（srs/23）。
+    placeholderData: keepPreviousData,
   });
 
   const invalidateWorkbench = useCallback(
     () => queryClient.invalidateQueries({ queryKey: ["projects", project.id, "test-items"] }),
     [project.id, queryClient],
   );
+  /** 用例/步骤改动会联动用例状态与树徽章：工作台与详情缓存一起作废。 */
+  const invalidateCaseData = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["projects", project.id, "test-items"] });
+    void queryClient.invalidateQueries({ queryKey: ["test-items", "detail"] });
+  }, [project.id, queryClient]);
 
   const createItemMutation = useMutation({
     mutationFn: (payload: CreateTestItemPayload) => testItemsApi.createItem(project.id, payload),
@@ -134,6 +145,12 @@ export function useTestItemsWorkbench(project: Project) {
   ) => {
     queryClient.setQueryData<TestItemDetail>(detailKey(testItemId), (previous) =>
       previous ? { ...previous, subItems: update(previous.subItems) } : previous,
+    );
+  };
+
+  const patchCases = (testItemId: string, update: (list: TestCaseRecord[]) => TestCaseRecord[]) => {
+    queryClient.setQueryData<TestItemDetail>(detailKey(testItemId), (previous) =>
+      previous ? { ...previous, cases: update(previous.cases) } : previous,
     );
   };
 
@@ -223,6 +240,127 @@ export function useTestItemsWorkbench(project: Project) {
     },
   });
 
+  const duplicateItemMutation = useMutation({
+    mutationFn: (id: string) => testItemsApi.duplicateItem(id),
+    onSuccess: (item) => {
+      toast.success(`已复制新增 ${item.identifier}`);
+      setSelectedId(item.id);
+      void invalidateWorkbench();
+    },
+  });
+
+  const updateFolderMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => testItemsApi.updateFolder(id, name),
+    onSuccess: (folder) => {
+      toast.success(`文件夹已重命名为「${folder.name}」`);
+      void invalidateWorkbench();
+    },
+  });
+
+  const deleteFolderMutation = useMutation({
+    mutationFn: (id: string) => testItemsApi.deleteFolder(id),
+    onSuccess: () => {
+      toast.success("文件夹已删除，内部测试项移回类型根目录");
+      void invalidateWorkbench();
+    },
+  });
+
+  /** 用例字段更新（树内重命名 + 用例详情面板共用）。 */
+  const updateCaseMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateCasePayload }) =>
+      testItemsApi.updateCase(id, payload),
+    onSuccess: (updated) => {
+      patchCases(updated.testItemId, (list) =>
+        list.map((record) => (record.id === updated.id ? updated : record)),
+      );
+      queryClient.setQueryData<TestItemsWorkspace>(workbenchKey, (previous) =>
+        previous
+          ? {
+              ...previous,
+              cases: previous.cases.map((record) => (record.id === updated.id ? updated : record)),
+            }
+          : previous,
+      );
+    },
+    onSettled: () => void invalidateWorkbench(),
+  });
+
+  const duplicateCaseMutation = useMutation({
+    mutationFn: ({ testItemId, id }: { testItemId: string; id: string }) =>
+      testItemsApi.duplicateCase(id).then((created) => ({ testItemId, created })),
+    onSuccess: ({ testItemId, created }) => {
+      patchCases(testItemId, (list) => [...list, created]);
+      toast.success(`已复制用例 ${created.identifier}`);
+      void invalidateWorkbench();
+    },
+  });
+
+  const moveItemMutation = useMutation({
+    mutationFn: ({
+      id,
+      folderId,
+      targetIndex,
+    }: {
+      id: string;
+      folderId: string | null;
+      targetIndex: number;
+    }) => testItemsApi.moveItem(id, folderId, targetIndex),
+    onMutate: async ({ id, folderId, targetIndex }) => {
+      await queryClient.cancelQueries({ queryKey: workbenchKey });
+      const previous = queryClient.getQueryData<TestItemsWorkspace>(workbenchKey);
+      if (previous) {
+        queryClient.setQueryData(workbenchKey, placeTestItem(previous, id, folderId, targetIndex));
+      }
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(workbenchKey, context.previous);
+    },
+    onSettled: () => void invalidateWorkbench(),
+  });
+
+  const moveCaseMutation = useMutation({
+    mutationFn: ({
+      id,
+      targetItemId,
+      targetIndex,
+    }: {
+      id: string;
+      targetItemId: string;
+      targetIndex: number;
+    }) => testItemsApi.moveCase(id, targetItemId, targetIndex),
+    onMutate: async ({ id, targetItemId, targetIndex }) => {
+      await queryClient.cancelQueries({ queryKey: workbenchKey });
+      const previous = queryClient.getQueryData<TestItemsWorkspace>(workbenchKey);
+      if (previous) {
+        queryClient.setQueryData(workbenchKey, placeCase(previous, id, targetItemId, targetIndex));
+      }
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(workbenchKey, context.previous);
+    },
+    // 跨项移动会重排标识：详情缓存同样作废，不能只刷工作台列表。
+    onSettled: () => {
+      void invalidateWorkbench();
+      void queryClient.invalidateQueries({ queryKey: ["test-items", "detail"] });
+    },
+  });
+
+  const deleteCaseMutation = useMutation({
+    mutationFn: ({ testItemId, id }: { testItemId: string; id: string }) =>
+      testItemsApi.deleteCase(id).then(() => ({ testItemId, id })),
+    onSuccess: (_result, variables) => {
+      patchCases(variables.testItemId, (list) =>
+        list.filter((record) => record.id !== variables.id),
+      );
+      toast.success("已删除用例");
+      void invalidateWorkbench();
+      // 删除后服务端会重排剩余用例的序号与标识，详情必须重新取一次。
+      void queryClient.invalidateQueries({ queryKey: detailKey(variables.testItemId) });
+    },
+  });
+
   const unlinkMutation = useMutation({
     mutationFn: ({ testItemId, requirementId }: { testItemId: string; requirementId: string }) =>
       testItemsApi.unlinkRequirement(testItemId, requirementId),
@@ -252,5 +390,14 @@ export function useTestItemsWorkbench(project: Project) {
     duplicateSubItemMutation,
     moveSubItemMutation,
     createCaseMutation,
+    duplicateItemMutation,
+    updateFolderMutation,
+    deleteFolderMutation,
+    updateCaseMutation,
+    invalidateCaseData,
+    duplicateCaseMutation,
+    deleteCaseMutation,
+    moveItemMutation,
+    moveCaseMutation,
   };
 }

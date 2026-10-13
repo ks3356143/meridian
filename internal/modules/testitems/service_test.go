@@ -552,3 +552,155 @@ func TestChangeTestItemType(t *testing.T) {
 		t.Fatalf("同类型静态第二个应被拒绝，实际 %v", err)
 	}
 }
+
+func TestMoveItemAcrossFolderAndRoot(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	first, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "第一项"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	second, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "第二项"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	folder, err := service.CreateFolder(ctx, CreateFolderInput{ProjectID: projectID, TypeCode: "SU", Name: "功能组"})
+	if err != nil {
+		t.Fatalf("创建文件夹失败: %v", err)
+	}
+	otherFolder, err := service.CreateFolder(ctx, CreateFolderInput{ProjectID: projectID, TypeCode: "IO", Name: "接口组"})
+	if err != nil {
+		t.Fatalf("创建文件夹失败: %v", err)
+	}
+
+	// 根目录重排：第二项插到第一位
+	if err := service.MoveItem(ctx, second.ID, nil, 0); err != nil {
+		t.Fatalf("根目录重排失败: %v", err)
+	}
+	rootItems, err := service.ListTestItems(ctx, projectID)
+	if err != nil {
+		t.Fatalf("读取测试项失败: %v", err)
+	}
+	if len(rootItems) != 2 || rootItems[0].ID != second.ID || rootItems[1].ID != first.ID {
+		t.Fatalf("根目录顺序不正确: %+v", rootItems)
+	}
+
+	// 跨类型文件夹被拒绝
+	if err := service.MoveItem(ctx, second.ID, &otherFolder.ID, 0); !errors.Is(err, ErrFolderMismatch) {
+		t.Fatalf("跨类型文件夹应被拒绝，实际 %v", err)
+	}
+
+	// 移入同类型文件夹后继续在文件夹内排序
+	if err := service.MoveItem(ctx, second.ID, &folder.ID, 0); err != nil {
+		t.Fatalf("移入文件夹失败: %v", err)
+	}
+	if err := service.MoveItem(ctx, first.ID, &folder.ID, 0); err != nil {
+		t.Fatalf("文件夹内重排失败: %v", err)
+	}
+	folderItems, err := service.ListTestItems(ctx, projectID)
+	if err != nil {
+		t.Fatalf("读取测试项失败: %v", err)
+	}
+	if folderItems[0].ID != first.ID || folderItems[1].ID != second.ID {
+		t.Fatalf("文件夹内顺序不正确: %+v", folderItems)
+	}
+	if folderItems[0].FolderID == nil || *folderItems[0].FolderID != folder.ID {
+		t.Fatalf("测试项应归属目标文件夹: %+v", folderItems[0])
+	}
+}
+
+func TestDuplicateItemCopiesFieldsAndRejectsStatic(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	sub, err := service.CreateSubItem(ctx, item.ID, "子项一")
+	if err != nil {
+		t.Fatalf("创建子项失败: %v", err)
+	}
+	if _, err := service.UpdateSubItem(ctx, sub.ID, UpdateSubItemInput{Ops: ptr("步骤"), Expected: ptr("准则")}); err != nil {
+		t.Fatalf("更新子项失败: %v", err)
+	}
+
+	copied, err := service.DuplicateItem(ctx, item.ID)
+	if err != nil {
+		t.Fatalf("复制新增失败: %v", err)
+	}
+	if copied.Name != "参数管理-副本" || copied.Identifier == item.Identifier {
+		t.Fatalf("副本名称或标识不正确: %+v", copied)
+	}
+	sourceItems, err := service.ListTestItems(ctx, projectID)
+	if err != nil {
+		t.Fatalf("读取测试项失败: %v", err)
+	}
+	if len(sourceItems) != 2 || sourceItems[0].ID != item.ID || sourceItems[1].ID != copied.ID {
+		t.Fatalf("副本应紧跟在原件之后: %+v", sourceItems)
+	}
+	copies, err := service.ListSubItems(ctx, copied.ID)
+	if err != nil {
+		t.Fatalf("读取子项失败: %v", err)
+	}
+	if len(copies) != 1 || copies[0].Name != "子项一" || copies[0].Ops != "步骤" {
+		t.Fatalf("子项未复制: %+v", copies)
+	}
+
+	staticItem, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "DC", Name: "文档审查"})
+	if err != nil {
+		t.Fatalf("创建静态测试项失败: %v", err)
+	}
+	if _, err := service.DuplicateItem(ctx, staticItem.ID); !errors.Is(err, ErrStaticTypeDuplicate) {
+		t.Fatalf("静态测试项复制应被拒绝，实际 %v", err)
+	}
+}
+
+func ptr[T any](value T) *T {
+	return &value
+}
+
+func TestDuplicateStepInsertsAfterSource(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	first, err := service.CreateStep(ctx, itemCase.ID, "预期一")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.CreateStep(ctx, itemCase.ID, "预期二"); err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+
+	// seq 上有 UNIQUE(test_case_id, seq)：复制中间行时必须先占位再重排，否则插入即冲突
+	if _, err := service.DuplicateStep(ctx, first.ID); err != nil {
+		t.Fatalf("复制步骤失败: %v", err)
+	}
+	steps, err := service.ListSteps(ctx, itemCase.ID)
+	if err != nil {
+		t.Fatalf("读取步骤失败: %v", err)
+	}
+	if len(steps) != 3 {
+		t.Fatalf("复制后应有 3 步，实际 %d", len(steps))
+	}
+	if steps[0].ExpectText != "预期一" || steps[1].ExpectText != "预期一" || steps[2].ExpectText != "预期二" {
+		t.Fatalf("副本应紧跟源步骤且内容一致: %+v", steps)
+	}
+	for index, step := range steps {
+		if step.Seq != index+1 {
+			t.Fatalf("序号未重排: %+v", steps)
+		}
+	}
+	if steps[1].Passed != "none" {
+		t.Fatalf("副本通过状态应重置为未执行: %+v", steps[1])
+	}
+}

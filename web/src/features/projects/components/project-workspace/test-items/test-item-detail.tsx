@@ -4,6 +4,8 @@ import {
   Info,
   CheckCircle2,
   CloudUpload,
+  CopyPlus,
+  Crosshair,
   Loader2,
   Pencil,
   Trash2,
@@ -63,6 +65,9 @@ function TestItemDetailPanelInner({
   onMoveSubItem,
   onCreateCase,
   onRequestDelete,
+  activeCaseId,
+  onSelectCase,
+  onDuplicateCase,
 }: {
   detail: TestItemDetail;
   type: TestItemType | undefined;
@@ -81,6 +86,10 @@ function TestItemDetailPanelInner({
   onMoveSubItem: (id: string, targetIndex: number) => Promise<unknown>;
   onCreateCase: (name: string) => Promise<unknown>;
   onRequestDelete: () => void;
+  /** 树里当前选中的用例 id：详情用例行据此高亮，点击行可回定位到树。 */
+  activeCaseId?: string;
+  onSelectCase?: (caseId: string) => void;
+  onDuplicateCase?: (caseId: string) => void;
 }) {
   const item = detail.item;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -683,17 +692,52 @@ function TestItemDetailPanelInner({
                   <th scope="col">用例标识</th>
                   <th scope="col">用例名称</th>
                   <th scope="col">状态</th>
+                  <th scope="col">
+                    <span className={styles.visuallyHidden}>操作</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {detail.cases.map((record) => (
-                  <tr key={record.id} data-status={record.status}>
+                  <tr
+                    key={record.id}
+                    data-status={record.status}
+                    data-active={record.id === activeCaseId ? "true" : undefined}
+                  >
                     <td className={styles.caseIdent}>{record.identifier}</td>
-                    <td>{record.name}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className={styles.caseRowName}
+                        onClick={() => onSelectCase?.(record.id)}
+                      >
+                        {record.name}
+                      </button>
+                    </td>
                     <td>
                       <span className={styles.caseStatus} data-status={record.status}>
                         {caseStatusLabel(record.status)}
                       </span>
+                    </td>
+                    <td className={styles.caseRowActions}>
+                      <button
+                        type="button"
+                        className={styles.caseRowAction}
+                        title="在左侧目录中定位"
+                        aria-label={`在目录中定位 ${record.identifier}`}
+                        onClick={() => onSelectCase?.(record.id)}
+                      >
+                        <Crosshair aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.caseRowAction}
+                        title="复制用例（含步骤）"
+                        aria-label={`复制 ${record.identifier}`}
+                        onClick={() => onDuplicateCase?.(record.id)}
+                      >
+                        <CopyPlus aria-hidden />
+                      </button>
                     </td>
                   </tr>
                 ))}

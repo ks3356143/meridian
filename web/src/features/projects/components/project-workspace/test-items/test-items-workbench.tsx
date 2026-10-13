@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FolderPlus, ListChecks, Plus, Rows3 } from "lucide-react";
+import {
+  ChevronsDownUp,
+  ChevronsUpDown,
+  FolderPlus,
+  ListChecks,
+  Plus,
+  Rows3,
+  Search,
+  X,
+} from "lucide-react";
 import type { TreeApi } from "react-arborist";
 import { toast } from "sonner";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
@@ -14,26 +23,38 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import type {
   CreateTestItemPayload,
   UpdateSubItemPayload,
   UpdateTestItemPayload,
 } from "@/features/test-items/api";
+import { testItemsApi } from "@/features/test-items/api";
 import type { Project } from "../../../types";
 import { ChangeItemTypeDialog } from "./test-item-change-type-dialog";
 import { CreateFolderDialog, CreateTestItemDialog } from "./test-item-create-dialog";
+import { TestCasePanel } from "./test-case-panel";
 import { TestItemDetailPanel } from "./test-item-detail";
-import { TestItemsTree } from "./test-items-tree";
+import { TestItemsTree, type TestItemsTreeAction, type TestItemsTreeMove } from "./test-items-tree";
 import {
   buildTestItemsTree,
+  filterTestItemsTree,
+  startInlineRename,
   platformApplies,
+  type TestItemsQuickFilter,
   type TestItemsTreeNode,
 } from "./test-items-tree-model";
 import { useTestItemsWorkbench } from "./use-test-items-workbench";
 import styles from "./test-items-workbench.module.css";
 
 let treePanelLayout: Record<string, number> | undefined;
+
+/** 树里的删除都是破坏性动作：统一走二次确认，确认文案按节点类型区分。 */
+type PendingDelete =
+  | { kind: "item"; id: string; label: string }
+  | { kind: "folder"; id: string; label: string; count: number }
+  | { kind: "case"; id: string; testItemId: string; label: string };
 
 function useWideLayout() {
   const query = "(min-width: 1101px)";
@@ -68,13 +89,32 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
     duplicateSubItemMutation,
     moveSubItemMutation,
     createCaseMutation,
+    duplicateItemMutation,
+    updateFolderMutation,
+    deleteFolderMutation,
+    updateCaseMutation,
+    invalidateCaseData,
+    duplicateCaseMutation,
+    deleteCaseMutation,
+    moveItemMutation,
+    moveCaseMutation,
   } = useTestItemsWorkbench(project);
   const wideLayout = useWideLayout();
   const treeRef = useRef<TreeApi<TestItemsTreeNode>>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [folderOpen, setFolderOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [changeTypeOpen, setChangeTypeOpen] = useState(false);
+  const [selectedCaseId, setSelectedCaseId] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [quickFilter, setQuickFilter] = useState<TestItemsQuickFilter>("all");
+
+  // 150ms 防抖：逐键过滤会重算整棵过滤树，防抖后再提交（老项目同口径）。
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearchQuery(searchInput), 150);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
 
   const workspace = workbenchQuery.data;
   const activeTypes = useMemo(
@@ -88,6 +128,27 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
     () => (workspace ? buildTestItemsTree(workspace, project.platform) : []),
     [project.platform, workspace],
   );
+  const searchActive = searchQuery.trim() !== "" || quickFilter !== "all";
+  const filteredTree = useMemo(
+    () => filterTestItemsTree(treeNodes, searchQuery, quickFilter),
+    [treeNodes, searchQuery, quickFilter],
+  );
+  // 快捷筛选计数（未完善 / 有失败）：走一遍完整树，与树徽章同口径。
+  const quickCounts = useMemo(() => {
+    let incomplete = 0;
+    let failed = 0;
+    const walk = (list: TestItemsTreeNode[]) => {
+      for (const node of list) {
+        if (node.kind === "item") {
+          if (node.incomplete) incomplete += 1;
+          if ((node.children ?? []).some((child) => child.status === "failed")) failed += 1;
+        }
+        if (node.children && node.children.length > 0) walk(node.children);
+      }
+    };
+    walk(treeNodes);
+    return { incomplete, failed };
+  }, [treeNodes]);
   // DC/SA/CR/CW 每轮各一个：已存在的静态类型不再出现在新增选项里。
   const usedStaticCodes = useMemo(() => {
     const staticCodes = new Set(
@@ -114,9 +175,32 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   const selectedItemId = detail?.item.id ?? "";
   const handleSelectNode = useCallback(
     (node: TestItemsTreeNode) => {
-      if (node.kind === "item" && node.refId) setSelectedId(node.refId);
+      if (node.kind === "item" && node.refId) {
+        setSelectedId(node.refId);
+        setSelectedCaseId("");
+      }
+      if (node.kind === "case" && node.refId) {
+        setSelectedCaseId(node.refId);
+        // 选中用例同时把父测试项设为当前项：面板「返回测试项」才有落点。
+        if (node.itemId) setSelectedId(node.itemId);
+      }
     },
     [setSelectedId],
+  );
+  /** 详情用例行 → 树：展开所属测试项、滚动并在树里高亮该用例。 */
+  const handleSelectCase = useCallback((caseId: string) => {
+    setSelectedCaseId(caseId);
+    const tree = treeRef.current;
+    if (!tree) return;
+    tree.openParents(`case:${caseId}`);
+    void tree.scrollTo(`case:${caseId}`);
+  }, []);
+  const handleDuplicateCase = useCallback(
+    (caseId: string) => {
+      if (!selectedItemId) return;
+      duplicateCaseMutation.mutate({ testItemId: selectedItemId, id: caseId });
+    },
+    [duplicateCaseMutation, selectedItemId],
   );
   const handlePatch = useCallback(
     (payload: UpdateTestItemPayload) =>
@@ -159,8 +243,108 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
     (name: string) => createCaseMutation.mutateAsync({ testItemId: selectedItemId, name }),
     [createCaseMutation, selectedItemId],
   );
+  /** 树右键「生成用例」：按 1:1 约定取该测试项第一个子项命名（未选中时先拉一次详情）。 */
+  const generateCaseForItem = useCallback(
+    async (testItemId: string) => {
+      const source =
+        testItemId === selectedItemId && detailQuery.data
+          ? detailQuery.data
+          : await testItemsApi.detail(testItemId);
+      const name = source?.subItems[0]?.name ?? "";
+      if (name === "") {
+        toast.error("该测试项还没有子项：先在「测试方法」里建子项，再生成用例");
+        return;
+      }
+      createCaseMutation.mutate({ testItemId, name });
+    },
+    [createCaseMutation, detailQuery, selectedItemId],
+  );
   const handleOpenChangeType = useCallback(() => setChangeTypeOpen(true), []);
-  const handleOpenDelete = useCallback(() => setDeleteOpen(true), []);
+  const handleOpenDelete = useCallback(() => {
+    if (!detail) return;
+    setPendingDelete({ kind: "item", id: detail.item.id, label: detail.item.name });
+  }, [detail]);
+  const handleTreeMove = useCallback(
+    (move: TestItemsTreeMove) => {
+      const dragId = move.dragIds[0];
+      if (!dragId || !move.parentId) return;
+      if (dragId.startsWith("item:")) {
+        const id = dragId.slice(5);
+        if (!move.parentId.startsWith("folder:") && !move.parentId.startsWith("group:")) return;
+        const folderId = move.parentId.startsWith("folder:") ? move.parentId.slice(7) : null;
+        // 分组子节点是「文件夹在前、类型根测试项在后」：把落点序号折算成根测试项序号。
+        let targetIndex = move.index;
+        if (folderId === null) {
+          const typeCode = move.parentId.slice(6);
+          const folderCount = (workspace?.folders ?? []).filter(
+            (folder) => folder.typeCode === typeCode,
+          ).length;
+          targetIndex = Math.max(0, move.index - folderCount);
+        }
+        moveItemMutation.mutate({ id, folderId, targetIndex });
+        return;
+      }
+      if (dragId.startsWith("case:") && move.parentId.startsWith("item:")) {
+        moveCaseMutation.mutate({
+          id: dragId.slice(5),
+          targetItemId: move.parentId.slice(5),
+          targetIndex: move.index,
+        });
+      }
+    },
+    [moveCaseMutation, moveItemMutation, workspace?.folders],
+  );
+  const handleRenameNode = useCallback(
+    (node: TestItemsTreeNode, name: string) => {
+      if (!node.refId) return;
+      if (node.kind === "folder") updateFolderMutation.mutate({ id: node.refId, name });
+      else if (node.kind === "item")
+        updateItemMutation.mutate({ id: node.refId, payload: { name } });
+      else if (node.kind === "case") {
+        updateCaseMutation.mutate({ id: node.refId, payload: { name } });
+      }
+    },
+    [updateCaseMutation, updateFolderMutation, updateItemMutation],
+  );
+  const handleTreeAction = useCallback(
+    (node: TestItemsTreeNode, action: TestItemsTreeAction) => {
+      if (!node.refId) return;
+      if (action === "duplicate") {
+        if (node.kind === "item") {
+          if (node.isStatic) {
+            toast.info("静态测试项不支持复制新增");
+            return;
+          }
+          duplicateItemMutation.mutate(node.refId);
+        } else if (node.kind === "case" && node.itemId) {
+          duplicateCaseMutation.mutate({ testItemId: node.itemId, id: node.refId });
+        }
+        return;
+      }
+      if (action === "generateCase") {
+        void generateCaseForItem(node.refId);
+        return;
+      }
+      if (node.kind === "item") {
+        setPendingDelete({ kind: "item", id: node.refId, label: node.label });
+      } else if (node.kind === "folder") {
+        setPendingDelete({
+          kind: "folder",
+          id: node.refId,
+          label: node.label,
+          count: node.count ?? 0,
+        });
+      } else if (node.kind === "case" && node.itemId) {
+        setPendingDelete({
+          kind: "case",
+          id: node.refId,
+          testItemId: node.itemId,
+          label: node.label,
+        });
+      }
+    },
+    [duplicateCaseMutation, duplicateItemMutation, generateCaseForItem],
+  );
   const changeTypeCaseCount = useMemo(
     () =>
       detail
@@ -168,6 +352,28 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
         : 0,
     [detail, workspace?.cases],
   );
+
+  // 键盘流：F2 重命名 / Delete 删除（二次确认）/ Ctrl+D 复制新增，作用于树里获得焦点的节点。
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const node = treeRef.current?.focusedNode;
+      if (!node || node.data.kind === "group") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable=true]")) return;
+      if (event.key === "F2") {
+        event.preventDefault();
+        void startInlineRename(node, handleRenameNode);
+      } else if (event.key === "Delete") {
+        event.preventDefault();
+        handleTreeAction(node.data, "delete");
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        handleTreeAction(node.data, "duplicate");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleRenameNode, handleTreeAction]);
 
   if (workbenchQuery.isPending) {
     return <QueryLoading label="正在加载测试项" rows={8} />;
@@ -183,6 +389,21 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   }
 
   const selectedItem = detail?.item;
+  // 用例详情（切片 5a）：用例数据取自工作台缓存，父测试项从用例反查。
+  const activeCase = selectedCaseId
+    ? (workspace.cases.find((record) => record.id === selectedCaseId) ?? null)
+    : null;
+  const activeCaseItem = activeCase
+    ? (workspace.items.find((item) => item.id === activeCase.testItemId) ?? null)
+    : null;
+  // 追踪关系继承所属测试项：详情可能还是上一项的占位（keepPreviousData），只认 ID 对得上的那次；静态项按测试项口径不显示该行。
+  const caseRequirements =
+    detail &&
+    activeCaseItem &&
+    detail.item.id === activeCaseItem.id &&
+    !activeTypes.find((type) => type.code === activeCaseItem.typeCode)?.isStatic
+      ? detail.requirements
+      : null;
   const folderName = selectedItem?.folderId
     ? (workspace.folders.find((folder) => folder.id === selectedItem.folderId)?.name ?? "")
     : "";
@@ -227,6 +448,78 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
         </Button>
         <span className={styles.roundChip}>{workspace.round.name}</span>
       </div>
+      <div className={styles.searchRow}>
+        <div className={styles.searchField}>
+          <Search className={styles.searchGlyph} aria-hidden />
+          <Input
+            className={styles.searchInput}
+            value={searchInput}
+            placeholder="搜索名称 / 标识 / 子项 / YL_ID"
+            aria-label="搜索测试项"
+            onChange={(event) => setSearchInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && searchInput !== "") {
+                event.preventDefault();
+                setSearchInput("");
+              }
+            }}
+          />
+          {searchInput !== "" ? (
+            <button
+              type="button"
+              className={styles.searchClear}
+              aria-label="清空搜索"
+              onClick={() => setSearchInput("")}
+            >
+              <X aria-hidden />
+            </button>
+          ) : null}
+        </div>
+      </div>
+      <div className={styles.filterRow}>
+        {(
+          [
+            { value: "all", label: "全部" },
+            { value: "incomplete", label: "未完善", count: quickCounts.incomplete },
+            { value: "failed", label: "有失败", count: quickCounts.failed },
+          ] as const
+        ).map((option) => (
+          <Button
+            key={option.value}
+            type="button"
+            size="xs"
+            variant="outline"
+            className={styles.quickChip}
+            data-active={quickFilter === option.value ? "true" : undefined}
+            onClick={() => setQuickFilter(option.value)}
+          >
+            {option.label}
+            {"count" in option ? (
+              <span className={styles.quickChipCount}>{option.count}</span>
+            ) : null}
+          </Button>
+        ))}
+        <div className={styles.treeActions}>
+          <button
+            type="button"
+            className={styles.treeActionButton}
+            aria-label="展开全部"
+            title="展开全部"
+            onClick={() => treeRef.current?.openAll()}
+          >
+            <ChevronsUpDown aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={styles.treeActionButton}
+            aria-label="收起全部"
+            title="收起全部"
+            onClick={() => treeRef.current?.closeAll()}
+          >
+            <ChevronsDownUp aria-hidden />
+          </button>
+        </div>
+      </div>
       <div className={styles.toolbarMeta}>
         <span className={styles.metaChip} data-tone="blue">
           <ListChecks aria-hidden />
@@ -254,22 +547,60 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
               新增测试项
             </Button>
           </div>
+        ) : searchActive && filteredTree.nodes.length === 0 ? (
+          <div className={styles.emptyResult}>
+            <p>没有匹配的测试项或用例</p>
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={() => {
+                setSearchInput("");
+                setQuickFilter("all");
+              }}
+            >
+              清除搜索与筛选
+            </Button>
+          </div>
         ) : (
           <TestItemsTree
-            nodes={treeNodes}
+            nodes={filteredTree.nodes}
             storageKey={`cm:test-items-tree:${project.id}`}
             selectedId={selectedId}
+            selectedCaseId={selectedCaseId}
             treeRef={treeRef}
+            forceExpanded={searchActive}
             onSelect={handleSelectNode}
+            onAction={handleTreeAction}
+            onRenameNode={handleRenameNode}
+            onMoveNode={handleTreeMove}
           />
         )}
       </div>
+      {searchActive ? (
+        <div className={styles.treeFooter}>
+          显示 {filteredTree.itemMatches} 项 · {filteredTree.caseMatches} 用例
+        </div>
+      ) : null}
     </aside>
   );
 
   const detailPane = (
     <div className={styles.detailPane}>
-      {selectedId === "" ? (
+      {activeCase && activeCaseItem ? (
+        <div className={styles.detailAnimated}>
+          <TestCasePanel
+            item={activeCaseItem}
+            caseRecord={activeCase}
+            requirements={caseRequirements}
+            members={project.members}
+            onBack={() => setSelectedCaseId("")}
+            onPatchCase={(payload) =>
+              updateCaseMutation.mutateAsync({ id: activeCase.id, payload })
+            }
+            onCaseChanged={invalidateCaseData}
+          />
+        </div>
+      ) : selectedId === "" ? (
         <div className={styles.detailEmpty}>
           <p className={styles.emptyTitle}>选择左侧测试项</p>
           <p className={styles.emptyText}>点击树中的测试项查看并就地编辑字段。</p>
@@ -283,7 +614,12 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
           onRetry={() => void detailQuery.refetch()}
         />
       ) : (
-        <div className={styles.detailAnimated}>
+        // 占位数据（placeholderData）期间面板不可交互：避免把上一项的字段写到刚选中的测试项上。
+        <div
+          className={styles.detailAnimated}
+          data-stale={detailQuery.isPlaceholderData ? "true" : undefined}
+          aria-busy={detailQuery.isPlaceholderData || undefined}
+        >
           <TestItemDetailPanel
             detail={detail}
             type={activeTypes.find((type) => type.code === detail.item.typeCode)}
@@ -302,6 +638,9 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             onMoveSubItem={handleMoveSubItem}
             onCreateCase={handleCreateCase}
             onRequestDelete={handleOpenDelete}
+            activeCaseId={selectedCaseId}
+            onSelectCase={handleSelectCase}
+            onDuplicateCase={handleDuplicateCase}
           />
         </div>
       )}
@@ -370,27 +709,48 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
         onOpenChange={setFolderOpen}
         onSubmit={(payload) => createFolderMutation.mutateAsync(payload)}
       />
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>删除测试项「{selectedItem?.name}」？</AlertDialogTitle>
-            <AlertDialogDescription>
-              将级联删除该测试项的子项、用例与步骤，需求关联同时解除；此操作不可撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              className={styles.dangerAction}
-              onClick={() => {
-                if (selectedItem) void deleteItemMutation.mutateAsync(selectedItem.id);
-              }}
-            >
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {pendingDelete ? (
+        <AlertDialog open onOpenChange={(open) => (open ? undefined : setPendingDelete(null))}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {pendingDelete.kind === "item"
+                  ? `删除测试项「${pendingDelete.label}」？`
+                  : pendingDelete.kind === "folder"
+                    ? `删除文件夹「${pendingDelete.label}」？`
+                    : `删除用例「${pendingDelete.label}」？`}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingDelete.kind === "item"
+                  ? "将级联删除该测试项的子项、用例与步骤，需求关联同时解除；此操作不可撤销。"
+                  : pendingDelete.kind === "folder"
+                    ? `文件夹内 ${pendingDelete.count} 个测试项会移到同类型根目录（不删除测试项）；此操作不可撤销。`
+                    : "删除后同测试项剩余用例的序号与标识会重新生成；此操作不可撤销。"}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogAction
+                className={styles.dangerAction}
+                onClick={() => {
+                  if (pendingDelete.kind === "item") {
+                    void deleteItemMutation.mutateAsync(pendingDelete.id);
+                  } else if (pendingDelete.kind === "folder") {
+                    void deleteFolderMutation.mutateAsync(pendingDelete.id);
+                  } else {
+                    void deleteCaseMutation.mutateAsync({
+                      testItemId: pendingDelete.testItemId,
+                      id: pendingDelete.id,
+                    });
+                  }
+                }}
+              >
+                删除
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
     </section>
   );
 }

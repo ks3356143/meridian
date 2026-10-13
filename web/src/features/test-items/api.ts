@@ -1,5 +1,6 @@
 import { request } from "@/api/client";
 import type {
+  CaseStepRecord,
   TestCaseRecord,
   TestItemDetail,
   TestItemFolder,
@@ -48,6 +49,19 @@ export interface CreateTestItemFolderPayload {
   parentId?: string | null;
 }
 
+export interface UpdateCasePayload {
+  name?: string;
+  summary?: string;
+  initText?: string;
+  prerequisites?: string;
+  designerId?: string;
+  testerId?: string;
+  monitorId?: string;
+  notes?: string;
+  notExecutedReason?: string;
+  clearExecDate?: boolean;
+}
+
 export const testItemsApi = {
   workspace: (projectCode: string) =>
     request<TestItemsWorkspace>("GET", `/api/v1/projects/${projectCode}/test-items`),
@@ -58,6 +72,9 @@ export const testItemsApi = {
   updateItem: (testItemId: string, payload: UpdateTestItemPayload) =>
     request<TestItemRecord>("PATCH", `/api/v1/test-items/${testItemId}`, {}, payload),
   deleteItem: (testItemId: string) => request<void>("DELETE", `/api/v1/test-items/${testItemId}`),
+  /** 复制新增：内容字段与子项一起复制，标识按「-副本」重排；静态类型后端拒绝。 */
+  duplicateItem: (testItemId: string) =>
+    request<TestItemRecord>("POST", `/api/v1/test-items/${testItemId}/duplicate`),
   createFolder: (projectCode: string, payload: CreateTestItemFolderPayload) =>
     request<TestItemFolder>(
       "POST",
@@ -65,6 +82,15 @@ export const testItemsApi = {
       {},
       payload,
     ),
+  updateFolder: (folderId: string, name: string) =>
+    request<TestItemFolder>("PATCH", `/api/v1/test-item-folders/${folderId}`, {}, { name }),
+  deleteFolder: (folderId: string) =>
+    request<void>("DELETE", `/api/v1/test-item-folders/${folderId}`),
+  /** 拖拽落位：folderId 为 null 表示移到类型根目录。 */
+  moveItem: (testItemId: string, folderId: string | null, targetIndex: number) =>
+    request<void>("POST", `/api/v1/test-items/${testItemId}/move`, {}, { folderId, targetIndex }),
+  moveCase: (caseId: string, targetItemId: string, targetIndex: number) =>
+    request<void>("POST", `/api/v1/test-cases/${caseId}/move`, {}, { targetItemId, targetIndex }),
   createSubItem: (testItemId: string, name: string) =>
     request<TestSubItemRecord>("POST", `/api/v1/test-items/${testItemId}/sub-items`, {}, { name }),
   updateSubItem: (subItemId: string, payload: UpdateSubItemPayload) =>
@@ -77,6 +103,25 @@ export const testItemsApi = {
     request<void>("POST", `/api/v1/test-sub-items/${subItemId}/move`, {}, { targetIndex }),
   createCase: (testItemId: string, name: string) =>
     request<TestCaseRecord>("POST", `/api/v1/test-items/${testItemId}/cases`, {}, { name }),
+  updateCase: (caseId: string, payload: UpdateCasePayload) =>
+    request<TestCaseRecord>("PATCH", `/api/v1/test-cases/${caseId}`, {}, payload),
+  caseSteps: (caseId: string) =>
+    request<CaseStepRecord[]>("GET", `/api/v1/test-cases/${caseId}/steps`),
+  createCaseStep: (caseId: string, expectText: string) =>
+    request<CaseStepRecord>("POST", `/api/v1/test-cases/${caseId}/steps`, {}, { expectText }),
+  updateCaseStep: (stepId: string, payload: { expectText?: string; passed?: string }) =>
+    request<CaseStepRecord>("PATCH", `/api/v1/test-case-steps/${stepId}`, {}, payload),
+  /** 三态循环：未执行 → 通过 → 未通过 → 未执行。 */
+  toggleCaseStep: (stepId: string) =>
+    request<CaseStepRecord>("POST", `/api/v1/test-case-steps/${stepId}/toggle`),
+  duplicateCaseStep: (stepId: string) =>
+    request<CaseStepRecord>("POST", `/api/v1/test-case-steps/${stepId}/duplicate`),
+  deleteCaseStep: (stepId: string) => request<void>("DELETE", `/api/v1/test-case-steps/${stepId}`),
+  moveCaseStep: (stepId: string, targetIndex: number) =>
+    request<void>("POST", `/api/v1/test-case-steps/${stepId}/move`, {}, { targetIndex }),
+  duplicateCase: (caseId: string) =>
+    request<TestCaseRecord>("POST", `/api/v1/test-cases/${caseId}/duplicate`),
+  deleteCase: (caseId: string) => request<void>("DELETE", `/api/v1/test-cases/${caseId}`),
   linkRequirement: (testItemId: string, requirementId: string) =>
     request<TestItemRequirementRef[]>(
       "POST",
