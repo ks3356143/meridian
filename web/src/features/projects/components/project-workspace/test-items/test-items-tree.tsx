@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, memo } from "react";
 import {
   ChevronRight,
+  ClipboardList,
   CopyPlus,
   Folder,
   FolderOpen,
@@ -418,7 +419,14 @@ function TestItemsTreeRow({
   const data = node.data;
   const tone = categoryTone(data.category ?? "");
   const isContainer = data.kind === "group" || data.kind === "folder";
-  const Icon = isContainer ? (node.isOpen ? FolderOpen : Folder) : ListChecks;
+  // 每层都给类型图标：文件夹 Folder / 测试项 ListChecks / 用例 ClipboardList，层级一眼分清。
+  const Icon = isContainer
+    ? node.isOpen
+      ? FolderOpen
+      : Folder
+    : data.kind === "case"
+      ? ClipboardList
+      : ListChecks;
 
   return (
     <div style={style} className={styles.row} ref={dragHandle}>
@@ -438,11 +446,8 @@ function TestItemsTreeRow({
           <ChevronRight className={styles.twistyIcon} />
         )}
       </span>
-      {data.kind === "case" ? (
-        <span className={styles.caseDot} data-status={data.status} />
-      ) : (
-        <Icon className={styles.icon} aria-hidden />
-      )}
+      <Icon className={styles.icon} aria-hidden />
+      {data.kind === "case" ? <span className={styles.caseDot} data-status={data.status} /> : null}
       {data.kind === "item" && !data.isStatic ? (
         <span className={styles.toneDot} data-tone={tone} aria-hidden />
       ) : null}

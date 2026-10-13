@@ -158,6 +158,56 @@ func TestStaticTypeRejectsRequirementLink(t *testing.T) {
 	}
 }
 
+func TestCreateCaseFillsDefaults(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数管理",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	sub, err := service.CreateSubItem(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建子项失败: %v", err)
+	}
+	desc := "子项描述：查询参数列表"
+	if _, err := service.UpdateSubItem(ctx, sub.ID, UpdateSubItemInput{Description: &desc}); err != nil {
+		t.Fatalf("更新子项描述失败: %v", err)
+	}
+
+	created, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	if created.Summary != desc {
+		t.Fatalf("用例综述应取子项描述，实际 %q", created.Summary)
+	}
+	if created.InitText == "" || created.Prerequisites == "" {
+		t.Fatalf("初始化与前提和约束应有默认话术: %+v", created)
+	}
+
+	// 无子项时回退到测试项描述。
+	itemDesc := "测试项描述：参数管理能力"
+	bare, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, TypeCode: "SU", Name: "参数管理二",
+	})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	if _, err := service.UpdateTestItem(ctx, bare.ID, UpdateTestItemInput{Description: &itemDesc}); err != nil {
+		t.Fatalf("更新测试项描述失败: %v", err)
+	}
+	fresh, err := service.CreateCase(ctx, bare.ID, "参数管理")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	if fresh.Summary != itemDesc {
+		t.Fatalf("无子项时综述应回退测试项描述，实际 %q", fresh.Summary)
+	}
+}
+
 func TestCaseRenumberAfterDelete(t *testing.T) {
 	service, projectID := newTestService(t)
 	ctx := context.Background()

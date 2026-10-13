@@ -149,8 +149,8 @@
 
 .execDate {
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
-  font-size: 0.7rem;
-  margin-left: 0.5rem;
+  font-size: 0.74rem;
+  padding-left: 0.3rem;
   white-space: nowrap;
 }
 
@@ -177,51 +177,114 @@
   padding-left: 0.3rem;
 }
 
-/* 追踪关系继承所属测试项，只读：chip 口径同测试项详情，去掉解除按钮。 */
-.reqRow {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  row-gap: 0.3rem;
+/* 追踪关系 = 追溯链树（文档 → 需求 → 测试项 → 用例），只读继承所属测试项。 */
+.trackTree {
+  font-size: 0.72rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.reqChip {
+.trackTree ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 0.5rem;
+}
+
+.trackTree li {
+  padding-left: 0.9rem;
+  position: relative;
+}
+
+/* 目录折线：缩进处一竖一横；末节点竖线只画到折点。 */
+.trackTree li::before {
+  background: color-mix(in srgb, var(--muted-foreground) 34%, transparent);
+  bottom: 0;
+  content: "";
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 1px;
+}
+
+.trackTree li:last-child::before {
+  bottom: auto;
+  height: 0.7rem;
+}
+
+.trackTree li::after {
+  background: color-mix(in srgb, var(--muted-foreground) 34%, transparent);
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  top: 0.7rem;
+  width: 0.6rem;
+}
+
+/* 第一层（来源文档）不画折线。 */
+.trackTree > li::after,
+.trackTree > li::before {
+  display: none;
+}
+
+.trackDoc,
+.trackReq,
+.trackItem,
+.trackCase {
   align-items: center;
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--primary) 26%, transparent);
   display: inline-flex;
-  flex: none;
-  gap: 0.3rem;
-  max-width: 24rem;
-  padding: 0.08rem 0.3rem;
+  gap: 0.35rem;
+  line-height: 1.4rem;
+  min-width: 0;
 }
 
-.reqSource {
-  background: color-mix(in srgb, var(--info) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
-  color: color-mix(in srgb, var(--info) 88%, var(--foreground));
-  flex: none;
-  font-size: 0.62rem;
-  max-width: 9rem;
-  overflow: hidden;
-  padding: 1px 0.25rem 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.trackDoc {
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
+  font-weight: 620;
 }
 
-.reqChapter {
-  color: color-mix(in srgb, var(--primary) 90%, var(--foreground));
+.trackIcon {
+  color: color-mix(in srgb, var(--primary) 82%, transparent);
+  flex: none;
+  height: 0.78rem;
+  width: 0.78rem;
+}
+
+.trackChapter {
+  color: color-mix(in srgb, var(--primary) 92%, var(--foreground));
   flex: none;
   font-family: var(--font-mono);
   font-size: 0.68rem;
-  white-space: nowrap;
 }
 
-.reqName {
+.trackName {
   color: color-mix(in srgb, var(--foreground) 92%, transparent);
-  font-size: 0.72rem;
   min-width: 0;
+}
+
+.trackIdent {
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+}
+
+.trackItem,
+.trackCase {
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.trackCase[data-current="true"] {
+  color: color-mix(in srgb, var(--primary) 92%, var(--foreground));
+  font-weight: 640;
+}
+
+.trackMuted {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  font-family: var(--font-sans);
 }
 
 .reqEmpty {
@@ -249,7 +312,7 @@
   width: 100%;
 }
 
-/* 列头与内容对齐：序号 / 通过两列居中，预期结果左对齐。 */
+/* 列头一律居中（用例表、测试项详情同口径），数据列各自对齐。 */
 .stepsTable th {
   background: color-mix(in srgb, var(--muted-foreground) 7%, var(--card));
   border: 1px solid var(--border);
@@ -257,17 +320,12 @@
   font-size: 0.7rem;
   font-weight: 620;
   padding: 0.3rem 0.5rem;
-  text-align: left;
+  text-align: center;
   vertical-align: middle;
   white-space: nowrap;
 }
 
-.stepsTable th:nth-child(1),
-.stepsTable th:nth-child(3) {
-  text-align: center;
-}
-
-/* 列宽：序号 / 通过 / 行操作固定，预期结果吃掉剩余宽度，避免「通过」后面出现大片空白。 */
+/* 列宽按内容收紧：序号 / 通过与否 / 行操作固定，期望结果吃剩余宽度，避免「通过」与行操作之间夹出一条空白带。 */
 .stepsTable th:nth-child(1),
 .stepsTable td:nth-child(1) {
   width: 2.6rem;
@@ -275,12 +333,12 @@
 
 .stepsTable th:nth-child(3),
 .stepsTable td:nth-child(3) {
-  width: 6rem;
+  width: 5rem;
 }
 
 .stepsTable th:nth-child(4),
 .stepsTable td:nth-child(4) {
-  width: 7.5rem;
+  width: 6.8rem;
 }
 
 .stepsTable td {
@@ -346,9 +404,13 @@
 }
 
 .stepActions {
-  display: flex;
+  display: inline-flex;
   gap: 0.15rem;
-  justify-content: center;
+  vertical-align: middle;
+}
+
+.stepActionsCell {
+  text-align: center;
 }
 
 .stepAction {
@@ -393,15 +455,6 @@
 .passButton:focus-visible {
   outline: 1px solid var(--primary);
   outline-offset: 1px;
-}
-
-.visuallyHidden {
-  clip-path: inset(50%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
 }
 
 .dangerAction {

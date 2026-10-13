@@ -1,5 +1,5 @@
-import { memo, useState } from "react";
-import { ArrowDown, ArrowUp, CopyPlus, Plus, Trash2 } from "lucide-react";
+import { memo, useLayoutEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, CopyPlus, FileText, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -21,6 +21,7 @@ import type {
   TestItemRecord,
   TestItemRequirementRef,
 } from "@/features/test-items/types";
+import { gsap, useGSAP } from "@/lib/gsap";
 import type { ProjectMember } from "../../../types";
 import { EditableCell } from "./editable-cell";
 import { caseStatusLabel } from "./test-items-design";
@@ -29,16 +30,10 @@ import { useCellUndo } from "./use-cell-undo";
 import styles from "./test-case-panel.module.css";
 
 /** 可撤销的用例文本字段（HTML 值都是字符串）。 */
-type CaseTextField =
-  | "name"
-  | "summary"
-  | "initText"
-  | "prerequisites"
-  | "notes"
-  | "notExecutedReason";
+type CaseTextField = "name" | "summary" | "initText" | "prerequisites";
 
 function formatExecDate(value: string | null) {
-  if (!value) return "未执行";
+  if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -87,6 +82,33 @@ function TestCasePanelInner({
   const [pendingDelete, setPendingDelete] = useState<{ id: string; seq: number } | null>(null);
   const { recordChange } = useCellUndo();
 
+  // 切用例时内容入场，口径与测试项详情一致：只动画内容，不动滚动容器本体。
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // 切用例时在绘制前回到顶部，避免"先画新用例再滚回去"的跳动（测试项详情同口径）。
+  useLayoutEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [caseRecord.id]);
+  useGSAP(
+    () => {
+      const element = bodyRef.current;
+      if (!element) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      gsap.fromTo(
+        element,
+        { autoAlpha: 0, y: 8 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.28,
+          ease: "power2.out",
+          clearProps: "transform,opacity,visibility",
+        },
+      );
+    },
+    { dependencies: [caseRecord.id], revertOnUpdate: true },
+  );
+
   /** 字段保存 + 记入撤销栈：撤销 = 用旧值再走一次同一条保存链路。 */
   const saveField = (label: string, field: CaseTextField, next: string) => {
     // 名称是必填（树上缺失徽章同源）：清空不落库，就地提示并保持红色脉冲。
@@ -131,9 +153,7 @@ function TestCasePanelInner({
           <th scope="col">序号</th>
           <th scope="col">期望结果与评估标准</th>
           <th scope="col">通过与否</th>
-          <th scope="col">
-            <span className={styles.visuallyHidden}>行操作</span>
-          </th>
+          <th scope="col">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -183,46 +203,48 @@ function TestCasePanelInner({
                 )}
               </button>
             </td>
-            <td className={styles.stepActions}>
-              <button
-                type="button"
-                className={styles.stepAction}
-                title="上移"
-                aria-label={`上移第 ${step.seq} 步`}
-                disabled={index === 0}
-                onClick={() => moveStepMutation.mutate({ id: step.id, targetIndex: index - 1 })}
-              >
-                <ArrowUp aria-hidden />
-              </button>
-              <button
-                type="button"
-                className={styles.stepAction}
-                title="下移"
-                aria-label={`下移第 ${step.seq} 步`}
-                disabled={index === steps.length - 1}
-                onClick={() => moveStepMutation.mutate({ id: step.id, targetIndex: index + 1 })}
-              >
-                <ArrowDown aria-hidden />
-              </button>
-              <button
-                type="button"
-                className={styles.stepAction}
-                title="复制步骤"
-                aria-label={`复制第 ${step.seq} 步`}
-                onClick={() => duplicateStepMutation.mutate(step.id)}
-              >
-                <CopyPlus aria-hidden />
-              </button>
-              <button
-                type="button"
-                className={styles.stepAction}
-                data-variant="destructive"
-                title="删除步骤"
-                aria-label={`删除第 ${step.seq} 步`}
-                onClick={() => setPendingDelete({ id: step.id, seq: step.seq })}
-              >
-                <Trash2 aria-hidden />
-              </button>
+            <td className={styles.stepActionsCell}>
+              <div className={styles.stepActions}>
+                <button
+                  type="button"
+                  className={styles.stepAction}
+                  title="上移"
+                  aria-label={`上移第 ${step.seq} 步`}
+                  disabled={index === 0}
+                  onClick={() => moveStepMutation.mutate({ id: step.id, targetIndex: index - 1 })}
+                >
+                  <ArrowUp aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className={styles.stepAction}
+                  title="下移"
+                  aria-label={`下移第 ${step.seq} 步`}
+                  disabled={index === steps.length - 1}
+                  onClick={() => moveStepMutation.mutate({ id: step.id, targetIndex: index + 1 })}
+                >
+                  <ArrowDown aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className={styles.stepAction}
+                  title="复制步骤"
+                  aria-label={`复制第 ${step.seq} 步`}
+                  onClick={() => duplicateStepMutation.mutate(step.id)}
+                >
+                  <CopyPlus aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className={styles.stepAction}
+                  data-variant="destructive"
+                  title="删除步骤"
+                  aria-label={`删除第 ${step.seq} 步`}
+                  onClick={() => setPendingDelete({ id: step.id, seq: step.seq })}
+                >
+                  <Trash2 aria-hidden />
+                </button>
+              </div>
             </td>
           </tr>
         ))}
@@ -253,180 +275,186 @@ function TestCasePanelInner({
         </div>
       </header>
 
-      <div className={styles.body}>
-        <p className={styles.undoHint}>
-          Ctrl+Z 撤销最近一次改动（上限 20 步；编辑中用浏览器原生撤销）
-        </p>
-        <table className={styles.sheet}>
-          <tbody>
-            <tr>
-              <th scope="row">用例名称</th>
-              <td>
-                <EditableCell
-                  value={caseRecord.name}
-                  label="用例名称"
-                  missing={caseRecord.name.trim() === ""}
-                  onSave={(next) => saveField("用例名称", "name", next)}
-                />
-              </td>
-              <th scope="row">用例标识</th>
-              <td>
-                {/* 标识随测试项与顺序自动重排（SRS 24/01），只读。 */}
-                <span className={styles.identValue}>{caseRecord.identifier}</span>
-              </td>
-            </tr>
-            {requirements ? (
+      <div className={styles.body} ref={scrollRef}>
+        <div ref={bodyRef}>
+          <p className={styles.undoHint}>
+            Ctrl+Z 撤销最近一次改动（上限 20 步；编辑中用浏览器原生撤销）
+          </p>
+          <table className={styles.sheet}>
+            <tbody>
               <tr>
-                <th scope="row">追踪关系</th>
-                <td colSpan={3}>
-                  {requirements.length === 0 ? (
-                    <span className={styles.reqEmpty}>
-                      未关联需求（继承所属测试项，关联入口在测试项详情的「追踪关系」）
-                    </span>
-                  ) : (
-                    <div className={styles.reqRow}>
-                      {requirements.map((reference) => (
-                        <span
-                          key={reference.id}
-                          className={styles.reqChip}
-                          title={`${reference.sourceName} · §${reference.chapterNumber} ${reference.name} · ${reference.externalIdentifier}`}
-                        >
-                          {reference.sourceName ? (
-                            <span className={styles.reqSource}>{reference.sourceName}</span>
-                          ) : null}
-                          <span className={styles.reqChapter}>§{reference.chapterNumber}</span>
-                          <TruncatedText
-                            value={reference.name}
-                            className={styles.reqName}
-                            tooltipValue={reference.name}
-                          />
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                <th scope="row">用例名称</th>
+                <td>
+                  <EditableCell
+                    value={caseRecord.name}
+                    label="用例名称"
+                    missing={caseRecord.name.trim() === ""}
+                    onSave={(next) => saveField("用例名称", "name", next)}
+                  />
+                </td>
+                <th scope="row">用例标识</th>
+                <td>
+                  {/* 标识随测试项与顺序自动重排（SRS 24/01），只读。 */}
+                  <span className={styles.identValue}>{caseRecord.identifier}</span>
                 </td>
               </tr>
-            ) : null}
-            <tr>
-              <th scope="row">用例综述</th>
-              <td colSpan={3}>
-                <EditableCell
-                  value={caseRecord.summary}
-                  label="用例综述"
-                  placeholder="点击填写用例综述（默认由子项内容拼接）"
-                  multiline
-                  onSave={(next) => saveField("用例综述", "summary", next)}
-                />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">用例初始化</th>
-              <td colSpan={3}>
-                <EditableCell
-                  value={caseRecord.initText}
-                  label="用例初始化"
-                  placeholder="点击填写初始化步骤"
-                  multiline
-                  onSave={(next) => saveField("用例初始化", "initText", next)}
-                />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">前提和约束</th>
-              <td colSpan={3}>
-                <EditableCell
-                  value={caseRecord.prerequisites}
-                  label="前提和约束"
-                  placeholder="点击填写前提和约束"
-                  multiline
-                  onSave={(next) => saveField("前提和约束", "prerequisites", next)}
-                />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">测试步骤</th>
-              <td colSpan={3}>
-                <div className={styles.stepsToolbar}>
-                  <span className={styles.stepsHint}>
-                    「输入及操作 / 实测结果」两列（富文本）随切片 5b 接入，人员指派与快捷键随 5c
+              {requirements ? (
+                <tr>
+                  <th scope="row">追踪关系</th>
+                  <td colSpan={3}>
+                    {requirements.length === 0 ? (
+                      <span className={styles.reqEmpty}>
+                        未关联需求（继承所属测试项，关联入口在测试项详情的「追踪关系」）
+                      </span>
+                    ) : (
+                      <ul className={styles.trackTree}>
+                        <li>
+                          <span className={styles.trackDoc}>
+                            <FileText className={styles.trackIcon} aria-hidden />
+                            {requirements[0].sourceName || "未标注来源文档"}
+                            {requirements[0].sourceVersion
+                              ? ` ${requirements[0].sourceVersion}`
+                              : ""}
+                          </span>
+                          <ul>
+                            {requirements.map((reference, index) => (
+                              <li key={reference.id}>
+                                <span className={styles.trackReq}>
+                                  <span className={styles.trackChapter}>
+                                    §{reference.chapterNumber}
+                                  </span>
+                                  <TruncatedText
+                                    value={reference.name}
+                                    className={styles.trackName}
+                                    tooltipValue={`${reference.name} · ${reference.externalIdentifier}`}
+                                  />
+                                  {reference.externalIdentifier ? (
+                                    <span className={styles.trackIdent}>
+                                      {reference.externalIdentifier}
+                                    </span>
+                                  ) : null}
+                                </span>
+                                {/* 追溯链只画一条：本用例挂在所属测试项下，测试项挂在第一条需求下，其余需求是旁支。 */}
+                                {index === 0 ? (
+                                  <ul>
+                                    <li>
+                                      <span className={styles.trackItem}>
+                                        {item.identifier}
+                                        <span className={styles.trackMuted}>{item.name}</span>
+                                      </span>
+                                      <ul>
+                                        <li>
+                                          <span className={styles.trackCase} data-current="true">
+                                            {caseRecord.identifier}
+                                            <span className={styles.trackMuted}>
+                                              {caseRecord.name}
+                                            </span>
+                                          </span>
+                                        </li>
+                                      </ul>
+                                    </li>
+                                  </ul>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      </ul>
+                    )}
+                  </td>
+                </tr>
+              ) : null}
+              <tr>
+                <th scope="row">用例综述</th>
+                <td colSpan={3}>
+                  <EditableCell
+                    value={caseRecord.summary}
+                    label="用例综述"
+                    placeholder="点击填写用例综述（默认由子项内容拼接）"
+                    multiline
+                    onSave={(next) => saveField("用例综述", "summary", next)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">用例初始化</th>
+                <td colSpan={3}>
+                  <EditableCell
+                    value={caseRecord.initText}
+                    label="用例初始化"
+                    placeholder="点击填写初始化步骤"
+                    multiline
+                    onSave={(next) => saveField("用例初始化", "initText", next)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">前提和约束</th>
+                <td colSpan={3}>
+                  <EditableCell
+                    value={caseRecord.prerequisites}
+                    label="前提和约束"
+                    placeholder="点击填写前提和约束"
+                    multiline
+                    onSave={(next) => saveField("前提和约束", "prerequisites", next)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">测试步骤</th>
+                <td colSpan={3}>
+                  <div className={styles.stepsToolbar}>
+                    <span className={styles.stepsHint}>
+                      「输入及操作 / 实测结果」两列（富文本）随切片 5b 接入，人员指派与快捷键随 5c
+                    </span>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="outline"
+                      onClick={() => createStepMutation.mutate()}
+                    >
+                      <Plus aria-hidden />
+                      新增步骤
+                    </Button>
+                  </div>
+                  {stepsBody}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">执行状态</th>
+                <td>
+                  <span className={styles.statusChip} data-status={caseRecord.status}>
+                    {caseStatusLabel(caseRecord.status)}
                   </span>
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="outline"
-                    onClick={() => createStepMutation.mutate()}
-                  >
-                    <Plus aria-hidden />
-                    新增步骤
-                  </Button>
-                </div>
-                {stepsBody}
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">设计人员</th>
-              <td>
-                <PersonCell id={caseRecord.designerId} members={members} />
-              </td>
-              <th scope="row">执行人员</th>
-              <td>
-                <PersonCell id={caseRecord.testerId} members={members} />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">监测人员</th>
-              <td>
-                <PersonCell id={caseRecord.monitorId} members={members} />
-              </td>
-              <th scope="row">问题单标识</th>
-              <td>
-                <span className={styles.placeholderChip}>问题单模块就绪后接入</span>
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">执行状态</th>
-              <td colSpan={3}>
-                <span className={styles.statusChip} data-status={caseRecord.status}>
-                  {caseStatusLabel(caseRecord.status)}
-                </span>
-                <span className={styles.execDate}>
-                  执行时间 {formatExecDate(caseRecord.execDate)}
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">未执行原因</th>
-              <td colSpan={3}>
-                <EditableCell
-                  value={caseRecord.notExecutedReason}
-                  label="未执行原因"
-                  placeholder={
-                    caseRecord.status === "pending"
-                      ? "未执行必填：填写原因（涉及内容与验证情况随记录模板再补）"
-                      : "点击填写未执行原因"
-                  }
-                  multiline
-                  missing={
-                    caseRecord.status === "pending" && caseRecord.notExecutedReason.trim() === ""
-                  }
-                  onSave={(next) => saveField("未执行原因", "notExecutedReason", next)}
-                />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row">备注</th>
-              <td colSpan={3}>
-                <EditableCell
-                  value={caseRecord.notes}
-                  label="备注"
-                  placeholder="点击填写备注"
-                  multiline
-                  onSave={(next) => saveField("备注", "notes", next)}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+                <th scope="row">测试时间</th>
+                <td>
+                  <span className={styles.execDate}>{formatExecDate(caseRecord.execDate)}</span>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">测试人员</th>
+                <td>
+                  <PersonCell id={caseRecord.testerId} members={members} />
+                </td>
+                <th scope="row">监测人员</th>
+                <td>
+                  <PersonCell id={caseRecord.monitorId} members={members} />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">问题单标识</th>
+                <td>
+                  <span className={styles.placeholderChip}>问题单模块就绪后接入</span>
+                </td>
+                <th scope="row">设计人员</th>
+                <td>
+                  <PersonCell id={caseRecord.designerId} members={members} />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {pendingDelete ? (

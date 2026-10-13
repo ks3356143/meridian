@@ -129,22 +129,50 @@ func createCaseAt(tx *gorm.DB, item TestItem, sortOrder int, name string) (Case,
 	}
 	seq := sortOrder + 1
 	now := time.Now()
+	summary, initText, prerequisites := caseDefaults(tx, item)
 	created := Case{
-		ID:         caseID,
-		ProjectID:  item.ProjectID,
-		TestItemID: item.ID,
-		Identifier: caseIdentifier(item.TypeCode, item.Suffix, seq),
-		Seq:        seq,
-		Name:       strings.TrimSpace(name),
-		SortOrder:  sortOrder,
-		Status:     "pending",
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		ID:            caseID,
+		ProjectID:     item.ProjectID,
+		TestItemID:    item.ID,
+		Identifier:    caseIdentifier(item.TypeCode, item.Suffix, seq),
+		Seq:           seq,
+		Name:          strings.TrimSpace(name),
+		Summary:       summary,
+		InitText:      initText,
+		Prerequisites: prerequisites,
+		SortOrder:     sortOrder,
+		Status:        "pending",
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 	if err := tx.Create(&created).Error; err != nil {
 		return Case{}, fmt.Errorf("创建用例失败: %w", err)
 	}
 	return created, nil
+}
+
+// caseDefaults 新建用例的默认内容：综述取首个子项描述（无则取测试项描述），
+// 初始化与前提和约束按类型给记录模板话术（对齐第三方测试记录 docx）。
+func caseDefaults(tx *gorm.DB, item TestItem) (summary string, initText string, prerequisites string) {
+	var subItem SubItem
+	if err := tx.Where("test_item_id = ?", item.ID).Order("seq asc").First(&subItem).Error; err == nil {
+		summary = strings.TrimSpace(subItem.Description)
+	}
+	if summary == "" {
+		summary = strings.TrimSpace(item.Description)
+	}
+	switch item.TypeCode {
+	case "DC":
+		initText = "被测文档已提交。"
+		prerequisites = "提交的文档出自委托方受控库，是委托方正式签署外发的。"
+	case "SA", "CR", "CW":
+		initText = "被测代码已提交。"
+		prerequisites = "提交的代码出自委托方受控库。"
+	default:
+		initText = "1. 被测软件已正常启动；2. 测试环境已配置就绪；3. 相关接口已连通。"
+		prerequisites = "1. 被测软件版本受控；2. 测试环境满足设计要求。"
+	}
+	return summary, initText, prerequisites
 }
 
 func createCase(tx *gorm.DB, item TestItem, name string, summary string) (Case, error) {
