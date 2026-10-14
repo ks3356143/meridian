@@ -73,6 +73,11 @@ func (s *Service) buildResponses(ctx context.Context, allProjects []Project) ([]
 		})
 	}
 
+	workspaceCounts, err := s.repository.CountWorkspaceObjects(ctx, projectIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	responses := make([]ProjectResponse, 0, len(allProjects))
 	for _, project := range allProjects {
 		owner := usersByID[project.OwnerID]
@@ -89,6 +94,7 @@ func (s *Service) buildResponses(ctx context.Context, allProjects []Project) ([]
 		if projectStandards == nil {
 			projectStandards = []ReferenceStandardResponse{}
 		}
+		counts := workspaceCounts[project.ID]
 
 		responses = append(responses, ProjectResponse{
 			ID:                      project.Code,
@@ -105,8 +111,9 @@ func (s *Service) buildResponses(ctx context.Context, allProjects []Project) ([]
 			RuntimeEnvironments:     nonNilStrings(dictionaryValues["runtime_environment"]),
 			DevelopmentEnvironments: nonNilStrings(dictionaryValues["development_environment"]),
 			ReferenceStandards:      projectStandards,
-			CasesTotal:              project.CasesTotal,
-			CasesExecuted:           project.CasesExecuted,
+			TestItemsTotal:          counts.TestItems,
+			CasesTotal:              counts.Cases,
+			CasesExecuted:           counts.CasesExecuted,
 			OpenIssues: OpenIssues{
 				Critical:   project.CriticalIssues,
 				Serious:    project.SeriousIssues,

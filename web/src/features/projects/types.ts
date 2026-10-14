@@ -52,6 +52,7 @@ export interface Project {
   developmentEnvironments: string[];
   referenceStandards: ReferenceStandard[];
   casesTotal: number;
+  testItemsTotal: number;
   casesExecuted: number;
   openIssues: OpenIssues;
   status: ProjectStatus;

@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"fmt"
 
 	"gorm.io/gorm"
 
@@ -181,4 +182,55 @@ func (r *Repository) CountUserReferences(ctx context.Context, userID string) (in
 		return 0, err
 	}
 	return memberCount + ownerCount, nil
+}
+
+// WorkspaceCounts 是项目下工作区数据的实时计数。
+// test_items / test_cases 由测试项模块维护，projects 表的 cases_total / cases_executed 是
+// 没有写入方的历史列，读取时统一实时聚合，避免同类计数再次漂移。
+type WorkspaceCounts struct {
+	TestItems     int
+	Cases         int
+	CasesExecuted int
+}
+
+func (r *Repository) CountWorkspaceObjects(ctx context.Context, projectIDs []string) (map[string]WorkspaceCounts, error) {
+	counts := make(map[string]WorkspaceCounts, len(projectIDs))
+	if len(projectIDs) == 0 {
+		return counts, nil
+	}
+	var itemRows []struct {
+		ProjectID string
+		Total     int
+	}
+	if err := r.db.WithContext(ctx).Table("test_items").
+		Select("project_id, COUNT(*) AS total").
+		Where("project_id IN ?", projectIDs).
+		Group("project_id").
+		Scan(&itemRows).Error; err != nil {
+		return nil, fmt.Errorf("统计项目测试项失败: %w", err)
+	}
+	for _, row := range itemRows {
+		entry := counts[row.ProjectID]
+		entry.TestItems = row.Total
+		counts[row.ProjectID] = entry
+	}
+	var caseRows []struct {
+		ProjectID string
+		Total     int
+		Executed  int
+	}
+	if err := r.db.WithContext(ctx).Table("test_cases").
+		Select("project_id, COUNT(*) AS total, SUM(CASE WHEN status = 'pending' THEN 0 ELSE 1 END) AS executed").
+		Where("project_id IN ?", projectIDs).
+		Group("project_id").
+		Scan(&caseRows).Error; err != nil {
+		return nil, fmt.Errorf("统计项目用例失败: %w", err)
+	}
+	for _, row := range caseRows {
+		entry := counts[row.ProjectID]
+		entry.Cases = row.Total
+		entry.CasesExecuted = row.Executed
+		counts[row.ProjectID] = entry
+	}
+	return counts, nil
 }

@@ -91,6 +91,7 @@ type ProjectResponse struct {
 	DevelopmentEnvironments []string                    `json:"developmentEnvironments"`
 	ReferenceStandards      []ReferenceStandardResponse `json:"referenceStandards"`
 	CasesTotal              int                         `json:"casesTotal"`
+	TestItemsTotal          int                         `json:"testItemsTotal"`
 	CasesExecuted           int                         `json:"casesExecuted"`
 	OpenIssues              OpenIssues                  `json:"openIssues"`
 	Status                  string                      `json:"status"`

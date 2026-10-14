@@ -21,7 +21,7 @@ import type {
   TestItemRecord,
   TestItemRequirementRef,
 } from "@/features/test-items/types";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { usePanelSwitchMotion } from "./use-panel-switch-motion";
 import type { ProjectMember } from "../../../types";
 import { EditableCell } from "./editable-cell";
 import { caseStatusLabel } from "./test-items-design";
@@ -89,25 +89,7 @@ function TestCasePanelInner({
   useLayoutEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [caseRecord.id]);
-  useGSAP(
-    () => {
-      const element = bodyRef.current;
-      if (!element) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      gsap.fromTo(
-        element,
-        { autoAlpha: 0, y: 8 },
-        {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.28,
-          ease: "power2.out",
-          clearProps: "transform,opacity,visibility",
-        },
-      );
-    },
-    { dependencies: [caseRecord.id], revertOnUpdate: true },
-  );
+  usePanelSwitchMotion(bodyRef, caseRecord.id);
 
   /** 字段保存 + 记入撤销栈：撤销 = 用旧值再走一次同一条保存链路。 */
   const saveField = (label: string, field: CaseTextField, next: string) => {

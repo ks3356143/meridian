@@ -41,7 +41,7 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
     value: number;
     tone: ModuleTone;
   }> = [
-    { icon: ListChecks, name: "测试项", value: 0, tone: "info" },
+    { icon: ListChecks, name: "测试项", value: project.testItemsTotal, tone: "info" },
     { icon: FlaskConical, name: "测试用例", value: project.casesTotal, tone: "primary" },
     { icon: Play, name: "执行记录", value: project.casesExecuted, tone: "warning" },
     { icon: ShieldAlert, name: "问题单", value: 0, tone: "danger" },

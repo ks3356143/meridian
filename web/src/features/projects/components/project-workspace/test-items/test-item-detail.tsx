@@ -24,7 +24,7 @@ import {
 import { EmptyHint } from "@/components/shared/empty-hint";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { usePanelSwitchMotion } from "./use-panel-switch-motion";
 import type { UpdateSubItemPayload, UpdateTestItemPayload } from "@/features/test-items/api";
 import type { TestItemDetail, TestItemType, TestRoundRecord } from "@/features/test-items/types";
 import type { ProjectPlatform } from "@/features/projects/types";
@@ -148,25 +148,7 @@ function TestItemDetailPanelInner({
 
   // 只动画滚动容器里的内容，不动滚动容器本身——否则滚动条跟着位移，看起来在跳。
   const contentRef = useRef<HTMLDivElement>(null);
-  useGSAP(
-    () => {
-      const element = contentRef.current;
-      if (!element) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      gsap.fromTo(
-        element,
-        { autoAlpha: 0, y: 8 },
-        {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.28,
-          ease: "power2.out",
-          clearProps: "transform,opacity,visibility",
-        },
-      );
-    },
-    { dependencies: [item.id], revertOnUpdate: true },
-  );
+  usePanelSwitchMotion(contentRef, item.id);
 
   useEffect(() => {
     const container = scrollRef.current;
