@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import type {
   CreateTestItemPayload,
+  UpdateCasePayload,
   UpdateSubItemPayload,
   UpdateTestItemPayload,
 } from "@/features/test-items/api";
@@ -173,6 +174,32 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   // 详情面板是重子树（表格 + 子项卡片），树的选择、弹窗开关、面板拖拽都会让工作区重渲染；
   // 回调保持稳定引用 + 面板 memo，才能让这些无关重渲染不落到详情树上。
   const selectedItemId = detail?.item.id ?? "";
+  // useMutation 的 mutate/mutateAsync 引用稳定，但外层对象每次渲染都会重建；memo 面板要求回调引用稳定，
+  // 这里把要用的方法抽成别名，依赖数组里只放别名（见 srs/21）。
+  const duplicateCase = duplicateCaseMutation.mutate;
+  const patchItem = updateItemMutation.mutateAsync;
+  const renameItem = updateItemMutation.mutate;
+  const linkRequirement = linkMutation.mutateAsync;
+  const unlinkRequirement = unlinkMutation.mutateAsync;
+  const createSubItem = createSubItemMutation.mutateAsync;
+  const updateSubItem = updateSubItemMutation.mutateAsync;
+  const removeSubItem = deleteSubItemMutation.mutateAsync;
+  const duplicateSubItem = duplicateSubItemMutation.mutateAsync;
+  const moveSubItem = moveSubItemMutation.mutateAsync;
+  const createCase = createCaseMutation.mutateAsync;
+  const generateCase = createCaseMutation.mutate;
+  const moveItem = moveItemMutation.mutate;
+  const moveCase = moveCaseMutation.mutate;
+  const renameFolder = updateFolderMutation.mutate;
+  const renameCase = updateCaseMutation.mutate;
+  const patchCase = updateCaseMutation.mutateAsync;
+  const duplicateItem = duplicateItemMutation.mutate;
+  const handleBackToItem = useCallback(() => setSelectedCaseId(""), []);
+  const handlePatchCase = useCallback(
+    (payload: UpdateCasePayload) => patchCase({ id: selectedCaseId, payload }),
+    [patchCase, selectedCaseId],
+  );
+
   const handleSelectNode = useCallback(
     (node: TestItemsTreeNode) => {
       if (node.kind === "item" && node.refId) {
@@ -198,50 +225,46 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   const handleDuplicateCase = useCallback(
     (caseId: string) => {
       if (!selectedItemId) return;
-      duplicateCaseMutation.mutate({ testItemId: selectedItemId, id: caseId });
+      duplicateCase({ testItemId: selectedItemId, id: caseId });
     },
-    [duplicateCaseMutation, selectedItemId],
+    [duplicateCase, selectedItemId],
   );
   const handlePatch = useCallback(
-    (payload: UpdateTestItemPayload) =>
-      updateItemMutation.mutateAsync({ id: selectedItemId, payload }),
-    [selectedItemId, updateItemMutation],
+    (payload: UpdateTestItemPayload) => patchItem({ id: selectedItemId, payload }),
+    [selectedItemId, patchItem],
   );
   const handleLink = useCallback(
-    (requirementId: string) =>
-      linkMutation.mutateAsync({ testItemId: selectedItemId, requirementId }),
-    [linkMutation, selectedItemId],
+    (requirementId: string) => linkRequirement({ testItemId: selectedItemId, requirementId }),
+    [linkRequirement, selectedItemId],
   );
   const handleUnlink = useCallback(
-    (requirementId: string) =>
-      unlinkMutation.mutateAsync({ testItemId: selectedItemId, requirementId }),
-    [selectedItemId, unlinkMutation],
+    (requirementId: string) => unlinkRequirement({ testItemId: selectedItemId, requirementId }),
+    [selectedItemId, unlinkRequirement],
   );
   const handleCreateSubItem = useCallback(
-    (name: string) => createSubItemMutation.mutateAsync({ testItemId: selectedItemId, name }),
-    [createSubItemMutation, selectedItemId],
+    (name: string) => createSubItem({ testItemId: selectedItemId, name }),
+    [createSubItem, selectedItemId],
   );
   const handleUpdateSubItem = useCallback(
-    (id: string, payload: UpdateSubItemPayload) =>
-      updateSubItemMutation.mutateAsync({ id, payload }),
-    [updateSubItemMutation],
+    (id: string, payload: UpdateSubItemPayload) => updateSubItem({ id, payload }),
+    [updateSubItem],
   );
   const handleDeleteSubItem = useCallback(
-    (id: string) => deleteSubItemMutation.mutateAsync({ testItemId: selectedItemId, id }),
-    [deleteSubItemMutation, selectedItemId],
+    (id: string) => removeSubItem({ testItemId: selectedItemId, id }),
+    [removeSubItem, selectedItemId],
   );
   const handleDuplicateSubItem = useCallback(
-    (id: string) => duplicateSubItemMutation.mutateAsync({ testItemId: selectedItemId, id }),
-    [duplicateSubItemMutation, selectedItemId],
+    (id: string) => duplicateSubItem({ testItemId: selectedItemId, id }),
+    [duplicateSubItem, selectedItemId],
   );
   const handleMoveSubItem = useCallback(
     (id: string, targetIndex: number) =>
-      moveSubItemMutation.mutateAsync({ testItemId: selectedItemId, id, targetIndex }),
-    [moveSubItemMutation, selectedItemId],
+      moveSubItem({ testItemId: selectedItemId, id, targetIndex }),
+    [moveSubItem, selectedItemId],
   );
   const handleCreateCase = useCallback(
-    (name: string) => createCaseMutation.mutateAsync({ testItemId: selectedItemId, name }),
-    [createCaseMutation, selectedItemId],
+    (name: string) => createCase({ testItemId: selectedItemId, name }),
+    [createCase, selectedItemId],
   );
   /** 树右键「生成用例」：按 1:1 约定取该测试项第一个子项命名（未选中时先拉一次详情）。 */
   const generateCaseForItem = useCallback(
@@ -255,9 +278,9 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
         toast.error("该测试项还没有子项：先在「测试方法」里建子项，再生成用例");
         return;
       }
-      createCaseMutation.mutate({ testItemId, name });
+      generateCase({ testItemId, name });
     },
-    [createCaseMutation, detailQuery, selectedItemId],
+    [generateCase, detailQuery.data, selectedItemId],
   );
   const handleOpenChangeType = useCallback(() => setChangeTypeOpen(true), []);
   const handleOpenDelete = useCallback(() => {
@@ -281,30 +304,29 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
           ).length;
           targetIndex = Math.max(0, move.index - folderCount);
         }
-        moveItemMutation.mutate({ id, folderId, targetIndex });
+        moveItem({ id, folderId, targetIndex });
         return;
       }
       if (dragId.startsWith("case:") && move.parentId.startsWith("item:")) {
-        moveCaseMutation.mutate({
+        moveCase({
           id: dragId.slice(5),
           targetItemId: move.parentId.slice(5),
           targetIndex: move.index,
         });
       }
     },
-    [moveCaseMutation, moveItemMutation, workspace?.folders],
+    [moveCase, moveItem, workspace?.folders],
   );
   const handleRenameNode = useCallback(
     (node: TestItemsTreeNode, name: string) => {
       if (!node.refId) return;
-      if (node.kind === "folder") updateFolderMutation.mutate({ id: node.refId, name });
-      else if (node.kind === "item")
-        updateItemMutation.mutate({ id: node.refId, payload: { name } });
+      if (node.kind === "folder") renameFolder({ id: node.refId, name });
+      else if (node.kind === "item") renameItem({ id: node.refId, payload: { name } });
       else if (node.kind === "case") {
-        updateCaseMutation.mutate({ id: node.refId, payload: { name } });
+        renameCase({ id: node.refId, payload: { name } });
       }
     },
-    [updateCaseMutation, updateFolderMutation, updateItemMutation],
+    [renameCase, renameFolder, renameItem],
   );
   const handleTreeAction = useCallback(
     (node: TestItemsTreeNode, action: TestItemsTreeAction) => {
@@ -315,9 +337,9 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             toast.info("静态测试项不支持复制新增");
             return;
           }
-          duplicateItemMutation.mutate(node.refId);
+          duplicateItem(node.refId);
         } else if (node.kind === "case" && node.itemId) {
-          duplicateCaseMutation.mutate({ testItemId: node.itemId, id: node.refId });
+          duplicateCase({ testItemId: node.itemId, id: node.refId });
         }
         return;
       }
@@ -343,7 +365,7 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
         });
       }
     },
-    [duplicateCaseMutation, duplicateItemMutation, generateCaseForItem],
+    [duplicateCase, duplicateItem, generateCaseForItem],
   );
   const changeTypeCaseCount = useMemo(
     () =>
@@ -593,10 +615,8 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             caseRecord={activeCase}
             requirements={caseRequirements}
             members={project.members}
-            onBack={() => setSelectedCaseId("")}
-            onPatchCase={(payload) =>
-              updateCaseMutation.mutateAsync({ id: activeCase.id, payload })
-            }
+            onBack={handleBackToItem}
+            onPatchCase={handlePatchCase}
             onCaseChanged={invalidateCaseData}
           />
         </div>
