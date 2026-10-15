@@ -41,10 +41,12 @@ function caretOffsetFromPoint(clientX: number, clientY: number): number | null {
   return null;
 }
 
-/** 供外部（子项卡的「自动编号」按钮）程序化改值并走同一条保存链路。 */
+/** 供外部（子项卡「自动编号」、用例综述「从描述回填」）程序化改值并走同一条保存链路。 */
 export type EditableCellHandle = {
   /** 归一化行首编号（1、2、3、）；空内容或无需变化时返回 false。 */
   applyNumbering: () => boolean;
+  /** 综述回填：整段写入外部文本并走同一条保存链路；空文本、内容相同或保存中返回 false。 */
+  applyText: (next: string) => boolean;
 };
 
 export function EditableCell({
@@ -257,13 +259,8 @@ export function EditableCell({
     await save(next);
   };
 
-  // 自动编号：与失焦保存同一条链路；保存中跳过，避免和 blur 保存竞态。
-  const applyNumbering = () => {
-    if (phase === "saving") return false;
-    const source = editing ? draftRef.current : value;
-    if (source.trim() === "") return false;
-    const next = normalizeNumbering(source).trim();
-    if (next === source.trim()) return false;
+  /** 外部程序化改值：同步草稿与编辑框 DOM，再走同一条保存链路（保存脉冲、Ctrl+Z 同源）。 */
+  const applyValue = (next: string) => {
     draftRef.current = next;
     const editor = editorRef.current;
     if (editor) editor.value = next;
@@ -272,7 +269,24 @@ export function EditableCell({
     return true;
   };
 
-  useImperativeHandle(ref, () => ({ applyNumbering }));
+  // 自动编号：与失焦保存同一条链路；保存中跳过，避免和 blur 保存竞态。
+  const applyNumbering = () => {
+    const source = editing ? draftRef.current : value;
+    const trimmed = source.trim();
+    if (phase === "saving" || trimmed === "") return false;
+    const next = normalizeNumbering(source).trim();
+    return next === trimmed ? false : applyValue(next);
+  };
+
+  // 综述回填：整段写入外部文本；空文本、内容相同或保存中不写。
+  const applyText = (next: string) => {
+    const text = next.trim();
+    if (phase === "saving" || text === "") return false;
+    if (text === (editing ? draftRef.current : value).trim()) return false;
+    return applyValue(text);
+  };
+
+  useImperativeHandle(ref, () => ({ applyNumbering, applyText }));
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (event.key === "Escape") {

@@ -1,0 +1,71 @@
+/* 综述回填：触发按钮与选项列表（选项本体走 shadcn Command）。 */
+.trigger {
+  align-items: center;
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 42%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.2rem;
+  justify-content: center;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+  width: 1.2rem;
+}
+
+.trigger svg {
+  height: 0.72rem;
+  width: 0.72rem;
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 48%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 0 14px -2px color-mix(in srgb, var(--primary) 50%, transparent);
+  color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+}
+
+.content {
+  padding: 0.4rem;
+  width: min(22rem, calc(100vw - 3rem));
+}
+
+.list {
+  max-height: 18rem;
+}
+
+/* 两行式选项：标签 + 描述预览（截断交给 CSS，不截数据）。 */
+.option {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.optionLabel {
+  color: color-mix(in srgb, var(--info) 86%, var(--foreground));
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.optionText {
+  color: color-mix(in srgb, var(--foreground) 84%, transparent);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  font-size: 0.72rem;
+  padding: 0.35rem;
+}

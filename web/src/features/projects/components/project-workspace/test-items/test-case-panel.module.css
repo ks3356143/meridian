@@ -468,3 +468,10 @@
     transition: none;
   }
 }
+
+/* 行标签上的字段级操作（综述回填按钮）：标签与按钮同行居中。 */
+.headAction {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35rem;
+}

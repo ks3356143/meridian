@@ -12,7 +12,7 @@
   opacity: 0;
   pointer-events: none;
   position: absolute;
-  transition: opacity 170ms ease;
+  /* 不加过渡：按下态已经有柔光，松手进编辑时若从 0 渐入会先"灭"一下再亮，看起来就是边框闪。 */
   z-index: 1;
 }
 
@@ -68,14 +68,6 @@
 
 /* 有边框变体（老项目口径）：展示态直接用输入框边框色，让用户知道可输入。
    展示态本来就带 1px 透明边框做盒模型占位，这里只是换颜色，切换编辑不改变任何尺寸。 */
-/* 展示态是 div[role=button]（为了能直接框选文字），没有 UA 焦点环：
-   键盘 Tab 到这里必须看得见焦点，口径与 .editor:focus 一致（1px 主色边框 + 3px / 12% 柔光）。 */
-.display:focus-visible {
-  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
-  outline: none;
-}
-
 .cell[data-bordered="true"] .display {
   border-color: var(--input);
 }
@@ -89,6 +81,25 @@
 .display:hover {
   background: color-mix(in srgb, var(--info) 8%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info) 26%, transparent);
+}
+
+/* 展示态获得焦点 / 鼠标按下 = 老项目输入框的焦点态（1px 主色边框 + 3px / 12% 柔光）。
+   div[tabindex] 在 mousedown 就会拿到真实焦点（老项目「按下即 focus」口径），松开鼠标、
+   甚至松手落在格子外，焦点仍在、绿框不熄；只做 :active 假焦点的话松手立刻掉回灰边框（闪一下）。
+   真正切换进编辑框仍在 click（松手）——否则展示态拖选、松手把选区带进编辑框会失效。
+   放在 :hover 之后，覆盖 hover 的 inset 阴影；键盘 Tab 命中 :focus，同样可见。 */
+.display:focus,
+.display:active {
+  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+  outline: none;
+}
+
+/* bordered 变体的 hover 用的是 (0,4,0) 优先级，焦点 / 按下态要同权重覆盖。 */
+.cell[data-bordered="true"] .display:focus,
+.cell[data-bordered="true"] .display:active {
+  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 .text {
@@ -120,7 +131,9 @@
   padding: calc(0.4rem + 0.5px) 0.4rem calc(0.4rem - 0.5px);
   /* 隐藏滚动条槽：textarea 一出现滚动条就会挤窄文字宽度、重新折行（真正看得见的"跳"）。 */
   scrollbar-width: none;
-  transition: border-color 180ms ease;
+  /* 全局 [data-slot="input"] 带 0.28s 边框过渡，会把"出现的首帧"渲染成灰边框再渐变——按下进编辑时就是一闪。
+     这里按同文件既有做法用 !important 压掉，首帧即焦点色（老项目口径）。 */
+  transition: none !important;
   width: 100%;
 }
 

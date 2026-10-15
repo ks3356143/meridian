@@ -90,7 +90,8 @@
 }
 
 .detail-stage-item {
-  min-width: 9rem;
+  /* 9rem 在 6 段时因取整多出 1px，阶段条会平白多一条横向滚动条。 */
+  min-width: 8.75rem;
   color: var(--muted-foreground);
   border: 1px solid #0000;
   flex: 1;
@@ -154,6 +155,11 @@
   color: var(--panel-tone);
 }
 
+/* 扫光 ::after 会先 translate 到卡片外再扫回来；卡片不裁切就会把整页的可滚动宽度撑开，
+   底部横向滚动条随动画忽隐忽现（与 .detail-stage-item 同口径）。 */
+.detail-module-card {
+  overflow: clip;
+}
 .detail-module-card[data-module-state="partial"]:after {
   content: "";
   background: linear-gradient(

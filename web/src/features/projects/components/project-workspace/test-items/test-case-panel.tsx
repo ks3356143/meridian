@@ -23,7 +23,8 @@ import type {
 } from "@/features/test-items/types";
 import { usePanelSwitchMotion } from "./use-panel-switch-motion";
 import type { ProjectMember } from "../../../types";
-import { EditableCell } from "./editable-cell";
+import { EditableCell, type EditableCellHandle } from "./editable-cell";
+import { SummaryBackfillPicker } from "./summary-backfill-picker";
 import { caseStatusLabel } from "./test-items-design";
 import { useCaseSteps } from "./use-case-steps";
 import { useCellUndo } from "./use-cell-undo";
@@ -80,6 +81,8 @@ function TestCasePanelInner({
     moveStepMutation,
   } = useCaseSteps(caseRecord.id, onCaseChanged);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; seq: number } | null>(null);
+  // 综述「从描述回填」按钮：走同一条保存链路（保存脉冲、Ctrl+Z 撤销同源）。
+  const summaryCellRef = useRef<EditableCellHandle>(null);
   const { recordChange } = useCellUndo();
 
   // 切用例时内容入场，口径与测试项详情一致：只动画内容，不动滚动容器本体。
@@ -347,9 +350,18 @@ function TestCasePanelInner({
                 </tr>
               ) : null}
               <tr>
-                <th scope="row">用例综述</th>
+                <th scope="row">
+                  <span className={styles.headAction}>
+                    用例综述
+                    <SummaryBackfillPicker
+                      itemId={item.id}
+                      onPick={(text) => summaryCellRef.current?.applyText(text) ?? false}
+                    />
+                  </span>
+                </th>
                 <td colSpan={3}>
                   <EditableCell
+                    ref={summaryCellRef}
                     value={caseRecord.summary}
                     label="用例综述"
                     placeholder="点击填写用例综述（默认由子项内容拼接）"
