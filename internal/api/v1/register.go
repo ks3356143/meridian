@@ -41,6 +41,6 @@ func Register(api huma.API, deps Dependencies) {
 		blocks: contentBlockService,
 		source: officecli.NewClient(""),
 	}))
-	testitemapi.Register(api, testitemservice.NewService(deps.DB))
+	testitemapi.Register(api, testitemservice.NewService(deps.DB).WithBlocks(contentBlockService))
 	userapi.Register(api, userservice.NewService(deps.DB), projectservice.NewService(deps.DB), deps.Auth)
 }

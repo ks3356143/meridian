@@ -1,11 +1,15 @@
 import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import type { RequirementBlockNode } from "@/features/requirements/types";
 import { testItemsApi } from "@/features/test-items/api";
-import type { CaseStepRecord } from "@/features/test-items/types";
+import type { CaseStepRecord, StepBlockView } from "@/features/test-items/types";
+
+/** 无块记录时的空视图；服务端轻量响应（新增步骤等）不带 op/act 时用它兜底。 */
+const EMPTY_STEP_BLOCK: StepBlockView = { doc: null, plainText: "", hasContent: false };
 
 /**
- * 用例步骤（切片 5a）：列表 + 增删改与三态切换。
+ * 用例步骤（切片 5a/5b）：列表 + 增删改、三态切换与富文本块保存。
  * 步骤状态联动用例状态/执行时间由服务端负责，前端在成功回调里让工作台与详情缓存失效。
  */
 export function useCaseSteps(caseId: string, onCaseChanged: () => void) {
@@ -27,10 +31,25 @@ export function useCaseSteps(caseId: string, onCaseChanged: () => void) {
     [queryClient, stepsKey],
   );
 
+  /** 单行操作的服务端响应只带自己负责的字段：merge 保留本地已有的 op/act。 */
+  const mergeStep = useCallback(
+    (updated: CaseStepRecord) => {
+      patchSteps((list) =>
+        list.map((step) => (step.id === updated.id ? { ...step, ...updated } : step)),
+      );
+    },
+    [patchSteps],
+  );
+
   const createStepMutation = useMutation({
     mutationFn: () => testItemsApi.createCaseStep(caseId, ""),
     onSuccess: (created) => {
-      patchSteps((list) => [...list, created].sort((left, right) => left.seq - right.seq));
+      patchSteps((list) =>
+        [
+          ...list,
+          { ...created, op: created.op ?? EMPTY_STEP_BLOCK, act: created.act ?? EMPTY_STEP_BLOCK },
+        ].sort((left, right) => left.seq - right.seq),
+      );
     },
   });
 
@@ -38,7 +57,7 @@ export function useCaseSteps(caseId: string, onCaseChanged: () => void) {
     mutationFn: ({ id, ...payload }: { id: string; expectText?: string; passed?: string }) =>
       testItemsApi.updateCaseStep(id, payload),
     onSuccess: (updated) => {
-      patchSteps((list) => list.map((step) => (step.id === updated.id ? updated : step)));
+      mergeStep(updated);
       // 预期结果/通过状态的任何改动都会让服务端重算用例状态与执行时间（撤销同理）。
       onCaseChanged();
     },
@@ -47,7 +66,23 @@ export function useCaseSteps(caseId: string, onCaseChanged: () => void) {
   const toggleStepMutation = useMutation({
     mutationFn: (id: string) => testItemsApi.toggleCaseStep(id),
     onSuccess: (updated) => {
-      patchSteps((list) => list.map((step) => (step.id === updated.id ? updated : step)));
+      mergeStep(updated);
+      onCaseChanged();
+    },
+  });
+
+  const saveStepBlocksMutation = useMutation({
+    mutationFn: ({
+      id,
+      ...payload
+    }: {
+      id: string;
+      op?: RequirementBlockNode;
+      act?: RequirementBlockNode;
+    }) => testItemsApi.saveCaseStepBlocks(id, payload),
+    onSuccess: (updated) => {
+      mergeStep(updated);
+      // 富文本保存同样会刷新执行时间（服务端「步骤改动自动写今天」口径）。
       onCaseChanged();
     },
   });
@@ -55,6 +90,17 @@ export function useCaseSteps(caseId: string, onCaseChanged: () => void) {
   const duplicateStepMutation = useMutation({
     mutationFn: (id: string) => testItemsApi.duplicateCaseStep(id),
     // 复制插在源步骤下方并重排序号，交给服务端口径：整表重取最稳。
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: stepsKey }),
+  });
+
+  const insertStepBeforeMutation = useMutation({
+    mutationFn: (id: string) => testItemsApi.insertCaseStepBefore(id),
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: stepsKey }),
+  });
+
+  const pasteStepMutation = useMutation({
+    mutationFn: (sourceStepId: string) => testItemsApi.importCaseStep(caseId, sourceStepId),
+    onSuccess: () => toast.success("已粘贴步骤（设计内容，执行数据不带）"),
     onSettled: () => void queryClient.invalidateQueries({ queryKey: stepsKey }),
   });
 
@@ -92,7 +138,10 @@ export function useCaseSteps(caseId: string, onCaseChanged: () => void) {
     createStepMutation,
     updateStepMutation,
     toggleStepMutation,
+    saveStepBlocksMutation,
     duplicateStepMutation,
+    insertStepBeforeMutation,
+    pasteStepMutation,
     deleteStepMutation,
     moveStepMutation,
   };

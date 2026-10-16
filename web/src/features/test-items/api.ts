@@ -1,4 +1,5 @@
 import { request } from "@/api/client";
+import type { RequirementBlockNode } from "@/features/requirements/types";
 import type {
   CaseStepRecord,
   TestCaseRecord,
@@ -54,6 +55,8 @@ export interface UpdateCasePayload {
   summary?: string;
   initText?: string;
   prerequisites?: string;
+  terminationText?: string;
+  passCriteria?: string;
   designerId?: string;
   testerId?: string;
   monitorId?: string;
@@ -116,7 +119,23 @@ export const testItemsApi = {
     request<CaseStepRecord>("POST", `/api/v1/test-case-steps/${stepId}/toggle`),
   duplicateCaseStep: (stepId: string) =>
     request<CaseStepRecord>("POST", `/api/v1/test-case-steps/${stepId}/duplicate`),
+  /** 在目标步骤上方插入空步骤（步骤表 Ctrl+Shift+Enter）。 */
+  insertCaseStepBefore: (stepId: string) =>
+    request<CaseStepRecord>("POST", `/api/v1/test-case-steps/${stepId}/insert-before`),
+  /** 跨用例复制步骤：把源步骤的设计内容复制到目标用例末尾。 */
+  importCaseStep: (targetCaseId: string, sourceStepId: string) =>
+    request<CaseStepRecord>(
+      "POST",
+      `/api/v1/test-cases/${targetCaseId}/steps/import`,
+      {},
+      { sourceStepId },
+    ),
   deleteCaseStep: (stepId: string) => request<void>("DELETE", `/api/v1/test-case-steps/${stepId}`),
+  /** 保存步骤富文本块（op 输入及操作 / act 实测结果），至少提交一个。 */
+  saveCaseStepBlocks: (
+    stepId: string,
+    payload: { op?: RequirementBlockNode; act?: RequirementBlockNode },
+  ) => request<CaseStepRecord>("PUT", `/api/v1/test-case-steps/${stepId}/blocks`, {}, payload),
   moveCaseStep: (stepId: string, targetIndex: number) =>
     request<void>("POST", `/api/v1/test-case-steps/${stepId}/move`, {}, { targetIndex }),
   duplicateCase: (caseId: string) =>

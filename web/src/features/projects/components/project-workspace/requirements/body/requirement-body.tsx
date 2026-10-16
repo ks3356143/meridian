@@ -12,6 +12,29 @@ type RequirementBodyProps = {
   projectCode: string;
 };
 
+/** 纯块渲染（无外框），供需求预览与用例步骤富文本单元格共用。 */
+export function RequirementBlocks({
+  doc,
+  projectCode,
+  className,
+}: {
+  doc: RequirementBlockNode;
+  projectCode: string;
+  className?: string;
+}) {
+  const blocks = doc.content ?? [];
+  if (blocks.length === 0) return null;
+  return (
+    <div className={`${contentStyles.surface} ${className ?? ""}`.trim()} role="document">
+      {blocks.map((block, index) => (
+        <div key={`${block.type}-${index}`} className={styles.block}>
+          <RequirementBlock block={block} projectCode={projectCode} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RequirementBodyImpl({ doc, projectCode }: RequirementBodyProps) {
   const blocks = doc.content ?? [];
 
@@ -21,16 +44,8 @@ function RequirementBodyImpl({ doc, projectCode }: RequirementBodyProps) {
 
   return (
     <section className={styles.frame} aria-label="需求正文">
-      <div
-        className={`${styles.viewport} ${contentStyles.surface}`}
-        role="document"
-        aria-label="结构化需求正文"
-      >
-        {blocks.map((block, index) => (
-          <div key={`${block.type}-${index}`} className={styles.block}>
-            <RequirementBlock block={block} projectCode={projectCode} />
-          </div>
-        ))}
+      <div className={styles.viewport} role="document" aria-label="结构化需求正文">
+        <RequirementBlocks doc={doc} projectCode={projectCode} />
       </div>
     </section>
   );

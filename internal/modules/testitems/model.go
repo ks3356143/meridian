@@ -83,15 +83,18 @@ func (SubItem) TableName() string { return "test_sub_items" }
 
 // Case 用例逻辑定义；操作/实际富文本存 content_blocks（step.{步骤ID}.op|act）。
 type Case struct {
-	ID                string     `gorm:"column:id;primaryKey" json:"id"`
-	ProjectID         string     `gorm:"column:project_id" json:"projectId"`
-	TestItemID        string     `gorm:"column:test_item_id" json:"testItemId"`
-	Identifier        string     `gorm:"column:identifier" json:"identifier"`
-	Seq               int        `gorm:"column:seq" json:"seq"`
-	Name              string     `gorm:"column:name" json:"name"`
-	Summary           string     `gorm:"column:summary" json:"summary"`
-	InitText          string     `gorm:"column:init_text" json:"initText"`
-	Prerequisites     string     `gorm:"column:prerequisites" json:"prerequisites"`
+	ID            string `gorm:"column:id;primaryKey" json:"id"`
+	ProjectID     string `gorm:"column:project_id" json:"projectId"`
+	TestItemID    string `gorm:"column:test_item_id" json:"testItemId"`
+	Identifier    string `gorm:"column:identifier" json:"identifier"`
+	Seq           int    `gorm:"column:seq" json:"seq"`
+	Name          string `gorm:"column:name" json:"name"`
+	Summary       string `gorm:"column:summary" json:"summary"`
+	InitText      string `gorm:"column:init_text" json:"initText"`
+	Prerequisites string `gorm:"column:prerequisites" json:"prerequisites"`
+	// TerminationText 终止条件、PassCriteria 通过准则：测试说明侧两栏（迁移 0025，切片 5b）。
+	TerminationText   string     `gorm:"column:termination_text" json:"terminationText"`
+	PassCriteria      string     `gorm:"column:pass_criteria" json:"passCriteria"`
 	DesignerID        *string    `gorm:"column:designer_id" json:"designerId"`
 	TesterID          *string    `gorm:"column:tester_id" json:"testerId"`
 	MonitorID         *string    `gorm:"column:monitor_id" json:"monitorId"`

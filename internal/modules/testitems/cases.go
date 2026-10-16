@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/id"
+	"chenmeridian/internal/modules/contentblocks"
 )
 
 // ListCases 返回测试项下的用例（按序号）。
@@ -93,12 +94,14 @@ func (s *Service) DuplicateCase(ctx context.Context, caseID string) (Case, error
 			return err
 		}
 		if err := tx.Model(&Case{}).Where("id = ?", created.ID).Updates(map[string]any{
-			"summary":       source.Summary,
-			"init_text":     source.InitText,
-			"prerequisites": source.Prerequisites,
-			"designer_id":   source.DesignerID,
-			"monitor_id":    source.MonitorID,
-			"updated_at":    timeNow(),
+			"summary":          source.Summary,
+			"init_text":        source.InitText,
+			"prerequisites":    source.Prerequisites,
+			"termination_text": source.TerminationText,
+			"pass_criteria":    source.PassCriteria,
+			"designer_id":      source.DesignerID,
+			"monitor_id":       source.MonitorID,
+			"updated_at":       timeNow(),
 		}).Error; err != nil {
 			return fmt.Errorf("复制用例字段失败: %w", err)
 		}
@@ -109,7 +112,12 @@ func (s *Service) DuplicateCase(ctx context.Context, caseID string) (Case, error
 			return fmt.Errorf("查询用例步骤失败: %w", err)
 		}
 		for _, step := range steps {
-			if _, err := insertStep(tx, created.ID, step.ExpectText); err != nil {
+			newStep, err := insertStep(tx, created.ID, step.ExpectText)
+			if err != nil {
+				return err
+			}
+			// 复制步骤的「输入及操作」设计内容；「实测结果」不随用例副本（执行数据重置）。
+			if err := contentblocks.CopyStepBlockTx(tx, step.ID, created.ID, newStep.ID, contentblocks.StepKindOp); err != nil {
 				return err
 			}
 		}
@@ -204,6 +212,8 @@ type UpdateCaseInput struct {
 	Summary           *string
 	InitText          *string
 	Prerequisites     *string
+	TerminationText   *string
+	PassCriteria      *string
 	DesignerID        *string
 	TesterID          *string
 	MonitorID         *string
@@ -226,6 +236,12 @@ func (s *Service) UpdateCase(ctx context.Context, caseID string, input UpdateCas
 	}
 	if input.Prerequisites != nil {
 		updates["prerequisites"] = strings.TrimSpace(*input.Prerequisites)
+	}
+	if input.TerminationText != nil {
+		updates["termination_text"] = strings.TrimSpace(*input.TerminationText)
+	}
+	if input.PassCriteria != nil {
+		updates["pass_criteria"] = strings.TrimSpace(*input.PassCriteria)
 	}
 	if input.DesignerID != nil {
 		updates["designer_id"] = emptyToNil(*input.DesignerID)

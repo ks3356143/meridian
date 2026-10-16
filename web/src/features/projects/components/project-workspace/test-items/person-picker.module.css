@@ -1,0 +1,56 @@
+/* 人员指派选择器（测试人员 / 监测人员 / 设计人员）：chip 触发 + 成员搜索下拉。 */
+
+.trigger {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.3rem;
+  padding: 0.08rem 0.42rem;
+  transition:
+    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.trigger:hover {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 26%, transparent);
+  color: var(--primary);
+}
+
+.trigger:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 45%, transparent);
+  outline: none;
+}
+
+.trigger[data-empty="true"] {
+  color: var(--muted-foreground);
+}
+
+.popover {
+  padding: 0;
+  width: 15rem;
+}
+
+.optionName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  margin-left: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+  }
+}

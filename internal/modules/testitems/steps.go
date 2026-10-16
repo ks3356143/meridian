@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/id"
+	"chenmeridian/internal/modules/contentblocks"
 )
 
 // ListSteps 返回用例步骤（按序号）。
@@ -19,6 +20,86 @@ func (s *Service) ListSteps(ctx context.Context, caseID string) ([]CaseStep, err
 		return nil, fmt.Errorf("查询用例步骤失败: %w", err)
 	}
 	return steps, nil
+}
+
+// StepView 用例步骤视图：步骤行 + 「输入及操作 / 实测结果」两块富文本（切片 5b）。
+type StepView struct {
+	CaseStep
+	Op  contentblocks.BlockView `json:"op"`
+	Act contentblocks.BlockView `json:"act"`
+}
+
+// ListStepsWithBlocks 返回步骤及其富文本块；无块记录的步骤带空视图。
+func (s *Service) ListStepsWithBlocks(ctx context.Context, caseID string) ([]StepView, error) {
+	steps, err := s.ListSteps(ctx, caseID)
+	if err != nil {
+		return nil, err
+	}
+	views := make([]StepView, 0, len(steps))
+	if len(steps) == 0 {
+		return views, nil
+	}
+	blocks := map[string]contentblocks.BlockView{}
+	if s.blocks != nil {
+		itemCase, err := s.GetCase(ctx, caseID)
+		if err != nil {
+			return nil, err
+		}
+		loaded, err := s.blocks.LoadBlocks(ctx, itemCase.ProjectID, contentblocks.OwnerTypeTestCase, caseID, "step.")
+		if err != nil {
+			return nil, err
+		}
+		blocks = loaded
+	}
+	for _, step := range steps {
+		views = append(views, assembleStepView(step, blocks))
+	}
+	return views, nil
+}
+
+func assembleStepView(step CaseStep, blocks map[string]contentblocks.BlockView) StepView {
+	view := StepView{CaseStep: step, Op: contentblocks.EmptyBlockView(), Act: contentblocks.EmptyBlockView()}
+	if block, ok := blocks[contentblocks.StepBlockKey(step.ID, contentblocks.StepKindOp)]; ok {
+		view.Op = block
+	}
+	if block, ok := blocks[contentblocks.StepBlockKey(step.ID, contentblocks.StepKindAct)]; ok {
+		view.Act = block
+	}
+	return view
+}
+
+// SaveStepBlock 保存步骤富文本块（「输入及操作」禁表格），并按步骤改动口径刷新执行时间。
+func (s *Service) SaveStepBlock(ctx context.Context, stepID, kind string, doc contentblocks.Node, operator string) (StepView, error) {
+	if kind != contentblocks.StepKindOp && kind != contentblocks.StepKindAct {
+		return StepView{}, fmt.Errorf("步骤内容块类型 %q 不受支持", kind)
+	}
+	if s.blocks == nil {
+		return StepView{}, fmt.Errorf("内容块服务未接线")
+	}
+	var step CaseStep
+	if err := s.db.WithContext(ctx).Where("id = ?", stepID).First(&step).Error; err != nil {
+		return StepView{}, ErrNotFound
+	}
+	itemCase, err := findCase(s.db.WithContext(ctx), step.TestCaseID)
+	if err != nil {
+		return StepView{}, err
+	}
+	opts := contentblocks.SaveBlockOptions{}
+	if kind == contentblocks.StepKindOp {
+		opts.BannedNodes = map[string]bool{contentblocks.NodeTable: true}
+	}
+	if _, err := s.blocks.SaveBlock(ctx, itemCase.ProjectID, contentblocks.OwnerTypeTestCase, step.TestCaseID,
+		contentblocks.StepBlockKey(stepID, kind), doc, opts, operator); err != nil {
+		return StepView{}, err
+	}
+	if err := touchCaseExecDate(s.db.WithContext(ctx), step.TestCaseID, false); err != nil {
+		return StepView{}, err
+	}
+	blocks, err := s.blocks.LoadBlocks(ctx, itemCase.ProjectID, contentblocks.OwnerTypeTestCase, step.TestCaseID, contentblocks.StepBlockPrefix(stepID))
+	if err != nil {
+		return StepView{}, err
+	}
+	return assembleStepView(step, blocks), nil
 }
 
 // CreateStep 在用例末尾追加步骤。
@@ -72,6 +153,72 @@ func insertStep(tx *gorm.DB, caseID string, expectText string) (CaseStep, error)
 	}
 	if err := recomputeCaseStatus(tx, caseID); err != nil {
 		return CaseStep{}, err
+	}
+	return created, nil
+}
+
+func listStepsTx(tx *gorm.DB, caseID string) ([]CaseStep, error) {
+	var steps []CaseStep
+	if err := tx.Where("test_case_id = ?", caseID).
+		Order("sort_order asc, created_at asc").Find(&steps).Error; err != nil {
+		return nil, fmt.Errorf("查询用例步骤失败: %w", err)
+	}
+	return steps, nil
+}
+
+// insertStepAt 在步骤序列的 position 位置插入一行。
+// 先写负数占位再两阶段重排：seq 上有 UNIQUE(test_case_id, seq)，直接写正数会和目标位置之后的行撞。
+func insertStepAt(tx *gorm.DB, caseID string, position int, template CaseStep) (CaseStep, error) {
+	steps, err := listStepsTx(tx, caseID)
+	if err != nil {
+		return CaseStep{}, err
+	}
+	if position < 0 {
+		position = 0
+	}
+	if position > len(steps) {
+		position = len(steps)
+	}
+	stepIDNew, err := id.New()
+	if err != nil {
+		return CaseStep{}, err
+	}
+	now := time.Now()
+	created := CaseStep{
+		ID:         stepIDNew,
+		TestCaseID: caseID,
+		Seq:        -(len(steps) + 1),
+		ExpectText: template.ExpectText,
+		Passed:     "none",
+		SortOrder:  len(steps),
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+	if err := tx.Create(&created).Error; err != nil {
+		return CaseStep{}, fmt.Errorf("插入用例步骤失败: %w", err)
+	}
+
+	ordered := make([]string, 0, len(steps)+1)
+	for _, step := range steps {
+		ordered = append(ordered, step.ID)
+	}
+	ordered = append(ordered[:position], append([]string{created.ID}, ordered[position:]...)...)
+	for index, idValue := range ordered {
+		if err := tx.Model(&CaseStep{}).Where("id = ?", idValue).Updates(map[string]any{
+			"sort_order": index,
+			"seq":        -(index + 1),
+			"updated_at": now,
+		}).Error; err != nil {
+			return CaseStep{}, fmt.Errorf("重排用例步骤失败: %w", err)
+		}
+	}
+	for index, idValue := range ordered {
+		if err := tx.Model(&CaseStep{}).Where("id = ?", idValue).Updates(map[string]any{
+			"seq":        index + 1,
+			"updated_at": now,
+		}).Error; err != nil {
+			return CaseStep{}, fmt.Errorf("重排用例步骤失败: %w", err)
+		}
 	}
 	return created, nil
 }
@@ -160,6 +307,9 @@ func (s *Service) DeleteStep(ctx context.Context, stepID string) error {
 		if err := tx.Where("id = ?", stepID).Delete(&CaseStep{}).Error; err != nil {
 			return fmt.Errorf("删除用例步骤失败: %w", err)
 		}
+		if err := contentblocks.DeleteBlocksTx(tx, contentblocks.OwnerTypeTestCase, step.TestCaseID, contentblocks.StepBlockPrefix(step.ID)); err != nil {
+			return err
+		}
 		if err := renumberSteps(tx, step.TestCaseID); err != nil {
 			return err
 		}
@@ -167,7 +317,7 @@ func (s *Service) DeleteStep(ctx context.Context, stepID string) error {
 	})
 }
 
-// DuplicateStep 复制步骤到其下方。
+// DuplicateStep 复制步骤到其下方（带 op 设计内容，执行数据重置）。
 func (s *Service) DuplicateStep(ctx context.Context, stepID string) (CaseStep, error) {
 	var created CaseStep
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -175,10 +325,9 @@ func (s *Service) DuplicateStep(ctx context.Context, stepID string) (CaseStep, e
 		if err := tx.Where("id = ?", stepID).First(&source).Error; err != nil {
 			return ErrNotFound
 		}
-		var steps []CaseStep
-		if err := tx.Where("test_case_id = ?", source.TestCaseID).
-			Order("sort_order asc, created_at asc").Find(&steps).Error; err != nil {
-			return fmt.Errorf("查询用例步骤失败: %w", err)
+		steps, err := listStepsTx(tx, source.TestCaseID)
+		if err != nil {
+			return err
 		}
 		position := -1
 		for index, step := range steps {
@@ -190,51 +339,87 @@ func (s *Service) DuplicateStep(ctx context.Context, stepID string) (CaseStep, e
 		if position < 0 {
 			return ErrNotFound
 		}
-		stepIDNew, err := id.New()
+		created, err = insertStepAt(tx, source.TestCaseID, position, source)
 		if err != nil {
 			return err
 		}
-		now := time.Now()
-		created = CaseStep{
-			ID:         stepIDNew,
-			TestCaseID: source.TestCaseID,
-			// 先写成负数占位：seq 上有 UNIQUE(test_case_id, seq)，直接写正数会和下方步骤撞。
-			Seq:        -(len(steps) + 1),
-			ExpectText: source.ExpectText,
-			Passed:     "none",
-			SortOrder:  len(steps),
-			CreatedAt:  now,
-			UpdatedAt:  now,
-		}
-		if err := tx.Create(&created).Error; err != nil {
-			return fmt.Errorf("复制用例步骤失败: %w", err)
-		}
-
-		ordered := make([]string, 0, len(steps)+1)
-		for _, step := range steps {
-			if step.ID != created.ID {
-				ordered = append(ordered, step.ID)
-			}
-		}
-		ordered = append(ordered[:position], append([]string{created.ID}, ordered[position:]...)...)
-		for index, idValue := range ordered {
-			if err := tx.Model(&CaseStep{}).Where("id = ?", idValue).Updates(map[string]any{
-				"sort_order": index,
-				"seq":        -(index + 1),
-				"updated_at": now,
-			}).Error; err != nil {
-				return fmt.Errorf("重排用例步骤失败: %w", err)
-			}
-		}
-		for index, idValue := range ordered {
-			if err := tx.Model(&CaseStep{}).Where("id = ?", idValue).Updates(map[string]any{
-				"seq":        index + 1,
-				"updated_at": now,
-			}).Error; err != nil {
-				return fmt.Errorf("重排用例步骤失败: %w", err)
-			}
+		// 「输入及操作」是设计内容随行复制；「实测结果 / 通过状态」是执行数据，不复制（Passed 已重置）。
+		if err := contentblocks.CopyStepBlockTx(tx, source.ID, source.TestCaseID, created.ID, contentblocks.StepKindOp); err != nil {
+			return err
 		}
 		return recomputeCaseStatus(tx, source.TestCaseID)
+	})
+	if err != nil {
+		return CaseStep{}, err
+	}
+	return created, nil
+}
+
+// InsertStepBefore 在目标步骤上方插入一个空步骤（步骤表 Ctrl+Shift+Enter）。
+func (s *Service) InsertStepBefore(ctx context.Context, stepID string) (CaseStep, error) {
+	var created CaseStep
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var target CaseStep
+		if err := tx.Where("id = ?", stepID).First(&target).Error; err != nil {
+			return ErrNotFound
+		}
+		steps, err := listStepsTx(tx, target.TestCaseID)
+		if err != nil {
+			return err
+		}
+		position := -1
+		for index, step := range steps {
+			if step.ID == stepID {
+				position = index
+				break
+			}
+		}
+		if position < 0 {
+			return ErrNotFound
+		}
+		created, err = insertStepAt(tx, target.TestCaseID, position, CaseStep{})
+		if err != nil {
+			return err
+		}
+		return recomputeCaseStatus(tx, target.TestCaseID)
+	})
+	if err != nil {
+		return CaseStep{}, err
+	}
+	return created, nil
+}
+
+// ImportStep 把源步骤的设计内容（expectText + op 块）复制到目标用例末尾（跨用例复制步骤）。
+func (s *Service) ImportStep(ctx context.Context, targetCaseID, sourceStepID string) (CaseStep, error) {
+	var created CaseStep
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var source CaseStep
+		if err := tx.Where("id = ?", sourceStepID).First(&source).Error; err != nil {
+			return ErrNotFound
+		}
+		target, err := findCase(tx, targetCaseID)
+		if err != nil {
+			return err
+		}
+		sourceCase, err := findCase(tx, source.TestCaseID)
+		if err != nil {
+			return err
+		}
+		if sourceCase.ProjectID != target.ProjectID {
+			return ErrImportAcrossProjects
+		}
+		steps, err := listStepsTx(tx, targetCaseID)
+		if err != nil {
+			return err
+		}
+		created, err = insertStepAt(tx, targetCaseID, len(steps), CaseStep{ExpectText: source.ExpectText})
+		if err != nil {
+			return err
+		}
+		if err := contentblocks.CopyStepBlockTx(tx, sourceStepID, targetCaseID, created.ID, contentblocks.StepKindOp); err != nil {
+			return err
+		}
+		return recomputeCaseStatus(tx, targetCaseID)
 	})
 	if err != nil {
 		return CaseStep{}, err
@@ -249,10 +434,9 @@ func (s *Service) MoveStep(ctx context.Context, stepID string, targetIndex int) 
 		if err := tx.Where("id = ?", stepID).First(&step).Error; err != nil {
 			return ErrNotFound
 		}
-		var steps []CaseStep
-		if err := tx.Where("test_case_id = ?", step.TestCaseID).
-			Order("sort_order asc, created_at asc").Find(&steps).Error; err != nil {
-			return fmt.Errorf("查询用例步骤失败: %w", err)
+		steps, err := listStepsTx(tx, step.TestCaseID)
+		if err != nil {
+			return err
 		}
 
 		from := -1

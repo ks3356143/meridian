@@ -153,13 +153,21 @@ func MarshalDocument(root Node) (string, error) {
 
 // ValidateDocument 校验整棵文档树是否符合受限节点白名单。
 func ValidateDocument(root Node) error {
+	return ValidateDocumentBanned(root, nil)
+}
+
+// ValidateDocumentBanned 在标准白名单之外禁用指定节点类型（如用例步骤「输入及操作」禁表格）。
+func ValidateDocumentBanned(root Node, banned map[string]bool) error {
 	if root.Type != NodeDoc {
 		return &ValidationError{Msg: fmt.Sprintf("根节点必须是 %s，当前为 %q", NodeDoc, root.Type)}
 	}
-	return validateNode(root, root.Type)
+	return validateNode(root, root.Type, banned)
 }
 
-func validateNode(n Node, path string) error {
+func validateNode(n Node, path string, banned map[string]bool) error {
+	if banned[n.Type] {
+		return &ValidationError{Path: path, Msg: fmt.Sprintf("节点类型 %q 在此内容块中不允许出现", n.Type)}
+	}
 	children, known := allowedChildren[n.Type]
 	if !known {
 		return &ValidationError{Path: path, Msg: fmt.Sprintf("节点类型 %q 未登记", n.Type)}
@@ -181,7 +189,7 @@ func validateNode(n Node, path string) error {
 				Msg:  fmt.Sprintf("节点 %q 不允许出现在 %q 下", child.Type, n.Type),
 			}
 		}
-		if err := validateNode(child, childPath); err != nil {
+		if err := validateNode(child, childPath, banned); err != nil {
 			return err
 		}
 	}

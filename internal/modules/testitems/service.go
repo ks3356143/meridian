@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/id"
+	"chenmeridian/internal/modules/contentblocks"
 )
 
 var (
@@ -41,6 +42,8 @@ var (
 	ErrFolderMismatch = errors.New("目标文件夹与测试项类型不一致")
 	// ErrSuffixExhausted 名称拼音前缀相同的测试项过多，后缀自动生成空间用尽（3 位前缀 + 36 种尾字符）。
 	ErrSuffixExhausted = errors.New("名称前缀相同的测试项过多，标识自动生成失败，请手工指定标识后缀")
+	// ErrImportAcrossProjects 跨用例复制步骤只允许在同一项目内。
+	ErrImportAcrossProjects = errors.New("只能在同一项目内的用例之间复制步骤")
 )
 
 // FindProjectID 按项目标识（RXXXXX）解析项目 id。
@@ -62,10 +65,18 @@ func (s *Service) FindProjectID(ctx context.Context, projectCode string) (string
 // Service 测试项与执行领域服务。
 type Service struct {
 	db *gorm.DB
+	// blocks 内容块服务（用例步骤富文本，切片 5b）；未接线时步骤块退化为空视图。
+	blocks *contentblocks.Service
 }
 
 func NewService(db *gorm.DB) *Service {
 	return &Service{db: db}
+}
+
+// WithBlocks 接线内容块服务（步骤「输入及操作 / 实测结果」富文本）。
+func (s *Service) WithBlocks(blocks *contentblocks.Service) *Service {
+	s.blocks = blocks
+	return s
 }
 
 func timeNow() time.Time { return time.Now() }

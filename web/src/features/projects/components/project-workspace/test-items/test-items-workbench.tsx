@@ -32,6 +32,7 @@ import type {
   UpdateTestItemPayload,
 } from "@/features/test-items/api";
 import { testItemsApi } from "@/features/test-items/api";
+import type { TestCaseRecord } from "@/features/test-items/types";
 import type { Project } from "../../../types";
 import { ChangeItemTypeDialog } from "./test-item-change-type-dialog";
 import { CreateFolderDialog, CreateTestItemDialog } from "./test-item-create-dialog";
@@ -50,6 +51,9 @@ import { useTestItemsWorkbench } from "./use-test-items-workbench";
 import styles from "./test-items-workbench.module.css";
 
 let treePanelLayout: Record<string, number> | undefined;
+
+// 稳定引用：detail 未就绪时 siblingCases 用同一空数组，避免切用例监听见步重挂（props 默认值 hoist）。
+const EMPTY_CASES: TestCaseRecord[] = [];
 
 /** 树里的删除都是破坏性动作：统一走二次确认，确认文案按节点类型区分。 */
 type PendingDelete =
@@ -615,6 +619,9 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             caseRecord={activeCase}
             requirements={caseRequirements}
             members={project.members}
+            projectCode={project.id}
+            siblingCases={detail?.cases ?? EMPTY_CASES}
+            onSelectSibling={handleSelectCase}
             onBack={handleBackToItem}
             onPatchCase={handlePatchCase}
             onCaseChanged={invalidateCaseData}

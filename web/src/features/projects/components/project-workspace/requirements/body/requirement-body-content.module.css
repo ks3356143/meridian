@@ -7,7 +7,7 @@
 .surface p[data-variant="figureCaption"] {
   color: var(--foreground);
   font-family: "SimHei", "Microsoft YaHei", sans-serif;
-  font-size: 10.5pt;
+  font-size: var(--body-caption-size, 10.5pt);
   font-weight: 700;
   text-align: center;
   text-indent: 0;
@@ -24,7 +24,7 @@
 
 .surface table {
   border-collapse: collapse;
-  font-size: 10.5pt;
+  font-size: var(--body-table-size, 10.5pt);
   line-height: 1.55;
   margin-inline: auto;
   max-width: 100%;

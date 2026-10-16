@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"chenmeridian/internal/database"
+	"chenmeridian/internal/modules/contentblocks"
 	"chenmeridian/migrations"
 )
 
@@ -39,7 +40,7 @@ VALUES (?, 'R99999', '单元测试项目', '鉴定测评', 'CPU/非嵌', '新研
 		projectID).Error; err != nil {
 		t.Fatalf("写入测试项目失败: %v", err)
 	}
-	return NewService(db), projectID
+	return NewService(db).WithBlocks(contentblocks.NewService(db, filepath.Join(t.TempDir(), "assets"))), projectID
 }
 
 func TestEnsureRoundIsIdempotent(t *testing.T) {
@@ -752,5 +753,360 @@ func TestDuplicateStepInsertsAfterSource(t *testing.T) {
 	}
 	if steps[1].Passed != "none" {
 		t.Fatalf("副本通过状态应重置为未执行: %+v", steps[1])
+	}
+}
+
+// ---- 切片 5b：步骤富文本块与用例「终止条件 / 通过准则」----
+
+func paraDoc(text string) contentblocks.Node {
+	return contentblocks.Node{Type: "doc", Content: []contentblocks.Node{
+		{Type: "paragraph", Content: []contentblocks.Node{{Type: "text", Text: text}}},
+	}}
+}
+
+func tableDoc() contentblocks.Node {
+	return contentblocks.Node{Type: "doc", Content: []contentblocks.Node{
+		{Type: "table", Content: []contentblocks.Node{
+			{Type: "tableRow", Content: []contentblocks.Node{
+				{Type: "tableHeader", Content: []contentblocks.Node{
+					{Type: "paragraph", Content: []contentblocks.Node{{Type: "text", Text: "列"}}},
+				}},
+			}},
+		}},
+	}}
+}
+
+func TestStepBlocksSaveAndList(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	step, err := service.CreateStep(ctx, itemCase.ID, "预期一")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+
+	view, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindOp, paraDoc("开机并进入主界面"), "user-1")
+	if err != nil {
+		t.Fatalf("保存输入及操作失败: %v", err)
+	}
+	if !view.Op.HasContent || view.Op.PlainText != "开机并进入主界面" {
+		t.Fatalf("输入及操作视图不正确: %+v", view.Op)
+	}
+	if view.Act.HasContent {
+		t.Fatalf("未保存的实测结果应为空: %+v", view.Act)
+	}
+
+	view, err = service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindAct, tableDoc(), "user-1")
+	if err != nil {
+		t.Fatalf("保存实测结果失败: %v", err)
+	}
+	if !view.Act.HasContent {
+		t.Fatalf("实测结果应保留表格内容: %+v", view.Act)
+	}
+	if !view.Op.HasContent {
+		t.Fatalf("保存 act 不应清空 op: %+v", view.Op)
+	}
+
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindOp, tableDoc(), "user-1"); err == nil {
+		t.Fatalf("输入及操作不应允许表格")
+	}
+
+	views, err := service.ListStepsWithBlocks(ctx, itemCase.ID)
+	if err != nil {
+		t.Fatalf("读取步骤失败: %v", err)
+	}
+	if len(views) != 1 || !views[0].Op.HasContent || !views[0].Act.HasContent {
+		t.Fatalf("列表应带两块富文本: %+v", views)
+	}
+}
+
+func TestDuplicateStepCopiesOpOnly(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	step, err := service.CreateStep(ctx, itemCase.ID, "预期一")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindOp, paraDoc("第一步操作"), ""); err != nil {
+		t.Fatalf("保存 op 失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindAct, paraDoc("第一步结果"), ""); err != nil {
+		t.Fatalf("保存 act 失败: %v", err)
+	}
+
+	if _, err := service.DuplicateStep(ctx, step.ID); err != nil {
+		t.Fatalf("复制步骤失败: %v", err)
+	}
+	views, err := service.ListStepsWithBlocks(ctx, itemCase.ID)
+	if err != nil {
+		t.Fatalf("读取步骤失败: %v", err)
+	}
+	if len(views) != 2 {
+		t.Fatalf("复制后应有 2 步，实际 %d", len(views))
+	}
+	copied := views[1]
+	if !copied.Op.HasContent || copied.Op.PlainText != "第一步操作" {
+		t.Fatalf("副本应带 op 设计内容: %+v", copied.Op)
+	}
+	if copied.Act.HasContent {
+		t.Fatalf("副本不应带实测结果: %+v", copied.Act)
+	}
+	if copied.Passed != "none" {
+		t.Fatalf("副本通过状态应重置: %+v", copied)
+	}
+}
+
+func TestDeleteStepRemovesBlocks(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	first, err := service.CreateStep(ctx, itemCase.ID, "预期一")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.CreateStep(ctx, itemCase.ID, "预期二"); err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, first.ID, contentblocks.StepKindOp, paraDoc("将被清理"), ""); err != nil {
+		t.Fatalf("保存 op 失败: %v", err)
+	}
+
+	if err := service.DeleteStep(ctx, first.ID); err != nil {
+		t.Fatalf("删除步骤失败: %v", err)
+	}
+	var count int64
+	if err := service.db.Model(&contentblocks.ContentBlock{}).
+		Where("owner_type = ? AND block_key LIKE ?", contentblocks.OwnerTypeTestCase, contentblocks.StepBlockPrefix(first.ID)+"%").
+		Count(&count).Error; err != nil {
+		t.Fatalf("统计残留块失败: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("删除步骤后应清理内容块，残留 %d", count)
+	}
+}
+
+func TestCaseTextFieldsUpdateAndDuplicate(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+
+	updated, err := service.UpdateCase(ctx, itemCase.ID, UpdateCaseInput{
+		TerminationText: ptr("达到终止条件"),
+		PassCriteria:    ptr("全部步骤通过"),
+	})
+	if err != nil {
+		t.Fatalf("更新用例文本两栏失败: %v", err)
+	}
+	if updated.TerminationText != "达到终止条件" || updated.PassCriteria != "全部步骤通过" {
+		t.Fatalf("终止条件/通过准则未写入: %+v", updated)
+	}
+
+	dup, err := service.DuplicateCase(ctx, itemCase.ID)
+	if err != nil {
+		t.Fatalf("复制用例失败: %v", err)
+	}
+	if dup.TerminationText != "达到终止条件" || dup.PassCriteria != "全部步骤通过" {
+		t.Fatalf("复制用例应带上文本两栏: %+v", dup)
+	}
+}
+
+func TestDuplicateCaseCopiesStepOp(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	step, err := service.CreateStep(ctx, itemCase.ID, "预期一")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindOp, paraDoc("设计操作"), ""); err != nil {
+		t.Fatalf("保存 op 失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindAct, paraDoc("执行结果"), ""); err != nil {
+		t.Fatalf("保存 act 失败: %v", err)
+	}
+
+	dup, err := service.DuplicateCase(ctx, itemCase.ID)
+	if err != nil {
+		t.Fatalf("复制用例失败: %v", err)
+	}
+	views, err := service.ListStepsWithBlocks(ctx, dup.ID)
+	if err != nil {
+		t.Fatalf("读取副本步骤失败: %v", err)
+	}
+	if len(views) != 1 {
+		t.Fatalf("副本应有 1 步，实际 %d", len(views))
+	}
+	if !views[0].Op.HasContent || views[0].Op.PlainText != "设计操作" {
+		t.Fatalf("副本步骤应带 op 设计内容: %+v", views[0].Op)
+	}
+	if views[0].Act.HasContent {
+		t.Fatalf("副本步骤不应带实测结果: %+v", views[0].Act)
+	}
+}
+
+func TestInsertStepBeforeKeepsOrder(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	first, err := service.CreateStep(ctx, itemCase.ID, "预期一")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.CreateStep(ctx, itemCase.ID, "预期二"); err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+
+	inserted, err := service.InsertStepBefore(ctx, first.ID)
+	if err != nil {
+		t.Fatalf("上方插入步骤失败: %v", err)
+	}
+	if inserted.ExpectText != "" || inserted.Passed != "none" {
+		t.Fatalf("插入的应是空步骤: %+v", inserted)
+	}
+	steps, err := service.ListSteps(ctx, itemCase.ID)
+	if err != nil {
+		t.Fatalf("读取步骤失败: %v", err)
+	}
+	if len(steps) != 3 || steps[0].ID != inserted.ID || steps[1].ExpectText != "预期一" {
+		t.Fatalf("插入位置不正确: %+v", steps)
+	}
+	for index, step := range steps {
+		if step.Seq != index+1 {
+			t.Fatalf("序号未重排: %+v", steps)
+		}
+	}
+}
+
+func TestImportStepCopiesDesignContent(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	sourceCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	sourceStep, err := service.CreateStep(ctx, sourceCase.ID, "列表显示匹配参数")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, sourceStep.ID, contentblocks.StepKindOp, paraDoc("打开界面并查询"), ""); err != nil {
+		t.Fatalf("保存 op 失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, sourceStep.ID, contentblocks.StepKindAct, paraDoc("执行结果"), ""); err != nil {
+		t.Fatalf("保存 act 失败: %v", err)
+	}
+	targetCase, err := service.CreateCase(ctx, item.ID, "参数新增")
+	if err != nil {
+		t.Fatalf("创建目标用例失败: %v", err)
+	}
+
+	imported, err := service.ImportStep(ctx, targetCase.ID, sourceStep.ID)
+	if err != nil {
+		t.Fatalf("跨用例复制步骤失败: %v", err)
+	}
+	if imported.ExpectText != "列表显示匹配参数" || imported.Passed != "none" {
+		t.Fatalf("导入步骤字段不正确: %+v", imported)
+	}
+	views, err := service.ListStepsWithBlocks(ctx, targetCase.ID)
+	if err != nil {
+		t.Fatalf("读取目标步骤失败: %v", err)
+	}
+	if len(views) != 1 {
+		t.Fatalf("目标用例应有 1 步，实际 %d", len(views))
+	}
+	if !views[0].Op.HasContent || views[0].Op.PlainText != "打开界面并查询" {
+		t.Fatalf("导入应带 op 设计内容: %+v", views[0].Op)
+	}
+	if views[0].Act.HasContent {
+		t.Fatalf("导入不应带实测结果: %+v", views[0].Act)
+	}
+}
+
+func TestImportStepRejectsCrossProject(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	sourceCase, err := service.CreateCase(ctx, item.ID, "参数查询")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	sourceStep, err := service.CreateStep(ctx, sourceCase.ID, "预期一")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+
+	if err := service.db.Exec(`
+INSERT INTO projects (id, code, name, nature, platform, software_type, classification, security_level, organization, owner_id, status, created_at, updated_at)
+VALUES ('other-project-002', 'R88888', '另一个项目', '鉴定测评', 'CPU/非嵌', '新研', '内部', 'C', '测试单位', 'user-1', '编制大纲中', datetime('now'), datetime('now'))`).Error; err != nil {
+		t.Fatalf("创建第二个项目失败: %v", err)
+	}
+	otherItem, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: "other-project-002", TypeCode: "SU", Name: "其他测试项"})
+	if err != nil {
+		t.Fatalf("在第二个项目创建测试项失败: %v", err)
+	}
+	targetCase, err := service.CreateCase(ctx, otherItem.ID, "目标用例")
+	if err != nil {
+		t.Fatalf("创建目标用例失败: %v", err)
+	}
+
+	if _, err := service.ImportStep(ctx, targetCase.ID, sourceStep.ID); !errors.Is(err, ErrImportAcrossProjects) {
+		t.Fatalf("跨项目复制步骤应被拒绝，实际 %v", err)
 	}
 }

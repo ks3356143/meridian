@@ -1,3 +1,5 @@
+import type { RequirementBlockNode } from "@/features/requirements/types";
+
 export interface TestItemType {
   id: string;
   code: string;
@@ -67,6 +69,10 @@ export interface TestCaseRecord {
   summary: string;
   initText: string;
   prerequisites: string;
+  /** 终止条件（测试说明侧，切片 5b）。 */
+  terminationText: string;
+  /** 通过准则（测试说明侧，切片 5b）。 */
+  passCriteria: string;
   designerId: string | null;
   testerId: string | null;
   monitorId: string | null;
@@ -79,14 +85,26 @@ export interface TestCaseRecord {
   updatedAt: string;
 }
 
+/** 步骤富文本块视图（op = 输入及操作 / act = 实测结果，切片 5b）。 */
+export interface StepBlockView {
+  /** 结构化文档；无块记录时为 null。 */
+  doc: RequirementBlockNode | null;
+  plainText: string;
+  hasContent: boolean;
+}
+
 export interface CaseStepRecord {
   id: string;
   testCaseId: string;
   seq: number;
-  /** 预期结果（纯文本）；操作步骤与实际结果两列随切片 5b 接入富文本。 */
+  /** 预期结果（纯文本）。 */
   expectText: string;
   /** 通过状态：none 未执行 / pass 通过 / fail 未通过。 */
   passed: string;
+  /** 输入及操作：富文本（文字 + 图片，不出现表格）。 */
+  op: StepBlockView;
+  /** 实测结果：富文本（文字 + 图片 + 表格）。 */
+  act: StepBlockView;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;

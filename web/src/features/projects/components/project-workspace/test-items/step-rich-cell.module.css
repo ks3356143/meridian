@@ -1,0 +1,179 @@
+/* 用例步骤富文本单元格（切片 5b）：展示态直接渲染结构化内容，点击进入编辑，编辑时顶部工具条。 */
+
+.cell {
+  /* 单元格里把正文规格收紧一档：正文是阅读面，步骤表是密集操作面。 */
+  --body-text-size: 0.78rem;
+  --body-heading-size: 0.82rem;
+  --body-caption-size: 0.72rem;
+  --body-table-size: 0.72rem;
+  min-width: 0;
+  position: relative;
+}
+
+/* 展示态与 EditableCell `bordered` 同口径：常驻 1px 输入边框，悬停给提示、聚焦/按下换主色。 */
+.display {
+  border: 1px solid var(--input);
+  cursor: text;
+  display: block;
+  min-height: 2.1rem;
+  /* 实测结果里的表格可能比单元格宽：单元格内横向滚动，不溢出到相邻列。 */
+  overflow-x: auto;
+  padding: 0.3rem 0.45rem;
+  transition:
+    border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  width: 100%;
+}
+
+.display:hover {
+  background: color-mix(in srgb, var(--info) 5%, transparent);
+  border-color: color-mix(in srgb, var(--info) 45%, var(--input));
+}
+
+.display:focus,
+.display:active {
+  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+  outline: none;
+}
+
+.placeholder {
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  user-select: none;
+}
+
+/* RequirementBlocks 的每个块自带 0.55rem 节距（正文阅读口径）；单元格里收紧。 */
+.content > :global(div) {
+  padding-bottom: 0.15rem;
+}
+
+.content > :global(div:last-child) {
+  padding-bottom: 0;
+}
+
+.editorWrap {
+  border: 1px solid color-mix(in srgb, var(--primary) 62%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+  position: relative;
+}
+
+/* 编辑时工具条：浮出在单元格上沿外侧、不占内容流——切编辑不改变行高，
+   否则「一个编辑器开着时点相邻单元格」的第一次点击会因行高变化落空。 */
+.toolbar {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  bottom: 100%;
+  box-shadow: var(--elevation-2);
+  display: flex;
+  gap: 0.08rem;
+  left: -1px;
+  padding: 0.12rem 0.18rem;
+  position: absolute;
+  right: -1px;
+  z-index: 40;
+}
+
+.toolButton {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.4rem;
+  justify-content: center;
+  width: 1.4rem;
+}
+
+.toolButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: var(--primary);
+}
+
+.toolButton[data-active="true"] {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 32%, transparent);
+  color: var(--primary);
+}
+
+.toolButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.toolButton svg {
+  height: 0.8rem;
+  width: 0.8rem;
+}
+
+.toolDivider {
+  background: var(--border);
+  height: 0.9rem;
+  margin: 0 0.14rem;
+  width: 1px;
+}
+
+.proseMirror {
+  font-size: var(--body-text-size, 12pt);
+  line-height: 1.7;
+  min-height: 2.1rem;
+  outline: none;
+  overflow-wrap: anywhere;
+  overflow-x: auto;
+  padding: 0.3rem 0.45rem;
+}
+
+.proseMirror :global(p) {
+  margin: 0 0 0.25rem;
+}
+
+.proseMirror :global(> :last-child) {
+  margin-bottom: 0;
+}
+
+.spinner {
+  animation: spin 0.9s linear infinite;
+  color: var(--primary);
+  height: 0.9rem;
+  position: absolute;
+  right: 0.35rem;
+  top: 0.35rem;
+  width: 0.9rem;
+}
+
+/* 已保存一次性脉冲（与 EditableCell 同口径）。 */
+.cell[data-phase="saved"] {
+  animation: savedPulse 1.3s ease-out 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes savedPulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 45%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .display {
+    transition: none;
+  }
+
+  .spinner {
+    animation-duration: 1.6s;
+  }
+
+  .cell[data-phase="saved"] {
+    animation: none;
+  }
+}

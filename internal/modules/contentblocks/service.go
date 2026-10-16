@@ -207,33 +207,116 @@ func (s *Service) loadRequirement(ctx context.Context, requirementID string) (re
 	return ref, nil
 }
 
-// persist 写入正文块。正文块是正文的权威源，不再回写 software_requirements.description。
-func (s *Service) persist(
+// BlockView 通用内容块视图：解析后的文档 + 纯文本 + 非空判定。
+type BlockView struct {
+	Doc        Node      `json:"doc"`
+	PlainText  string    `json:"plainText"`
+	HasContent bool      `json:"hasContent"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+}
+
+// emptyBlockView 无块记录时的默认视图（空文档），包级缓存避免重复解析。
+var emptyBlockView = func() BlockView {
+	doc, err := ParseDocument([]byte(EmptyDocumentJSON))
+	if err != nil {
+		return BlockView{}
+	}
+	return BlockView{Doc: doc}
+}()
+
+// EmptyBlockView 返回无块记录时的空视图。
+func EmptyBlockView() BlockView {
+	return emptyBlockView
+}
+
+// SaveBlockOptions 控制块写入的来源标记与额外节点禁用。
+type SaveBlockOptions struct {
+	Origin        string
+	AuthoringMode string
+	// BannedNodes 在标准白名单之外禁用指定节点类型（如用例步骤「输入及操作」禁表格）。
+	BannedNodes map[string]bool
+}
+
+// LoadBlocks 按拥有者读取块视图；keyPrefix 为空时返回该拥有者全部块。
+func (s *Service) LoadBlocks(
 	ctx context.Context,
 	projectID string,
+	ownerType string,
 	ownerID string,
+	keyPrefix string,
+) (map[string]BlockView, error) {
+	query := s.db.WithContext(ctx).
+		Where("project_id = ? AND owner_type = ? AND owner_id = ?", projectID, ownerType, ownerID)
+	if keyPrefix != "" {
+		query = query.Where("block_key LIKE ?", keyPrefix+"%")
+	}
+	var blocks []ContentBlock
+	if err := query.Find(&blocks).Error; err != nil {
+		return nil, fmt.Errorf("查询内容块失败: %w", err)
+	}
+	views := make(map[string]BlockView, len(blocks))
+	for _, block := range blocks {
+		doc, err := ParseDocument([]byte(block.BodyJSON))
+		if err != nil {
+			return nil, fmt.Errorf("内容块数据非法: %w", err)
+		}
+		views[block.BlockKey] = BlockView{
+			Doc:        doc,
+			PlainText:  PlainText(doc),
+			HasContent: HasContent(doc),
+			UpdatedAt:  block.UpdatedAt,
+		}
+	}
+	return views, nil
+}
+
+// SaveBlock 校验并保存单个内容块（按拥有者+块键 upsert），返回最新视图。
+func (s *Service) SaveBlock(
+	ctx context.Context,
+	projectID string,
+	ownerType string,
+	ownerID string,
+	blockKey string,
 	doc Node,
-	origin string,
-	authoringMode string,
+	opts SaveBlockOptions,
 	operator string,
-) error {
+) (BlockView, error) {
+	doc = SanitizeDocument(doc)
+	if err := ValidateDocumentBanned(doc, opts.BannedNodes); err != nil {
+		return BlockView{}, err
+	}
+	origin := opts.Origin
+	if origin == "" {
+		origin = OriginManual
+	}
+	if !validOrigins[origin] {
+		return BlockView{}, fmt.Errorf("来源 %q 不受支持", origin)
+	}
+	authoringMode := opts.AuthoringMode
+	if authoringMode == "" {
+		authoringMode = AuthoringManual
+	}
+	if !validAuthoringModes[authoringMode] {
+		return BlockView{}, fmt.Errorf("创作方式 %q 不受支持", authoringMode)
+	}
+
 	bodyJSON, err := MarshalDocument(doc)
 	if err != nil {
-		return err
+		return BlockView{}, err
 	}
 	plainText := PlainText(doc)
 	now := time.Now().UTC()
 
 	blockID, err := id.New()
 	if err != nil {
-		return err
+		return BlockView{}, err
 	}
 	block := ContentBlock{
 		ID:            blockID,
 		ProjectID:     projectID,
-		OwnerType:     OwnerTypeRequirement,
+		OwnerType:     ownerType,
 		OwnerID:       ownerID,
-		BlockKey:      BlockKeyRequirementBody,
+		BlockKey:      blockKey,
 		BodyJSON:      bodyJSON,
 		PayloadJSON:   "{}",
 		PlainText:     plainText,
@@ -260,8 +343,25 @@ func (s *Service) persist(
 			"updated_at":     now,
 		}),
 	}).Create(&block).Error; err != nil {
-		return fmt.Errorf("保存需求正文块失败: %w", err)
+		return BlockView{}, fmt.Errorf("保存内容块失败: %w", err)
 	}
 
-	return nil
+	return BlockView{Doc: doc, PlainText: plainText, HasContent: HasContent(doc), UpdatedAt: now}, nil
+}
+
+// persist 写入需求正文块。正文块是正文的权威源，不再回写 software_requirements.description。
+func (s *Service) persist(
+	ctx context.Context,
+	projectID string,
+	ownerID string,
+	doc Node,
+	origin string,
+	authoringMode string,
+	operator string,
+) error {
+	_, err := s.SaveBlock(ctx, projectID, OwnerTypeRequirement, ownerID, BlockKeyRequirementBody, doc, SaveBlockOptions{
+		Origin:        origin,
+		AuthoringMode: authoringMode,
+	}, operator)
+	return err
 }

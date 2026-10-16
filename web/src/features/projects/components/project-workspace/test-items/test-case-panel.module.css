@@ -170,13 +170,6 @@
   padding-left: 0.3rem;
 }
 
-/* 人员栏位：只读显示姓名，指派下拉随切片 5c。 */
-.personChip {
-  color: color-mix(in srgb, var(--foreground) 92%, transparent);
-  font-size: 0.74rem;
-  padding-left: 0.3rem;
-}
-
 /* 追踪关系 = 追溯链树（文档 → 需求 → 测试项 → 用例），只读继承所属测试项。 */
 .trackTree {
   font-size: 0.72rem;
@@ -325,20 +318,34 @@
   white-space: nowrap;
 }
 
-/* 列宽按内容收紧：序号 / 通过与否 / 行操作固定，期望结果吃剩余宽度，避免「通过」与行操作之间夹出一条空白带。 */
+/* 列宽：序号 / 通过与否 / 行操作固定；输入及操作 : 期望结果 : 实测结果 ≈ 31 : 23 : 46。
+   百分比相对整表宽（fixed 布局），fixed 列扣掉后三列内部比例即 31 : 23 : 46。 */
 .stepsTable th:nth-child(1),
 .stepsTable td:nth-child(1) {
   width: 2.6rem;
 }
 
-.stepsTable th:nth-child(3),
-.stepsTable td:nth-child(3) {
+.stepsTable th:nth-child(2) {
+  width: 22%;
+}
+
+.stepsTable th:nth-child(3) {
+  width: 17%;
+}
+
+.stepsTable th:nth-child(4) {
+  width: 32%;
+}
+
+.stepsTable th:nth-child(5),
+.stepsTable td:nth-child(5) {
   width: 5rem;
 }
 
-.stepsTable th:nth-child(4),
-.stepsTable td:nth-child(4) {
-  width: 6.8rem;
+.stepsTable th:nth-child(6),
+.stepsTable td:nth-child(6) {
+  /* 5 个行操作按钮（移动 / 复制 / 复制到剪贴板 / 删除）。 */
+  width: 7.6rem;
 }
 
 .stepsTable td {
@@ -348,7 +355,7 @@
   vertical-align: middle;
 }
 
-.stepsTable td:nth-child(3) {
+.stepsTable td:nth-child(5) {
   text-align: center;
 }
 
@@ -403,6 +410,23 @@
   border-color: color-mix(in srgb, var(--primary) 42%, transparent);
 }
 
+/* 跨用例粘贴步骤：表格下方右对齐一条（剪贴板非空时出现）。 */
+.pasteRow {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 0.45rem;
+}
+
+.pasteHint {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .stepActions {
   display: inline-flex;
   gap: 0.15rem;

@@ -141,6 +141,8 @@ type UpdateCaseBody struct {
 	Summary           *string `json:"summary,omitempty"`
 	InitText          *string `json:"initText,omitempty"`
 	Prerequisites     *string `json:"prerequisites,omitempty"`
+	TerminationText   *string `json:"terminationText,omitempty"`
+	PassCriteria      *string `json:"passCriteria,omitempty"`
 	DesignerID        *string `json:"designerId,omitempty"`
 	TesterID          *string `json:"testerId,omitempty"`
 	MonitorID         *string `json:"monitorId,omitempty"`
@@ -206,6 +208,8 @@ func registerCases(api huma.API, handler *Handler) {
 			Summary:           input.Body.Summary,
 			InitText:          input.Body.InitText,
 			Prerequisites:     input.Body.Prerequisites,
+			TerminationText:   input.Body.TerminationText,
+			PassCriteria:      input.Body.PassCriteria,
 			DesignerID:        input.Body.DesignerID,
 			TesterID:          input.Body.TesterID,
 			MonitorID:         input.Body.MonitorID,

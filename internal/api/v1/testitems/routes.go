@@ -7,6 +7,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 
+	authservice "chenmeridian/internal/auth"
+	contentblocksservice "chenmeridian/internal/modules/contentblocks"
 	testitemsservice "chenmeridian/internal/modules/testitems"
 )
 
@@ -23,6 +25,14 @@ func Register(api huma.API, service *testitemsservice.Service) {
 	registerCases(api, handler)
 	registerSteps(api, handler)
 	registerLinks(api, handler)
+}
+
+func currentUserID(ctx context.Context) string {
+	claims, ok := authservice.ClaimsFromContext(ctx)
+	if !ok {
+		return ""
+	}
+	return claims.UserID
 }
 
 // nonNil 把 nil 切片转为空切片，保证 JSON 输出 [] 而不是 null（前端按数组消费）。
@@ -421,6 +431,13 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("已关联需求的测试项不能标记为隐含需求（先解除关联）")
 	case errors.Is(err, testitemsservice.ErrStaticTypeExists):
 		return huma.Error400BadRequest("同一轮次只能创建一个该类型静态测试项（DC/SA/CR/CW 各一个）")
+	case errors.Is(err, testitemsservice.ErrImportAcrossProjects):
+		return huma.Error400BadRequest("只能在同一项目内的用例之间复制步骤")
+	}
+	// 步骤富文本块的内容校验失败（如「输入及操作」出现表格）按 422 返回。
+	var validationErr *contentblocksservice.ValidationError
+	if errors.As(err, &validationErr) {
+		return huma.Error422UnprocessableEntity(validationErr.Error())
 	}
 	return huma.Error500InternalServerError(fallback)
 }

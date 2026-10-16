@@ -1,19 +1,7 @@
-import { memo, useLayoutEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, CopyPlus, FileText, Plus, Trash2 } from "lucide-react";
+import { memo, useEffect, useLayoutEffect, useRef } from "react";
+import { FileText } from "lucide-react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { EmptyHint } from "@/components/shared/empty-hint";
-import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import type { UpdateCasePayload } from "@/features/test-items/api";
 import type {
@@ -23,15 +11,22 @@ import type {
 } from "@/features/test-items/types";
 import { usePanelSwitchMotion } from "./use-panel-switch-motion";
 import type { ProjectMember } from "../../../types";
+import { CaseStepsSection } from "./case-steps-section";
 import { EditableCell, type EditableCellHandle } from "./editable-cell";
+import { PersonPicker } from "./person-picker";
 import { SummaryBackfillPicker } from "./summary-backfill-picker";
 import { caseStatusLabel } from "./test-items-design";
-import { useCaseSteps } from "./use-case-steps";
 import { useCellUndo } from "./use-cell-undo";
 import styles from "./test-case-panel.module.css";
 
 /** 可撤销的用例文本字段（HTML 值都是字符串）。 */
-type CaseTextField = "name" | "summary" | "initText" | "prerequisites";
+type CaseTextField =
+  | "name"
+  | "summary"
+  | "initText"
+  | "prerequisites"
+  | "terminationText"
+  | "passCriteria";
 
 function formatExecDate(value: string | null) {
   if (!value) return "—";
@@ -40,21 +35,14 @@ function formatExecDate(value: string | null) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-/** 人员栏位（模板「测试人员 / 监测人员」）：先只读显示姓名，指派下拉随切片 5c。 */
-function PersonCell({ id, members }: { id: string | null; members: ProjectMember[] }) {
-  const person = id ? members.find((member) => member.id === id) : undefined;
-  return person ? (
-    <span className={styles.personChip}>{person.displayName || person.username}</span>
-  ) : (
-    <span className={styles.placeholderChip}>未指派</span>
-  );
-}
-
 function TestCasePanelInner({
   item,
   caseRecord,
   requirements,
   members,
+  projectCode,
+  siblingCases,
+  onSelectSibling,
   onBack,
   onPatchCase,
   onCaseChanged,
@@ -66,21 +54,15 @@ function TestCasePanelInner({
   requirements: TestItemRequirementRef[] | null;
   /** 项目成员：人员栏位只读显示姓名。 */
   members: ProjectMember[];
+  /** 项目业务标识（RXXXXX）：富文本图片的附件上传与读取按项目隔离。 */
+  projectCode: string;
+  /** 同测试项内的兄弟用例：Ctrl+←/→ 按列表顺序切换。 */
+  siblingCases: TestCaseRecord[];
+  onSelectSibling: (caseId: string) => void;
   onBack: () => void;
   onPatchCase: (payload: UpdateCasePayload) => Promise<unknown>;
   onCaseChanged: () => void;
 }) {
-  const {
-    stepsQuery,
-    steps,
-    createStepMutation,
-    updateStepMutation,
-    toggleStepMutation,
-    duplicateStepMutation,
-    deleteStepMutation,
-    moveStepMutation,
-  } = useCaseSteps(caseRecord.id, onCaseChanged);
-  const [pendingDelete, setPendingDelete] = useState<{ id: string; seq: number } | null>(null);
   // 综述「从描述回填」按钮：走同一条保存链路（保存脉冲、Ctrl+Z 撤销同源）。
   const summaryCellRef = useRef<EditableCellHandle>(null);
   const { recordChange } = useCellUndo();
@@ -107,135 +89,39 @@ function TestCasePanelInner({
     });
   };
 
-  const stepsBody = stepsQuery.isPending ? (
-    <QueryLoading label="正在加载测试步骤" rows={3} />
-  ) : stepsQuery.isError ? (
-    <QueryError
-      title="步骤加载失败"
-      description="无法读取该用例的测试步骤。"
-      onRetry={() => void stepsQuery.refetch()}
-    />
-  ) : steps.length === 0 ? (
-    <EmptyHint
-      tone="info"
-      action={
-        <Button
-          type="button"
-          size="xs"
-          variant="outline"
-          onClick={() => createStepMutation.mutate()}
-        >
-          新增第一个步骤
-        </Button>
+  // 切用例：Ctrl+←/→ 上/下一条。用例详情打开期间全局生效（面板挂载即挂监听）；
+  // 普通输入框内让位给光标移动；富文本编辑器内按「编辑态先保存再切」口径直接切换（blur 提交后下一拍跳转）。
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      const active = document.activeElement as HTMLElement | null;
+      const tag = active?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const currentIndex = siblingCases.findIndex((item) => item.id === caseRecord.id);
+      const target = siblingCases[currentIndex + (event.key === "ArrowLeft" ? -1 : 1)];
+      if (!target) return;
+      event.preventDefault();
+      active?.blur();
+      window.setTimeout(() => onSelectSibling(target.id), 0);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [caseRecord.id, siblingCases, onSelectSibling]);
+
+  /** 人员指派：走用例 PATCH 同一保存链路，并记入 Ctrl+Z 撤销栈（与文本字段同口径）。 */
+  const savePerson = (
+    label: string,
+    field: "testerId" | "monitorId" | "designerId",
+    next: string,
+  ) => {
+    const previous = caseRecord[field] ?? "";
+    return onPatchCase({ [field]: next }).then(() => {
+      if (previous !== next) {
+        recordChange(label, () => onPatchCase({ [field]: previous }));
       }
-    >
-      这个用例还没有步骤；步骤是执行与记录的取数单位，至少保留 1 行。
-    </EmptyHint>
-  ) : (
-    <table className={styles.stepsTable}>
-      <thead>
-        <tr>
-          <th scope="col">序号</th>
-          <th scope="col">期望结果与评估标准</th>
-          <th scope="col">通过与否</th>
-          <th scope="col">操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        {steps.map((step, index) => (
-          <tr key={step.id} data-status={step.passed}>
-            <td className={styles.stepSeq}>{step.seq}</td>
-            <td>
-              <EditableCell
-                value={step.expectText}
-                label={`第 ${step.seq} 步期望结果与评估标准`}
-                placeholder="点击填写期望结果与评估标准"
-                multiline
-                bordered
-                onSave={(next) => {
-                  const previous = step.expectText;
-                  return updateStepMutation
-                    .mutateAsync({ id: step.id, expectText: next })
-                    .then(() => {
-                      if (previous !== next) {
-                        recordChange(`第 ${step.seq} 步期望结果与评估标准`, () =>
-                          updateStepMutation.mutateAsync({ id: step.id, expectText: previous }),
-                        );
-                      }
-                    });
-                }}
-              />
-            </td>
-            <td>
-              <button
-                type="button"
-                className={styles.passButton}
-                data-status={step.passed}
-                title="点击切换：未执行 → 通过 → 未通过"
-                onClick={() => {
-                  const previous = step.passed;
-                  void toggleStepMutation
-                    .mutateAsync(step.id)
-                    .then(() =>
-                      recordChange(`第 ${step.seq} 步通过状态`, () =>
-                        updateStepMutation.mutateAsync({ id: step.id, passed: previous }),
-                      ),
-                    );
-                }}
-              >
-                {caseStatusLabel(
-                  step.passed === "pass" ? "passed" : step.passed === "fail" ? "failed" : "pending",
-                )}
-              </button>
-            </td>
-            <td className={styles.stepActionsCell}>
-              <div className={styles.stepActions}>
-                <button
-                  type="button"
-                  className={styles.stepAction}
-                  title="上移"
-                  aria-label={`上移第 ${step.seq} 步`}
-                  disabled={index === 0}
-                  onClick={() => moveStepMutation.mutate({ id: step.id, targetIndex: index - 1 })}
-                >
-                  <ArrowUp aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className={styles.stepAction}
-                  title="下移"
-                  aria-label={`下移第 ${step.seq} 步`}
-                  disabled={index === steps.length - 1}
-                  onClick={() => moveStepMutation.mutate({ id: step.id, targetIndex: index + 1 })}
-                >
-                  <ArrowDown aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className={styles.stepAction}
-                  title="复制步骤"
-                  aria-label={`复制第 ${step.seq} 步`}
-                  onClick={() => duplicateStepMutation.mutate(step.id)}
-                >
-                  <CopyPlus aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className={styles.stepAction}
-                  data-variant="destructive"
-                  title="删除步骤"
-                  aria-label={`删除第 ${step.seq} 步`}
-                  onClick={() => setPendingDelete({ id: step.id, seq: step.seq })}
-                >
-                  <Trash2 aria-hidden />
-                </button>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
+    });
+  };
 
   return (
     <div className={styles.panel}>
@@ -263,7 +149,8 @@ function TestCasePanelInner({
       <div className={styles.body} ref={scrollRef}>
         <div ref={bodyRef}>
           <p className={styles.undoHint}>
-            Ctrl+Z 撤销最近一次改动（上限 20 步；编辑中用浏览器原生撤销）
+            Ctrl+Z 撤销 · Ctrl+←/→ 切换用例 · Alt+↑/↓ 移动步骤 · Ctrl+D 复制步骤 · Ctrl+Shift+Enter
+            上方插入 · Ctrl+Backspace 删除步骤（撤销上限 20 步；编辑中用浏览器原生撤销）
           </p>
           <table className={styles.sheet}>
             <tbody>
@@ -397,21 +284,12 @@ function TestCasePanelInner({
               <tr>
                 <th scope="row">测试步骤</th>
                 <td colSpan={3}>
-                  <div className={styles.stepsToolbar}>
-                    <span className={styles.stepsHint}>
-                      「输入及操作 / 实测结果」两列（富文本）随切片 5b 接入，人员指派与快捷键随 5c
-                    </span>
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="outline"
-                      onClick={() => createStepMutation.mutate()}
-                    >
-                      <Plus aria-hidden />
-                      新增步骤
-                    </Button>
-                  </div>
-                  {stepsBody}
+                  <CaseStepsSection
+                    caseId={caseRecord.id}
+                    projectCode={projectCode}
+                    onCaseChanged={onCaseChanged}
+                    recordChange={recordChange}
+                  />
                 </td>
               </tr>
               <tr>
@@ -429,11 +307,21 @@ function TestCasePanelInner({
               <tr>
                 <th scope="row">测试人员</th>
                 <td>
-                  <PersonCell id={caseRecord.testerId} members={members} />
+                  <PersonPicker
+                    id={caseRecord.testerId}
+                    label="测试人员"
+                    members={members}
+                    onAssign={(memberId) => savePerson("测试人员", "testerId", memberId)}
+                  />
                 </td>
                 <th scope="row">监测人员</th>
                 <td>
-                  <PersonCell id={caseRecord.monitorId} members={members} />
+                  <PersonPicker
+                    id={caseRecord.monitorId}
+                    label="监测人员"
+                    members={members}
+                    onAssign={(memberId) => savePerson("监测人员", "monitorId", memberId)}
+                  />
                 </td>
               </tr>
               <tr>
@@ -443,35 +331,42 @@ function TestCasePanelInner({
                 </td>
                 <th scope="row">设计人员</th>
                 <td>
-                  <PersonCell id={caseRecord.designerId} members={members} />
+                  <PersonPicker
+                    id={caseRecord.designerId}
+                    label="设计人员"
+                    members={members}
+                    onAssign={(memberId) => savePerson("设计人员", "designerId", memberId)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">终止条件</th>
+                <td colSpan={3}>
+                  <EditableCell
+                    value={caseRecord.terminationText}
+                    label="终止条件"
+                    placeholder="点击填写终止条件"
+                    multiline
+                    onSave={(next) => saveField("终止条件", "terminationText", next)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">通过准则</th>
+                <td colSpan={3}>
+                  <EditableCell
+                    value={caseRecord.passCriteria}
+                    label="通过准则"
+                    placeholder="点击填写通过准则"
+                    multiline
+                    onSave={(next) => saveField("通过准则", "passCriteria", next)}
+                  />
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-
-      {pendingDelete ? (
-        <AlertDialog open onOpenChange={(open) => (open ? undefined : setPendingDelete(null))}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>删除第 {pendingDelete.seq} 步？</AlertDialogTitle>
-              <AlertDialogDescription>
-                删除后剩余步骤会重新编号；用例至少保留 1 个步骤。
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>取消</AlertDialogCancel>
-              <AlertDialogAction
-                className={styles.dangerAction}
-                onClick={() => deleteStepMutation.mutate(pendingDelete.id)}
-              >
-                删除
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      ) : null}
     </div>
   );
 }
