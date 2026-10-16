@@ -1,28 +1,8 @@
 import { CalendarClock, CircleAlert, ListChecks } from "lucide-react";
 import { Children, type ReactNode } from "react";
 import { Link } from "react-router";
-import { cn } from "cn";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { totalOpenIssues, type Project } from "../types";
-
-const itemButtonClass =
-  "hover:bg-primary/6 focus-visible:bg-primary/8 h-auto w-full justify-between rounded-none px-1 py-2.5 text-left text-[13px]";
-
-const sectionStyles = {
-  danger: {
-    bar: "bg-destructive",
-    icon: "border-destructive/35 bg-destructive/12 text-destructive",
-  },
-  primary: {
-    bar: "bg-primary",
-    icon: "border-primary/35 bg-primary/12 text-primary",
-  },
-  info: {
-    bar: "bg-info",
-    icon: "border-info/35 bg-info/12 text-info",
-  },
-} as const;
+import styles from "./todo-panel.module.css";
 
 export function TodoPanel({ projects }: { projects: Project[] }) {
   const openIssues = projects
@@ -46,7 +26,10 @@ export function TodoPanel({ projects }: { projects: Project[] }) {
     .slice(0, 4);
 
   return (
-    <aside className="panel-surface border-border relative grid w-full overflow-hidden rounded-sm border md:grid-cols-3">
+    <aside
+      aria-label="待办摘要"
+      className={`panel-surface border-border rounded-sm border ${styles.panel}`}
+    >
       <TodoSection
         title="未闭环问题"
         icon={CircleAlert}
@@ -55,24 +38,23 @@ export function TodoPanel({ projects }: { projects: Project[] }) {
       >
         {openIssues.map((item) => (
           <li key={item.projectId}>
-            <Button asChild variant="ghost" className={itemButtonClass}>
-              <Link to={`/projects/${item.projectId}`}>
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{item.projectName}</span>
-                  <span className="text-muted-foreground block font-mono text-xs">
-                    {item.projectId}
-                  </span>
-                </span>
-                <span className="flex shrink-0 flex-col items-end gap-0.5">
-                  <Badge variant={item.urgent > 0 ? "danger" : "secondary"} className="font-mono">
-                    {item.count}
-                  </Badge>
+            <Link to={`/projects/${item.projectId}`} className={styles.item}>
+              <span className={styles.itemMain}>
+                <span className={styles.itemName}>{item.projectName}</span>
+                <span className={styles.itemMeta}>
+                  <span>{item.projectId}</span>
                   {item.urgent > 0 ? (
-                    <span className="text-destructive text-[10px]">重大/严重 {item.urgent}</span>
+                    <>
+                      <span className={styles.itemMetaDot}>·</span>
+                      <span className={styles.itemUrgent}>重大/严重 {item.urgent}</span>
+                    </>
                   ) : null}
                 </span>
-              </Link>
-            </Button>
+              </span>
+              <span className={styles.badge} data-urgent={item.urgent > 0 ? "true" : "false"}>
+                {item.count}
+              </span>
+            </Link>
           </li>
         ))}
       </TodoSection>
@@ -80,17 +62,15 @@ export function TodoPanel({ projects }: { projects: Project[] }) {
       <TodoSection title="待执行用例" icon={ListChecks} tone="primary" emptyText="全部用例已执行">
         {pendingCases.map((p) => (
           <li key={p.id}>
-            <Button asChild variant="ghost" className={itemButtonClass}>
-              <Link to={`/projects/${p.id}`}>
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{p.name}</span>
-                  <span className="text-muted-foreground block font-mono text-xs">{p.id}</span>
+            <Link to={`/projects/${p.id}`} className={styles.item}>
+              <span className={styles.itemMain}>
+                <span className={styles.itemName}>{p.name}</span>
+                <span className={styles.itemMeta}>
+                  <span>{p.id}</span>
                 </span>
-                <Badge variant="primary" className="font-mono">
-                  {p.casesTotal - p.casesExecuted}
-                </Badge>
-              </Link>
-            </Button>
+              </span>
+              <span className={styles.badge}>{p.casesTotal - p.casesExecuted}</span>
+            </Link>
           </li>
         ))}
       </TodoSection>
@@ -98,16 +78,16 @@ export function TodoPanel({ projects }: { projects: Project[] }) {
       <TodoSection title="最近更新" icon={CalendarClock} tone="info" emptyText="暂无项目">
         {recentProjects.map((p) => (
           <li key={p.id}>
-            <Button asChild variant="ghost" className={itemButtonClass}>
-              <Link to={`/projects/${p.id}`}>
-                <span className="text-muted-foreground min-w-0 truncate font-mono text-xs">
-                  {p.id}
+            <Link to={`/projects/${p.id}`} className={styles.item}>
+              <span className={styles.itemMain}>
+                <span className={styles.itemName}>{p.name}</span>
+                <span className={styles.itemMeta}>
+                  <span>{p.id}</span>
+                  <span className={styles.itemMetaDot}>·</span>
+                  <span>{p.updatedAt}</span>
                 </span>
-                <span className="text-muted-foreground shrink-0 font-mono text-[10px]">
-                  {p.updatedAt}
-                </span>
-              </Link>
-            </Button>
+              </span>
+            </Link>
           </li>
         ))}
       </TodoSection>
@@ -124,29 +104,24 @@ function TodoSection({
 }: {
   title: string;
   icon: typeof CircleAlert;
-  tone: keyof typeof sectionStyles;
+  tone: "danger" | "primary" | "info";
   emptyText: string;
   children: ReactNode;
 }) {
-  const style = sectionStyles[tone];
   const hasContent = Children.count(children) > 0;
 
   return (
-    <section className="border-border relative border-b p-4 pl-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
-      <span className={cn("absolute inset-y-0 left-0 w-[3px]", style.bar)} aria-hidden />
-      <div className="mb-3 flex items-center gap-2.5">
-        <span
-          className={cn("flex size-7 items-center justify-center rounded-sm border", style.icon)}
-        >
-          <Icon className="size-3.5" aria-hidden />
+    <section className={styles.section} data-tone={tone}>
+      <span className={styles.bar} aria-hidden />
+      <div className={styles.header}>
+        <span className={styles.iconChip}>
+          <Icon aria-hidden />
         </span>
-        <h2 className="text-sm font-semibold">{title}</h2>
+        <h2 className={styles.title}>{title}</h2>
       </div>
-      <ul className="flex flex-col">
+      <ul className={styles.list}>
         {children}
-        {!hasContent ? (
-          <li className="text-muted-foreground py-4 text-center text-xs">{emptyText}</li>
-        ) : null}
+        {!hasContent ? <li className={styles.empty}>{emptyText}</li> : null}
       </ul>
     </section>
   );

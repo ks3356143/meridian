@@ -1,0 +1,223 @@
+/* 风险与活动卡片：语义色条 + 紧凑三行信息，hover 提色，危险卡色条低速呼吸。 */
+.grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.75rem 0.65rem 0.95rem;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--tone, var(--primary)) 4%, transparent),
+      transparent 46%
+    ),
+    var(--card);
+  box-shadow: var(--elevation-input);
+  color: var(--foreground);
+  overflow: hidden;
+  text-decoration: none;
+  transition:
+    border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.card[data-tone="danger"] {
+  --tone: var(--destructive);
+}
+
+.card[data-tone="warning"] {
+  --tone: var(--warning);
+}
+
+.card[data-tone="info"] {
+  --tone: var(--info);
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--tone) 38%, var(--border));
+  box-shadow: var(--elevation-2);
+}
+
+.card:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 45%, transparent);
+}
+
+.bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--tone);
+}
+
+/* 危险卡色条呼吸（用户点名的反馈语言），只动色条，不碰 hover 阴影。 */
+.card[data-tone="danger"] .bar {
+  animation: barBreath 2.4s ease-in-out infinite;
+}
+
+.card[data-tone="danger"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 0 18px -6px color-mix(in srgb, var(--destructive) 52%, transparent);
+  opacity: 0.4;
+  pointer-events: none;
+  animation: glowBreath 2.4s ease-in-out infinite;
+}
+
+@keyframes barBreath {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes glowBreath {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.08rem 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--tone) 32%, transparent);
+  background: color-mix(in srgb, var(--tone) 10%, transparent);
+  color: var(--tone);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.ident {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+}
+
+.name {
+  overflow: hidden;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+}
+
+.footSignal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.footSignal svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--tone);
+}
+
+.footQuiet svg {
+  color: var(--muted-foreground);
+}
+
+.status {
+  color: var(--muted-foreground);
+}
+
+.arrow {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  transition:
+    color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    translate 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.card:hover .arrow {
+  color: var(--tone);
+  translate: 3px 0;
+}
+
+.empty {
+  display: flex;
+  min-height: 4rem;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border);
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .arrow {
+    transition: none;
+  }
+
+  .card[data-tone="danger"] .bar,
+  .card[data-tone="danger"]::after {
+    animation: none;
+  }
+
+  .card:hover .arrow {
+    translate: none;
+  }
+}

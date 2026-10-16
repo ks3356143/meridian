@@ -1,0 +1,187 @@
+/* 待办面板（未闭环问题 / 待执行用例 / 最近更新）：语义色列 + 两行信息行。 */
+.panel {
+  position: relative;
+  display: grid;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .panel {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.section {
+  position: relative;
+  padding: 0.9rem 1rem 0.6rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
+
+.section[data-tone="danger"] {
+  --tone: var(--destructive);
+}
+
+.section[data-tone="primary"] {
+  --tone: var(--primary);
+}
+
+.section[data-tone="info"] {
+  --tone: var(--info);
+}
+
+@media (min-width: 768px) {
+  .section {
+    border-bottom: 0;
+    border-right: 1px solid var(--border);
+  }
+
+  .section:last-child {
+    border-right: 0;
+  }
+}
+
+.bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--tone);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
+}
+
+.iconChip {
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--tone) 35%, transparent);
+  background: color-mix(in srgb, var(--tone) 10%, transparent);
+  color: var(--tone);
+}
+
+.iconChip svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.5rem;
+  color: var(--foreground);
+  text-decoration: none;
+  transition:
+    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.item + .item {
+  border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.item:hover {
+  background: color-mix(in srgb, var(--tone) 5%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--tone) 55%, transparent);
+}
+
+.item:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--tone) 6%, transparent);
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--tone) 60%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--ring) 42%, transparent);
+}
+
+.itemMain {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.itemName {
+  overflow: hidden;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.itemMetaDot {
+  color: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+}
+
+.itemUrgent {
+  color: var(--destructive);
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-flex;
+  min-width: 1.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0.12rem 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--tone) 32%, transparent);
+  background: color-mix(in srgb, var(--tone) 10%, transparent);
+  color: var(--tone);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.badge[data-urgent="false"] {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--muted-foreground) 8%, transparent);
+  color: var(--muted-foreground);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.1rem 0;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
+}
