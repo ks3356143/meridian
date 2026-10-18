@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
   CreateTestItemPayload,
   UpdateCasePayload,
@@ -62,7 +63,7 @@ type PendingDelete =
   | { kind: "case"; id: string; testItemId: string; label: string };
 
 function useWideLayout() {
-  const query = "(min-width: 1101px)";
+  const query = "(min-width: 1321px)";
   const [wide, setWide] = useState(() => window.matchMedia(query).matches);
 
   useEffect(() => {
@@ -382,10 +383,12 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   // 键盘流：F2 重命名 / Delete 删除（二次确认）/ Ctrl+D 复制新增，作用于树里获得焦点的节点。
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      // 快捷键只在树获得焦点时生效，避免在详情按钮/空白处按 Delete 误删树节点。
+      if (!target?.closest('[role="tree"]')) return;
       const node = treeRef.current?.focusedNode;
       if (!node || node.data.kind === "group") return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, [contenteditable=true]")) return;
+      if (target.closest("input, textarea") || target.isContentEditable) return;
       if (event.key === "F2") {
         event.preventDefault();
         void startInlineRename(node, handleRenameNode);
@@ -423,13 +426,17 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
     ? (workspace.items.find((item) => item.id === activeCase.testItemId) ?? null)
     : null;
   // 追踪关系继承所属测试项：详情可能还是上一项的占位（keepPreviousData），只认 ID 对得上的那次；静态项按测试项口径不显示该行。
+  const detailMatchesCaseItem = Boolean(
+    detail && activeCaseItem && detail.item.id === activeCaseItem.id,
+  );
   const caseRequirements =
-    detail &&
+    detailMatchesCaseItem &&
     activeCaseItem &&
-    detail.item.id === activeCaseItem.id &&
     !activeTypes.find((type) => type.code === activeCaseItem.typeCode)?.isStatic
-      ? detail.requirements
+      ? (detail?.requirements ?? null)
       : null;
+  // 详情占位数据期间不把上一项的用例列表交给切用例快捷键。
+  const siblingCases = detailMatchesCaseItem ? (detail?.cases ?? EMPTY_CASES) : EMPTY_CASES;
   const folderName = selectedItem?.folderId
     ? (workspace.folders.find((folder) => folder.id === selectedItem.folderId)?.name ?? "")
     : "";
@@ -517,6 +524,7 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             variant="outline"
             className={styles.quickChip}
             data-active={quickFilter === option.value ? "true" : undefined}
+            aria-pressed={quickFilter === option.value}
             onClick={() => setQuickFilter(option.value)}
           >
             {option.label}
@@ -526,24 +534,32 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
           </Button>
         ))}
         <div className={styles.treeActions}>
-          <button
-            type="button"
-            className={styles.treeActionButton}
-            aria-label="展开全部"
-            title="展开全部"
-            onClick={() => treeRef.current?.openAll()}
-          >
-            <ChevronsUpDown aria-hidden />
-          </button>
-          <button
-            type="button"
-            className={styles.treeActionButton}
-            aria-label="收起全部"
-            title="收起全部"
-            onClick={() => treeRef.current?.closeAll()}
-          >
-            <ChevronsDownUp aria-hidden />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={styles.treeActionButton}
+                aria-label="展开全部"
+                onClick={() => treeRef.current?.openAll()}
+              >
+                <ChevronsUpDown aria-hidden />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">展开全部</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={styles.treeActionButton}
+                aria-label="收起全部"
+                onClick={() => treeRef.current?.closeAll()}
+              >
+                <ChevronsDownUp aria-hidden />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">收起全部</TooltipContent>
+          </Tooltip>
         </div>
       </div>
       <div className={styles.toolbarMeta}>
@@ -614,23 +630,30 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
     <div className={styles.detailPane}>
       {activeCase && activeCaseItem ? (
         <div className={styles.detailAnimated}>
+          {/* 切换用例重建面板：撤销栈与内部编辑态必须跟着实体清空。 */}
           <TestCasePanel
+            key={activeCase.id}
             item={activeCaseItem}
             caseRecord={activeCase}
             requirements={caseRequirements}
             members={project.members}
             projectCode={project.id}
-            siblingCases={detail?.cases ?? EMPTY_CASES}
+            siblingCases={siblingCases}
             onSelectSibling={handleSelectCase}
             onBack={handleBackToItem}
             onPatchCase={handlePatchCase}
             onCaseChanged={invalidateCaseData}
           />
         </div>
+      ) : workspace.items.length === 0 ? (
+        <div className={styles.detailEmpty}>
+          <p className={styles.emptyTitle}>还没有测试项</p>
+          <p className={styles.emptyText}>先新增测试项，再在这里填写字段。</p>
+        </div>
       ) : selectedId === "" ? (
         <div className={styles.detailEmpty}>
-          <p className={styles.emptyTitle}>选择左侧测试项</p>
-          <p className={styles.emptyText}>点击树中的测试项查看并就地编辑字段。</p>
+          <p className={styles.emptyTitle}>选择测试项</p>
+          <p className={styles.emptyText}>在测试项树中选择后查看并就地编辑字段。</p>
         </div>
       ) : detailQuery.isPending ? (
         <QueryLoading label="正在加载测试项详情" rows={6} />
@@ -689,7 +712,7 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             id="test-items-tree-panel"
             className={styles.panelFrame}
             defaultSize={380}
-            minSize="411px"
+            minSize="380px"
             maxSize="680px"
           >
             {treePane}

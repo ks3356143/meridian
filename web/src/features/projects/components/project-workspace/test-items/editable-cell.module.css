@@ -3,161 +3,47 @@
   position: relative;
 }
 
-/* 焦点柔光画在单元格的绝对定位伪元素上：不占宽高、不参与布局。
-   口径对齐老项目——边框变色 + 一层 3px / 12% 柔光，绝不再画第二根实线（否则就是双边框）。 */
-.cell::after {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
-  content: "";
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  /* 不加过渡：按下态已经有柔光，松手进编辑时若从 0 渐入会先"灭"一下再亮，看起来就是边框闪。 */
-  z-index: 1;
-}
-
-.cell[data-editing="true"]::after {
-  opacity: 1;
-}
-
-.cell[data-missing="true"]:not([data-editing="true"])::after {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--destructive) 42%, transparent),
-    0 0 14px -5px color-mix(in srgb, var(--destructive) 34%, transparent);
-  inset: 0;
-  opacity: 1;
-}
-
-/* 编辑框常驻 DOM（保住浏览器原生撤销栈，失焦再进入仍可 Ctrl+Z），用 data-editing 切换显示；
-   两者盒模型同尺寸，切换不改变行高。 */
-.editorSlot {
-  min-width: 0;
-}
-
-.cell:not([data-editing="true"]) .editorSlot {
-  display: none;
-}
-
-.cell[data-editing="true"] .display {
-  display: none;
-}
-
-/* 展示态与编辑态共用同一组盒模型尺寸，点击编辑不改变行高，表格不会跳动。 */
-.display {
-  align-items: center;
-  background: transparent;
-  /* 与编辑态输入框同样带 1px 边框（透明），两者盒模型完全一致，切换不改变行高。 */
-  border: 1px solid transparent;
+/* 常驻编辑元素：内容、基线、盒模型都不随 focus 变化，只切背景和焦点边框。 */
+.editor {
+  background: color-mix(in srgb, var(--muted) 16%, var(--card));
+  border: 1px solid var(--input) !important;
+  box-shadow: none !important;
   cursor: text;
-  display: flex;
-  /* 行高用整数像素：textarea 的 scrollHeight 是整数，小数行高会带来 0.5px 行高差；
-     对称内边距 + 整数行高让展示态与编辑框逐像素重合。 */
+  font-size: 0.76rem;
   line-height: 18px;
-  min-height: 2rem;
-  /* 光学居中：上下各让 0.5px（总高不变），抵消 CJK 字形视觉重心偏上。 */
-  padding: calc(0.4rem + 0.5px) 0.4rem calc(0.4rem - 0.5px);
-  /* 展示态支持直接拖选文字（选中后松手会把选区带进编辑框）。 */
-  user-select: text;
-  text-align: left;
-  transition:
-    background-color 0.18s ease,
-    box-shadow 0.18s ease,
-    color 0.18s ease;
-  width: 100%;
-}
-
-/* 有边框变体（老项目口径）：展示态直接用输入框边框色，让用户知道可输入。
-   展示态本来就带 1px 透明边框做盒模型占位，这里只是换颜色，切换编辑不改变任何尺寸。 */
-.cell[data-bordered="true"] .display {
-  border-color: var(--input);
-}
-
-.cell[data-bordered="true"] .display:hover {
-  background: color-mix(in srgb, var(--info) 5%, transparent);
-  border-color: color-mix(in srgb, var(--info) 45%, var(--input));
-  box-shadow: none;
-}
-
-.display:hover {
-  background: color-mix(in srgb, var(--info) 8%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info) 26%, transparent);
-}
-
-/* 展示态获得焦点 / 鼠标按下 = 老项目输入框的焦点态（1px 主色边框 + 3px / 12% 柔光）。
-   div[tabindex] 在 mousedown 就会拿到真实焦点（老项目「按下即 focus」口径），松开鼠标、
-   甚至松手落在格子外，焦点仍在、绿框不熄；只做 :active 假焦点的话松手立刻掉回灰边框（闪一下）。
-   真正切换进编辑框仍在 click（松手）——否则展示态拖选、松手把选区带进编辑框会失效。
-   放在 :hover 之后，覆盖 hover 的 inset 阴影；键盘 Tab 命中 :focus，同样可见。 */
-.display:focus,
-.display:active {
-  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
-  outline: none;
-}
-
-/* bordered 变体的 hover 用的是 (0,4,0) 优先级，焦点 / 按下态要同权重覆盖。 */
-.cell[data-bordered="true"] .display:focus,
-.cell[data-bordered="true"] .display:active {
-  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
-}
-
-.text {
-  display: block;
-  line-height: inherit;
+  min-height: 2.5rem;
+  outline: none !important;
   overflow-wrap: anywhere;
+  padding: 11px 0.4rem 9px;
+  transition: background-color 0.15s ease !important;
   white-space: pre-wrap;
   width: 100%;
 }
 
-.placeholder {
-  /* 空值占位：比正文弱一档但仍清晰可辨（用户反馈原 78% 太淡看不见）。 */
+.editor:hover {
+  background: color-mix(in srgb, var(--muted) 24%, var(--card));
+  border-color: color-mix(in srgb, var(--info) 45%, var(--input)) !important;
+}
+
+.editor:focus,
+.editor:focus-visible {
+  background: var(--card) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent) !important;
+}
+
+.editor[data-empty="true"]::before {
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
-  line-height: inherit;
-  /* 占位文字不是内容：禁止框选（展示态支持拖选真值，但不能把提示语也选上）。 */
-  user-select: none;
+  content: attr(data-placeholder);
+  pointer-events: none;
 }
 
-/* 编辑框统一口径：单行 Input 与多行 Textarea 外观、焦点完全一致。
-   全局 field-state.css 对 [data-slot="input"]:focus-visible 用了 !important 的粗环，
-   这里用更高优先级 + !important 压掉，只留 1px 主色边框 + 3px / 12% 柔光（老项目口径）。 */
-.editor {
-  border: 1px solid var(--input) !important;
-  box-shadow: none !important;
-  font-size: 0.76rem;
-  line-height: 18px;
-  min-height: 2rem;
-  outline: none !important;
-  padding: calc(0.4rem + 0.5px) 0.4rem calc(0.4rem - 0.5px);
-  /* 隐藏滚动条槽：textarea 一出现滚动条就会挤窄文字宽度、重新折行（真正看得见的"跳"）。 */
-  scrollbar-width: none;
-  /* 全局 [data-slot="input"] 带 0.28s 边框过渡，会把"出现的首帧"渲染成灰边框再渐变——按下进编辑时就是一闪。
-     这里按同文件既有做法用 !important 压掉，首帧即焦点色（老项目口径）。 */
-  transition: none !important;
-  width: 100%;
-}
-
-.editor::-webkit-scrollbar {
-  height: 0;
-  width: 0;
-}
-
-/* 单行输入框不要用共享组件的固定 h-8：放开高度后与展示态同高（18px 行高 + padding + 边框）。 */
-.cell input.editor {
-  height: auto !important;
-}
-
-.cell .editor:focus,
-.cell .editor:focus-visible {
-  border-color: color-mix(in srgb, var(--primary) 62%, transparent) !important;
-  box-shadow: none !important;
-}
-
-.cell[data-missing="true"]:not([data-editing="true"]) .display {
+.cell[data-missing="true"] .editor:not(:focus) {
   animation: missingPulse 1.8s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--destructive) 42%, var(--input)) !important;
 }
 
-.cell[data-phase="saved"] {
+.cell[data-phase="saved"] .editor {
   animation: savedPulse 1.3s ease-out 1;
 }
 
@@ -167,29 +53,29 @@
   height: 0.8rem;
   position: absolute;
   right: 0.45rem;
-  top: 0.6rem;
+  top: 0.65rem;
   width: 0.8rem;
 }
 
 @keyframes missingPulse {
   0%,
   100% {
-    background: color-mix(in srgb, var(--destructive) 4%, transparent);
+    background: color-mix(in srgb, var(--destructive) 4%, var(--card));
   }
 
   50% {
-    background: color-mix(in srgb, var(--destructive) 13%, transparent);
+    background: color-mix(in srgb, var(--destructive) 13%, var(--card));
   }
 }
 
 @keyframes savedPulse {
   0% {
-    background: color-mix(in srgb, var(--success) 24%, transparent);
+    background: color-mix(in srgb, var(--success) 24%, var(--card));
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 38%, transparent);
   }
 
   100% {
-    background: transparent;
+    background: var(--card);
     box-shadow: 0 0 0 1px transparent;
   }
 }
@@ -201,13 +87,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cell[data-missing="true"]:not([data-editing="true"]) .display,
-  .cell[data-phase="saved"] {
+  .cell[data-missing="true"] .editor:not(:focus),
+  .cell[data-phase="saved"] .editor {
     animation: none;
   }
 
-  .display,
   .editor {
-    transition: none;
+    transition: none !important;
   }
 }

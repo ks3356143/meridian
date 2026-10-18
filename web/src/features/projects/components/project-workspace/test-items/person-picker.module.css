@@ -8,6 +8,8 @@
   cursor: pointer;
   display: inline-flex;
   gap: 0.3rem;
+  max-width: min(18rem, 100%);
+  min-height: 1.5rem;
   padding: 0.08rem 0.42rem;
   transition:
     background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
@@ -27,6 +29,12 @@
   outline: none;
 }
 
+.trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .trigger[data-empty="true"] {
   color: var(--muted-foreground);
 }
@@ -37,9 +45,23 @@
 }
 
 .optionName {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.chevron {
+  color: color-mix(in srgb, var(--muted-foreground) 76%, transparent);
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.check {
+  color: var(--primary);
+  flex: none;
+  height: 0.85rem;
+  width: 0.85rem;
 }
 
 .meta {

@@ -100,7 +100,7 @@
   transition:
     color 0.16s ease,
     background-color 0.16s ease;
-  width: 1.1rem;
+  width: 1.5rem;
 }
 
 /* 拖拽可发现性：悬停卡片时把手加深一档，不常驻。 */
@@ -240,14 +240,14 @@
   color: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
   cursor: pointer;
   display: inline-flex;
-  height: 1.2rem;
+  height: 1.5rem;
   justify-content: center;
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
     box-shadow 0.18s ease,
     color 0.18s ease;
-  width: 1.2rem;
+  width: 1.5rem;
 }
 
 .numberButton:hover {

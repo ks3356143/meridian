@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const editableSelector =
-  "input, textarea, select, [contenteditable='true'], [contenteditable=''], [data-draggable='true']";
+  "input, textarea, select, [contenteditable]:not([contenteditable='false']), [data-draggable='true']";
 
 export function SelectionDragGuard() {
   useEffect(() => {

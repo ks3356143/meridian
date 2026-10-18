@@ -1,10 +1,10 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { Bold as BoldIcon, ImagePlus, ListOrdered, Redo2, Table2, Undo2 } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { Bold as BoldIcon, ImagePlus, Redo2, Table2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { Fragment, Slice } from "@tiptap/pm/model";
-import type { EditorView } from "@tiptap/pm/view";
+
 import { Gapcursor, UndoRedo } from "@tiptap/extensions";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { requirementsApi } from "@/features/requirements/api";
 import type { RequirementBlockNode } from "@/features/requirements/types";
 import { insertAfterNodeSelection } from "../requirements/body/requirement-body-editor-utils";
@@ -29,29 +29,37 @@ import styles from "./step-rich-cell.module.css";
 
 const EMPTY_DOC: RequirementBlockNode = { type: "doc", content: [{ type: "paragraph" }] };
 
-/** 「输入及操作」禁表格：粘贴切片里的 table 顶层节点直接剥掉（不含表格扩展，粘贴的表格也不保留）。 */
-function dropTables(slice: Slice, view: EditorView): Slice {
-  const shaped = shapePastedSlice(slice, view);
-  const nodes = shaped.content.content;
-  const kept = nodes.filter((node) => node.type.name !== "table");
-  if (kept.length === nodes.length) return shaped;
-  return new Slice(Fragment.fromArray(kept), shaped.openStart, shaped.openEnd);
-}
-
 type StepRichEditorProps = {
   doc: RequirementBlockNode | null;
-  /** op = 输入及操作（无表格）；act = 实测结果（含表格）。 */
-  kind: "op" | "act";
+  /** op = 输入及操作；act = 实测结果；两者都支持表格。 */
   projectCode: string;
-  onDone: (doc: RequirementBlockNode) => void;
+  /** 从展示态点击进入时的视口坐标；键盘激活时为空，光标落末尾。 */
+  initialPoint?: { x: number; y: number } | null;
+  /** 从展示态拖选进入时的首尾视口坐标；普通点击为空。 */
+  initialRange?: {
+    anchor: { x: number; y: number };
+    head: { x: number; y: number };
+  } | null;
+  /** 工具栏退出动画期间保持编辑器挂载，动画结束后再卸载。 */
+  closing?: boolean;
+  onDone: (doc: RequirementBlockNode, changed: boolean) => Promise<boolean> | boolean;
   onCancel: () => void;
 };
 
 /** 步骤单元格内联编辑器：复用需求正文的扩展集，编辑时顶部出现迷你工具栏。 */
-export function StepRichEditor({ doc, kind, projectCode, onDone, onCancel }: StepRichEditorProps) {
+export function StepRichEditor({
+  doc,
+  projectCode,
+  initialPoint,
+  initialRange,
+  closing = false,
+  onDone,
+  onCancel,
+}: StepRichEditorProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const committedRef = useRef(false);
+  const baselineRef = useRef<string | null>(null);
   const onDoneRef = useRef(onDone);
   const onCancelRef = useRef(onCancel);
   useEffect(() => {
@@ -74,14 +82,10 @@ export function StepRichEditor({ doc, kind, projectCode, onDone, onCancel }: Ste
         ListKeymap.configure({
           listTypes: [{ itemName: "listItem", wrapperNames: ["orderedList"] }],
         }),
-        ...(kind === "act"
-          ? [
-              RequirementTable.configure({ resizable: false }),
-              TableRow,
-              RequirementTableHeader,
-              RequirementTableCell,
-            ]
-          : []),
+        RequirementTable.configure({ resizable: false }),
+        TableRow,
+        RequirementTableHeader,
+        RequirementTableCell,
         AssetImage.configure({
           projectCode,
           upload: (file: File) => requirementsApi.uploadAsset(projectCode, file),
@@ -89,13 +93,13 @@ export function StepRichEditor({ doc, kind, projectCode, onDone, onCancel }: Ste
         RequirementPasteCleanup,
       ],
       content: doc && (doc.content?.length ?? 0) > 0 ? doc : EMPTY_DOC,
-      autofocus: "end",
+      autofocus: false,
       editorProps: {
         attributes: {
           class: `${styles.proseMirror} ${contentStyles.surface}`,
           spellcheck: "false",
         },
-        transformPasted: kind === "op" ? dropTables : shapePastedSlice,
+        transformPasted: shapePastedSlice,
         handleKeyDown: (_view, event) => {
           if (event.key === "Escape") {
             committedRef.current = true;
@@ -106,23 +110,54 @@ export function StepRichEditor({ doc, kind, projectCode, onDone, onCancel }: Ste
         },
       },
     },
-    [kind, projectCode],
+    [projectCode],
   );
+
+  // Tiptap 的 autofocus 会调用浏览器默认聚焦并滚动外层容器；
+  // 手动 focus + preventScroll，避免点开步骤时整张表突然上跳。
+  // 用 layout effect 在首帧绘制前落下选区，避免展示态选区卸载后先闪一帧再恢复。
+  useLayoutEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    // 记下 Tiptap 规范化后的初始文档；仅打开/关闭不产生保存请求。
+    baselineRef.current = JSON.stringify(editor.getJSON());
+    // 先 focus 再写选区：反过来 focus 会把浏览器默认光标重置，出现一帧无选区。
+    editor.view.dom.focus({ preventScroll: true });
+    const anchor = initialRange
+      ? editor.view.posAtCoords({ left: initialRange.anchor.x, top: initialRange.anchor.y })
+      : null;
+    const head = initialRange
+      ? editor.view.posAtCoords({ left: initialRange.head.x, top: initialRange.head.y })
+      : null;
+    if (anchor && head) {
+      editor.commands.setTextSelection({
+        from: Math.min(anchor.pos, head.pos),
+        to: Math.max(anchor.pos, head.pos),
+      });
+    } else {
+      const clicked = initialPoint
+        ? editor.view.posAtCoords({ left: initialPoint.x, top: initialPoint.y })
+        : null;
+      editor.commands.setTextSelection(clicked?.pos ?? editor.state.doc.content.size);
+    }
+  }, [editor, initialPoint, initialRange]);
 
   const state = useEditorState({
     editor,
     selector: ({ editor: current }) => ({
       bold: current.isActive("bold"),
-      orderedList: current.isActive("orderedList"),
+
       canUndo: current.can().undo(),
       canRedo: current.can().redo(),
     }),
   });
 
-  const commit = () => {
+  const commit = async () => {
     if (!editor || editor.isDestroyed || committedRef.current) return;
     committedRef.current = true;
-    onDoneRef.current(editor.getJSON() as RequirementBlockNode);
+    const doc = editor.getJSON() as RequirementBlockNode;
+    const changed = baselineRef.current !== JSON.stringify(doc);
+    const closed = await onDoneRef.current(doc, changed);
+    if (!closed) committedRef.current = false;
   };
 
   // 焦点移出编辑器+工具栏整体才算完成（工具栏按钮用 mousedown preventDefault 不夺焦，这里是兜底）。
@@ -131,7 +166,7 @@ export function StepRichEditor({ doc, kind, projectCode, onDone, onCancel }: Ste
   const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
     const next = event.relatedTarget as Node | null;
     if (next && wrapRef.current?.contains(next)) return;
-    window.setTimeout(commit, 0);
+    window.setTimeout(() => void commit(), 0);
   };
 
   const handleImageChosen = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,8 +193,18 @@ export function StepRichEditor({ doc, kind, projectCode, onDone, onCancel }: Ste
   };
 
   return (
-    <div ref={wrapRef} className={styles.editorWrap} onBlur={handleBlur}>
-      <div className={styles.toolbar} role="toolbar" aria-label="步骤格式工具栏">
+    <div
+      ref={wrapRef}
+      className={styles.editorWrap}
+      data-closing={closing ? "true" : undefined}
+      onBlur={handleBlur}
+    >
+      <div
+        className={styles.toolbar}
+        data-closing={closing ? "true" : undefined}
+        role="toolbar"
+        aria-label="步骤格式工具栏"
+      >
         <ToolButton
           label="撤销"
           disabled={!state?.canUndo}
@@ -182,28 +227,20 @@ export function StepRichEditor({ doc, kind, projectCode, onDone, onCancel }: Ste
         >
           <BoldIcon aria-hidden />
         </ToolButton>
-        <ToolButton
-          label="有序列表"
-          active={state?.orderedList}
-          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-        >
-          <ListOrdered aria-hidden />
-        </ToolButton>
+
         <ToolButton label="插入图片" onClick={() => imageInputRef.current?.click()}>
           <ImagePlus aria-hidden />
         </ToolButton>
-        {kind === "act" ? (
-          <ToolButton
-            label="插入表格"
-            onClick={() =>
-              editor?.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run()
-            }
-          >
-            <Table2 aria-hidden />
-          </ToolButton>
-        ) : null}
+        <ToolButton
+          label="插入表格"
+          onClick={() =>
+            editor?.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run()
+          }
+        >
+          <Table2 aria-hidden />
+        </ToolButton>
       </div>
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className={styles.editorContent} />
       <input
         ref={imageInputRef}
         type="file"
@@ -229,17 +266,23 @@ function ToolButton({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      className={styles.toolButton}
-      data-active={active ? "true" : undefined}
-      disabled={disabled}
-      title={label}
-      aria-label={label}
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={onClick}
-    >
-      {children}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={styles.toolButtonWrap}>
+          <button
+            type="button"
+            className={styles.toolButton}
+            data-active={active ? "true" : undefined}
+            disabled={disabled}
+            aria-label={label}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={onClick}
+          >
+            {children}
+          </button>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
   );
 }

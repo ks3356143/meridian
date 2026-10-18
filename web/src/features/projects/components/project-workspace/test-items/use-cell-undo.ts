@@ -39,7 +39,7 @@ export function useCellUndo() {
       if (event.shiftKey) return;
       const target = event.target as HTMLElement | null;
       // 编辑中交给浏览器原生撤销（保住逐字回退）。
-      if (target?.closest("input, textarea, [contenteditable=true]")) return;
+      if (target && (target.closest("input, textarea") || target.isContentEditable)) return;
       if (stackRef.current.length === 0) return;
       event.preventDefault();
       void undo();

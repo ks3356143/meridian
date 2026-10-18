@@ -1,0 +1,52 @@
+.title {
+  align-items: center;
+  display: flex;
+  gap: 0.45rem;
+}
+
+.tableWrap {
+  margin-top: 0.7rem;
+  max-height: 60vh;
+  overflow: auto;
+  scrollbar-color: color-mix(in srgb, var(--muted-foreground) 28%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.table {
+  font-size: 0.74rem;
+}
+
+.keys {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.16rem;
+}
+
+.key {
+  background: color-mix(in srgb, var(--muted) 48%, var(--card));
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1;
+  padding: 0.28rem 0.36rem;
+  white-space: nowrap;
+}
+
+.plus {
+  color: var(--muted-foreground);
+  font-size: 0.62rem;
+}
+
+.scope {
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.description {
+  line-height: 1.5;
+  min-width: 12rem;
+  white-space: normal;
+}

@@ -121,7 +121,7 @@ func registerSteps(api huma.API, handler *Handler) {
 		Method:      http.MethodPut,
 		Path:        "/api/v1/test-case-steps/{id}/blocks",
 		Summary:     "保存步骤富文本块",
-		Description: "保存「输入及操作」（禁表格）或「实测结果」，返回更新后的步骤视图；两者至少提交一个。",
+		Description: "保存「输入及操作」或「实测结果」，返回更新后的步骤视图；两者至少提交一个。",
 		Tags:        []string{"测试项与执行"},
 	}, func(ctx context.Context, input *SaveStepBlocksInput) (*StepViewOutput, error) {
 		var view testitemsservice.StepView

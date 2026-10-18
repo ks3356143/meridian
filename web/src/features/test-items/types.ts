@@ -101,7 +101,7 @@ export interface CaseStepRecord {
   expectText: string;
   /** 通过状态：none 未执行 / pass 通过 / fail 未通过。 */
   passed: string;
-  /** 输入及操作：富文本（文字 + 图片，不出现表格）。 */
+  /** 输入及操作：富文本（文字 + 图片 + 表格）。 */
   op: StepBlockView;
   /** 实测结果：富文本（文字 + 图片 + 表格）。 */
   act: StepBlockView;

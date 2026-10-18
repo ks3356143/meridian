@@ -68,7 +68,7 @@ func assembleStepView(step CaseStep, blocks map[string]contentblocks.BlockView) 
 	return view
 }
 
-// SaveStepBlock 保存步骤富文本块（「输入及操作」禁表格），并按步骤改动口径刷新执行时间。
+// SaveStepBlock 保存步骤富文本块，并按步骤改动口径刷新执行时间。
 func (s *Service) SaveStepBlock(ctx context.Context, stepID, kind string, doc contentblocks.Node, operator string) (StepView, error) {
 	if kind != contentblocks.StepKindOp && kind != contentblocks.StepKindAct {
 		return StepView{}, fmt.Errorf("步骤内容块类型 %q 不受支持", kind)
@@ -84,12 +84,8 @@ func (s *Service) SaveStepBlock(ctx context.Context, stepID, kind string, doc co
 	if err != nil {
 		return StepView{}, err
 	}
-	opts := contentblocks.SaveBlockOptions{}
-	if kind == contentblocks.StepKindOp {
-		opts.BannedNodes = map[string]bool{contentblocks.NodeTable: true}
-	}
 	if _, err := s.blocks.SaveBlock(ctx, itemCase.ProjectID, contentblocks.OwnerTypeTestCase, step.TestCaseID,
-		contentblocks.StepBlockKey(stepID, kind), doc, opts, operator); err != nil {
+		contentblocks.StepBlockKey(stepID, kind), doc, contentblocks.SaveBlockOptions{}, operator); err != nil {
 		return StepView{}, err
 	}
 	if err := touchCaseExecDate(s.db.WithContext(ctx), step.TestCaseID, false); err != nil {

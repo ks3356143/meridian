@@ -120,20 +120,24 @@ export const SubItemCards = memo(function SubItemCardsImpl({
         <>
           <div className={styles.toolbar}>
             <span className={styles.count}>{`共 ${subItems.length} 个子项`}</span>
-            <Button
-              type="button"
-              size="xs"
-              variant="outline"
-              className={styles.toolButton}
-              title="复制最后一个子项为新卡片，再改内容"
-              onClick={() => {
-                const last = subItems[subItems.length - 1];
-                if (last) void onDuplicate(last.id);
-              }}
-            >
-              <CopyPlus aria-hidden />
-              从上个复制
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  className={styles.toolButton}
+                  onClick={() => {
+                    const last = subItems[subItems.length - 1];
+                    if (last) void onDuplicate(last.id);
+                  }}
+                >
+                  <CopyPlus aria-hidden />
+                  从上个复制
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">复制最后一个子项为新卡片，再改内容</TooltipContent>
+            </Tooltip>
             <Button type="button" size="xs" onClick={() => void handleCreate()} disabled={creating}>
               <Plus aria-hidden />
               新增子项
@@ -212,16 +216,20 @@ const SortableCard = memo(function SortableCardImpl({
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
       <span className={styles.bar} aria-hidden />
-      <button
-        type="button"
-        className={styles.handle}
-        aria-label="拖动排序（空格拿起，方向键移动）"
-        title="拖动排序（空格拿起，方向键移动）"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical aria-hidden />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={styles.handle}
+            aria-label="拖动排序（空格拿起，方向键移动）"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical aria-hidden />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">拖动排序（空格拿起，方向键移动）</TooltipContent>
+      </Tooltip>
 
       <div className={styles.body}>
         <div className={styles.head}>
@@ -264,18 +272,22 @@ const SortableCard = memo(function SortableCardImpl({
               </TooltipTrigger>
               <TooltipContent side="top">复制为新的子项</TooltipContent>
             </Tooltip>
-            <Button
-              type="button"
-              size="xs"
-              variant="outline"
-              className={styles.iconButton}
-              data-variant="danger"
-              aria-label="删除子项"
-              title="删除子项"
-              onClick={() => void onDelete(id)}
-            >
-              <Trash2 aria-hidden />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  className={styles.iconButton}
+                  data-variant="danger"
+                  aria-label="删除子项"
+                  onClick={() => void onDelete(id)}
+                >
+                  <Trash2 aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">删除子项</TooltipContent>
+            </Tooltip>
           </div>
         </div>
         <div className={styles.descCol}>

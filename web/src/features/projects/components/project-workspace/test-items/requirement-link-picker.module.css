@@ -1,3 +1,8 @@
+/* Tooltip 触发器不能直接包 disabled button，用 inline-flex 锚点保留悬停事件。 */
+.linkAnchor {
+  display: inline-flex;
+}
+
 /* 关联需求选择器：按来源文档分组的结果列表。 */
 .linkPopover {
   padding: 0.5rem;

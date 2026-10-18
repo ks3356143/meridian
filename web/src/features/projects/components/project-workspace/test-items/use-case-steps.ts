@@ -50,6 +50,7 @@ export function useCaseSteps(caseId: string, onCaseChanged: () => void) {
           { ...created, op: created.op ?? EMPTY_STEP_BLOCK, act: created.act ?? EMPTY_STEP_BLOCK },
         ].sort((left, right) => left.seq - right.seq),
       );
+      onCaseChanged();
     },
   });
 
@@ -89,24 +90,32 @@ export function useCaseSteps(caseId: string, onCaseChanged: () => void) {
 
   const duplicateStepMutation = useMutation({
     mutationFn: (id: string) => testItemsApi.duplicateCaseStep(id),
+    onSuccess: onCaseChanged,
     // 复制插在源步骤下方并重排序号，交给服务端口径：整表重取最稳。
     onSettled: () => void queryClient.invalidateQueries({ queryKey: stepsKey }),
   });
 
   const insertStepBeforeMutation = useMutation({
     mutationFn: (id: string) => testItemsApi.insertCaseStepBefore(id),
+    onSuccess: onCaseChanged,
     onSettled: () => void queryClient.invalidateQueries({ queryKey: stepsKey }),
   });
 
   const pasteStepMutation = useMutation({
     mutationFn: (sourceStepId: string) => testItemsApi.importCaseStep(caseId, sourceStepId),
-    onSuccess: () => toast.success("已粘贴步骤（设计内容，执行数据不带）"),
+    onSuccess: () => {
+      toast.success("已粘贴步骤（设计内容，执行数据不带）");
+      onCaseChanged();
+    },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: stepsKey }),
   });
 
   const deleteStepMutation = useMutation({
     mutationFn: (id: string) => testItemsApi.deleteCaseStep(id),
-    onSuccess: () => toast.success("已删除步骤"),
+    onSuccess: () => {
+      toast.success("已删除步骤");
+      onCaseChanged();
+    },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: stepsKey }),
   });
 

@@ -156,7 +156,7 @@ func ValidateDocument(root Node) error {
 	return ValidateDocumentBanned(root, nil)
 }
 
-// ValidateDocumentBanned 在标准白名单之外禁用指定节点类型（如用例步骤「输入及操作」禁表格）。
+// ValidateDocumentBanned 在标准白名单之外禁用指定节点类型。
 func ValidateDocumentBanned(root Node, banned map[string]bool) error {
 	if root.Type != NodeDoc {
 		return &ValidationError{Msg: fmt.Sprintf("根节点必须是 %s，当前为 %q", NodeDoc, root.Type)}

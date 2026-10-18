@@ -94,6 +94,7 @@
   font-weight: 760;
   line-height: 1.3;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .heroTags {
@@ -446,9 +447,12 @@
 }
 
 .sectionLink {
+  align-items: center;
   color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
   cursor: pointer;
+  display: inline-flex;
   font-size: 0.74rem;
+  min-height: 1.5rem;
   padding: 0.18rem 0.5rem;
   transition:
     background-color 0.18s ease,
@@ -474,13 +478,16 @@
 /* ---------- Word 表格 ---------- */
 
 .tableWrap {
+  overflow-x: auto;
   padding: 0.75rem 1.1rem 0;
+  scrollbar-width: thin;
 }
 
 .itemTable {
   background: color-mix(in srgb, var(--card) 97%, transparent);
   border-collapse: collapse;
   box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  min-width: 860px;
   table-layout: fixed;
   width: 100%;
 }
@@ -536,6 +543,11 @@
   color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
   flex: none;
   padding-left: 0.3rem;
+}
+
+/* 后缀沿用旧输入框的 7rem 宽度，避免只在 42px 小盒里编辑。 */
+.identEditor {
+  flex: 0 0 7rem;
 }
 
 .prioritySelect {
@@ -744,10 +756,18 @@
   flex: none;
   height: 0.9rem;
   justify-content: center;
+  position: relative;
   transition:
     color 0.16s ease,
     background-color 0.16s ease;
   width: 0.9rem;
+}
+
+/* 视觉仍是 14px 小叉，点击命中区扩到 24px，避免需求 chip 上误点。 */
+.unlinkButton::after {
+  content: "";
+  inset: -0.3rem;
+  position: absolute;
 }
 
 .unlinkButton svg {
@@ -1032,11 +1052,14 @@
 
 /* 用例行：行名可点（回定位到树），行尾动作按钮平时隐身，hover / 键盘聚焦时亮起。 */
 .caseRowName {
+  align-items: center;
   background: none;
   border: none;
   color: inherit;
   cursor: pointer;
+  display: inline-flex;
   font: inherit;
+  min-height: 1.5rem;
   padding: 0;
   text-align: left;
   transition: color 0.16s ease;
@@ -1064,16 +1087,16 @@
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
   cursor: pointer;
   display: inline-flex;
-  height: 1.35rem;
+  height: 1.5rem;
   justify-content: center;
-  opacity: 0;
+  opacity: 0.72;
   padding: 0;
   transition:
     opacity 0.16s ease,
     color 0.16s ease,
     background-color 0.16s ease,
     border-color 0.16s ease;
-  width: 1.35rem;
+  width: 1.5rem;
 }
 
 .caseRowAction svg {

@@ -313,7 +313,7 @@ function TestItemDetailPanelInner({
                   ) : (
                     <span className={styles.completenessDone}>
                       <CheckCircle2 aria-hidden />
-                      四项齐全，可进入执行
+                      全部齐全，可进入执行
                     </span>
                   )}
                 </>
@@ -359,6 +359,7 @@ function TestItemDetailPanelInner({
               type="button"
               className={styles.sectionLink}
               data-active={activeSection === section.id ? "true" : undefined}
+              aria-current={activeSection === section.id ? "location" : undefined}
               onClick={() => jumpTo(section.id)}
             >
               {section.label}
@@ -387,6 +388,7 @@ function TestItemDetailPanelInner({
                     <EditableCell
                       value={item.suffix}
                       label="测试项标识后缀"
+                      className={styles.identEditor}
                       onSave={(next) => patch({ suffix: next })}
                       onPhase={reportPhase}
                     />
@@ -421,27 +423,36 @@ function TestItemDetailPanelInner({
                 <td>
                   {/* 静态四类（DC/SA/CR/CW）每轮各一个固定槽位，类型锁定：不渲染成可点按钮。 */}
                   {isStatic ? (
-                    <span className={styles.typeLocked} title="静态测试项类型锁定，不可修改">
-                      <span className={styles.typeText} data-tone={tone}>
-                        {item.typeCode}
-                        {type ? ` · ${type.name}` : ""}
-                      </span>
-                      <span className={styles.staticChip}>静态</span>
-                    </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className={styles.typeLocked}>
+                          <span className={styles.typeText} data-tone={tone}>
+                            {item.typeCode}
+                            {type ? ` · ${type.name}` : ""}
+                          </span>
+                          <span className={styles.staticChip}>静态</span>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">静态测试项类型锁定，不可修改</TooltipContent>
+                    </Tooltip>
                   ) : (
-                    <button
-                      type="button"
-                      className={styles.typeButton}
-                      onClick={onChangeType}
-                      aria-label="修改测试项类型"
-                      title="修改测试项类型"
-                    >
-                      <span className={styles.typeText} data-tone={tone}>
-                        {item.typeCode}
-                        {type ? ` · ${type.name}` : ""}
-                      </span>
-                      <Pencil className={styles.typeEditIcon} aria-hidden />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className={styles.typeButton}
+                          onClick={onChangeType}
+                          aria-label="修改测试项类型"
+                        >
+                          <span className={styles.typeText} data-tone={tone}>
+                            {item.typeCode}
+                            {type ? ` · ${type.name}` : ""}
+                          </span>
+                          <Pencil className={styles.typeEditIcon} aria-hidden />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">修改测试项类型</TooltipContent>
+                    </Tooltip>
                   )}
                 </td>
               </tr>
@@ -494,17 +505,13 @@ function TestItemDetailPanelInner({
                             </span>
                           ) : null}
                           {!tracked ? (
-                            <span className={styles.pendingHint}>未关联需求，完善度不计入</span>
+                            <span className={styles.pendingHint}>未关联需求，按未完善处理</span>
                           ) : null}
                         </div>
                         {detail.requirements.length > 0 ? (
                           <div className={styles.linkRow}>
                             {detail.requirements.map((reference) => (
-                              <span
-                                key={reference.id}
-                                className={styles.linkChip}
-                                title={`${reference.sourceName} · §${reference.chapterNumber} ${reference.name}`}
-                              >
+                              <span key={reference.id} className={styles.linkChip}>
                                 {reference.sourceName ? (
                                   <span className={styles.linkSource}>{reference.sourceName}</span>
                                 ) : null}
@@ -701,25 +708,33 @@ function TestItemDetailPanelInner({
                         {caseStatusLabel(record.status)}
                       </span>
                     </td>
-                    <td className={styles.caseRowActions}>
-                      <button
-                        type="button"
-                        className={styles.caseRowAction}
-                        title="在左侧目录中定位"
-                        aria-label={`在目录中定位 ${record.identifier}`}
-                        onClick={() => onSelectCase?.(record.id)}
-                      >
-                        <Crosshair aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.caseRowAction}
-                        title="复制用例（含步骤）"
-                        aria-label={`复制 ${record.identifier}`}
-                        onClick={() => onDuplicateCase?.(record.id)}
-                      >
-                        <CopyPlus aria-hidden />
-                      </button>
+                    <td className={styles.caseRowActions} aria-label="用例操作">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className={styles.caseRowAction}
+                            aria-label={`在目录中定位 ${record.identifier}`}
+                            onClick={() => onSelectCase?.(record.id)}
+                          >
+                            <Crosshair aria-hidden />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">在左侧目录中定位</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className={styles.caseRowAction}
+                            aria-label={`复制 ${record.identifier}`}
+                            onClick={() => onDuplicateCase?.(record.id)}
+                          >
+                            <CopyPlus aria-hidden />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">复制用例（含步骤）</TooltipContent>
+                      </Tooltip>
                     </td>
                   </tr>
                 ))}

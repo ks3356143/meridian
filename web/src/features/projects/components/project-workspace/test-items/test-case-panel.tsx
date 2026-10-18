@@ -1,7 +1,8 @@
-import { memo, useEffect, useLayoutEffect, useRef } from "react";
-import { FileText } from "lucide-react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import type { UpdateCasePayload } from "@/features/test-items/api";
 import type {
@@ -15,6 +16,7 @@ import { CaseStepsSection } from "./case-steps-section";
 import { EditableCell, type EditableCellHandle } from "./editable-cell";
 import { PersonPicker } from "./person-picker";
 import { SummaryBackfillPicker } from "./summary-backfill-picker";
+import { TestCaseShortcutsDialog } from "./test-case-shortcuts-dialog";
 import { caseStatusLabel } from "./test-items-design";
 import { useCellUndo } from "./use-cell-undo";
 import styles from "./test-case-panel.module.css";
@@ -65,7 +67,16 @@ function TestCasePanelInner({
 }) {
   // 综述「从描述回填」按钮：走同一条保存链路（保存脉冲、Ctrl+Z 撤销同源）。
   const summaryCellRef = useRef<EditableCellHandle>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const { recordChange } = useCellUndo();
+  const currentCaseIndex = siblingCases.findIndex((record) => record.id === caseRecord.id);
+  const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
+  const previousCase = currentCaseIndex > 0 ? siblingCases[currentCaseIndex - 1] : undefined;
+  const nextCase =
+    currentCaseIndex >= 0 && currentCaseIndex < siblingCases.length - 1
+      ? siblingCases[currentCaseIndex + 1]
+      : undefined;
+  const canSwitchCase = siblingCases.length > 1 && currentCaseIndex >= 0;
 
   // 切用例时内容入场，口径与测试项详情一致：只动画内容，不动滚动容器本体。
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -98,8 +109,7 @@ function TestCasePanelInner({
       const active = document.activeElement as HTMLElement | null;
       const tag = active?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      const currentIndex = siblingCases.findIndex((item) => item.id === caseRecord.id);
-      const target = siblingCases[currentIndex + (event.key === "ArrowLeft" ? -1 : 1)];
+      const target = siblingCases[currentCaseIndex + (event.key === "ArrowLeft" ? -1 : 1)];
       if (!target) return;
       event.preventDefault();
       active?.blur();
@@ -107,7 +117,7 @@ function TestCasePanelInner({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [caseRecord.id, siblingCases, onSelectSibling]);
+  }, [caseRecord.id, currentCaseIndex, siblingCases, onSelectSibling]);
 
   /** 人员指派：走用例 PATCH 同一保存链路，并记入 Ctrl+Z 撤销栈（与文本字段同口径）。 */
   const savePerson = (
@@ -131,7 +141,7 @@ function TestCasePanelInner({
           <div className={styles.heroTitleRow}>
             <span className={styles.titleBar} aria-hidden />
             <h2 className={styles.heroTitle}>{caseRecord.name}</h2>
-            <span className={styles.statusChip} data-status={caseRecord.status}>
+            <span className={styles.statusChip} data-status={caseRecord.status} aria-live="polite">
               {caseStatusLabel(caseRecord.status)}
             </span>
           </div>
@@ -140,6 +150,51 @@ function TestCasePanelInner({
           <span className={styles.parentChip}>
             所属测试项 {item.identifier} · {item.name}
           </span>
+          {canSwitchCase ? (
+            <div className={styles.caseNav} role="group" aria-label="同测试项用例切换">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={styles.caseNavTrigger}>
+                    <Button
+                      type="button"
+                      size="icon-xs"
+                      variant="outline"
+                      aria-label="上一条用例"
+                      disabled={!previousCase}
+                      onClick={() => previousCase && onSelectSibling(previousCase.id)}
+                    >
+                      <ChevronLeft aria-hidden />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {previousCase ? `上一条：${previousCase.name}` : "已经是第一条"}
+                </TooltipContent>
+              </Tooltip>
+              <span className={styles.caseNavPosition}>
+                {currentCaseIndex + 1}/{siblingCases.length}
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={styles.caseNavTrigger}>
+                    <Button
+                      type="button"
+                      size="icon-xs"
+                      variant="outline"
+                      aria-label="下一条用例"
+                      disabled={!nextCase}
+                      onClick={() => nextCase && onSelectSibling(nextCase.id)}
+                    >
+                      <ChevronRight aria-hidden />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {nextCase ? `下一条：${nextCase.name}` : "已经是最后一条"}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          ) : null}
           <Button type="button" size="xs" variant="outline" onClick={onBack}>
             返回测试项
           </Button>
@@ -148,10 +203,6 @@ function TestCasePanelInner({
 
       <div className={styles.body} ref={scrollRef}>
         <div ref={bodyRef}>
-          <p className={styles.undoHint}>
-            Ctrl+Z 撤销 · Ctrl+←/→ 切换用例 · Alt+↑/↓ 移动步骤 · Ctrl+D 复制步骤 · Ctrl+Shift+Enter
-            上方插入 · Ctrl+Backspace 删除步骤（撤销上限 20 步；编辑中用浏览器原生撤销）
-          </p>
           <table className={styles.sheet}>
             <tbody>
               <tr>
@@ -282,20 +333,29 @@ function TestCasePanelInner({
                 </td>
               </tr>
               <tr>
-                <th scope="row">测试步骤</th>
-                <td colSpan={3}>
+                <th colSpan={4} scope="rowgroup" className={styles.stepsSectionTitle}>
+                  测试步骤
+                </th>
+              </tr>
+              <tr>
+                <td colSpan={4} className={styles.stepsSectionCell}>
                   <CaseStepsSection
                     caseId={caseRecord.id}
                     projectCode={projectCode}
                     onCaseChanged={onCaseChanged}
                     recordChange={recordChange}
+                    onOpenShortcuts={openShortcuts}
                   />
                 </td>
               </tr>
               <tr>
                 <th scope="row">执行状态</th>
                 <td>
-                  <span className={styles.statusChip} data-status={caseRecord.status}>
+                  <span
+                    className={styles.statusChip}
+                    data-status={caseRecord.status}
+                    aria-live="polite"
+                  >
                     {caseStatusLabel(caseRecord.status)}
                   </span>
                 </td>
@@ -367,6 +427,7 @@ function TestCasePanelInner({
           </table>
         </div>
       </div>
+      <TestCaseShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>
   );
 }

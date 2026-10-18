@@ -815,8 +815,12 @@ func TestStepBlocksSaveAndList(t *testing.T) {
 		t.Fatalf("保存 act 不应清空 op: %+v", view.Op)
 	}
 
-	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindOp, tableDoc(), "user-1"); err == nil {
-		t.Fatalf("输入及操作不应允许表格")
+	view, err = service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindOp, tableDoc(), "user-1")
+	if err != nil {
+		t.Fatalf("输入及操作应允许表格: %v", err)
+	}
+	if !view.Op.HasContent || view.Op.PlainText != "列" {
+		t.Fatalf("输入及操作的表格内容未保存: %+v", view.Op)
 	}
 
 	views, err := service.ListStepsWithBlocks(ctx, itemCase.ID)

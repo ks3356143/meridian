@@ -26,6 +26,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { caseStatusLabel, categoryTone } from "./test-items-design";
 import { startInlineRename, type TestItemsTreeNode } from "./test-items-tree-model";
 import styles from "./test-items-tree.module.css";
@@ -473,12 +474,14 @@ function TestItemsTreeRow({
         <>
           {data.implicit ? <span className={styles.implicitChip}>隐含</span> : null}
           {data.incomplete ? (
-            <span
-              className={styles.incomplete}
-              title={data.missing?.length ? `缺：${data.missing.join("、")}` : "未完善"}
-            >
-              未完善
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={styles.incomplete}>未完善</span>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {data.missing?.length ? `缺：${data.missing.join("、")}` : "未完善"}
+              </TooltipContent>
+            </Tooltip>
           ) : null}
         </>
       ) : null}

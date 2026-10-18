@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Check, ChevronDown } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -37,9 +38,10 @@ export function PersonPicker({
           type="button"
           className={styles.trigger}
           data-empty={person ? undefined : "true"}
-          aria-label={`指派${label}`}
+          aria-label={`${label}：${person ? person.displayName || person.username : "未指派"}，点击选择`}
         >
-          {person ? person.displayName || person.username : "未指派"}
+          <span>{person ? person.displayName || person.username : "未指派"}</span>
+          <ChevronDown className={styles.chevron} aria-hidden />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className={styles.popover}>
@@ -58,6 +60,7 @@ export function PersonPicker({
                     setOpen(false);
                   }}
                 >
+                  {member.id === id ? <Check className={styles.check} aria-hidden /> : null}
                   <span className={styles.optionName}>{member.displayName || member.username}</span>
                   <span className={styles.meta}>{member.username}</span>
                 </CommandItem>

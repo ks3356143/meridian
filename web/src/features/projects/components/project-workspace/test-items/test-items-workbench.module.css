@@ -8,6 +8,28 @@
 .panelFrame {
   height: 100%;
   min-height: 0;
+  scrollbar-color: color-mix(in srgb, var(--muted-foreground) 28%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.panelFrame::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.panelFrame::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panelFrame::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted-foreground) 28%, transparent);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.panelFrame::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--primary) 55%, var(--muted-foreground));
+  background-clip: content-box;
 }
 
 .treePane {
@@ -189,13 +211,12 @@
   color: var(--destructive-foreground);
 }
 
-@media (max-width: 1100px) {
-  /* 纵向布局：树面板固定 42vh 不被下方详情挤压（此前详情高时树被压到只剩几十像素），
-     超出部分由 workspace-route 主滚动承担（规范：1100 以下只保留一个主滚动）。 */
+@media (max-width: 1320px) {
+  /* 纵向布局：树面板固定高度不被下方详情挤压；1320 以下只保留一个主滚动。 */
   .treePane {
     border-bottom: 1px solid var(--border);
     flex: none;
-    height: 42vh;
+    height: clamp(15rem, 32vh, 22rem);
   }
 
   .detailPane {
@@ -248,11 +269,11 @@
   color: color-mix(in srgb, var(--muted-foreground) 85%, transparent);
   cursor: pointer;
   display: inline-flex;
-  height: 1.1rem;
+  height: 1.5rem;
   justify-content: center;
   position: absolute;
-  right: 0.34rem;
-  width: 1.1rem;
+  right: 0.2rem;
+  width: 1.5rem;
   z-index: 1;
 }
 
@@ -300,13 +321,13 @@
   color: color-mix(in srgb, var(--muted-foreground) 90%, transparent);
   cursor: pointer;
   display: inline-flex;
-  height: 1.35rem;
+  height: 1.5rem;
   justify-content: center;
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
     color 0.18s ease;
-  width: 1.35rem;
+  width: 1.5rem;
 }
 
 .treeActionButton:hover {

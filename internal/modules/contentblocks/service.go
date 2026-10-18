@@ -233,7 +233,7 @@ func EmptyBlockView() BlockView {
 type SaveBlockOptions struct {
 	Origin        string
 	AuthoringMode string
-	// BannedNodes 在标准白名单之外禁用指定节点类型（如用例步骤「输入及操作」禁表格）。
+	// BannedNodes 在标准白名单之外禁用指定节点类型，由调用方按业务传入。
 	BannedNodes map[string]bool
 }
 

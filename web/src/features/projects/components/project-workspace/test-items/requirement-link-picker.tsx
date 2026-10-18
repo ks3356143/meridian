@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { requirementsApi } from "@/features/requirements/api";
 import styles from "./requirement-link-picker.module.css";
 
@@ -60,19 +61,29 @@ export function RequirementLinkPicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          className={styles.linkButton}
-          disabled={disabled}
-          title={disabled ? "当前按隐含需求处理，如需关联需求请先关闭隐含需求" : undefined}
-        >
-          <span className={styles.btnDot} data-tone="green" aria-hidden />
-          关联需求
-        </Button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={styles.linkAnchor}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                className={styles.linkButton}
+                disabled={disabled}
+              >
+                <span className={styles.btnDot} data-tone="green" aria-hidden />
+                关联需求
+              </Button>
+            </PopoverTrigger>
+          </span>
+        </TooltipTrigger>
+        {disabled ? (
+          <TooltipContent side="top">
+            当前按隐含需求处理，如需关联需求请先关闭隐含需求
+          </TooltipContent>
+        ) : null}
+      </Tooltip>
       <PopoverContent align="start" className={styles.linkPopover}>
         <input
           className={styles.linkSearch}

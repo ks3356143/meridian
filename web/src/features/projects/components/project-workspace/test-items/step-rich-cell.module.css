@@ -10,30 +10,40 @@
   position: relative;
 }
 
-/* 展示态与 EditableCell `bordered` 同口径：常驻 1px 输入边框，悬停给提示、聚焦/按下换主色。 */
-.display {
+/* 展示态与编辑态共用同一套盒模型：字号、行高、边框、内边距都不随 focus 改变，
+   只切背景和边框色，避免切换 DOM 时文字基线或行高发生亚像素移动。 */
+.display,
+.proseMirror {
+  background: color-mix(in srgb, var(--muted) 16%, var(--card));
   border: 1px solid var(--input);
   cursor: text;
-  display: block;
-  min-height: 2.1rem;
+  font-size: var(--body-text-size, 12pt);
+  line-height: 1.8;
+  min-height: 2.5rem;
   /* 实测结果里的表格可能比单元格宽：单元格内横向滚动，不溢出到相邻列。 */
   overflow-x: auto;
   padding: 0.3rem 0.45rem;
-  transition:
-    border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-    background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-    box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1);
   width: 100%;
 }
 
-.display:hover {
-  background: color-mix(in srgb, var(--info) 5%, transparent);
+.display {
+  align-items: center;
+  display: flex;
+  transition: background-color 0.15s ease;
+}
+
+.display:hover,
+.proseMirror:hover {
+  background: color-mix(in srgb, var(--muted) 24%, var(--card));
   border-color: color-mix(in srgb, var(--info) 45%, var(--input));
 }
 
 .display:focus,
-.display:active {
-  border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+.display:active,
+.proseMirror:focus,
+.proseMirror:focus-visible {
+  background: var(--card);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
   outline: none;
 }
@@ -41,6 +51,11 @@
 .placeholder {
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
   user-select: none;
+}
+
+.content {
+  min-width: 0;
+  width: 100%;
 }
 
 /* RequirementBlocks 的每个块自带 0.55rem 节距（正文阅读口径）；单元格里收紧。 */
@@ -51,11 +66,38 @@
 .content > :global(div:last-child) {
   padding-bottom: 0;
 }
+/* 实测结果里的内嵌表格：列宽不再被父级 max-width 强行压扁；
+   单元格保底 7rem，超宽时由 RequirementBlocks 的 tableWrap 横向滚动。 */
+.cell .content :global(table),
+.cell .proseMirror :global(table) {
+  max-width: none;
+  min-width: 100%;
+  table-layout: auto;
+  width: auto;
+}
 
+.cell .content :global(th),
+.cell .content :global(td),
+.cell .proseMirror :global(th),
+.cell .proseMirror :global(td) {
+  height: 2rem;
+  min-width: 7rem;
+  overflow-wrap: anywhere;
+}
+
+/* 外框移到 ProseMirror 本身，和展示态共用同一盒模型。 */
 .editorWrap {
-  border: 1px solid color-mix(in srgb, var(--primary) 62%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+  min-width: 0;
   position: relative;
+}
+
+.editorWrap[data-closing="true"] {
+  pointer-events: none;
+}
+
+/* EditorContent 的空包装层不参与布局，避免多出一层导致垂直方向差 1px。 */
+.editorContent {
+  display: contents;
 }
 
 /* 编辑时工具条：浮出在单元格上沿外侧、不占内容流——切编辑不改变行高，
@@ -64,15 +106,52 @@
   align-items: center;
   background: var(--card);
   border: 1px solid var(--border);
-  bottom: 100%;
+  bottom: calc(100% + 0.55rem);
   box-shadow: var(--elevation-2);
   display: flex;
   gap: 0.08rem;
   left: -1px;
+  opacity: 1;
   padding: 0.12rem 0.18rem;
   position: absolute;
   right: -1px;
+  transform: translateY(0) scale(1);
+  transform-origin: 1rem 100%;
+  transition:
+    opacity 150ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 150ms cubic-bezier(0.32, 0.72, 0, 1);
   z-index: 40;
+}
+
+@starting-style {
+  .toolbar {
+    opacity: 0;
+    transform: translateY(5px) scale(0.98);
+  }
+}
+
+.toolbar[data-closing="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px) scale(0.98);
+}
+
+/* 小箭头指向输入区，工具栏与编辑框之间留出空隙，避免贴脸遮挡。 */
+.toolbar::after {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  bottom: -5px;
+  content: "";
+  height: 8px;
+  left: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  width: 8px;
+}
+
+.toolButtonWrap {
+  display: inline-flex;
 }
 
 .toolButton {
@@ -82,9 +161,9 @@
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
   cursor: pointer;
   display: inline-flex;
-  height: 1.4rem;
+  height: 1.5rem;
   justify-content: center;
-  width: 1.4rem;
+  width: 1.5rem;
 }
 
 .toolButton:hover:not(:disabled) {
@@ -116,21 +195,36 @@
 }
 
 .proseMirror {
-  font-size: var(--body-text-size, 12pt);
-  line-height: 1.7;
-  min-height: 2.1rem;
+  /* 与 RequirementBlocks 段落同色，切编辑时字形颜色和亮度也不变。 */
+  color: color-mix(in srgb, var(--foreground) 94%, var(--muted-foreground));
   outline: none;
   overflow-wrap: anywhere;
-  overflow-x: auto;
-  padding: 0.3rem 0.45rem;
 }
 
-.proseMirror :global(p) {
-  margin: 0 0 0.25rem;
+/* RequirementBlocks 每个块外层是 div + 0.15rem 内边距；编辑态用等值外边距，
+   让段落、列表、表格在展示态与编辑态占同样的垂直空间。 */
+.proseMirror > * {
+  margin-block: 0;
 }
 
-.proseMirror :global(> :last-child) {
-  margin-bottom: 0;
+.proseMirror > *:not(:last-child) {
+  margin-bottom: 0.15rem;
+}
+
+/* 预览里的 tableWrap 自带 0.1rem 底部留白，编辑态 tableWrapper 补同值。 */
+.proseMirror > :global(.tableWrapper) {
+  padding-bottom: 0.1rem;
+}
+
+/* 编辑态只有一个段落时垂直居中；多段/表格仍从顶部排。 */
+.proseMirror:has(> p:only-child) {
+  align-items: center;
+  display: flex;
+}
+
+.proseMirror:has(> p:only-child) > p {
+  margin: 0;
+  width: 100%;
 }
 
 .spinner {
@@ -165,7 +259,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .display {
+  .toolbar {
+    transition: none;
+  }
+
+  @starting-style {
+    .toolbar {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .display,
+  .proseMirror {
     transition: none;
   }
 

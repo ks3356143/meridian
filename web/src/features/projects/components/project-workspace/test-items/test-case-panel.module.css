@@ -60,6 +60,7 @@
   line-height: 1.3;
   margin: 0;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .statusChip {
@@ -100,28 +101,62 @@
 .parentChip {
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
   font-size: 0.7rem;
+  line-height: 1.4;
+  max-width: 28rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.caseNav {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.2rem;
+}
+
+.caseNavTrigger {
+  display: inline-flex;
+}
+
+.caseNavPosition {
+  color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.1rem;
+  text-align: center;
   white-space: nowrap;
 }
 
-/* 撤销口径提示：一句话说明 Ctrl+Z 的作用域，避免用户以为能撤销整轮操作。 */
-.undoHint {
-  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
-  font-size: 0.68rem;
-  margin: 0 0 0.5rem;
+/* 蓝色快捷键入口：把两条长提示收进独立说明窗口。 */
+.shortcutButton {
+  background: color-mix(in srgb, var(--info) 8%, var(--card));
+  border-color: color-mix(in srgb, var(--info) 34%, var(--border));
+  color: color-mix(in srgb, var(--info) 90%, var(--foreground));
+  gap: 0.25rem;
+}
+
+.shortcutButton:hover {
+  background: color-mix(in srgb, var(--info) 14%, var(--card));
+  border-color: color-mix(in srgb, var(--info) 52%, var(--border));
 }
 
 /* 表格内浮：与测试项详情同口径（卡内留白，表格自带边框与轻阴影）。 */
 .body {
   min-height: 0;
+  overflow-x: auto;
   overflow-y: auto;
   padding: 0.75rem 1.1rem 1rem;
+  scrollbar-color: color-mix(in srgb, var(--muted-foreground) 28%, transparent) transparent;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 .sheet {
   background: color-mix(in srgb, var(--card) 97%, transparent);
   border-collapse: collapse;
   box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  min-width: 860px;
   table-layout: fixed;
   width: 100%;
 }
@@ -285,17 +320,30 @@
   font-size: 0.72rem;
 }
 
+/* 测试步骤是整段工作区：标题独占一行，表格占满用例表全宽。 */
+.stepsSectionTitle {
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  border: 1px solid var(--border);
+  color: color-mix(in srgb, var(--foreground) 94%, transparent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.45rem 0.6rem;
+  text-align: center;
+}
+
+.stepsSectionCell {
+  padding: 0.4rem 0.45rem 0.5rem;
+  vertical-align: top;
+}
+
 .stepsToolbar {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 0.45rem;
-}
-
-.stepsHint {
-  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
-  font-size: 0.68rem;
 }
 
 /* 固定列宽：宽屏下不能让「通过 / 行操作」两列被内容拉宽，否则中间会空出一大片。 */
@@ -312,47 +360,61 @@
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
   font-size: 0.7rem;
   font-weight: 620;
-  padding: 0.3rem 0.5rem;
+  line-height: 1.35;
+  padding: 0.3rem 0.35rem;
   text-align: center;
   vertical-align: middle;
+  white-space: normal;
+}
+
+/* 极窄的序号 / 操作列不换行，避免 1366 宽下标题被拆成竖排。 */
+.stepsTable th:nth-child(1),
+.stepsTable th:nth-child(6) {
   white-space: nowrap;
 }
 
-/* 列宽：序号 / 通过与否 / 行操作固定；输入及操作 : 期望结果 : 实测结果 ≈ 31 : 23 : 46。
-   百分比相对整表宽（fixed 布局），fixed 列扣掉后三列内部比例即 31 : 23 : 46。 */
+/* 六列百分比总和 100%；数据三列严格保持 4 : 3 : 6。
+   序号线 / 通过 / 操作都压到最小，同时给三块内容腾出宽度。 */
 .stepsTable th:nth-child(1),
 .stepsTable td:nth-child(1) {
-  width: 2.6rem;
+  width: 4%;
 }
 
 .stepsTable th:nth-child(2) {
-  width: 22%;
+  width: 26.15%;
 }
 
 .stepsTable th:nth-child(3) {
-  width: 17%;
+  width: 19.62%;
 }
 
 .stepsTable th:nth-child(4) {
-  width: 32%;
+  width: 39.23%;
 }
 
 .stepsTable th:nth-child(5),
 .stepsTable td:nth-child(5) {
-  width: 5rem;
+  padding-inline: 0.1rem;
+  width: 5%;
 }
 
 .stepsTable th:nth-child(6),
 .stepsTable td:nth-child(6) {
-  /* 5 个行操作按钮（移动 / 复制 / 复制到剪贴板 / 删除）。 */
-  width: 7.6rem;
+  /* 2×3 紧凑操作网格：5 个 24px 按钮不占横向空间。 */
+  width: 6%;
 }
 
 .stepsTable td {
   border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
   font-size: 0.74rem;
-  padding: 0.3rem 0.5rem;
+  padding: 0.25rem 0.35rem;
   vertical-align: middle;
+}
+/* 三块内容框统一初始高度，内容多时各自继续长高，不互相拉伸。 */
+.stepsTable tbody td:nth-child(2) > div > div,
+.stepsTable tbody td:nth-child(3) > div > div,
+.stepsTable tbody td:nth-child(4) > div > div {
+  min-height: 2.5rem;
 }
 
 .stepsTable td:nth-child(5) {
@@ -378,15 +440,19 @@
   font-size: 0.7rem;
   text-align: center;
   vertical-align: middle;
-  width: 2.6rem;
+  width: 2.4rem;
 }
 
 .passButton {
+  align-items: center;
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
   cursor: pointer;
+  display: inline-flex;
   font-size: 0.7rem;
-  padding: 1px 0.45rem 0;
+  justify-content: center;
+  min-height: 1.5rem;
+  padding: 1px 0.15rem 0;
   transition:
     background-color 0.16s ease,
     border-color 0.16s ease,
@@ -414,6 +480,7 @@
 .pasteRow {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
   justify-content: flex-end;
   margin-top: 0.45rem;
@@ -427,13 +494,25 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.stepActions {
+.stepActionWrap {
+  align-items: center;
   display: inline-flex;
-  gap: 0.15rem;
-  vertical-align: middle;
+  height: 1.5rem;
+  justify-content: center;
+  width: 1.5rem;
 }
 
-.stepActionsCell {
+.stepActions {
+  display: grid;
+  gap: 0.02rem;
+  grid-template-columns: repeat(2, 1.5rem);
+  justify-content: center;
+  margin-inline: auto;
+  width: max-content;
+}
+
+.stepsTable td.stepActionsCell {
+  padding-inline: 0.05rem;
   text-align: center;
 }
 
@@ -444,13 +523,13 @@
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
   cursor: pointer;
   display: inline-flex;
-  height: 1.35rem;
+  height: 1.5rem;
   justify-content: center;
   transition:
     color 0.16s ease,
     background-color 0.16s ease,
     border-color 0.16s ease;
-  width: 1.35rem;
+  width: 1.5rem;
 }
 
 .stepAction svg {
