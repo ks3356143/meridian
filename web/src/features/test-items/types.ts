@@ -44,6 +44,31 @@ export interface TestItemRecord {
   updatedAt: string;
 }
 
+export type BatchCreateTestItemOutcome =
+  | "created"
+  | "skipped_existing"
+  | "skipped_incomplete"
+  | "skipped_not_official"
+  | "failed";
+
+export interface BatchCreateTestItemResultItem {
+  requirementId: string;
+  chapterNumber: string;
+  name: string;
+  outcome: BatchCreateTestItemOutcome;
+  testItemId?: string;
+  testItemIdentifier?: string;
+  message?: string;
+}
+
+export interface BatchCreateTestItemsResult {
+  total: number;
+  created: number;
+  skipped: number;
+  failed: number;
+  items: BatchCreateTestItemResultItem[];
+}
+
 export interface TestSubItemRecord {
   id: string;
   testItemId: string;

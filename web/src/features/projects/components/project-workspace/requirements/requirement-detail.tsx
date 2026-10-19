@@ -4,9 +4,10 @@ import {
   CloudUpload,
   CopyPlus,
   History,
-  FileText,
   Link2,
   Loader2,
+  Plus,
+  RefreshCw,
   Sparkles,
   Trash2,
   X,
@@ -22,8 +23,19 @@ import {
   useState,
   type SyntheticEvent,
 } from "react";
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
+import { toast } from "sonner";
 import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Badge } from "@/components/ui/badge";
 import { SectionTitle } from "@/components/ui/section-title";
@@ -40,6 +52,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { requirementsApi } from "@/features/requirements/api";
+import { testItemsApi } from "@/features/test-items/api";
 import type {
   RequirementContent,
   RequirementBodyResponse,
@@ -58,6 +71,7 @@ import {
   type RequirementDraft,
 } from "./requirement-form";
 import { materializeAssetImages } from "./body/requirement-body-assets";
+import { RequirementFloatingCreateButton } from "./requirement-floating-create-button";
 import type { RequirementBodyEditorHandle } from "./body/requirement-body-editor";
 import styles from "./requirement-detail.module.css";
 
@@ -95,6 +109,10 @@ function requirementContentKey(requirementId: string) {
   return ["software-requirements", requirementId, "content"] as const;
 }
 
+function requirementTestItemsKey(requirementId: string) {
+  return ["software-requirements", requirementId, "test-items"] as const;
+}
+
 function RequirementDetailImpl(props: RequirementDetailProps) {
   const { requirement } = props;
   const detailQuery = useQuery({
@@ -123,6 +141,7 @@ function RequirementDetailImpl(props: RequirementDetailProps) {
   const detailPending = detail.body.requirementId !== requirement.id;
   return (
     <RequirementDetailForm
+      key={requirement.id}
       {...props}
       detail={detail}
       detailPending={detailPending}
@@ -154,6 +173,27 @@ function RequirementDetailForm({
   onRetryDetail: () => void;
 }) {
   const queryClient = useQueryClient();
+  const linkedTestItemsQuery = useQuery({
+    queryKey: requirementTestItemsKey(requirement.id),
+    queryFn: () => testItemsApi.requirementItems(requirement.id),
+    staleTime: 30_000,
+  });
+  const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
+  const createTestItemMutation = useMutation({
+    mutationFn: (createAnother: boolean) =>
+      testItemsApi.createFromRequirement(projectCode, requirement.id, createAnother),
+    onSuccess: (item) => {
+      toast.success(`已创建测试项 ${item.identifier} 并关联当前需求`);
+      void queryClient.invalidateQueries({ queryKey: requirementTestItemsKey(requirement.id) });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", projectCode, "requirements"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", projectCode, "test-items"],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["test-items", "detail"] });
+    },
+  });
   const contentDescription =
     detail.mode === "text" ? detail.content.description : detail.body.plainText;
   const bodyBaselineDoc = useMemo(
@@ -178,6 +218,7 @@ function RequirementDetailForm({
   const [descriptionStuck, setDescriptionStuck] = useState(false);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
   const descriptionSentinelRef = useRef<HTMLDivElement>(null);
+  const fabSentinelRef = useRef<HTMLDivElement>(null);
   const bodyDialogRef = useRef<HTMLDialogElement>(null);
   const bodyEditorHandleRef = useRef<RequirementBodyEditorHandle | null>(null);
   const bodyEditBaselineDocRef = useRef(bodyEditBaselineDoc);
@@ -229,6 +270,7 @@ function RequirementDetailForm({
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, []);
+
   const initializedDetailRef = useRef("");
   useEffect(() => {
     if (detailPending || detailError) return;
@@ -268,6 +310,23 @@ function RequirementDetailForm({
     (kind) => requirementKindOptions.find((option) => option.value === kind)?.label ?? kind,
   );
   const incomplete = draft.description.trim() === "";
+  const canCreateTestItem =
+    !incomplete &&
+    !dirty &&
+    !bodyDirty &&
+    !bodyBusy &&
+    !linkedTestItemsQuery.isPending &&
+    !linkedTestItemsQuery.isError &&
+    !createTestItemMutation.isPending;
+  const linkedTestItems = linkedTestItemsQuery.data ?? [];
+  const handleCreateTestItem = () => {
+    if (linkedTestItems.length > 0) {
+      setConfirmCreateOpen(true);
+      return;
+    }
+    createTestItemMutation.mutate(false);
+  };
+
   const identifierPending =
     requirement.identifierAutoGenerated || requirement.externalIdentifier.trim() === "";
   const errors = getRequirementDraftErrors(draft);
@@ -662,7 +721,79 @@ function RequirementDetailForm({
             <FieldError id="detail-secondary-kind-error">{errors.secondaryKinds}</FieldError>
           </Field>
         </div>
+        <div ref={fabSentinelRef} className={styles.fabSentinel} aria-hidden />
 
+        <section className={styles.related}>
+          <header>
+            <div>
+              <h4>
+                <Link2 aria-hidden />
+                关联测试项
+              </h4>
+              <p>从当前需求创建测试项，或查看已经关联的测试项。</p>
+            </div>
+            <div className={styles.relatedActions}>
+              <Button
+                type="button"
+                size="xs"
+                disabled={!canCreateTestItem}
+                aria-busy={createTestItemMutation.isPending || undefined}
+                onClick={handleCreateTestItem}
+              >
+                {createTestItemMutation.isPending ? (
+                  <Loader2 data-icon="inline-start" className={styles.buttonSpinner} aria-hidden />
+                ) : (
+                  <Plus aria-hidden />
+                )}
+                {createTestItemMutation.isPending ? "创建中..." : "创建并关联测试项"}
+              </Button>
+            </div>
+          </header>
+          {!canCreateTestItem &&
+          !createTestItemMutation.isPending &&
+          !linkedTestItemsQuery.isPending &&
+          !linkedTestItemsQuery.isError ? (
+            <p className={styles.relatedHint}>
+              {incomplete
+                ? "补全描述后才能创建测试项。"
+                : dirty || bodyDirty
+                  ? "先保存需求修改，再创建测试项。"
+                  : bodyBusy
+                    ? "正在保存需求，请稍候。"
+                    : ""}
+            </p>
+          ) : null}
+          {linkedTestItemsQuery.isPending ? (
+            <p className={styles.relatedLoading}>正在读取关联测试项…</p>
+          ) : linkedTestItemsQuery.isError ? (
+            <div className={styles.relatedErrorRow}>
+              <span>关联测试项读取失败</span>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={() => void linkedTestItemsQuery.refetch()}
+              >
+                <RefreshCw aria-hidden />
+                重试
+              </Button>
+            </div>
+          ) : linkedTestItems.length === 0 ? (
+            <p className={styles.relatedEmpty}>尚未关联测试项。</p>
+          ) : (
+            <ul className={styles.relatedList} aria-label="已关联测试项">
+              {linkedTestItems.map((item) => (
+                <li key={item.id} className={styles.relatedItem}>
+                  <span className={styles.relatedItemMain}>
+                    <span className={styles.relatedIdent}>{item.identifier}</span>
+                    <span className={styles.relatedName}>{item.name}</span>
+                  </span>
+                  <span className={styles.relatedType}>{item.typeCode}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
         <section
           className={styles.descriptionCard}
           aria-busy={bodyRefreshVisible ? true : undefined}
@@ -819,25 +950,32 @@ function RequirementDetailForm({
           ) : null}
         </dialog>
 
-        <section className={styles.related}>
-          <header>
-            <div>
-              <h4>
-                <Link2 aria-hidden />
-                关联测试项
-              </h4>
-              <p>测试项模块落地后在此维护多对多追踪关系。</p>
-              {incomplete ? (
-                <p className={styles.incompleteHint}>补全描述后才能关联测试项。</p>
-              ) : null}
-            </div>
-            <Badge variant="outline">
-              <FileText aria-hidden />
-              待接入
-            </Badge>
-          </header>
-        </section>
+        <AlertDialog open={confirmCreateOpen} onOpenChange={setConfirmCreateOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>创建新的关联测试项？</AlertDialogTitle>
+              <AlertDialogDescription>
+                已有关联需求，是否创建一个新的关联测试项？
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={createTestItemMutation.isPending}
+                onClick={() => createTestItemMutation.mutate(true)}
+              >
+                {createTestItemMutation.isPending ? "创建中..." : "创建"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
+      <RequirementFloatingCreateButton
+        rootRef={bodyScrollRef}
+        sentinelRef={fabSentinelRef}
+        enabled={canCreateTestItem}
+        onClick={handleCreateTestItem}
+      />
     </section>
   );
 

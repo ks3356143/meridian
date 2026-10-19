@@ -36,6 +36,8 @@ var (
 	ErrStaticTypeDuplicate = errors.New("静态测试项不支持复制新增，请用「新增测试项」按类型创建")
 	// ErrRequirementIncomplete 需求描述待补全，暂不能建立关联。
 	ErrRequirementIncomplete = errors.New("需求描述待补全，暂不能关联")
+	// ErrRequirementNotOfficial 只有已确认需求可以建立测试项关联。
+	ErrRequirementNotOfficial = errors.New("只有已确认需求可以关联测试项")
 	// ErrProjectNotFound 项目不存在。
 	ErrProjectNotFound = errors.New("项目不存在")
 	// ErrFolderMismatch 目标文件夹与测试项类型不一致。
@@ -44,6 +46,8 @@ var (
 	ErrSuffixExhausted = errors.New("名称前缀相同的测试项过多，标识自动生成失败，请手工指定标识后缀")
 	// ErrImportAcrossProjects 跨用例复制步骤只允许在同一项目内。
 	ErrImportAcrossProjects = errors.New("只能在同一项目内的用例之间复制步骤")
+	// ErrRequirementSelectionRequired 批量创建必须指定需求。
+	ErrRequirementSelectionRequired = errors.New("请选择需求")
 )
 
 // FindProjectID 按项目标识（RXXXXX）解析项目 id。
@@ -201,22 +205,45 @@ type CreateTestItemInput struct {
 	Description  string
 	Adequacy     string
 	PassCriteria string
+	// RequirementID 非空时按该需求创建测试项并建立关联；类型和名称留空时使用需求默认值。
+	RequirementID string
+	// CreateAnother 为 true 时跳过同类型同名称幂等复用，强制创建一条新的关联测试项。
+	CreateAnother bool
 	// ImplicitRequirement 隐含需求标记（不关联需求时按已满足追踪关系计）。
 	ImplicitRequirement bool
 }
 
 // CreateTestItem 新建测试项；标识后缀留空时按名称拼音首字母自动生成，套话按类型预填。
 func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput) (TestItem, error) {
-	name := strings.TrimSpace(input.Name)
-	if name == "" {
-		return TestItem{}, ErrNameRequired
-	}
-
 	var created TestItem
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if input.RequirementID != "" {
+			requirement, err := loadRequirementForLink(tx, input.ProjectID, input.RequirementID)
+			if err != nil {
+				return err
+			}
+			if strings.TrimSpace(input.TypeCode) == "" {
+				input.TypeCode = requirementTestItemType(requirement.PrimaryKind)
+			}
+			if strings.TrimSpace(input.Name) == "" {
+				input.Name = requirement.Name
+			}
+			if input.ImplicitRequirement {
+				return ErrImplicitWithRequirement
+			}
+		}
+
+		name := strings.TrimSpace(input.Name)
+		if name == "" {
+			return ErrNameRequired
+		}
+
 		itemType, err := findItemType(tx, input.TypeCode)
 		if err != nil {
 			return err
+		}
+		if itemType.IsStatic && input.RequirementID != "" {
+			return ErrStaticNoRequirementLink
 		}
 		platform, err := projectPlatform(tx, input.ProjectID)
 		if err != nil {
@@ -235,6 +262,24 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 			}
 			if existing > 0 {
 				return ErrStaticTypeExists
+			}
+		}
+
+		// 一键创建按「同需求 + 同类型 + 同名称」幂等；用户确认“再建一个”时跳过复用。
+		if input.RequirementID != "" && !input.CreateAnother {
+			var existing TestItem
+			err := tx.Table("test_items AS item").
+				Select("item.*").
+				Joins("JOIN requirement_test_items AS link ON link.test_item_id = item.id").
+				Where("link.requirement_id = ? AND item.project_id = ? AND item.type_code = ? AND item.name = ?",
+					input.RequirementID, input.ProjectID, itemType.Code, name).
+				Take(&existing).Error
+			if err == nil {
+				created = existing
+				return markRequirementTestItemCompletedTx(tx, input.ProjectID, input.RequirementID)
+			}
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("查询已关联测试项失败: %w", err)
 			}
 		}
 
@@ -312,12 +357,30 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 				return err
 			}
 		}
+		if input.RequirementID != "" {
+			return createRequirementLinkTx(tx, input.ProjectID, input.RequirementID, created.ID)
+		}
 		return nil
 	})
 	if err != nil {
 		return TestItem{}, err
 	}
 	return created, nil
+}
+
+func requirementTestItemType(primaryKind string) string {
+	switch strings.TrimSpace(primaryKind) {
+	case "interface":
+		return "IO"
+	case "performance":
+		return "AC"
+	case "safety":
+		return "SE"
+	case "reliability":
+		return "KK"
+	default:
+		return "SU"
+	}
 }
 
 func nextItemSortOrder(tx *gorm.DB, projectID string, typeCode string, folderID *string) (int, error) {

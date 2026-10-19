@@ -507,6 +507,7 @@
 .row {
   align-items: center;
   border: 1px solid transparent;
+  border-radius: 0;
   color: var(--foreground);
   display: flex;
   font-size: 12px;
@@ -530,6 +531,7 @@
 
 .row::before {
   background: color-mix(in srgb, var(--primary) 20%, transparent);
+  border-radius: 0;
   content: "";
   inset-block: 0;
   left: 0;
@@ -929,6 +931,7 @@
 }
 
 .rowCheck {
+  border-radius: 0;
   height: 0.85rem;
   margin-inline-end: 0.2rem;
   width: 0.85rem;

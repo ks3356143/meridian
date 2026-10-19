@@ -1,6 +1,7 @@
 import { request } from "@/api/client";
 import type { RequirementBlockNode } from "@/features/requirements/types";
 import type {
+  BatchCreateTestItemsResult,
   CaseStepRecord,
   TestCaseRecord,
   TestItemDetail,
@@ -72,6 +73,28 @@ export const testItemsApi = {
     request<TestItemDetail>("GET", `/api/v1/test-items/${testItemId}`),
   createItem: (projectCode: string, payload: CreateTestItemPayload) =>
     request<TestItemRecord>("POST", `/api/v1/projects/${projectCode}/test-items`, {}, payload),
+  /** 按需求默认值创建并关联测试项；createAnother 为真时跳过同类型同名称复用。 */
+  createFromRequirement: (projectCode: string, requirementId: string, createAnother = false) =>
+    request<TestItemRecord>(
+      "POST",
+      `/api/v1/projects/${projectCode}/test-items`,
+      {},
+      { requirementId, createAnother },
+    ),
+  /** 全部或选中的已确认需求批量创建测试项；已关联和待补描述默认跳过。 */
+  createFromRequirements: (
+    projectCode: string,
+    payload: { all?: boolean; requirementIds?: string[] },
+  ) =>
+    request<BatchCreateTestItemsResult>(
+      "POST",
+      `/api/v1/projects/${projectCode}/test-items/from-requirements`,
+      {},
+      payload,
+    ),
+  /** 需求详情侧的已关联测试项。 */
+  requirementItems: (requirementId: string) =>
+    request<TestItemRecord[]>("GET", `/api/v1/software-requirements/${requirementId}/test-items`),
   updateItem: (testItemId: string, payload: UpdateTestItemPayload) =>
     request<TestItemRecord>("PATCH", `/api/v1/test-items/${testItemId}`, {}, payload),
   deleteItem: (testItemId: string) => request<void>("DELETE", `/api/v1/test-items/${testItemId}`),

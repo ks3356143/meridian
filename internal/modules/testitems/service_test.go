@@ -43,6 +43,137 @@ VALUES (?, 'R99999', '单元测试项目', '鉴定测评', 'CPU/非嵌', '新研
 	return NewService(db).WithBlocks(contentblocks.NewService(db, filepath.Join(t.TempDir(), "assets"))), projectID
 }
 
+func seedRequirementForCreate(
+	t *testing.T,
+	service *Service,
+	projectID string,
+	requirementID string,
+	name string,
+	primaryKind string,
+	status string,
+	taskStatus string,
+	description string,
+) {
+	t.Helper()
+	if err := service.db.Exec(`
+INSERT INTO work_objects (id, project_id, object_kind, name, created_at, updated_at)
+VALUES ('wo-1', ?, 'srs', '需求规格说明', datetime('now'), datetime('now'))`, projectID).Error; err != nil {
+		t.Fatalf("写入工作对象失败: %v", err)
+	}
+	if err := service.db.Exec(`
+INSERT INTO work_object_versions (id, project_id, work_object_id, version, platform, status, source, received_at, receive_mode, created_at, updated_at)
+VALUES ('wov-1', ?, 'wo-1', 'V1.0', 'common', 'confirmed', '研制方', '2026-10-19', 'email', datetime('now'), datetime('now'))`,
+		projectID).Error; err != nil {
+		t.Fatalf("写入工作对象版本失败: %v", err)
+	}
+	if err := service.db.Exec(`
+INSERT INTO software_requirements
+    (id, project_id, source_version_id, chapter_number, external_identifier, name, description,
+     primary_kind, secondary_kinds, tags, origin, source_anchor, status, test_item_task_status,
+     created_at, updated_at)
+VALUES (?, ?, 'wov-1', '4.1', '', ?, ?, ?, '[]', '[]', 'manual', '', ?, ?, datetime('now'), datetime('now'))`,
+		requirementID, projectID, name, description, primaryKind, status, taskStatus).Error; err != nil {
+		t.Fatalf("写入需求失败: %v", err)
+	}
+}
+
+func seedBatchRequirement(
+	t *testing.T,
+	service *Service,
+	projectID string,
+	requirementID string,
+	chapterNumber string,
+	name string,
+	primaryKind string,
+	status string,
+	taskStatus string,
+	description string,
+) {
+	t.Helper()
+	if err := service.db.Exec(`
+INSERT INTO software_requirements
+    (id, project_id, source_version_id, chapter_number, external_identifier, name, description,
+     primary_kind, secondary_kinds, tags, origin, source_anchor, status, test_item_task_status,
+     created_at, updated_at)
+VALUES (?, ?, 'wov-1', ?, '', ?, ?, ?, '[]', '[]', 'manual', '', ?, ?, datetime('now'), datetime('now'))`,
+		requirementID, projectID, chapterNumber, name, description, primaryKind, status, taskStatus).Error; err != nil {
+		t.Fatalf("写入批量测试需求失败: %v", err)
+	}
+}
+
+func TestCreateTestItemsFromRequirementsAllSkipsExistingAndIncomplete(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+	seedRequirementForCreate(t, service, projectID, "req-batch-new", "批量新建", "functional", "official", "pending", "需要创建测试项")
+	seedBatchRequirement(t, service, projectID, "req-batch-linked", "4.2", "已有关联", "functional", "official", "pending", "已有测试项")
+	seedBatchRequirement(t, service, projectID, "req-batch-incomplete", "4.3", "待补描述", "functional", "official", "none", "")
+
+	if _, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID: projectID, RequirementID: "req-batch-linked",
+	}); err != nil {
+		t.Fatalf("准备已关联需求失败: %v", err)
+	}
+
+	result, err := service.CreateTestItemsFromRequirements(ctx, projectID, nil, true)
+	if err != nil {
+		t.Fatalf("批量创建全部测试项失败: %v", err)
+	}
+	if result.Total != 3 || result.Created != 1 || result.Skipped != 2 || result.Failed != 0 {
+		t.Fatalf("批量汇总不正确: %+v", result)
+	}
+	outcomes := make(map[string]string, len(result.Items))
+	for _, item := range result.Items {
+		outcomes[item.RequirementID] = item.Outcome
+	}
+	if outcomes["req-batch-new"] != BatchOutcomeCreated ||
+		outcomes["req-batch-linked"] != BatchOutcomeSkippedExisting ||
+		outcomes["req-batch-incomplete"] != BatchOutcomeSkippedIncomplete {
+		t.Fatalf("批量结果分类不正确: %+v", outcomes)
+	}
+	createdItems, err := service.ListTestItemsByRequirement(ctx, "req-batch-new")
+	if err != nil || len(createdItems) != 1 {
+		t.Fatalf("新需求应创建并关联 1 个测试项: %+v, err=%v", createdItems, err)
+	}
+	var itemCount int64
+	if err := service.db.Model(&TestItem{}).Where("project_id = ?", projectID).Count(&itemCount).Error; err != nil {
+		t.Fatalf("统计测试项失败: %v", err)
+	}
+	if itemCount != 2 {
+		t.Fatalf("应仅新增 1 个测试项，实际总数 %d", itemCount)
+	}
+}
+
+func TestCreateTestItemsFromRequirementsSelectedIDs(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+	seedRequirementForCreate(t, service, projectID, "req-selected-1", "选中一", "functional", "official", "pending", "描述一")
+	seedBatchRequirement(t, service, projectID, "req-selected-2", "4.2", "未选中", "interface", "official", "pending", "描述二")
+	seedBatchRequirement(t, service, projectID, "req-selected-3", "4.3", "选中三", "performance", "official", "pending", "描述三")
+
+	result, err := service.CreateTestItemsFromRequirements(
+		ctx,
+		projectID,
+		[]string{"req-selected-1", "req-selected-3", "req-selected-1"},
+		false,
+	)
+	if err != nil {
+		t.Fatalf("按选中需求批量创建失败: %v", err)
+	}
+	if result.Total != 2 || result.Created != 2 || result.Skipped != 0 || result.Failed != 0 {
+		t.Fatalf("选中需求批量汇总不正确: %+v", result)
+	}
+	if len(result.Items) != 2 {
+		t.Fatalf("重复需求 id 应去重，实际 %+v", result.Items)
+	}
+	notSelected, err := service.ListTestItemsByRequirement(ctx, "req-selected-2")
+	if err != nil {
+		t.Fatalf("查询未选中需求关联失败: %v", err)
+	}
+	if len(notSelected) != 0 {
+		t.Fatalf("未选中需求不应创建测试项: %+v", notSelected)
+	}
+}
+
 func TestEnsureRoundIsIdempotent(t *testing.T) {
 	service, projectID := newTestService(t)
 	ctx := context.Background()
@@ -132,6 +263,106 @@ func TestCreateTestItemSuffixConflictAdjusts(t *testing.T) {
 	}
 	if second.Suffix == first.Suffix {
 		t.Fatalf("同后缀应自动调整为唯一值: %q", second.Suffix)
+	}
+}
+
+func TestCreateTestItemForRequirementDefaultsAndLinks(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+	seedRequirementForCreate(t, service, projectID, "req-create-item", "参数性能", "performance", "official", "pending", "应满足参数性能要求")
+
+	created, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID:     projectID,
+		RequirementID: "req-create-item",
+	})
+	if err != nil {
+		t.Fatalf("按需求创建测试项失败: %v", err)
+	}
+	if created.TypeCode != "AC" || created.Name != "参数性能" || created.Priority != "中" {
+		t.Fatalf("需求默认值不正确: %+v", created)
+	}
+	refs, err := service.ListRequirements(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("查询关联需求失败: %v", err)
+	}
+	if len(refs) != 1 || refs[0].ID != "req-create-item" {
+		t.Fatalf("测试项应关联需求: %+v", refs)
+	}
+	var taskStatus string
+	if err := service.db.Table("software_requirements").
+		Select("test_item_task_status").
+		Where("id = ?", "req-create-item").
+		Scan(&taskStatus).Error; err != nil {
+		t.Fatalf("查询需求任务状态失败: %v", err)
+	}
+	if taskStatus != "completed" {
+		t.Fatalf("需求任务状态应变为 completed，实际 %q", taskStatus)
+	}
+
+	reused, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID:     projectID,
+		RequirementID: "req-create-item",
+	})
+	if err != nil {
+		t.Fatalf("重复按需求创建失败: %v", err)
+	}
+	if reused.ID != created.ID {
+		t.Fatalf("同需求同类型同名称应幂等返回，首次 %s，再次 %s", created.ID, reused.ID)
+	}
+	another, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID:     projectID,
+		RequirementID: "req-create-item",
+		CreateAnother: true,
+	})
+	if err != nil {
+		t.Fatalf("确认再建一个时创建失败: %v", err)
+	}
+	if another.ID == created.ID || another.Suffix == created.Suffix {
+		t.Fatalf("确认再建一个应生成新测试项，首次 %+v，再次 %+v", created, another)
+	}
+	var linkCount int64
+	if err := service.db.Model(&RequirementLink{}).
+		Where("requirement_id = ?", "req-create-item").
+		Count(&linkCount).Error; err != nil {
+		t.Fatalf("统计关联失败: %v", err)
+	}
+	if linkCount != 2 {
+		t.Fatalf("确认再建一个后应有两条关联，实际 %d", linkCount)
+	}
+}
+
+func TestCreateTestItemForIncompleteRequirementRejected(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+	seedRequirementForCreate(t, service, projectID, "req-incomplete", "待补描述", "functional", "official", "none", "")
+
+	_, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID:     projectID,
+		RequirementID: "req-incomplete",
+	})
+	if !errors.Is(err, ErrRequirementIncomplete) {
+		t.Fatalf("待补描述需求应拒绝创建，实际 %v", err)
+	}
+	var count int64
+	if err := service.db.Model(&TestItem{}).Where("project_id = ?", projectID).Count(&count).Error; err != nil {
+		t.Fatalf("统计测试项失败: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("失败时不应留下测试项，实际 %d", count)
+	}
+}
+
+func TestCreateTestItemForCandidateRequirementRejected(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+	seedRequirementForCreate(t, service, projectID, "req-candidate", "候选需求", "functional", "candidate", "none", "候选需求正文")
+
+	_, err := service.CreateTestItem(ctx, CreateTestItemInput{
+		ProjectID:     projectID,
+		RequirementID: "req-candidate",
+	})
+	if !errors.Is(err, ErrRequirementNotOfficial) {
+		t.Fatalf("候选需求应拒绝创建，实际 %v", err)
 	}
 }
 

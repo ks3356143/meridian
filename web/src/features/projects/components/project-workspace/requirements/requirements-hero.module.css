@@ -77,11 +77,13 @@
   }
 
   .actions {
+    flex-wrap: wrap;
     justify-self: stretch;
   }
 
   .actions :global([data-slot="button"]) {
-    width: 100%;
+    flex: 1 1 9rem;
+    width: auto;
   }
 }
 

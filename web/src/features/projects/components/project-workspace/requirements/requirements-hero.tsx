@@ -1,4 +1,4 @@
-import { Archive, ClipboardPaste } from "lucide-react";
+import { Archive, ClipboardPaste, Sparkles } from "lucide-react";
 import { memo, useMemo } from "react";
 import type { RequirementRecord } from "@/features/requirements/types";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,13 @@ function RequirementsHeroImpl({
   loading,
   onOpenDeleted,
   onOpenBulkPaste,
+  onCreateAllTestItems,
 }: {
   requirements: RequirementRecord[];
   loading: boolean;
   onOpenDeleted: () => void;
   onOpenBulkPaste: () => void;
+  onCreateAllTestItems: () => void;
 }) {
   const stats = useMemo(() => {
     let officialCount = 0;
@@ -74,7 +76,16 @@ function RequirementsHeroImpl({
         ))}
       </dl>
       <div className={styles.actions}>
-        <Button type="button" size="sm" onClick={onOpenBulkPaste}>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!requirements.some((requirement) => requirement.status === "official")}
+          onClick={onCreateAllTestItems}
+        >
+          <Sparkles data-icon="inline-start" aria-hidden />
+          一键创建测试项
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={onOpenBulkPaste}>
           <ClipboardPaste data-icon="inline-start" aria-hidden />
           批量粘贴建树
         </Button>

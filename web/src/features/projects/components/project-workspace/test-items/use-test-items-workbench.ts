@@ -70,6 +70,14 @@ export function useTestItemsWorkbench(project: Project) {
     void queryClient.invalidateQueries({ queryKey: ["projects", project.id, "test-items"] });
     void queryClient.invalidateQueries({ queryKey: ["test-items", "detail"] });
   }, [project.id, queryClient]);
+  /** 需求详情缓存也依赖测试项关联，删除/关联/解除后必须让它重新取数。 */
+  const invalidateRequirementLinks = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: ["software-requirements"],
+      predicate: (query) => query.queryKey.length >= 3 && query.queryKey[2] === "test-items",
+    });
+    void queryClient.invalidateQueries({ queryKey: ["projects", project.id, "requirements"] });
+  }, [project.id, queryClient]);
 
   const createItemMutation = useMutation({
     mutationFn: (payload: CreateTestItemPayload) => testItemsApi.createItem(project.id, payload),
@@ -114,6 +122,7 @@ export function useTestItemsWorkbench(project: Project) {
       queryClient.removeQueries({ queryKey: detailKey(id) });
       setSelectedId((current) => (current === id ? "" : current));
       void invalidateWorkbench();
+      invalidateRequirementLinks();
     },
   });
 
@@ -135,6 +144,7 @@ export function useTestItemsWorkbench(project: Project) {
       );
       toast.success("已关联需求");
       void invalidateWorkbench();
+      invalidateRequirementLinks();
     },
   });
 
@@ -370,6 +380,7 @@ export function useTestItemsWorkbench(project: Project) {
       );
       toast.success("已解除关联");
       void invalidateWorkbench();
+      invalidateRequirementLinks();
     },
   });
 

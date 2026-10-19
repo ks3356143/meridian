@@ -43,6 +43,10 @@ import { RequirementAuditDialog } from "./requirement-audit-dialog";
 import { RequirementBulkDeleteDialog } from "./requirement-bulk-delete-dialog";
 import { RequirementBulkUpdateDialog } from "./requirement-bulk-update-dialog";
 import { RequirementBulkPasteDialog } from "./requirement-bulk-paste-dialog";
+import {
+  RequirementCreateTestItemsDialog,
+  type TestItemCreateScope,
+} from "./requirement-create-test-items-dialog";
 import { RequirementsHero } from "./requirements-hero";
 
 import { RequirementsTree, type RequirementCreatedSignal } from "./requirements-tree";
@@ -87,6 +91,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
     bulkPurgeMutation,
     bulkUpdateMutation,
     bulkCreateMutation,
+    bulkCreateTestItemsMutation,
     bulkCleanNamesMutation,
     parseMutation,
     candidateStatusMutation,
@@ -102,6 +107,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkPasteOpen, setBulkPasteOpen] = useState(false);
+  const [testItemCreateScope, setTestItemCreateScope] = useState<TestItemCreateScope | null>(null);
   const [selectedId, setSelectedId] = useState("");
   const [workbenchTab, setWorkbenchTab] = useState<WorkbenchTab>("confirmed");
   const [candidateActivated, setCandidateActivated] = useState(false);
@@ -136,6 +142,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
     () => requirements.filter((requirement) => requirement.status === "official"),
     [requirements],
   );
+
   const recycleBinRequirements = useMemo(
     () => requirements.filter((requirement) => requirement.status === "excluded"),
     [requirements],
@@ -207,6 +214,8 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const openBulkUpdateDialog = useCallback(() => setBulkUpdateOpen(true), []);
   const openBulkDeleteDialog = useCallback(() => setBulkDeleteOpen(true), []);
   const openBulkPasteDialog = useCallback(() => setBulkPasteOpen(true), []);
+  const openCreateAllTestItemsDialog = useCallback(() => setTestItemCreateScope("all"), []);
+  const openBulkCreateTestItemsDialog = useCallback(() => setTestItemCreateScope("selected"), []);
   const workspaceTabs = useMemo(
     () => (
       <TabsList
@@ -490,6 +499,25 @@ export function RequirementsLayout({ project }: { project: Project }) {
     },
     [parseSRS],
   );
+  const submitTestItemCreate = useCallback(async () => {
+    const scope = testItemCreateScope;
+    if (!scope) return;
+    try {
+      await bulkCreateTestItemsMutation.mutateAsync(
+        scope === "all"
+          ? { all: true }
+          : { requirementIds: selectedRequirements.map((item) => item.id) },
+      );
+      setTestItemCreateScope(null);
+      if (scope === "selected") {
+        setBatchMode(false);
+        setSelectedIds([]);
+      }
+    } catch {
+      // 保持弹窗打开，由 mutation.error 展示失败原因。
+    }
+  }, [bulkCreateTestItemsMutation, selectedRequirements, testItemCreateScope]);
+
   const handleCandidateConfirm = useCallback(
     async (ids: string[]) => {
       await changeCandidateStatus({ ids, action: "confirm" });
@@ -538,6 +566,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       onToggleSource={toggleSourceSelected}
       onOpenBulkUpdate={openBulkUpdateDialog}
       onOpenBulkDelete={openBulkDeleteDialog}
+      onOpenBulkCreateTestItems={openBulkCreateTestItemsDialog}
       onClearSelection={clearSelection}
       onRegisterExitAnimation={registerTreeExitAnimation}
       naturalHeight={!wideLayout}
@@ -549,6 +578,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       loading={workbenchQuery.isFetching}
       onOpenDeleted={openRecycleBin}
       onOpenBulkPaste={openBulkPasteDialog}
+      onCreateAllTestItems={openCreateAllTestItemsDialog}
     />
   );
   const detail = detailRequirement ? (
@@ -739,6 +769,25 @@ export function RequirementsLayout({ project }: { project: Project }) {
     );
   }
 
+  function renderCreateTestItemsDialog() {
+    if (!testItemCreateScope) return null;
+    return (
+      <RequirementCreateTestItemsDialog
+        open
+        requirements={testItemCreateScope === "all" ? officialRequirements : selectedRequirements}
+        scope={testItemCreateScope}
+        submitting={bulkCreateTestItemsMutation.isPending}
+        error={bulkCreateTestItemsMutation.error}
+        onOpenChange={(open) => {
+          if (open) return;
+          setTestItemCreateScope(null);
+          bulkCreateTestItemsMutation.reset();
+        }}
+        onConfirm={submitTestItemCreate}
+      />
+    );
+  }
+
   function renderBulkPasteDialog() {
     return (
       <RequirementBulkPasteDialog
@@ -921,6 +970,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
       {renderBulkUpdateDialog()}
       {renderBulkDeleteDialog()}
       {renderBulkPasteDialog()}
+      {renderCreateTestItemsDialog()}
       <AlertDialog
         open={Boolean(pendingSelect)}
         onOpenChange={(open) => {

@@ -111,6 +111,7 @@ function RequirementsTreeImpl({
   onToggleSource,
   onOpenBulkUpdate,
   onOpenBulkDelete,
+  onOpenBulkCreateTestItems,
   onClearSelection,
   onRegisterExitAnimation,
   naturalHeight,
@@ -132,6 +133,7 @@ function RequirementsTreeImpl({
   onToggleSource: (sourceId: string, checked: boolean, requirementIds?: string[]) => void;
   onOpenBulkUpdate: () => void;
   onOpenBulkDelete: () => void;
+  onOpenBulkCreateTestItems: () => void;
   onClearSelection: () => void;
   onRegisterExitAnimation: (requestExit: (id: string) => Promise<void>) => void;
   naturalHeight: boolean;
@@ -167,6 +169,7 @@ function RequirementsTreeImpl({
     () => new Map(officialRequirements.map((requirement) => [requirement.id, requirement])),
     [officialRequirements],
   );
+
   const visibleRequirements = useMemo(() => {
     if (completenessFilter === "missing-description") {
       return officialRequirements.filter((requirement) => !requirement.hasDescription);
@@ -752,6 +755,16 @@ function RequirementsTreeImpl({
             已选 {selectedCount} 项
           </span>
           <div className={styles.batchActions}>
+            <Button
+              type="button"
+              size="xs"
+              disabled={selectedCount === 0}
+              onClick={onOpenBulkCreateTestItems}
+              aria-label="为选中需求批量创建测试项"
+            >
+              <Sparkles data-icon="inline-start" aria-hidden />
+              创建测试项
+            </Button>
             <Button
               type="button"
               size="xs"

@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { requirementsApi } from "@/features/requirements/api";
+import { testItemsApi } from "@/features/test-items/api";
 import type {
   BulkCleanNamesPayload,
   BulkPurgeRequirementsPayload,
@@ -137,6 +138,37 @@ export function useRequirementsWorkbench(project: Project) {
     },
   });
 
+  const bulkCreateTestItemsMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof testItemsApi.createFromRequirements>[1]) =>
+      testItemsApi.createFromRequirements(project.id, payload),
+    onSuccess: async (result) => {
+      const createdRequirementIDs = result.items
+        .filter((item) => item.outcome === "created")
+        .map((item) => item.requirementId);
+      const skipped = result.skipped > 0 ? `，跳过 ${result.skipped} 个` : "";
+      if (result.failed > 0) {
+        const firstFailure = result.items.find((item) => item.outcome === "failed")?.message;
+        toast.warning(
+          `已创建 ${result.created} 个测试项${skipped}，失败 ${result.failed} 个${firstFailure ? `；${firstFailure}` : ""}`,
+        );
+      } else if (result.created > 0) {
+        toast.success(`已创建 ${result.created} 个测试项${skipped}`);
+      } else {
+        toast.info("没有需要创建的测试项，均已关联或待补描述");
+      }
+      await Promise.all([
+        invalidate(),
+        queryClient.invalidateQueries({ queryKey: ["projects", project.id, "test-items"] }),
+        queryClient.invalidateQueries({ queryKey: ["test-items", "detail"] }),
+        ...createdRequirementIDs.map((requirementID) =>
+          queryClient.invalidateQueries({
+            queryKey: ["software-requirements", requirementID, "test-items"],
+          }),
+        ),
+      ]);
+    },
+  });
+
   const bulkCleanNamesMutation = useMutation({
     mutationFn: (payload: BulkCleanNamesPayload) =>
       requirementsApi.bulkCleanNames(project.id, payload),
@@ -195,6 +227,7 @@ export function useRequirementsWorkbench(project: Project) {
     bulkPurgeMutation,
     bulkUpdateMutation,
     bulkCreateMutation,
+    bulkCreateTestItemsMutation,
     bulkCleanNamesMutation,
     parseMutation,
     candidateStatusMutation,

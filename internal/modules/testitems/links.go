@@ -31,6 +31,64 @@ const requirementRefJoins = "JOIN software_requirements AS req ON req.id = link.
 	"JOIN work_object_versions AS ver ON ver.id = req.source_version_id " +
 	"JOIN work_objects AS wo ON wo.id = ver.work_object_id"
 
+type requirementForLink struct {
+	Status             string `gorm:"column:status"`
+	TestItemTaskStatus string `gorm:"column:test_item_task_status"`
+	PrimaryKind        string `gorm:"column:primary_kind"`
+	Name               string `gorm:"column:name"`
+	Description        string `gorm:"column:description"`
+}
+
+// loadRequirementForLink 统一校验需求归属、正式状态和描述完整度。
+func loadRequirementForLink(tx *gorm.DB, projectID string, requirementID string) (requirementForLink, error) {
+	var requirement requirementForLink
+	err := tx.Table("software_requirements").
+		Select("status, test_item_task_status, primary_kind, name, description").
+		Where("id = ? AND project_id = ?", requirementID, projectID).
+		Take(&requirement).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return requirement, ErrNotFound
+	}
+	if err != nil {
+		return requirement, fmt.Errorf("查询需求失败: %w", err)
+	}
+	if requirement.Status != "official" {
+		return requirement, ErrRequirementNotOfficial
+	}
+	if (strings.TrimSpace(requirement.TestItemTaskStatus) == "" || requirement.TestItemTaskStatus == "none") &&
+		strings.TrimSpace(requirement.Description) == "" {
+		return requirement, ErrRequirementIncomplete
+	}
+	return requirement, nil
+}
+
+func markRequirementTestItemCompletedTx(tx *gorm.DB, projectID string, requirementID string) error {
+	if err := tx.Table("software_requirements").
+		Where("id = ? AND project_id = ?", requirementID, projectID).
+		Update("test_item_task_status", "completed").Error; err != nil {
+		return fmt.Errorf("更新需求测试项任务状态失败: %w", err)
+	}
+	return nil
+}
+
+func createRequirementLinkTx(tx *gorm.DB, projectID string, requirementID string, testItemID string) error {
+	linkID, err := id.New()
+	if err != nil {
+		return err
+	}
+	link := RequirementLink{
+		ID:            linkID,
+		ProjectID:     projectID,
+		RequirementID: requirementID,
+		TestItemID:    testItemID,
+		CreatedAt:     time.Now(),
+	}
+	if err := tx.Create(&link).Error; err != nil {
+		return fmt.Errorf("关联需求失败: %w", err)
+	}
+	return markRequirementTestItemCompletedTx(tx, projectID, requirementID)
+}
+
 // ListRequirements 返回测试项关联的需求（静态测试项始终为空）。
 func (s *Service) ListRequirements(ctx context.Context, testItemID string) ([]RequirementRef, error) {
 	var refs []RequirementRef
@@ -63,38 +121,10 @@ func (s *Service) LinkRequirement(ctx context.Context, projectID string, testIte
 		if item.ImplicitRequirement {
 			return ErrImplicitWithRequirement
 		}
-
-		var requirement struct {
-			Description string `gorm:"column:description"`
-		}
-		if err := tx.Table("software_requirements").
-			Select("description").
-			Where("id = ? AND project_id = ?", requirementID, projectID).
-			Take(&requirement).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrNotFound
-			}
-			return fmt.Errorf("查询需求失败: %w", err)
-		}
-		if strings.TrimSpace(requirement.Description) == "" {
-			return ErrRequirementIncomplete
-		}
-
-		linkID, err := id.New()
-		if err != nil {
+		if _, err := loadRequirementForLink(tx, projectID, requirementID); err != nil {
 			return err
 		}
-		link := RequirementLink{
-			ID:            linkID,
-			ProjectID:     projectID,
-			RequirementID: requirementID,
-			TestItemID:    testItemID,
-			CreatedAt:     time.Now(),
-		}
-		if err := tx.Create(&link).Error; err != nil {
-			return fmt.Errorf("关联需求失败: %w", err)
-		}
-		return nil
+		return createRequirementLinkTx(tx, projectID, requirementID, testItemID)
 	})
 }
 

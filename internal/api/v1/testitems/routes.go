@@ -20,6 +20,7 @@ func Register(api huma.API, service *testitemsservice.Service) {
 	handler := &Handler{service: service}
 	registerWorkspace(api, handler)
 	registerItems(api, handler)
+	registerBatchCreateFromRequirements(api, handler)
 	registerFolders(api, handler)
 	registerSubItems(api, handler)
 	registerCases(api, handler)
@@ -126,14 +127,18 @@ func (h *Handler) workspace(ctx context.Context, projectCode string) (WorkspaceB
 type CreateItemInput struct {
 	Code string `path:"code" doc:"项目标识"`
 	Body struct {
-		TypeCode     string  `json:"typeCode" doc:"类型代号，如 SU"`
-		Name         string  `json:"name" doc:"测试项名称"`
+		TypeCode     string  `json:"typeCode,omitempty" doc:"类型代号，如 SU；按需求创建时可留空"`
+		Name         string  `json:"name,omitempty" doc:"测试项名称；按需求创建时可留空"`
 		Suffix       string  `json:"suffix,omitempty" doc:"标识后缀，留空按名称自动生成"`
 		Priority     string  `json:"priority,omitempty" doc:"高/中/低"`
 		FolderID     *string `json:"folderId,omitempty"`
 		Description  string  `json:"description,omitempty"`
 		Adequacy     string  `json:"adequacy,omitempty"`
 		PassCriteria string  `json:"passCriteria,omitempty"`
+		// RequirementID 非空时按需求默认值创建测试项并同步建立关联。
+		RequirementID string `json:"requirementId,omitempty" doc:"需求 id；提供时按需求创建并关联"`
+		// CreateAnother 为 true 时跳过同类型同名称复用，创建新的关联测试项。
+		CreateAnother bool `json:"createAnother,omitempty" doc:"已有测试项时是否强制再创建一条"`
 		// ImplicitRequirement 隐含需求：不关联需求时勾选，完善度的追踪关系按已满足计。
 		ImplicitRequirement bool `json:"implicitRequirement,omitempty"`
 	}
@@ -164,7 +169,7 @@ func registerItems(api huma.API, handler *Handler) {
 		Method:      http.MethodPost,
 		Path:        "/api/v1/projects/{code}/test-items",
 		Summary:     "新增测试项",
-		Description: "静态类型（DC/SA/CR/CW）自动带一条壳用例；套话按类型预填。",
+		Description: "静态类型（DC/SA/CR/CW）自动带一条壳用例；传入 requirementId 时按需求默认值创建并建立关联。",
 		Tags:        []string{"测试项与执行"},
 	}, func(ctx context.Context, input *CreateItemInput) (*ItemOutput, error) {
 		projectID, err := handler.projectID(ctx, input.Code)
@@ -182,6 +187,8 @@ func registerItems(api huma.API, handler *Handler) {
 			Adequacy:     input.Body.Adequacy,
 			PassCriteria: input.Body.PassCriteria,
 
+			RequirementID:       input.Body.RequirementID,
+			CreateAnother:       input.Body.CreateAnother,
 			ImplicitRequirement: input.Body.ImplicitRequirement,
 		})
 		if err != nil {
@@ -417,6 +424,8 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("静态测试项不建立需求关联")
 	case errors.Is(err, testitemsservice.ErrRequirementIncomplete):
 		return huma.Error400BadRequest("该需求描述待补全，暂不能建立关联")
+	case errors.Is(err, testitemsservice.ErrRequirementNotOfficial):
+		return huma.Error400BadRequest("只有已确认需求可以关联测试项")
 	case errors.Is(err, testitemsservice.ErrSwitchToStaticWithLinks):
 		return huma.Error400BadRequest("该测试项已关联需求，不能改为静态测试项（请先解除关联）")
 	case errors.Is(err, testitemsservice.ErrStaticTypeLocked):
@@ -433,6 +442,8 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("同一轮次只能创建一个该类型静态测试项（DC/SA/CR/CW 各一个）")
 	case errors.Is(err, testitemsservice.ErrImportAcrossProjects):
 		return huma.Error400BadRequest("只能在同一项目内的用例之间复制步骤")
+	case errors.Is(err, testitemsservice.ErrRequirementSelectionRequired):
+		return huma.Error422UnprocessableEntity("请选择需求")
 	}
 	// 步骤富文本块的内容校验失败（如「输入及操作」出现表格）按 422 返回。
 	var validationErr *contentblocksservice.ValidationError
