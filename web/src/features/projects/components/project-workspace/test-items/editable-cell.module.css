@@ -10,14 +10,18 @@
   box-shadow: none !important;
   cursor: text;
   font-size: 0.76rem;
-  line-height: 18px;
+  line-height: 22px;
   min-height: 2.5rem;
   outline: none !important;
   overflow-wrap: anywhere;
-  padding: 11px 0.4rem 9px;
+  padding: 8px 0.4rem;
   transition: background-color 0.15s ease !important;
   white-space: pre-wrap;
   width: 100%;
+}
+
+.editor::selection {
+  background: color-mix(in srgb, var(--primary) 26%, transparent);
 }
 
 .editor:hover {
