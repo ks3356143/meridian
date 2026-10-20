@@ -335,6 +335,7 @@ const SortableCard = memo(function SortableCardImpl({
               bordered
               multiline
               missing={sub.ops.trim() === ""}
+              className={styles.stepEditor}
               onSave={(next) => onUpdate(id, { ops: next })}
               onPhase={onPhase}
             />
@@ -370,6 +371,7 @@ const SortableCard = memo(function SortableCardImpl({
               bordered
               multiline
               missing={sub.expected.trim() === ""}
+              className={styles.stepEditor}
               onSave={(next) => onUpdate(id, { expected: next })}
               onPhase={onPhase}
             />

@@ -1,0 +1,2163 @@
+{
+  "documentOptions": [
+    "软件任务书",
+    "软件开发计划",
+    "软件配置管理计划",
+    "软件质量保证计划",
+    "软件需求规格说明",
+    "软件设计说明",
+    "软件单元测试计划",
+    "软件单元测试说明",
+    "软件单元测试报告",
+    "软件配置项测试计划",
+    "软件配置项测试说明",
+    "软件配置项测试报告",
+    "软件用户手册",
+    "软件研制总结报告",
+    "软件固件保障手册",
+    "软件版本说明"
+  ],
+  "reviewSheets": [
+    {
+      "code": "DC-KIT",
+      "kind": "DC",
+      "name": "文档齐套性",
+      "checks": [
+        {
+          "category": "齐套性",
+          "title": "是否有软件任务书",
+          "requirement": "是否有软件任务书",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件开发计划",
+          "requirement": "是否有软件开发计划",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件配置管理计划",
+          "requirement": "是否有软件配置管理计划",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件质量保证计划",
+          "requirement": "是否有软件质量保证计划",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件需求规格说明",
+          "requirement": "是否有软件需求规格说明",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件设计说明",
+          "requirement": "是否有软件设计说明",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件单元测试计划",
+          "requirement": "是否有软件单元测试计划",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件单元测试说明",
+          "requirement": "是否有软件单元测试说明",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件单元测试报告",
+          "requirement": "是否有软件单元测试报告",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件配置项测试计划",
+          "requirement": "是否有软件配置项测试计划",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件配置项测试说明",
+          "requirement": "是否有软件配置项测试说明",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件配置项测试报告",
+          "requirement": "是否有软件配置项测试报告",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件用户手册",
+          "requirement": "是否有软件用户手册",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件研制总结报告",
+          "requirement": "是否有软件研制总结报告",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件固件保障手册",
+          "requirement": "是否有软件固件保障手册",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "齐套性",
+          "title": "是否有软件版本说明",
+          "requirement": "是否有软件版本说明",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "封面内容是否完整、正确，是否包括了文档名称、版本、密级、编号、单位、编写时间",
+          "requirement": "封面内容是否完整、正确，是否包括了文档名称、版本、密级、编号、单位、编写时间",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "文档签署是否完整，包括拟制、审核、批准等信息",
+          "requirement": "文档签署是否完整，包括拟制、审核、批准等信息",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "规范性",
+          "title": "是否有直观明了的索引（目录）和排版格式，并且正确",
+          "requirement": "是否有直观明了的索引（目录）和排版格式，并且正确",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        },
+        {
+          "category": "规范性",
+          "title": "页眉、页脚、页码是否符合要求",
+          "requirement": "页眉、页脚、页码是否符合要求",
+          "basis": "GJB 438C-2021 附录A.1",
+          "practice": ""
+        }
+      ]
+    },
+    {
+      "code": "DC-SRS",
+      "kind": "DC",
+      "name": "软件需求规格说明",
+      "checks": [
+        {
+          "category": "完整性",
+          "title": "完整性",
+          "requirement": "完整性",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "系统概述本文档适用的系统和软件的用途，描述系统与软件的一…",
+          "requirement": "系统概述本文档适用的系统和软件的用途，描述系统与软件的一般特性",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "文档概述了本文档的用途和内容，并描述与它的使用有关的保密…",
+          "requirement": "文档概述了本文档的用途和内容，并描述与它的使用有关的保密性方面的要求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "引用文档应列出文档的编号、标题、编写单位、修订版及日期",
+          "requirement": "引用文档应列出文档的编号、标题、编写单位、修订版及日期",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "CSCI能力需求标识出所要求的每一个CICI能力，并列出…",
+          "requirement": "CSCI能力需求标识出所要求的每一个CICI能力，并列出与该能力有关的需求，包括所需的CSCI行为",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "CSIC的外部接口需求应使用唯一的标识符标识CSCI每一…",
+          "requirement": "CSIC的外部接口需求应使用唯一的标识符标识CSCI每一个外部接口，并描述为实现该接口提出的该CSCI的需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "CSCI内部接口需求应指明施加于CSCI内部接口的需求",
+          "requirement": "CSCI内部接口需求应指明施加于CSCI内部接口的需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "保密性需求应指明与维护保密性有关的CSCI需求",
+          "requirement": "保密性需求应指明与维护保密性有关的CSCI需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "安全性需求应指明关于防止或尽可能降低对人员、财产和物理环…",
+          "requirement": "安全性需求应指明关于防止或尽可能降低对人员、财产和物理环境产生以外危险的CSCI安全性需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "环境适应性需求应指明CSCI的运行环境需求",
+          "requirement": "环境适应性需求应指明CSCI的运行环境需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "计算机资源需求应指明CSCI必须使用的计算机硬件的需求、…",
+          "requirement": "计算机资源需求应指明CSCI必须使用的计算机硬件的需求、计算机硬件资源的使用需求、必须使用或必须被纳入本CSCI的计算机软件需求、必须使用的计算机通信方面的需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "设计和实现约束应指明约束CSCI的设计和实现的需求",
+          "requirement": "设计和实现约束应指明约束CSCI的设计和实现的需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "人员相关需求描述与使用或保障本CSCI的人员有关的CSC…",
+          "requirement": "人员相关需求描述与使用或保障本CSCI的人员有关的CSCI需求，包括人员的数量、职能等级、工作周期、必须的培训以及其他信息",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "训练相关需求应指明与训练相关的CSCI需求",
+          "requirement": "训练相关需求应指明与训练相关的CSCI需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "软件保障需求应指明与软件保障考虑有关的CSCI需求",
+          "requirement": "软件保障需求应指明与软件保障考虑有关的CSCI需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "包装需求应指明为了交付而对CSCI进行包装、标记和处理的…",
+          "requirement": "包装需求应指明为了交付而对CSCI进行包装、标记和处理的需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "需求的优先顺序和关键性应指明本规格说明中各需求的优先次序…",
+          "requirement": "需求的优先顺序和关键性应指明本规格说明中各需求的优先次序、关键性或表示其相对重要性的权重",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "合格性规定应定义一组合格性检验方法，针对每个需求制定确定…",
+          "requirement": "合格性规定应定义一组合格性检验方法，针对每个需求制定确定需求得到满足所使用的方法",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "需求可追踪性应描述从本规格说明中的每一个CSCI需求所涉…",
+          "requirement": "需求可追踪性应描述从本规格说明中的每一个CSCI需求所涉及的系统/子系统需求的可追踪性，以及从分配给本CSCI的每一个系统/子系统需求，到所涉及的CSCI需求的可追踪性",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "准确性",
+          "requirement": "准确性",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "准确性",
+          "title": "列举的各项需求均具备可测试性",
+          "requirement": "列举的各项需求均具备可测试性",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "准确性",
+          "title": "在已知的条件限制下，所有的需求都应为可实现的需求",
+          "requirement": "在已知的条件限制下，所有的需求都应为可实现的需求",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "准确性",
+          "title": "一致性",
+          "requirement": "一致性",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        },
+        {
+          "category": "一致性",
+          "title": "需求规格说明与其他软件文档之间无相互矛盾或冲突",
+          "requirement": "需求规格说明与其他软件文档之间无相互矛盾或冲突",
+          "basis": "GJB 438C-2021 附录A.2",
+          "practice": ""
+        }
+      ]
+    },
+    {
+      "code": "DC-DESIGN",
+      "kind": "DC",
+      "name": "软件设计文档",
+      "checks": [
+        {
+          "category": "完整性",
+          "title": "完整性",
+          "requirement": "完整性",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "系统概述本文档适用的系统和软件的用途，描述系统与软件的一…",
+          "requirement": "系统概述本文档适用的系统和软件的用途，描述系统与软件的一般特性",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "文档概述了本文档的用途和内容，并描述与它的使用有关的保密…",
+          "requirement": "文档概述了本文档的用途和内容，并描述与它的使用有关的保密性方面的要求",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "引用文档应列出文档的编号、标题、编写单位、修订版及日期",
+          "requirement": "引用文档应列出文档的编号、标题、编写单位、修订版及日期",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "CSCI级设计决策应根据需要分条给出CSCI行为设计的决…",
+          "requirement": "CSCI级设计决策应根据需要分条给出CSCI行为设计的决策和其他影响组成该CSCI的软件单元的选择与设计的决策",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "CSCI部件描述构成该CSCI的所有软件单元、软件单元的…",
+          "requirement": "CSCI部件描述构成该CSCI的所有软件单元、软件单元的静态关系、每个软件单元的用途、每个软件单元的开发状态/类型、CSCI计划使用的计算机硬件资源、标识实现每个软件单元的软件放置在哪个程序库中",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "执行方案应说明软件单元间的执行方案，说明软件单元间的动态…",
+          "requirement": "执行方案应说明软件单元间的执行方案，说明软件单元间的动态关系",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "接口标识和接口图应标识每一个接口，包含项目唯一的标识符，…",
+          "requirement": "接口标识和接口图应标识每一个接口，包含项目唯一的标识符，并声明哪些实体具有固定的接口特性，说明哪些实体正在开发或修改之中",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "通过唯一的标识符来标识接口，并标识接口实体，分条描述单方…",
+          "requirement": "通过唯一的标识符来标识接口，并标识接口实体，分条描述单方或双方接口实体的特性",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "CSCI详细设计应通过项目唯一的标识符来标识软件单元，并…",
+          "requirement": "CSCI详细设计应通过项目唯一的标识符来标识软件单元，并对该单元进行说明",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "需求可追踪性包含从本文档所标识的每个软件单元，到分配给它…",
+          "requirement": "需求可追踪性包含从本文档所标识的每个软件单元，到分配给它的CSCI需求的可追踪性，以及从每个CSCI需求，到被分配这些需求的软件单元的可追踪性。",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "准确性",
+          "requirement": "准确性",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "准确性",
+          "title": "所有的变量说明和模块说明均清晰无歧义",
+          "requirement": "所有的变量说明和模块说明均清晰无歧义",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "准确性",
+          "title": "所有的文字和图形应描述清晰准确",
+          "requirement": "所有的文字和图形应描述清晰准确",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "准确性",
+          "title": "无二义性的定义、术语或内容",
+          "requirement": "无二义性的定义、术语或内容",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "准确性",
+          "title": "一致性",
+          "requirement": "一致性",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "一致性",
+          "title": "设计文档中图文一致无冲突",
+          "requirement": "设计文档中图文一致无冲突",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        },
+        {
+          "category": "一致性",
+          "title": "设计文档与需求文档一致，无冲突",
+          "requirement": "设计文档与需求文档一致，无冲突",
+          "basis": "GJB 438C-2021 附录A.3",
+          "practice": ""
+        }
+      ]
+    },
+    {
+      "code": "DC-USER",
+      "kind": "DC",
+      "name": "用户手册",
+      "checks": [
+        {
+          "category": "完整性",
+          "title": "用户手册是否覆盖软件安装、启动和退出步骤",
+          "requirement": "用户手册是否覆盖软件安装、启动和退出步骤",
+          "basis": "GJB 438C-2021 用户手册审查建议",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "用户手册是否说明主要功能入口与操作流程",
+          "requirement": "用户手册是否说明主要功能入口与操作流程",
+          "basis": "GJB 438C-2021 用户手册审查建议",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "用户手册是否说明异常提示、常见问题和恢复方法",
+          "requirement": "用户手册是否说明异常提示、常见问题和恢复方法",
+          "basis": "GJB 438C-2021 用户手册审查建议",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "用户手册是否列出运行环境、权限与前置条件",
+          "requirement": "用户手册是否列出运行环境、权限与前置条件",
+          "basis": "GJB 438C-2021 用户手册审查建议",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "用户手册中的界面、术语和版本是否与软件一致",
+          "requirement": "用户手册中的界面、术语和版本是否与软件一致",
+          "basis": "GJB 438C-2021 用户手册审查建议",
+          "practice": ""
+        },
+        {
+          "category": "完整性",
+          "title": "用户手册是否包含必要的安全与保密注意事项",
+          "requirement": "用户手册是否包含必要的安全与保密注意事项",
+          "basis": "GJB 438C-2021 用户手册审查建议",
+          "practice": ""
+        }
+      ]
+    }
+  ],
+  "codeReviewSheets": [
+    {
+      "code": "CR-C",
+      "kind": "CR",
+      "name": "C语言代码审查单",
+      "language": "C",
+      "checks": [
+        {
+          "category": "存储类",
+          "title": "未使用内存的内容是否影响系统安全",
+          "requirement": "未使用内存的内容是否影响系统安全",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "存储类",
+          "title": "其处理是否得当",
+          "requirement": "其处理是否得当",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "存储类",
+          "title": "动态申请内存是否判断成功后使用",
+          "requirement": "动态申请内存是否判断成功后使用",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "存储类",
+          "title": "动态分配的内存是否及时释放",
+          "requirement": "动态分配的内存是否及时释放",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "存储类",
+          "title": "防止内存操作越界",
+          "requirement": "防止内存操作越界",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "声明定义",
+          "title": "变量是否正确定义",
+          "requirement": "变量是否正确定义",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "声明定义",
+          "title": "不同标识符的书写是否清晰可辨",
+          "requirement": "不同标识符的书写是否清晰可辨",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "声明定义",
+          "title": "数组声明时，其大小是否定义好",
+          "requirement": "数组声明时，其大小是否定义好",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "声明定义",
+          "title": "共用体、结构体、枚举的所有成员变量是否进行了初始化",
+          "requirement": "共用体、结构体、枚举的所有成员变量是否进行了初始化",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "指针使用",
+          "title": "是否存在指针越界（指针指向的地址不超过了有效地址范围）",
+          "requirement": "是否存在指针越界（指针指向的地址不超过了有效地址范围）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "指针使用",
+          "title": "不应将局部变量的地址赋值给外部指针",
+          "requirement": "不应将局部变量的地址赋值给外部指针",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "指针使用",
+          "title": "是否对参数指针进行赋值",
+          "requirement": "是否对参数指针进行赋值",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "指针使用",
+          "title": "参数变量的传递是否使用了无类型指针",
+          "requirement": "参数变量的传递是否使用了无类型指针",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "指针使用",
+          "title": "是否使用了野指针",
+          "requirement": "是否使用了野指针",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "类型转换",
+          "title": "数据类型转换是否正确",
+          "requirement": "数据类型转换是否正确",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "类型转换",
+          "title": "隐式的整型转换是否改变了基础类型的符号",
+          "requirement": "隐式的整型转换是否改变了基础类型的符号",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "类型转换",
+          "title": "整型或浮点的隐式转换是否缩小了基础类型的大小",
+          "requirement": "整型或浮点的隐式转换是否缩小了基础类型的大小",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "类型转换",
+          "title": "指针变量赋予非指针变量时是否进行了强制转换",
+          "requirement": "指针变量赋予非指针变量时是否进行了强制转换",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "类型转换",
+          "title": "是否使用无实质作用的类型转换",
+          "requirement": "是否使用无实质作用的类型转换",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "比较判断",
+          "title": "是否进行了浮点相等比较（不能进行浮点相等比较，也不能与0…",
+          "requirement": "是否进行了浮点相等比较（不能进行浮点相等比较，也不能与0值进行相等比较，包括不等于的比较，只能进行大于小于的比较）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "比较判断",
+          "title": "是否对无符号数进行大于或等于零或小于零的比较",
+          "requirement": "是否对无符号数进行大于或等于零或小于零的比较",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "比较判断",
+          "title": "变量有效性判断时范围是否与文档一致",
+          "requirement": "变量有效性判断时范围是否与文档一致",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "比较判断",
+          "title": "是否使用指针进行大于或小于的逻辑比较",
+          "requirement": "是否使用指针进行大于或小于的逻辑比较",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "选择的运算符合理吗？运算符的优先结合次序正确吗？",
+          "requirement": "选择的运算符合理吗？运算符的优先结合次序正确吗？",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "应对运算中可能存在的数据溢出（如除数为零、大数相加减乘除…",
+          "requirement": "应对运算中可能存在的数据溢出（如除数为零、大数相加减乘除、数据连续加、数据连续减、根号下为负数等）情况进行处理",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "是否将bool类型用做内置运算符的操作数？（除了&&、|…",
+          "requirement": "是否将bool类型用做内置运算符的操作数？（除了&&、||、!、==、!=、&和条件运算符）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "是否将enum类型用作内置运算符的操作数？（除了[]、=…",
+          "requirement": "是否将enum类型用作内置运算符的操作数？（除了[]、=、==、!=、&、<、<-、>、->运算符）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "运算符!、&&或||的每个操作数是否都是bool类型？",
+          "requirement": "运算符!、&&或||的每个操作数是否都是bool类型？",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "对变量进行移位运算是否超出变量长度",
+          "requirement": "对变量进行移位运算是否超出变量长度",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "是否将越界整数赋给整型变量",
+          "requirement": "是否将越界整数赋给整型变量",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "数组下标是否是大于等于零的整型数",
+          "requirement": "数组下标是否是大于等于零的整型数",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "非枚举类型变量是否使用了枚举类型的值",
+          "requirement": "非枚举类型变量是否使用了枚举类型的值",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "是否存在一个很大的数与一个很小的数进行+，-运算",
+          "requirement": "是否存在一个很大的数与一个很小的数进行+，-运算",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "是否给无符号类型变量赋负值",
+          "requirement": "是否给无符号类型变量赋负值",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "数据精度是否满足运算要求",
+          "requirement": "数据精度是否满足运算要求",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "需要时，应对运算进行正确的限幅（输出的结果是否有上下限要…",
+          "requirement": "需要时，应对运算进行正确的限幅（输出的结果是否有上下限要求）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "数学运算",
+          "title": "变量的定义类型和使用类型是否一致",
+          "requirement": "变量的定义类型和使用类型是否一致",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "函数使用",
+          "title": "函数是否返回了定义在函数内部的局部变量",
+          "requirement": "函数是否返回了定义在函数内部的局部变量",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "函数使用",
+          "title": "有返回值函数的返回语句是否带有返回值",
+          "requirement": "有返回值函数的返回语句是否带有返回值",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "函数使用",
+          "title": "全部所需的参数是否已传送给每一个被调用的模块（参数传的全…",
+          "requirement": "全部所需的参数是否已传送给每一个被调用的模块（参数传的全不全）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "函数使用",
+          "title": "被传送的参数值是否正确的设置",
+          "requirement": "被传送的参数值是否正确的设置",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "函数使用",
+          "title": "函数定义与声明一致",
+          "requirement": "函数定义与声明一致",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "函数使用",
+          "title": "函数的错误返回值都必须进行处理",
+          "requirement": "函数的错误返回值都必须进行处理",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "函数使用",
+          "title": "实参和形参所使用的变量类型和个数是否一致",
+          "requirement": "实参和形参所使用的变量类型和个数是否一致",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "程序语言的使用",
+          "title": "文件、数据库和注册表等打开后，在对其进行操作之后是否进行…",
+          "requirement": "文件、数据库和注册表等打开后，在对其进行操作之后是否进行了关闭",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "程序语言的使用",
+          "title": "用于表示字符串的数组是否以‘\\0’结束",
+          "requirement": "用于表示字符串的数组是否以‘\\0’结束",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "程序语言的使用",
+          "title": "函数宏参数的定义是否使用括号",
+          "requirement": "函数宏参数的定义是否使用括号",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "程序语言的使用",
+          "title": "for循环中控制变量是否为局部变量",
+          "requirement": "for循环中控制变量是否为局部变量",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "程序语言的使用",
+          "title": "for循环中控制变量是否为整型变量",
+          "requirement": "for循环中控制变量是否为整型变量",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "程序语言的使用",
+          "title": "for循环中是否对循环控制变量进行修改",
+          "requirement": "for循环中是否对循环控制变量进行修改",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "寄存器使用",
+          "title": "寄存器使用是否按照芯片手册的操作要求",
+          "requirement": "寄存器使用是否按照芯片手册的操作要求",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "寄存器使用",
+          "title": "宏扩展或子程序调用是否使用了已使用着的寄存器而未保存数据",
+          "requirement": "宏扩展或子程序调用是否使用了已使用着的寄存器而未保存数据",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "寄存器使用",
+          "title": "默认使用的寄存器的值是否正确（注意每个寄存器的初始默认值…",
+          "requirement": "默认使用的寄存器的值是否正确（注意每个寄存器的初始默认值）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "可维护性",
+          "title": "嵌套的IF、ELSE、WHILE等语句是否已正确地缩进、…",
+          "requirement": "嵌套的IF、ELSE、WHILE等语句是否已正确地缩进、是否少括号，是否忘写了括号",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "可维护性",
+          "title": "注释准确并且有意义",
+          "requirement": "注释准确并且有意义",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "可维护性",
+          "title": "注释语句应不少于20",
+          "requirement": "注释语句应不少于20",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "可维护性",
+          "title": "是否存在嵌套注释",
+          "requirement": "是否存在嵌套注释",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "可维护性",
+          "title": "标号和子程序名符合代码的逻辑含义吗",
+          "requirement": "标号和子程序名符合代码的逻辑含义吗",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "可维护性",
+          "title": "避免使用不易理解的数字，用有意义的标识来替代，涉及物理状…",
+          "requirement": "避免使用不易理解的数字，用有意义的标识来替代，涉及物理状态或者含有物理意义的常量，不应直接使用数字，必须用有意义的枚举或宏来代替",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "可维护性",
+          "title": "注意运算符的优先级，并用括号明确表达式的操作顺序，避免使…",
+          "requirement": "注意运算符的优先级，并用括号明确表达式的操作顺序，避免使用默认优先级",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "逻辑",
+          "title": "代码是否做了设计规定的内容",
+          "requirement": "代码是否做了设计规定的内容",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "逻辑",
+          "title": "全部设计是否均已实现（和详细设计的一致性）",
+          "requirement": "全部设计是否均已实现（和详细设计的一致性）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "逻辑",
+          "title": "每个循环是否执行正确的次数",
+          "requirement": "每个循环是否执行正确的次数",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "逻辑",
+          "title": "是否存在死循环的风险（例如当等待某变量为一特定值才退出时…",
+          "requirement": "是否存在死循环的风险（例如当等待某变量为一特定值才退出时存在风险；循环语句中必须有超时保护）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "逻辑",
+          "title": "不能使用未赋值的变量",
+          "requirement": "不能使用未赋值的变量",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "逻辑",
+          "title": "Switch语句必须有default分支",
+          "requirement": "Switch语句必须有default分支",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "逻辑",
+          "title": "必须处理程序所能遇到的各种出错情况",
+          "requirement": "必须处理程序所能遇到的各种出错情况",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "软件多余物",
+          "title": "是否有不可能执行到的代码",
+          "requirement": "是否有不可能执行到的代码",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "软件多余物",
+          "title": "是否有即使不执行也不影响程序功能的指令",
+          "requirement": "是否有即使不执行也不影响程序功能的指令",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "软件多余物",
+          "title": "是否有未引用的变量、标号和常量",
+          "requirement": "是否有未引用的变量、标号和常量",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "软件多余物",
+          "title": "有无未引用的宏",
+          "requirement": "有无未引用的宏",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "其他",
+          "title": "应根据看门狗触发周期正确设置其清除周期（不能超过狗咬时间…",
+          "requirement": "应根据看门狗触发周期正确设置其清除周期（不能超过狗咬时间）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "其他",
+          "title": "应根据需要监视的流程，正确设置清除看门狗的位置（在该清除…",
+          "requirement": "应根据需要监视的流程，正确设置清除看门狗的位置（在该清除的地方要清除，比如初始化阶段、各个进程等；在不该清除的地方不能清除，比如在需求中要求等待狗咬的位置等）",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "其他",
+          "title": "对于全局变量的读写要合理",
+          "requirement": "对于全局变量的读写要合理",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "代码审查覆盖项",
+          "title": "中断资源冲突检查",
+          "requirement": "中断资源冲突检查",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        }
+      ]
+    },
+    {
+      "code": "CR-CPP",
+      "kind": "CR",
+      "name": "C++代码审查单",
+      "language": "C++",
+      "checks": [
+        {
+          "category": "C++规则",
+          "title": "含有动态分配成员的类，必须编写拷贝构造函数，并重载赋值操…",
+          "requirement": "含有动态分配成员的类，必须编写拷贝构造函数，并重载赋值操作符",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "虚拟基类指针转换为派生类指针必须使用dynamic ca…",
+          "requirement": "虚拟基类指针转换为派生类指针必须使用dynamic cast转换",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "菱形层次结构的派生设计，对基类派生必须使用virtual…",
+          "requirement": "菱形层次结构的派生设计，对基类派生必须使用virtual说明",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "抽象类中的复制操作符重载必须是保护的或私有的",
+          "requirement": "抽象类中的复制操作符重载必须是保护的或私有的",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "构造函数中禁止使用全局变量",
+          "requirement": "构造函数中禁止使用全局变量",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "类中必须明确定义缺省构造函数",
+          "requirement": "类中必须明确定义缺省构造函数",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "单参数构造函数必须使用explicit声明",
+          "requirement": "单参数构造函数必须使用explicit声明",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "类中所有成员变量必须在构造函数中初始化",
+          "requirement": "类中所有成员变量必须在构造函数中初始化",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "派生类构造函数必须在初始化列表中说明直接基类构造函数",
+          "requirement": "派生类构造函数必须在初始化列表中说明直接基类构造函数",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "具有虚拟成员函数的类，析构函数必须是虚拟的",
+          "requirement": "具有虚拟成员函数的类，析构函数必须是虚拟的",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "析构函数中禁止存在不是由自身捕获处理的异常",
+          "requirement": "析构函数中禁止存在不是由自身捕获处理的异常",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "基类虚拟函数的参数缺省值在派生类重写函数中禁止被改变",
+          "requirement": "基类虚拟函数的参数缺省值在派生类重写函数中禁止被改变",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "派生类对基类虚拟函数重写的声明必须使用virtual显示…",
+          "requirement": "派生类对基类虚拟函数重写的声明必须使用virtual显示说明",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "禁止非纯虚函数被纯虚函数重写",
+          "requirement": "禁止非纯虚函数被纯虚函数重写",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "禁止将不相关的指针类型强制转换为对象指针类型",
+          "requirement": "禁止将不相关的指针类型强制转换为对象指针类型",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "指针或引用的类型转换中禁止移除const或volatil…",
+          "requirement": "指针或引用的类型转换中禁止移除const或volatile属性",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "使用new分配的内存空间，用完后必须使用delete释放",
+          "requirement": "使用new分配的内存空间，用完后必须使用delete释放",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "必须使用delete[]释放new[]分配的内存空间",
+          "requirement": "必须使用delete[]释放new[]分配的内存空间",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "被delete的指针必须指向最初new分配的地址",
+          "requirement": "被delete的指针必须指向最初new分配的地址",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "函数中固定长度数组变量的传递必须使用引用方式",
+          "requirement": "函数中固定长度数组变量的传递必须使用引用方式",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "定义为const的成员函数禁止返回非const的指针或引…",
+          "requirement": "定义为const的成员函数禁止返回非const的指针或引用",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "禁止可导致非资源性对象数据被外部修改的成员函数返回",
+          "requirement": "禁止可导致非资源性对象数据被外部修改的成员函数返回",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "捕获的顺序必须按由派生类到基类的次序排序",
+          "requirement": "捕获的顺序必须按由派生类到基类的次序排序",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "每个指定的抛出必须由与之匹配的捕获",
+          "requirement": "每个指定的抛出必须由与之匹配的捕获",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "异常抛出的对象必须使用引用方式捕获",
+          "requirement": "异常抛出的对象必须使用引用方式捕获",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "缺省捕获必须放在所有指定捕获之后",
+          "requirement": "缺省捕获必须放在所有指定捕获之后",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "禁止显式直接抛出NULL",
+          "requirement": "禁止显式直接抛出NULL",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        },
+        {
+          "category": "C++规则",
+          "title": "模板的声明、定义与实现必须在同一个文件之中",
+          "requirement": "模板的声明、定义与实现必须在同一个文件之中",
+          "basis": "GJB 438C-2021 附录B.1",
+          "practice": ""
+        }
+      ]
+    },
+    {
+      "code": "CR-HDL",
+      "kind": "CR",
+      "name": "HDL代码审查单",
+      "language": "Verilog/VHDL",
+      "checks": [
+        {
+          "category": "FPGA编码",
+          "title": "信号与寄存器是否在使用前完成声明和初始化",
+          "requirement": "信号与寄存器是否在使用前完成声明和初始化",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "位宽、符号位和截断转换是否明确且无溢出",
+          "requirement": "位宽、符号位和截断转换是否明确且无溢出",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "时钟、复位与使能信号是否按要求同步处理",
+          "requirement": "时钟、复位与使能信号是否按要求同步处理",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "跨时钟域信号是否采用同步器或握手设计",
+          "requirement": "跨时钟域信号是否采用同步器或握手设计",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "组合逻辑是否存在锁存器、竞争或毛刺风险",
+          "requirement": "组合逻辑是否存在锁存器、竞争或毛刺风险",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "状态机是否覆盖全部状态、默认分支和异常恢复",
+          "requirement": "状态机是否覆盖全部状态、默认分支和异常恢复",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "未使用信号、不可达状态和冗余逻辑是否清理",
+          "requirement": "未使用信号、不可达状态和冗余逻辑是否清理",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "存储器与总线访问是否处理越界、冲突和等待",
+          "requirement": "存储器与总线访问是否处理越界、冲突和等待",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "寄存器读写是否遵循芯片手册与复位默认值",
+          "requirement": "寄存器读写是否遵循芯片手册与复位默认值",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        },
+        {
+          "category": "FPGA编码",
+          "title": "中断资源、优先级和清除时序是否符合设计要求",
+          "requirement": "中断资源、优先级和清除时序是否符合设计要求",
+          "basis": "GJB 438C-2021 附录B（平台适配）",
+          "practice": ""
+        }
+      ]
+    }
+  ],
+  "analysis": {
+    "C3": [
+      {
+        "seq": 1,
+        "requirement": "是否存在转向并不存在的语句标号？（错误）"
+      },
+      {
+        "seq": 2,
+        "requirement": "是否存在调用不存在的子程序？（错误）"
+      },
+      {
+        "seq": 3,
+        "requirement": "是否存在不合理的无限循环结构？（提示：无限循环多与中断函数配合使用，应分析其是否符合设计要求）（错误）"
+      },
+      {
+        "seq": 4,
+        "requirement": "Switch语句的索引变量的数值是否与可能的分支数量不同？（错误）"
+      },
+      {
+        "seq": 5,
+        "requirement": "是否存在不能穷尽的判断？（如：一个输入参数的预期是1、2或3，当参数值部位1和2时，是否在逻辑上假设了参数值必定为3）（错误）"
+      },
+      {
+        "seq": 6,
+        "requirement": "是否存在go to语句的程序转向结构？（警告）"
+      },
+      {
+        "seq": 7,
+        "requirement": "是否存在未使用的子程序定义或语句标号？（提示：测试工具分析的未调用模块多为中断程序模块，应分析实际运行过程中模块能够被调用）（警告）"
+      },
+      {
+        "seq": 8,
+        "requirement": "是否存在函数的递归调用？（警告）"
+      },
+      {
+        "seq": 9,
+        "requirement": "是否存在多个函数出口？（警告）"
+      },
+      {
+        "seq": 10,
+        "requirement": "是否存在从程序入口进入后无法达到的语句或分支（不可达语句）?（提示：测试工具分析的不可达语句或分支多为异常或可靠性处理，应确认其是否符合设计）（警告）"
+      },
+      {
+        "seq": 11,
+        "requirement": "循环体中存在循环中断（break）或强制循环（continue）的非结构化设计时，是否符合设计要求？（警告）"
+      }
+    ],
+    "C4": [
+      {
+        "seq": 1,
+        "requirement": "是否存在变量（对象）使用前未定义的情况（-u）？（错误）"
+      },
+      {
+        "seq": 2,
+        "requirement": "是否存在变量（对象）未定义或销毁之后再使用（ku）？（错误）"
+      },
+      {
+        "seq": 3,
+        "requirement": "是否存在变量（对象）在两次定义间未被使用的情况（dd）？（警告）"
+      },
+      {
+        "seq": 4,
+        "requirement": "是否存在变量（对象）定义但未被使用的情况（d-）？（警告）"
+      },
+      {
+        "seq": 5,
+        "requirement": "是否存在变量（对象）未定义或销毁之后再销毁（kk）？（警告）"
+      },
+      {
+        "seq": 6,
+        "requirement": "是否存在变量（对象）定义之后销毁（dk）？（警告）"
+      },
+      {
+        "seq": 7,
+        "requirement": "是否存在变量（对象）定义之前销毁（-k）？（警告）"
+      }
+    ]
+  },
+  "ruleGroups": [
+    {
+      "code": "R-1-1",
+      "name": "预处理与声明",
+      "rules": [
+        {
+          "code": "R-1-1-1",
+          "description": "禁止通过宏定义改变关键字和基本类型含义"
+        },
+        {
+          "code": "R-1-1-2",
+          "description": "禁止将其他标识宏定义为关键字和基本类型"
+        },
+        {
+          "code": "R-1-1-3",
+          "description": "用typedef自定义的类型禁止被重新定义"
+        },
+        {
+          "code": "R-1-1-4",
+          "description": "禁止重新定义C或C++的关键字"
+        },
+        {
+          "code": "R-1-1-5",
+          "description": "禁止#define被重复定义"
+        },
+        {
+          "code": "R-1-1-6",
+          "description": "函数中的#define和#undef必须配对使用"
+        },
+        {
+          "code": "R-1-1-7",
+          "description": "以函数形式定义的宏，参数和结果必须用括号括起来"
+        },
+        {
+          "code": "R-1-1-8",
+          "description": "结构、联合、枚举的定义中必须定义标识名"
+        },
+        {
+          "code": "R-1-1-9",
+          "description": "结构体定义中禁止含有无名结构体"
+        },
+        {
+          "code": "R-1-1-10",
+          "description": "位定义的有符号整型变量位长必须大于1"
+        },
+        {
+          "code": "R-1-1-11",
+          "description": "位定义的整数型变量必须明确定义是有符号还是无符号的"
+        },
+        {
+          "code": "R-1-1-12",
+          "description": "位定义的变量必须是同长度的类型且定义位禁止跨越类型的长度"
+        },
+        {
+          "code": "R-1-1-13",
+          "description": "函数声明中必须对参数类型进行声明，并带有变量名"
+        },
+        {
+          "code": "R-1-1-14",
+          "description": "函数声明必须与函数原型一致"
+        },
+        {
+          "code": "R-1-1-15",
+          "description": "函数中的参数必须使用类型声明"
+        },
+        {
+          "code": "R-1-1-16",
+          "description": "外部声明的变量，类型必须与定义一致"
+        },
+        {
+          "code": "R-1-1-17",
+          "description": "禁止在函数体内使用外部声明"
+        },
+        {
+          "code": "R-1-1-18",
+          "description": "数组定义禁止没有显示的边界限定"
+        },
+        {
+          "code": "R-1-1-19",
+          "description": "禁止使用extern声明对变量初始化"
+        },
+        {
+          "code": "R-1-1-20",
+          "description": "用于数值计算的字符型变量必须明确定义是有符号还是无符号"
+        },
+        {
+          "code": "R-1-1-21",
+          "description": "禁止在#include语句中使用绝对路径"
+        },
+        {
+          "code": "R-1-1-22",
+          "description": "禁止头文件重复包含"
+        },
+        {
+          "code": "R-1-1-23",
+          "description": "函数参数表为空时，必须使用void明确说明"
+        }
+      ]
+    },
+    {
+      "code": "R-1-2",
+      "name": "语句结构",
+      "rules": [
+        {
+          "code": "R-1-2-1",
+          "description": "循环体必须用大括号括起来"
+        },
+        {
+          "code": "R-1-2-2",
+          "description": "If、else if、else必须用大括号括起来"
+        },
+        {
+          "code": "R-1-2-3",
+          "description": "禁止在头文件前有可执行代码"
+        },
+        {
+          "code": "R-1-2-4",
+          "description": "引起二义性理解的逻辑表达式，必须使用括号显式说明优先级顺序"
+        },
+        {
+          "code": "R-1-2-5",
+          "description": "逻辑判别表达式中的运算项必须要使用括号"
+        },
+        {
+          "code": "R-1-2-6",
+          "description": "禁止嵌套注释"
+        }
+      ]
+    },
+    {
+      "code": "R-1-3",
+      "name": "指针",
+      "rules": [
+        {
+          "code": "R-1-3-1",
+          "description": "禁止指针的指针超过两级"
+        },
+        {
+          "code": "R-1-3-2",
+          "description": "函数指针的使用必须加以&明确说明"
+        },
+        {
+          "code": "R-1-3-3",
+          "description": "禁止对参数指针进行赋值"
+        },
+        {
+          "code": "R-1-3-4",
+          "description": "禁止将局部变量地址做为函数返回值返回"
+        },
+        {
+          "code": "R-1-3-5",
+          "description": "禁止使用或释放未分配空间或已释放的指针"
+        },
+        {
+          "code": "R-1-3-6",
+          "description": "指针变量被释放后必须置为NULL"
+        },
+        {
+          "code": "R-1-3-7",
+          "description": "动态分配的指针变量定义时如未被分配空间必须初始化为NULL"
+        },
+        {
+          "code": "R-1-3-8",
+          "description": "动态分配的指针变量第一次使用前必须进行是否为NULL的判别"
+        },
+        {
+          "code": "R-1-3-9",
+          "description": "空指针必须使用NULL，禁止使用整型数0"
+        },
+        {
+          "code": "R-1-3-10",
+          "description": "禁止文件指针在退出时没有关闭文件"
+        }
+      ]
+    },
+    {
+      "code": "R-1-4",
+      "name": "分支控制",
+      "rules": [
+        {
+          "code": "R-1-4-1",
+          "description": "在if-else if语句中必须使用else分支"
+        },
+        {
+          "code": "R-1-4-2",
+          "description": "条件判定分支如果为空，必须以单独一行的分号加注释进行明确说明"
+        },
+        {
+          "code": "R-1-4-3",
+          "description": "禁止使用空switch语句"
+        },
+        {
+          "code": "R-1-4-4",
+          "description": "禁止对bool量使用switch语句"
+        },
+        {
+          "code": "R-1-4-5",
+          "description": "禁止switch语句中只包含default语句"
+        },
+        {
+          "code": "R-1-4-6",
+          "description": "除枚举类型列举完全外，switch语句必须要有default"
+        },
+        {
+          "code": "R-1-4-7",
+          "description": "Switch中的case和default必须以break或return终止，共用case必须加以明确注释"
+        },
+        {
+          "code": "R-1-4-8",
+          "description": "Switch语句的所有分支必须具有相同的层次范围"
+        }
+      ]
+    },
+    {
+      "code": "R-1-5",
+      "name": "跳转",
+      "rules": [
+        {
+          "code": "R-1-5-1",
+          "description": "禁止从复合语句外goto到复合语句内，或由下向上goto"
+        },
+        {
+          "code": "R-1-5-2",
+          "description": "禁止使用setjmp/longjmp"
+        }
+      ]
+    },
+    {
+      "code": "R-1-6",
+      "name": "表达式",
+      "rules": [
+        {
+          "code": "R-1-6-1",
+          "description": "禁止将浮点常数赋值给整型变量"
+        },
+        {
+          "code": "R-1-6-2",
+          "description": "禁止将越界整数赋值给整型变量"
+        },
+        {
+          "code": "R-1-6-3",
+          "description": "禁止在逻辑表达式中使用赋值语句"
+        },
+        {
+          "code": "R-1-6-4",
+          "description": "禁止对逻辑表达式进行位运算"
+        },
+        {
+          "code": "R-1-6-5",
+          "description": "禁止在运算表达式中或函数调用参数中使用++或—操作符"
+        },
+        {
+          "code": "R-1-6-6",
+          "description": "对变量进行移位运算禁止超出变量长度"
+        },
+        {
+          "code": "R-1-6-7",
+          "description": "禁止移位操作中的移位数为负数"
+        },
+        {
+          "code": "R-1-6-8",
+          "description": "数组禁止越界使用"
+        },
+        {
+          "code": "R-1-6-9",
+          "description": "数组下标必须是大于等于零的整型数"
+        },
+        {
+          "code": "R-1-6-10",
+          "description": "禁止对常数值做逻辑非的运算"
+        },
+        {
+          "code": "R-1-6-11",
+          "description": "禁止非枚举类型变量使用枚举类型的值"
+        },
+        {
+          "code": "R-1-6-12",
+          "description": "除法运算中禁止被零除"
+        },
+        {
+          "code": "R-1-6-13",
+          "description": "禁止在sizeof中使用赋值"
+        },
+        {
+          "code": "R-1-6-14",
+          "description": "缓存区读取操作禁止越界"
+        },
+        {
+          "code": "R-1-6-15",
+          "description": "缓存区写入操作禁止越界"
+        },
+        {
+          "code": "R-1-6-16",
+          "description": "禁止使用已被释放了的内存空间"
+        },
+        {
+          "code": "R-1-6-17",
+          "description": "被free的指针必须指向最初malloc、calloc分配的地址"
+        },
+        {
+          "code": "R-1-6-18",
+          "description": "禁止使用gets函数，应使用fgets函数替代"
+        },
+        {
+          "code": "R-1-6-19",
+          "description": "使用字符串赋值、拷贝、追加等函数时，禁止目标字符串存储空间越界"
+        }
+      ]
+    },
+    {
+      "code": "R-1-7",
+      "name": "函数",
+      "rules": [
+        {
+          "code": "R-1-7-1",
+          "description": "禁止覆盖标准函数库的函数"
+        },
+        {
+          "code": "R-1-7-2",
+          "description": "禁止函数的实参和形参类型不一致"
+        },
+        {
+          "code": "R-1-7-3",
+          "description": "实参和形参的个数必须一致"
+        },
+        {
+          "code": "R-1-7-4",
+          "description": "禁止使用旧形式的函数参数表定义形式"
+        },
+        {
+          "code": "R-1-7-5",
+          "description": "函数声明和函数定义中的参数类型必须一致"
+        },
+        {
+          "code": "R-1-7-6",
+          "description": "函数声明和函数定义中的返回类型必须一致"
+        },
+        {
+          "code": "R-1-7-7",
+          "description": "有返回值的函数必须通过返回语句返回"
+        },
+        {
+          "code": "R-1-7-8",
+          "description": "禁止无返回值函数的返回语句带有返回值"
+        },
+        {
+          "code": "R-1-7-9",
+          "description": "有返回值的函数的返回语句必须带有返回值"
+        },
+        {
+          "code": "R-1-7-10",
+          "description": "函数返回值的类型必须与定义一致"
+        },
+        {
+          "code": "R-1-7-11",
+          "description": "具有返回值的函数，其返回值如果不被使用，调用时应有（void）说明"
+        },
+        {
+          "code": "R-1-7-12",
+          "description": "无返回值的函数，调用时禁止再用（void）重复说明"
+        },
+        {
+          "code": "R-1-7-13",
+          "description": "静态函数必须被使用"
+        },
+        {
+          "code": "R-1-7-14",
+          "description": "禁止同一个表达式中调用多个顺序相关函数"
+        },
+        {
+          "code": "R-1-7-15",
+          "description": "禁止在函数参数表中使用省略号"
+        },
+        {
+          "code": "R-1-7-16",
+          "description": "禁止使用直接或间接自调用函数"
+        }
+      ]
+    },
+    {
+      "code": "R-1-8",
+      "name": "可达性",
+      "rules": [
+        {
+          "code": "R-1-8-1",
+          "description": "禁止不可达语句"
+        },
+        {
+          "code": "R-1-8-2",
+          "description": "禁止不可达分支"
+        },
+        {
+          "code": "R-1-8-3",
+          "description": "禁止使用无效语句"
+        },
+        {
+          "code": "R-1-8-4",
+          "description": "使用八进制数必须明确注释"
+        },
+        {
+          "code": "R-1-8-5",
+          "description": "数字类型后缀必须使用大写字母"
+        }
+      ]
+    },
+    {
+      "code": "R-1-9",
+      "name": "循环",
+      "rules": [
+        {
+          "code": "R-1-9-1",
+          "description": "For循环控制变量必须使用局部变量"
+        },
+        {
+          "code": "R-1-9-2",
+          "description": "For循环控制变量必须使用整数型变量"
+        },
+        {
+          "code": "R-1-9-3",
+          "description": "禁止在for循环体内部修改循环控制变量"
+        },
+        {
+          "code": "R-1-9-4",
+          "description": "无限循环必须使用while(1)语句，禁止使用for(;;)等其他形式的语句"
+        }
+      ]
+    },
+    {
+      "code": "R-1-10",
+      "name": "类型转换",
+      "rules": [
+        {
+          "code": "R-1-10-1",
+          "description": "浮点数变量赋值给整型变量必须强制转换"
+        },
+        {
+          "code": "R-1-10-2",
+          "description": "长整数变量赋值给短整数变量必须强制转换"
+        },
+        {
+          "code": "R-1-10-3",
+          "description": "Double型变量赋给float型变量必须强制转换"
+        },
+        {
+          "code": "R-1-10-4",
+          "description": "指针变量的赋值类型必须与指针变量类型一致"
+        },
+        {
+          "code": "R-1-10-5",
+          "description": "将指针量赋予非指针变量或非指针量赋予指针变量，必须使用强制转换"
+        },
+        {
+          "code": "R-1-10-6",
+          "description": "禁止使用无实质作用的类型转换"
+        }
+      ]
+    },
+    {
+      "code": "R-1-11",
+      "name": "变量使用",
+      "rules": [
+        {
+          "code": "R-1-11-1",
+          "description": "变量禁止未赋值就使用"
+        },
+        {
+          "code": "R-1-11-2",
+          "description": "变量初始化禁止隐含依赖于系统的缺省值"
+        },
+        {
+          "code": "R-1-11-3",
+          "description": "结构体初始化的嵌套结构必须与定义一致"
+        },
+        {
+          "code": "R-1-11-4",
+          "description": "枚举元素定义中的初始化必须完整"
+        }
+      ]
+    },
+    {
+      "code": "R-1-12",
+      "name": "比较判断",
+      "rules": [
+        {
+          "code": "R-1-12-1",
+          "description": "禁止对逻辑量进行大于或小于的逻辑比较"
+        },
+        {
+          "code": "R-1-12-2",
+          "description": "禁止对指针进行大于或小于的逻辑比较"
+        },
+        {
+          "code": "R-1-12-3",
+          "description": "禁止对浮点数进行是否相等的比较"
+        },
+        {
+          "code": "R-1-12-4",
+          "description": "禁止对无符号数进行大于等于零或小于零的比较"
+        },
+        {
+          "code": "R-1-12-5",
+          "description": "禁止无符号数与有符号数之间的直接比较"
+        }
+      ]
+    },
+    {
+      "code": "R-1-13",
+      "name": "命名冲突",
+      "rules": [
+        {
+          "code": "R-1-13-1",
+          "description": "禁止局部变量与全局变量同名"
+        },
+        {
+          "code": "R-1-13-2",
+          "description": "禁止函数形参与全局变量同名"
+        },
+        {
+          "code": "R-1-13-3",
+          "description": "禁止变量名与函数名同名"
+        },
+        {
+          "code": "R-1-13-4",
+          "description": "禁止变量名与标识名同名"
+        },
+        {
+          "code": "R-1-13-5",
+          "description": "禁止变量名与枚举元素同名"
+        },
+        {
+          "code": "R-1-13-6",
+          "description": "禁止变量名与typedef自定义的类型名同名"
+        },
+        {
+          "code": "R-1-13-7",
+          "description": "禁止在内部块中重定义已有的变量名"
+        },
+        {
+          "code": "R-1-13-8",
+          "description": "禁止仅依赖大小写区分的变量"
+        },
+        {
+          "code": "R-1-13-9",
+          "description": "禁止仅依赖小写字母“l”与数字“1”区分的变量"
+        },
+        {
+          "code": "R-1-13-10",
+          "description": "禁止仅依赖小写字母“O”与数字“0”区分的变量"
+        },
+        {
+          "code": "R-1-13-11",
+          "description": "禁止单独使用小写字母“l”或大写字母“O”作为变量名"
+        },
+        {
+          "code": "R-1-13-12",
+          "description": "程序外部可改写的变量，必须使用volatile类型说明"
+        },
+        {
+          "code": "R-1-13-13",
+          "description": "禁止在表达式中出现多个同一volatile类型变量的运算"
+        },
+        {
+          "code": "R-1-13-14",
+          "description": "禁止将NULL做为整型数0使用"
+        },
+        {
+          "code": "R-1-13-15",
+          "description": "禁止给无符号类型变量赋负值"
+        },
+        {
+          "code": "R-1-13-16",
+          "description": "用于表示字符串的数组必须以‘\\0’结束"
+        }
+      ]
+    },
+    {
+      "code": "R-2-1",
+      "name": "类资源管理",
+      "rules": [
+        {
+          "code": "R-2-1-1",
+          "description": "含有动态分配成员的类，必须编写拷贝构造函数，并重载赋值操作符"
+        },
+        {
+          "code": "R-2-1-2",
+          "description": "虚拟基类指针转换为派生类指针必须使用dynamic cast转换"
+        },
+        {
+          "code": "R-2-1-3",
+          "description": "菱形层次结构的派生设计，对基类派生必须使用virtual说明"
+        },
+        {
+          "code": "R-2-1-4",
+          "description": "抽象类中的复制操作符重载必须是保护的或私有的"
+        }
+      ]
+    },
+    {
+      "code": "R-2-2",
+      "name": "构造函数",
+      "rules": [
+        {
+          "code": "R-2-2-1",
+          "description": "构造函数中禁止使用全局变量"
+        },
+        {
+          "code": "R-2-2-2",
+          "description": "类中必须明确定义缺省构造函数"
+        },
+        {
+          "code": "R-2-2-3",
+          "description": "单参数构造函数必须使用explicit声明"
+        },
+        {
+          "code": "R-2-2-4",
+          "description": "类中所有成员变量必须在构造函数中初始化"
+        },
+        {
+          "code": "R-2-2-5",
+          "description": "派生类构造函数必须在初始化列表中说明直接基类构造函数"
+        }
+      ]
+    },
+    {
+      "code": "R-2-3",
+      "name": "析构函数",
+      "rules": [
+        {
+          "code": "R-2-3-1",
+          "description": "具有虚拟成员函数的类，析构函数必须是虚拟的"
+        },
+        {
+          "code": "R-2-3-2",
+          "description": "析构函数中禁止存在不是由自身捕获处理的异常"
+        }
+      ]
+    },
+    {
+      "code": "R-2-4",
+      "name": "虚函数",
+      "rules": [
+        {
+          "code": "R-2-4-1",
+          "description": "基类虚拟函数的参数缺省值在派生类重写函数中禁止被改变"
+        },
+        {
+          "code": "R-2-4-2",
+          "description": "派生类对基类虚拟函数重写的声明必须使用virtual显示说明"
+        },
+        {
+          "code": "R-2-4-3",
+          "description": "禁止非纯虚函数被纯虚函数重写"
+        }
+      ]
+    },
+    {
+      "code": "R-2-5",
+      "name": "指针转换",
+      "rules": [
+        {
+          "code": "R-2-5-1",
+          "description": "禁止将不相关的指针类型强制转换为对象指针类型"
+        },
+        {
+          "code": "R-2-5-2",
+          "description": "指针或引用的类型转换中禁止移除const或volatile属性"
+        }
+      ]
+    },
+    {
+      "code": "R-2-6",
+      "name": "动态内存",
+      "rules": [
+        {
+          "code": "R-2-6-1",
+          "description": "使用new分配的内存空间，用完后必须使用delete释放"
+        },
+        {
+          "code": "R-2-6-2",
+          "description": "必须使用delete[]释放new[]分配的内存空间"
+        },
+        {
+          "code": "R-2-6-3",
+          "description": "被delete的指针必须指向最初new分配的地址"
+        }
+      ]
+    },
+    {
+      "code": "R-2-7",
+      "name": "引用参数",
+      "rules": [
+        {
+          "code": "R-2-7-1",
+          "description": "函数中固定长度数组变量的传递必须使用引用方式"
+        },
+        {
+          "code": "R-2-7-2",
+          "description": "定义为const的成员函数禁止返回非const的指针或引用"
+        },
+        {
+          "code": "R-2-7-3",
+          "description": "禁止可导致非资源性对象数据被外部修改的成员函数返回"
+        }
+      ]
+    },
+    {
+      "code": "R-2-8",
+      "name": "异常捕获",
+      "rules": [
+        {
+          "code": "R-2-8-1",
+          "description": "捕获的顺序必须按由派生类到基类的次序排序"
+        },
+        {
+          "code": "R-2-8-2",
+          "description": "每个指定的抛出必须由与之匹配的捕获"
+        },
+        {
+          "code": "R-2-8-3",
+          "description": "异常抛出的对象必须使用引用方式捕获"
+        },
+        {
+          "code": "R-2-8-4",
+          "description": "缺省捕获必须放在所有指定捕获之后"
+        },
+        {
+          "code": "R-2-8-5",
+          "description": "禁止显式直接抛出NULL"
+        }
+      ]
+    },
+    {
+      "code": "R-2-9",
+      "name": "模板",
+      "rules": [
+        {
+          "code": "R-2-9-1",
+          "description": "模板的声明、定义与实现必须在同一个文件之中"
+        }
+      ]
+    }
+  ]
+}

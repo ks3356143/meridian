@@ -270,11 +270,12 @@
 }
 
 .heroSide {
-  /* 删除按钮与完善度卡片同行：竖排会把英雄区撑高，标题左侧空出一条带（2026-10-12）。 */
+  /* 查找、删除与完善度卡片同排；空间不足时整体换行，不挤压标题。 */
   align-items: center;
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .deleteButton {
@@ -451,7 +452,7 @@
   color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   min-height: 1.5rem;
   padding: 0.18rem 0.5rem;
   transition:
@@ -496,7 +497,7 @@
   background: color-mix(in srgb, var(--muted-foreground) 7%, var(--card));
   border: 1px solid var(--border);
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 640;
   padding: 0.35rem 0.5rem;
   text-align: center;
@@ -517,7 +518,7 @@
 
 .itemTable td {
   border: 1px solid var(--border);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   padding: 0.2rem 0.25rem;
   vertical-align: middle;
 }
@@ -526,7 +527,7 @@
   align-items: center;
   display: flex;
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   gap: 0;
   min-width: 0;
 }
@@ -978,15 +979,15 @@
 }
 
 /* 行首状态色条：通过绿 / 未通过红 / 未执行灰，和徽章同色相。 */
-.caseTable tbody tr[data-status="passed"] td:first-child {
+.caseTable tbody tr[data-status="passed"] td:nth-child(2) {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--success) 80%, transparent);
 }
 
-.caseTable tbody tr[data-status="failed"] td:first-child {
+.caseTable tbody tr[data-status="failed"] td:nth-child(2) {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--destructive) 80%, transparent);
 }
 
-.caseTable tbody tr[data-status="pending"] td:first-child {
+.caseTable tbody tr[data-status="pending"] td:nth-child(2) {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--muted-foreground) 40%, transparent);
 }
 
@@ -1001,6 +1002,13 @@
 
 .caseTable tr:last-child td {
   border-bottom: none;
+}
+
+.caseSelectHead,
+.caseSelectCell {
+  padding-inline: 0.35rem;
+  text-align: center;
+  width: 2.1rem;
 }
 
 .caseIdent {
@@ -1125,7 +1133,7 @@
   background: color-mix(in srgb, var(--primary) 9%, transparent);
 }
 
-.caseTable tbody tr[data-active="true"] td:first-child {
+.caseTable tbody tr[data-active="true"] td:nth-child(2) {
   box-shadow: inset 3px 0 0 var(--primary);
 }
 

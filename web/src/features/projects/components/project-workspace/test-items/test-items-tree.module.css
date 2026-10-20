@@ -3,13 +3,16 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  /* 树是虚拟滚动容器：槽位常驻，展开/收起不会让右侧行内容横向跳动。 */
-  scrollbar-gutter: stable;
 }
 
 .tree {
   outline: none;
-  scrollbar-gutter: stable;
+}
+
+/* 统一行宽并让长标签在行内省略，避免固有宽度撑开背景、挤错右侧状态徽章。 */
+.tree :global([role="treeitem"]) {
+  max-width: 100% !important;
+  min-width: 100% !important;
 }
 
 .tree:focus-visible {
@@ -20,14 +23,9 @@
   border-left: 2px solid transparent;
   cursor: default;
   height: 100%;
-  transition: background-color 0.16s ease;
 }
 
-.rowHost:hover {
-  background: color-mix(in srgb, var(--info) 6%, transparent);
-}
-
-.rowHost[data-kind="group"] {
+.rowHost[data-kind="group"] .row {
   background: color-mix(in srgb, var(--muted-foreground) 4%, transparent);
   font-weight: 640;
 }
@@ -65,7 +63,11 @@
   cursor: pointer;
 }
 
-.rowSelected {
+.rowHost:hover .row {
+  background: color-mix(in srgb, var(--info) 6%, transparent);
+}
+
+.rowSelected .row {
   background: color-mix(in srgb, var(--primary) 10%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 }
@@ -79,7 +81,12 @@
   display: flex;
   gap: 0.32rem;
   height: 100%;
-  padding-right: 0.55rem;
+  overflow: hidden;
+  padding-right: 0.35rem;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+  width: 100%;
   white-space: nowrap;
 }
 
@@ -140,15 +147,26 @@
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
   flex: none;
   font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: 0.68rem;
 }
 
 .label {
   flex: 1 1 auto;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   /* 光学居中：行盒整体下移 0.25px（块级加内边距会被父级重新居中，取半量）。 */
   padding-top: 0.5px;
+}
+
+.meta {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  gap: 0.32rem;
+  margin-left: auto;
 }
 
 .count[data-tone="green"] {
@@ -190,8 +208,8 @@
   align-items: center;
   display: inline-flex;
   flex: none;
-  font-size: 0.52rem;
-  height: 0.95rem;
+  font-size: 0.58rem;
+  height: 1rem;
   line-height: 1;
   padding: 1px 0.3rem 0;
   white-space: nowrap;
@@ -316,7 +334,7 @@
 
 .caseStatus {
   flex: none;
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   white-space: nowrap;
 }
 
@@ -337,7 +355,7 @@
     transition: none;
   }
 
-  .rowHost {
+  .row {
     transition: none;
   }
 
@@ -372,4 +390,15 @@
   .renameInput {
     transition: none;
   }
+}
+
+.staticProgress {
+  background: color-mix(in srgb, var(--info) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 26%, var(--border));
+  color: color-mix(in srgb, var(--info) 88%, var(--foreground));
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  padding: 0 0.26rem;
+  white-space: nowrap;
 }

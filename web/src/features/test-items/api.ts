@@ -4,6 +4,10 @@ import type {
   BatchCreateTestItemsResult,
   CaseStepRecord,
   TestCaseRecord,
+  StaticState,
+  StaticWorkbench,
+  RequirementTestItemPreview,
+  TestCaseSearchHit,
   TestItemDetail,
   TestItemFolder,
   TestItemRecord,
@@ -51,6 +55,15 @@ export interface CreateTestItemFolderPayload {
   parentId?: string | null;
 }
 
+export interface BatchAssignCasesPayload {
+  caseIds: string[];
+  /** 空字符串清除指派；省略表示不修改。 */
+  testerId?: string;
+  status?: "pending" | "passed" | "failed";
+  /** YYYY-MM-DD；空字符串清除；省略表示不修改。 */
+  execDate?: string;
+}
+
 export interface UpdateCasePayload {
   name?: string;
   summary?: string;
@@ -92,6 +105,12 @@ export const testItemsApi = {
       {},
       payload,
     ),
+  /** 测试项页入口：已确认需求的创建候选与关联状态。 */
+  requirementCreatePreview: (projectCode: string) =>
+    request<RequirementTestItemPreview>(
+      "GET",
+      `/api/v1/projects/${projectCode}/test-items/from-requirements/preview`,
+    ),
   /** 需求详情侧的已关联测试项。 */
   requirementItems: (requirementId: string) =>
     request<TestItemRecord[]>("GET", `/api/v1/software-requirements/${requirementId}/test-items`),
@@ -131,6 +150,38 @@ export const testItemsApi = {
     request<TestCaseRecord>("POST", `/api/v1/test-items/${testItemId}/cases`, {}, { name }),
   updateCase: (caseId: string, payload: UpdateCasePayload) =>
     request<TestCaseRecord>("PATCH", `/api/v1/test-cases/${caseId}`, {}, payload),
+  /** 同一测试项内批量设置测试人员、状态与执行日期。 */
+  batchAssignCases: (testItemId: string, payload: BatchAssignCasesPayload) =>
+    request<{ cases: TestCaseRecord[] }>(
+      "POST",
+      `/api/v1/test-items/${testItemId}/cases/batch-assign`,
+      {},
+      payload,
+    ).then((result) => result.cases),
+  staticWorkbench: (testItemId: string) =>
+    request<StaticWorkbench>("GET", `/api/v1/test-items/${testItemId}/static-workbench`),
+  saveStaticWorkbench: (testItemId: string, expectedVersion: number, state: StaticState) =>
+    request<StaticWorkbench>(
+      "PUT",
+      `/api/v1/test-items/${testItemId}/static-workbench`,
+      {},
+      { expectedVersion, state },
+    ),
+  ensureStaticItems: (projectCode: string) =>
+    request<{ created: TestItemRecord[] }>(
+      "POST",
+      `/api/v1/projects/${projectCode}/static-items/ensure`,
+    ).then((result) => result.created),
+  deleteStaticItems: (projectCode: string) =>
+    request<{ removed: number }>("DELETE", `/api/v1/projects/${projectCode}/static-items`).then(
+      (result) => result.removed,
+    ),
+  /** 测试项内查找用例字段与步骤正文。 */
+  searchCases: (testItemId: string, query: string) =>
+    request<{ hits: TestCaseSearchHit[] }>(
+      "GET",
+      `/api/v1/test-items/${testItemId}/search?q=${encodeURIComponent(query)}`,
+    ).then((result) => result.hits),
   caseSteps: (caseId: string) =>
     request<CaseStepRecord[]>("GET", `/api/v1/test-cases/${caseId}/steps`),
   createCaseStep: (caseId: string, expectText: string) =>
@@ -163,6 +214,14 @@ export const testItemsApi = {
     request<void>("POST", `/api/v1/test-case-steps/${stepId}/move`, {}, { targetIndex }),
   duplicateCase: (caseId: string) =>
     request<TestCaseRecord>("POST", `/api/v1/test-cases/${caseId}/duplicate`),
+  /** Ctrl+拖拽：复制到目标测试项的目标位置。 */
+  copyCase: (caseId: string, targetItemId: string, targetIndex: number) =>
+    request<TestCaseRecord>(
+      "POST",
+      `/api/v1/test-cases/${caseId}/copy`,
+      {},
+      { targetItemId, targetIndex },
+    ),
   deleteCase: (caseId: string) => request<void>("DELETE", `/api/v1/test-cases/${caseId}`),
   linkRequirement: (testItemId: string, requirementId: string) =>
     request<TestItemRequirementRef[]>(

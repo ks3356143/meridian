@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -25,12 +26,25 @@ import { EmptyHint } from "@/components/shared/empty-hint";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePanelSwitchMotion } from "./use-panel-switch-motion";
-import type { UpdateSubItemPayload, UpdateTestItemPayload } from "@/features/test-items/api";
-import type { TestItemDetail, TestItemType, TestRoundRecord } from "@/features/test-items/types";
+import type {
+  BatchAssignCasesPayload,
+  UpdateSubItemPayload,
+  UpdateTestItemPayload,
+} from "@/features/test-items/api";
+import type {
+  TestCaseSearchHit,
+  TestItemDetail,
+  TestItemType,
+  TestRoundRecord,
+} from "@/features/test-items/types";
 import type { ProjectPlatform } from "@/features/projects/types";
+import type { ProjectMember } from "../../../types";
+import { CaseBatchBar } from "./case-batch-bar";
+import { CaseSearch } from "./case-search";
 import { EditableCell } from "./editable-cell";
 import { RequirementAccordion } from "./requirement-accordion";
 import { RequirementLinkPicker } from "./requirement-link-picker";
+import { StaticWorkbenchSection } from "./static-workbench";
 import { SubItemCards } from "./sub-item-cards";
 import { caseStatusLabel, categoryTone } from "./test-items-design";
 import styles from "./test-item-detail.module.css";
@@ -54,6 +68,7 @@ function TestItemDetailPanelInner({
   folderName,
   platform,
   projectId,
+  members,
   onPatch,
   onLink,
   onUnlink,
@@ -68,6 +83,8 @@ function TestItemDetailPanelInner({
   activeCaseId,
   onSelectCase,
   onDuplicateCase,
+  onBatchAssign,
+  onOpenSearchHit,
 }: {
   detail: TestItemDetail;
   type: TestItemType | undefined;
@@ -75,6 +92,7 @@ function TestItemDetailPanelInner({
   folderName: string;
   platform: ProjectPlatform;
   projectId: string;
+  members: ProjectMember[];
   onPatch: (payload: UpdateTestItemPayload) => Promise<unknown>;
   onLink: (requirementId: string) => Promise<unknown>;
   onUnlink: (requirementId: string) => Promise<unknown>;
@@ -90,11 +108,18 @@ function TestItemDetailPanelInner({
   activeCaseId?: string;
   onSelectCase?: (caseId: string) => void;
   onDuplicateCase?: (caseId: string) => void;
+  onBatchAssign?: (
+    caseIds: string[],
+    payload: Omit<BatchAssignCasesPayload, "caseIds">,
+  ) => Promise<unknown>;
+  onOpenSearchHit?: (hit: TestCaseSearchHit) => void;
 }) {
   const item = detail.item;
   const scrollRef = useRef<HTMLDivElement>(null);
   const jumpSpyLockRef = useRef(false);
   const [activeSection, setActiveSection] = useState<string>(SECTION_BASIC);
+  const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
+  const [batchPending, setBatchPending] = useState(false);
   const isStatic = type?.isStatic ?? false;
 
   // 保存状态芯片（对齐需求详情的即时编辑口径）：待自动保存 / 保存中 / 已自动保存 / 保存失败。
@@ -243,6 +268,28 @@ function TestItemDetailPanelInner({
     detail.cases.length === 0 ? 0 : Math.round((passedCount / detail.cases.length) * 100);
   const tone = type ? categoryTone(type.category) : "green";
   const complete = completeness !== null && completeness.done === completeness.total;
+  const selectedCaseSet = new Set(selectedCaseIds);
+  const allCasesSelected =
+    detail.cases.length > 0 && detail.cases.every((record) => selectedCaseSet.has(record.id));
+  const someCasesSelected = selectedCaseIds.length > 0 && !allCasesSelected;
+  const toggleAllCases = (checked: boolean | "indeterminate") => {
+    setSelectedCaseIds(checked === true ? detail.cases.map((record) => record.id) : []);
+  };
+  const toggleCase = (caseId: string, checked: boolean | "indeterminate") => {
+    setSelectedCaseIds((current) =>
+      checked === true ? [...new Set([...current, caseId])] : current.filter((id) => id !== caseId),
+    );
+  };
+  const applyBatchAssign = async (payload: Omit<BatchAssignCasesPayload, "caseIds">) => {
+    if (!onBatchAssign || selectedCaseIds.length === 0) return;
+    setBatchPending(true);
+    try {
+      await onBatchAssign(selectedCaseIds, payload);
+      setSelectedCaseIds([]);
+    } finally {
+      setBatchPending(false);
+    }
+  };
 
   return (
     <div className={styles.detail} ref={scrollRef}>
@@ -270,6 +317,7 @@ function TestItemDetailPanelInner({
             </div>
           </div>
           <div className={styles.heroSide}>
+            <CaseSearch testItemId={item.id} onOpenHit={(hit) => onOpenSearchHit?.(hit)} />
             <Button
               type="button"
               variant="outline"
@@ -597,6 +645,18 @@ function TestItemDetailPanelInner({
                   />
                 </td>
               </tr>
+              {isStatic ? (
+                <tr>
+                  <th scope="row">静态测试</th>
+                  <td colSpan={3}>
+                    <StaticWorkbenchSection
+                      testItemId={item.id}
+                      kind={item.typeCode}
+                      platform={platform}
+                    />
+                  </td>
+                </tr>
+              ) : null}
               <tr data-pending={!isStatic && item.adequacy.trim() === "" ? "true" : undefined}>
                 <th scope="row">充分性要求</th>
                 <td colSpan={3}>
@@ -675,71 +735,96 @@ function TestItemDetailPanelInner({
               尚无用例；到上方「测试方法」子项卡片点「生成用例」即可 1:1 生成。
             </EmptyHint>
           ) : (
-            <table className={styles.caseTable}>
-              <thead>
-                <tr>
-                  <th scope="col">用例标识</th>
-                  <th scope="col">用例名称</th>
-                  <th scope="col">状态</th>
-                  <th scope="col">
-                    <span className={styles.visuallyHidden}>操作</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.cases.map((record) => (
-                  <tr
-                    key={record.id}
-                    data-status={record.status}
-                    data-active={record.id === activeCaseId ? "true" : undefined}
-                  >
-                    <td className={styles.caseIdent}>{record.identifier}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className={styles.caseRowName}
-                        onClick={() => onSelectCase?.(record.id)}
-                      >
-                        {record.name}
-                      </button>
-                    </td>
-                    <td>
-                      <span className={styles.caseStatus} data-status={record.status}>
-                        {caseStatusLabel(record.status)}
-                      </span>
-                    </td>
-                    <td className={styles.caseRowActions} aria-label="用例操作">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            className={styles.caseRowAction}
-                            aria-label={`在目录中定位 ${record.identifier}`}
-                            onClick={() => onSelectCase?.(record.id)}
-                          >
-                            <Crosshair aria-hidden />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">在左侧目录中定位</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            className={styles.caseRowAction}
-                            aria-label={`复制 ${record.identifier}`}
-                            onClick={() => onDuplicateCase?.(record.id)}
-                          >
-                            <CopyPlus aria-hidden />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">复制用例（含步骤）</TooltipContent>
-                      </Tooltip>
-                    </td>
+            <>
+              <CaseBatchBar
+                selectedCount={selectedCaseIds.length}
+                members={members}
+                pending={batchPending}
+                onApply={applyBatchAssign}
+                onClearSelection={() => setSelectedCaseIds([])}
+              />
+              <table className={styles.caseTable}>
+                <thead>
+                  <tr>
+                    <th scope="col" className={styles.caseSelectHead}>
+                      <Checkbox
+                        checked={
+                          allCasesSelected ? true : someCasesSelected ? "indeterminate" : false
+                        }
+                        aria-label="全选用例"
+                        onCheckedChange={toggleAllCases}
+                      />
+                    </th>
+                    <th scope="col">用例标识</th>
+                    <th scope="col">用例名称</th>
+                    <th scope="col">状态</th>
+                    <th scope="col">
+                      <span className={styles.visuallyHidden}>操作</span>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {detail.cases.map((record) => (
+                    <tr
+                      key={record.id}
+                      data-status={record.status}
+                      data-active={record.id === activeCaseId ? "true" : undefined}
+                    >
+                      <td className={styles.caseSelectCell}>
+                        <Checkbox
+                          checked={selectedCaseSet.has(record.id)}
+                          aria-label={`选择 ${record.identifier}`}
+                          onCheckedChange={(checked) => toggleCase(record.id, checked)}
+                        />
+                      </td>
+                      <td className={styles.caseIdent}>{record.identifier}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className={styles.caseRowName}
+                          onClick={() => onSelectCase?.(record.id)}
+                        >
+                          {record.name}
+                        </button>
+                      </td>
+                      <td>
+                        <span className={styles.caseStatus} data-status={record.status}>
+                          {caseStatusLabel(record.status)}
+                        </span>
+                      </td>
+                      <td className={styles.caseRowActions} aria-label="用例操作">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className={styles.caseRowAction}
+                              aria-label={`在目录中定位 ${record.identifier}`}
+                              onClick={() => onSelectCase?.(record.id)}
+                            >
+                              <Crosshair aria-hidden />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">在左侧目录中定位</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className={styles.caseRowAction}
+                              aria-label={`复制 ${record.identifier}`}
+                              onClick={() => onDuplicateCase?.(record.id)}
+                            >
+                              <CopyPlus aria-hidden />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">复制用例（含步骤）</TooltipContent>
+                        </Tooltip>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
         </section>
       </div>

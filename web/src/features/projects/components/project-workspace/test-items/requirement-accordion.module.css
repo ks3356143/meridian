@@ -106,15 +106,16 @@
 /* 展开用 grid-template-rows 过渡，行高变化有动效且不打断滚动 */
 .accordionBody {
   display: grid;
-  grid-template-rows: 0fr;
+  grid-template-rows: minmax(0, 0fr);
   transition: grid-template-rows 0.26s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .accordion[data-open="true"] .accordionBody {
-  grid-template-rows: 1fr;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .accordionInner {
+  min-height: 0;
   overflow: hidden;
 }
 

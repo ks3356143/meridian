@@ -106,7 +106,7 @@ func TestCreateTestItemsFromRequirementsAllSkipsExistingAndIncomplete(t *testing
 	ctx := context.Background()
 	seedRequirementForCreate(t, service, projectID, "req-batch-new", "批量新建", "functional", "official", "pending", "需要创建测试项")
 	seedBatchRequirement(t, service, projectID, "req-batch-linked", "4.2", "已有关联", "functional", "official", "pending", "已有测试项")
-	seedBatchRequirement(t, service, projectID, "req-batch-incomplete", "4.3", "待补描述", "functional", "official", "none", "")
+	seedBatchRequirement(t, service, projectID, "req-batch-incomplete", "4.3", "待补描述", "functional", "official", "completed", "")
 
 	if _, err := service.CreateTestItem(ctx, CreateTestItemInput{
 		ProjectID: projectID, RequirementID: "req-batch-linked",
@@ -334,7 +334,8 @@ func TestCreateTestItemForRequirementDefaultsAndLinks(t *testing.T) {
 func TestCreateTestItemForIncompleteRequirementRejected(t *testing.T) {
 	service, projectID := newTestService(t)
 	ctx := context.Background()
-	seedRequirementForCreate(t, service, projectID, "req-incomplete", "待补描述", "functional", "official", "none", "")
+	// 旧 test_item_task_status 可能残留 completed；创建资格必须以正文是否为空为准。
+	seedRequirementForCreate(t, service, projectID, "req-incomplete", "待补描述", "functional", "official", "completed", "")
 
 	_, err := service.CreateTestItem(ctx, CreateTestItemInput{
 		ProjectID:     projectID,

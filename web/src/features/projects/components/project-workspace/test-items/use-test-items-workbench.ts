@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type {
+  BatchAssignCasesPayload,
   CreateTestItemFolderPayload,
   CreateTestItemPayload,
   UpdateCasePayload,
@@ -94,25 +95,62 @@ export function useTestItemsWorkbench(project: Project) {
       // 乐观交互：先落详情缓存，失败原子回滚。
       await queryClient.cancelQueries({ queryKey: detailKey(id) });
       const previous = queryClient.getQueryData<TestItemDetail>(detailKey(id));
+      // 类型/文件夹会重排树分组，必须重新取工作台；其它字段只 patch 当前行。
+      const structural =
+        payload.typeCode !== undefined ||
+        payload.folderId !== undefined ||
+        payload.clearFolder === true;
       if (previous) {
         queryClient.setQueryData<TestItemDetail>(detailKey(id), {
           ...previous,
           item: applyItemPatch(previous.item, payload),
         });
       }
-      return { previous };
+      let previousWorkspace: TestItemsWorkspace | undefined;
+      if (!structural) {
+        await queryClient.cancelQueries({ queryKey: workbenchKey });
+        previousWorkspace = queryClient.getQueryData<TestItemsWorkspace>(workbenchKey);
+        if (previousWorkspace) {
+          queryClient.setQueryData<TestItemsWorkspace>(workbenchKey, {
+            ...previousWorkspace,
+            items: previousWorkspace.items.map((item) =>
+              item.id === id ? applyItemPatch(item, payload) : item,
+            ),
+          });
+        }
+      }
+      return { previous, previousWorkspace };
     },
     onError: (_error, variables, context) => {
       if (context?.previous) {
         queryClient.setQueryData(detailKey(variables.id), context.previous);
+      }
+      if (context?.previousWorkspace) {
+        queryClient.setQueryData(workbenchKey, context.previousWorkspace);
       }
     },
     onSuccess: (item, variables) => {
       queryClient.setQueryData<TestItemDetail>(detailKey(variables.id), (previous) =>
         previous ? { ...previous, item } : previous,
       );
+      queryClient.setQueryData<TestItemsWorkspace>(workbenchKey, (previous) =>
+        previous
+          ? {
+              ...previous,
+              items: previous.items.map((current) => (current.id === item.id ? item : current)),
+            }
+          : previous,
+      );
     },
-    onSettled: () => invalidateWorkbench(),
+    onSettled: (_data, _error, variables) => {
+      if (
+        variables.payload.typeCode !== undefined ||
+        variables.payload.folderId !== undefined ||
+        variables.payload.clearFolder === true
+      ) {
+        void invalidateWorkbench();
+      }
+    },
   });
 
   const deleteItemMutation = useMutation({
@@ -292,7 +330,51 @@ export function useTestItemsWorkbench(project: Project) {
           : previous,
       );
     },
+  });
+
+  const batchAssignCasesMutation = useMutation({
+    mutationFn: ({
+      testItemId,
+      caseIds,
+      payload,
+    }: {
+      testItemId: string;
+      caseIds: string[];
+      payload: Omit<BatchAssignCasesPayload, "caseIds">;
+    }) => testItemsApi.batchAssignCases(testItemId, { ...payload, caseIds }),
+    onSuccess: (updated, variables) => {
+      const updatedByID = new Map(updated.map((record) => [record.id, record]));
+      patchCases(variables.testItemId, (list) =>
+        list.map((record) => updatedByID.get(record.id) ?? record),
+      );
+      queryClient.setQueryData<TestItemsWorkspace>(workbenchKey, (previous) =>
+        previous
+          ? {
+              ...previous,
+              cases: previous.cases.map((record) => updatedByID.get(record.id) ?? record),
+            }
+          : previous,
+      );
+      toast.success(`已批量更新 ${updated.length} 条用例`);
+    },
     onSettled: () => void invalidateWorkbench(),
+  });
+
+  const copyCaseMutation = useMutation({
+    mutationFn: ({
+      id,
+      targetItemId,
+      targetIndex,
+    }: {
+      id: string;
+      targetItemId: string;
+      targetIndex: number;
+    }) => testItemsApi.copyCase(id, targetItemId, targetIndex),
+    onSuccess: (created) => {
+      toast.success(`已复制为 ${created.identifier}`);
+      void invalidateWorkbench();
+      void queryClient.invalidateQueries({ queryKey: ["test-items", "detail"] });
+    },
   });
 
   const duplicateCaseMutation = useMutation({
@@ -371,6 +453,23 @@ export function useTestItemsWorkbench(project: Project) {
     },
   });
 
+  const ensureStaticItemsMutation = useMutation({
+    mutationFn: () => testItemsApi.ensureStaticItems(project.id),
+    onSuccess: (created) => {
+      if (created.length === 0) toast.info("推荐静态测试项已齐全");
+      else toast.success(`已补齐 ${created.length} 个静态测试项`);
+      void invalidateWorkbench();
+    },
+  });
+
+  const deleteStaticItemsMutation = useMutation({
+    mutationFn: () => testItemsApi.deleteStaticItems(project.id),
+    onSuccess: (removed) => {
+      toast.success(`已删除 ${removed} 个静态测试项`);
+      void invalidateWorkbench();
+    },
+  });
+
   const unlinkMutation = useMutation({
     mutationFn: ({ testItemId, requirementId }: { testItemId: string; requirementId: string }) =>
       testItemsApi.unlinkRequirement(testItemId, requirementId),
@@ -407,8 +506,12 @@ export function useTestItemsWorkbench(project: Project) {
     updateCaseMutation,
     invalidateCaseData,
     duplicateCaseMutation,
+    copyCaseMutation,
+    batchAssignCasesMutation,
     deleteCaseMutation,
     moveItemMutation,
     moveCaseMutation,
+    ensureStaticItemsMutation,
+    deleteStaticItemsMutation,
   };
 }

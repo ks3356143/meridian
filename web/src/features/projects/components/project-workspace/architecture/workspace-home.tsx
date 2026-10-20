@@ -1,5 +1,5 @@
 import { useOutletContext } from "react-router";
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import { Badge } from "@/components/ui/badge";
 import { gsap, useGSAP } from "@/lib/gsap";
 import type { ProjectWorkspaceOutletContext } from "../project-workspace-layout";
@@ -18,18 +18,58 @@ export function WorkspaceHome() {
       if (!containerRef.current) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-      gsap.fromTo(
-        "[data-architecture-panel]",
-        { opacity: 0 },
-        { opacity: 1, duration: 0.34, ease: "power3.out", stagger: 0.045 },
-      );
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .fromTo(
+          "[data-home-hero]",
+          { opacity: 0, y: 10, scale: 0.998, willChange: "transform, opacity" },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.34,
+            clearProps: "transform,opacity,willChange",
+          },
+        )
+        .fromTo(
+          "[data-home-metric]",
+          { opacity: 0.2, y: 6, willChange: "transform, opacity" },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.24,
+            stagger: 0.045,
+            clearProps: "transform,opacity,willChange",
+          },
+          "-=0.28",
+        )
+        .fromTo(
+          [".workspace-home-main", ".workspace-home-aside"],
+          { opacity: 0.25, y: 8, willChange: "transform, opacity" },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.3,
+            stagger: 0.05,
+            clearProps: "transform,opacity,willChange",
+          },
+          "-=0.2",
+        );
     },
     { scope: containerRef },
   );
 
   return (
     <div ref={containerRef} className="workspace-home">
-      <section className="workspace-home-hero">
+      <section
+        className="workspace-home-hero"
+        data-home-hero
+        style={
+          {
+            "--workspace-progress": Math.min(1, Math.max(0, executionRate / 100)),
+          } as CSSProperties
+        }
+      >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={project.status === "已完成" ? "default" : "secondary"}>
@@ -44,15 +84,15 @@ export function WorkspaceHome() {
           </p>
         </div>
         <dl className="workspace-home-metrics">
-          <div>
+          <div data-home-metric>
             <dt>用例执行</dt>
             <dd className="font-mono">{executionRate}%</dd>
           </div>
-          <div>
+          <div data-home-metric>
             <dt>未闭环问题</dt>
             <dd className="font-mono">{openIssues}</dd>
           </div>
-          <div>
+          <div data-home-metric>
             <dt>测试用例</dt>
             <dd className="font-mono">{project.casesTotal}</dd>
           </div>

@@ -100,21 +100,33 @@ func renumberCases(tx *gorm.DB, testItemID string) error {
 		Order("sort_order asc, created_at asc").Find(&cases).Error; err != nil {
 		return fmt.Errorf("查询用例失败: %w", err)
 	}
+	ordered := make([]string, 0, len(cases))
+	for _, itemCase := range cases {
+		ordered = append(ordered, itemCase.ID)
+	}
+	return writeCaseOrder(tx, item, ordered)
+}
 
-	// 两阶段重排：先写入临时序号避开 (test_item_id, seq) 唯一约束，再写最终序号。
+// writeCaseOrder 按给定顺序两阶段写入用例序号、排序和标识。
+// 第一阶段先写 TMP 标识与负序号，避开 (project_id, identifier) / (test_item_id, seq) 唯一约束。
+func writeCaseOrder(tx *gorm.DB, item TestItem, ordered []string) error {
+	if len(ordered) == 0 {
+		return nil
+	}
 	now := timeNow()
-	for index, itemCase := range cases {
-		if err := tx.Model(&Case{}).Where("id = ?", itemCase.ID).Updates(map[string]any{
+	for index, caseID := range ordered {
+		if err := tx.Model(&Case{}).Where("id = ?", caseID).Updates(map[string]any{
 			"seq":        -(index + 1),
 			"sort_order": index,
+			"identifier": "TMP_" + caseID,
 			"updated_at": now,
 		}).Error; err != nil {
 			return fmt.Errorf("重排用例失败: %w", err)
 		}
 	}
-	for index, itemCase := range cases {
+	for index, caseID := range ordered {
 		seq := index + 1
-		if err := tx.Model(&Case{}).Where("id = ?", itemCase.ID).Updates(map[string]any{
+		if err := tx.Model(&Case{}).Where("id = ?", caseID).Updates(map[string]any{
 			"seq":        seq,
 			"identifier": caseIdentifier(item.TypeCode, item.Suffix, seq),
 			"updated_at": now,

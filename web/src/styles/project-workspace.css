@@ -102,7 +102,7 @@
   align-items: center;
   gap: 0.625rem 1rem;
   min-width: 0;
-  padding: 0.65rem clamp(0.75rem, 2vw, 1.5rem);
+  padding: 0.7rem clamp(0.75rem, 2vw, 1.5rem);
   display: flex;
 }
 
@@ -134,6 +134,14 @@
   transform: translate(-120%);
 }
 
+/* 本规则必须排在基础动画之后，否则同特异度的 animation 声明会把 reduced-motion 覆盖掉。 */
+@media (prefers-reduced-motion: reduce) {
+  .workspace-topbar-beam::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 .workspace-body {
   padding: 0 clamp(0.75rem, 1.8vw, 1.5rem) 1.5rem;
 }
@@ -143,13 +151,32 @@
 }
 
 .workspace-route {
+  --workspace-route-accent: var(--primary);
   min-height: 0;
   padding-top: 0;
   border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
   border-top: 0;
   border-radius: 0;
-  background: var(--card);
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--workspace-route-accent) 6%, transparent),
+      transparent 28rem
+    ),
+    var(--card);
   animation: workspace-route-enter 0.28s ease-out;
+}
+
+.workspace-route[data-workspace-section="assets"] {
+  --workspace-route-accent: var(--info);
+}
+
+.workspace-route[data-workspace-section="requirements"] {
+  --workspace-route-accent: var(--chart-5);
+}
+
+.workspace-route[data-workspace-section="delivery"] {
+  --workspace-route-accent: var(--warning);
 }
 
 main.workspace-route {
@@ -180,10 +207,12 @@ main.workspace-route::-webkit-scrollbar-thumb {
 
 @keyframes workspace-route-enter {
   from {
-    opacity: 0;
+    opacity: 0.35;
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -198,6 +227,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
 }
 
 .workspace-home-hero {
+  --workspace-progress: 0;
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem 1.5rem;
@@ -211,6 +241,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 1rem;
+  overflow: hidden;
   padding: clamp(1rem, 2vw, 1.5rem);
   position: relative;
 }
@@ -222,6 +253,41 @@ main.workspace-route::-webkit-scrollbar-thumb {
   position: absolute;
   inset-block: 0;
   left: 0;
+}
+
+/* 首页唯一的一次性信号：执行率在 hero 底边充能，不循环扫动。 */
+.workspace-home-hero::after {
+  animation: workspace-progress-charge 0.86s cubic-bezier(0.22, 0.85, 0.24, 1) 0.16s both;
+  background: linear-gradient(90deg, var(--primary), var(--info));
+  bottom: 0;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent),
+    0 0 14px color-mix(in srgb, var(--primary) 34%, transparent);
+  content: "";
+  height: 2px;
+  inset-inline: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: scaleX(var(--workspace-progress));
+  transform-origin: left;
+}
+
+@keyframes workspace-progress-charge {
+  from {
+    opacity: 0.35;
+    transform: scaleX(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleX(var(--workspace-progress));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-home-hero::after {
+    animation: none;
+  }
 }
 
 .workspace-home-metrics {
@@ -298,22 +364,37 @@ main.workspace-route::-webkit-scrollbar-thumb {
   align-self: stretch;
   width: 3px;
   flex: none;
+  transition: box-shadow 0.22s ease;
+}
+
+.workspace-task-row:hover .workspace-task-rail {
+  box-shadow: 0 0 14px -2px currentColor;
 }
 
 .workspace-task-primary {
   background: var(--primary);
+  color: var(--primary);
 }
 
 .workspace-task-info {
   background: var(--info);
+  color: var(--info);
 }
 
 .workspace-task-warning {
   background: var(--warning);
+  color: var(--warning);
 }
 
 .workspace-task-danger {
   background: var(--destructive);
+  color: var(--destructive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-task-rail {
+    transition: none;
+  }
 }
 
 .workspace-tree-row {
@@ -643,13 +724,13 @@ main.workspace-route::-webkit-scrollbar-thumb {
 .workspace-topbar-id {
   color: var(--topbar-strong);
   letter-spacing: 0.02em;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .workspace-topbar-title {
   color: var(--topbar-foreground);
-  font-size: 0.875rem;
+  font-size: 0.925rem;
   font-weight: 700;
   line-height: 1.25;
 }
@@ -792,7 +873,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
   align-items: center;
   gap: 0.5rem;
   padding-inline: 0.625rem;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 650;
   display: inline-flex;
 }

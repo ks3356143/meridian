@@ -44,6 +44,26 @@ export interface TestItemRecord {
   updatedAt: string;
 }
 
+export interface RequirementTestItemCandidate {
+  requirementId: string;
+  chapterNumber: string;
+  name: string;
+  primaryKind: string;
+  mappedTypeCode: string;
+  hasDescription: boolean;
+  linkedTestItemCount: number;
+  canCreate: boolean;
+  blockReason?: string;
+}
+
+export interface RequirementTestItemPreview {
+  total: number;
+  creatable: number;
+  linked: number;
+  incomplete: number;
+  requirements: RequirementTestItemCandidate[];
+}
+
 export type BatchCreateTestItemOutcome =
   | "created"
   | "skipped_existing"
@@ -167,6 +187,10 @@ export interface TestItemCounts {
   requirementCount: number;
   /** 操作步骤或通过准则为空的子项数：>0 视为"测试方法未完善"。 */
   incompleteSubItemCount: number;
+  /** 静态工作台进度（DC/CR 已审 / 总数；CW 文件数）。 */
+  staticReviewed?: number;
+  staticTotal?: number;
+  staticFileCount?: number;
   /** 子项名称（树搜索按子项名匹配；无子项时为 null）。 */
   subItemNames?: string[] | null;
 }
@@ -187,5 +211,155 @@ export interface TestItemDetail {
   cases: TestCaseRecord[];
 }
 
+/** 测试项内查找命中：case = 用例字段，step = 步骤字段。 */
+export interface TestCaseSearchHit {
+  kind: "case" | "step";
+  caseId: string;
+  caseIdentifier: string;
+  caseName: string;
+  field: string;
+  snippet: string;
+  stepId?: string;
+  stepSeq?: number;
+}
+
 export type TestItemPriority = "高" | "中" | "低";
 export type TestCaseStatus = "pending" | "passed" | "failed";
+
+/** 静态测试：DC/SA/CR/CW 专属工作台。 */
+export interface StaticDocument {
+  id: string;
+  name: string;
+  version: string;
+  category: string;
+  seq: number;
+}
+
+export interface StaticCheckTemplate {
+  category: string;
+  title: string;
+  requirement: string;
+  basis: string;
+  practice: string;
+}
+
+export interface StaticSheetTemplate {
+  code: string;
+  kind: string;
+  name: string;
+  language?: string;
+  checks: StaticCheckTemplate[];
+}
+
+export interface StaticReviewCheck {
+  id: string;
+  seq: number;
+  category: string;
+  title: string;
+  requirement: string;
+  basis: string;
+  practice: string;
+  result: "unreviewed" | "passed" | "failed";
+  notes: string;
+}
+
+export interface StaticReviewSheet {
+  id: string;
+  templateCode: string;
+  name: string;
+  targetDocumentName: string;
+  targetDocumentVersion: string;
+  checks: StaticReviewCheck[];
+}
+
+export interface StaticMetrics {
+  softwareName: string;
+  softwareVersion: string;
+  softwareScale: number | null;
+  codeLines: number | null;
+  commentLines: number | null;
+  blankLines: number | null;
+  moduleCount: number | null;
+  averageSize: number | null;
+  averageFanout: number | null;
+  averageComplexity: number | null;
+  maxComplexity: number | null;
+  highComplexityRatio: number | null;
+  commentRatio: number | null;
+}
+
+export interface StaticRuleViolation {
+  ruleCode: string;
+  reason: string;
+  location: string;
+}
+
+export interface StaticAnalysisCheck {
+  id: string;
+  form: "C3" | "C4";
+  seq: number;
+  requirement: string;
+  hasIssue: boolean;
+  problem: string;
+  location: string;
+  issueId: string;
+}
+
+export interface StaticReviewTarget {
+  id: string;
+  language: string;
+  sheetCode: string;
+  name: string;
+  checks: StaticReviewCheck[];
+}
+
+export interface StaticCodeFile {
+  id: string;
+  name: string;
+  lines: number | null;
+}
+
+export interface StaticState {
+  documents: StaticDocument[];
+  reviewSheets: StaticReviewSheet[];
+  metrics: StaticMetrics;
+  metricConclusion: string;
+  ruleViolations: StaticRuleViolation[];
+  analysisChecks: StaticAnalysisCheck[];
+  c3Conclusion: string;
+  c4Conclusion: string;
+  reviewTargets: StaticReviewTarget[];
+  codeFiles: StaticCodeFile[];
+}
+
+export interface StaticRule {
+  code: string;
+  description: string;
+}
+
+export interface StaticRuleGroup {
+  code: string;
+  name: string;
+  rules: StaticRule[];
+}
+
+export interface StaticAnalysisRequirement {
+  seq: number;
+  requirement: string;
+}
+
+export interface StaticCatalog {
+  documentOptions: string[];
+  reviewSheets: StaticSheetTemplate[];
+  ruleGroups: StaticRuleGroup[];
+  analysisChecks: Record<"C3" | "C4", StaticAnalysisRequirement[]>;
+}
+
+export interface StaticWorkbench {
+  testItemId: string;
+  kind: "DC" | "SA" | "CR" | "CW";
+  version: number;
+  state: StaticState;
+  catalog: StaticCatalog;
+  updatedAt: string;
+}

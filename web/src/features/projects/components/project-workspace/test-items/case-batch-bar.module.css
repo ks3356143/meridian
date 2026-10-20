@@ -1,0 +1,137 @@
+.collapse {
+  display: grid;
+  grid-template-rows: minmax(0, 0fr);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    grid-template-rows 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.18s ease,
+    visibility 0s linear 0.28s;
+  visibility: hidden;
+}
+
+.collapse[data-visible="true"] {
+  grid-template-rows: minmax(0, 1fr);
+  opacity: 1;
+  pointer-events: auto;
+  transition:
+    grid-template-rows 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.2s ease,
+    visibility 0s;
+  visibility: visible;
+}
+
+.bar {
+  align-items: center;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--primary) 10%, transparent), transparent 62%),
+    color-mix(in srgb, var(--card) 96%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 26%, var(--border));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: space-between;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.42rem 0.65rem;
+  transform: translateY(-0.25rem);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.collapse[data-visible="true"] .bar {
+  transform: none;
+}
+
+.lead,
+.controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.spark {
+  align-items: center;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, transparent);
+  color: var(--primary);
+  display: inline-flex;
+  height: 1.45rem;
+  justify-content: center;
+  width: 1.45rem;
+}
+
+.icon {
+  height: 0.8rem;
+  width: 0.8rem;
+}
+
+.collapse[data-visible="true"] .spark {
+  animation: batchPulse 2.4s ease-in-out infinite;
+}
+
+.count {
+  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+  font-size: 0.72rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.trigger {
+  height: 1.7rem;
+  min-width: 8.6rem;
+}
+
+.trigger .icon,
+.dateTrigger .icon {
+  height: 0.76rem;
+  width: 0.76rem;
+}
+
+.dateTrigger {
+  gap: 0.32rem;
+  height: 1.7rem;
+  white-space: nowrap;
+}
+
+.calendarPopover {
+  padding: 0.25rem;
+}
+
+.calendarActions {
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.25rem;
+}
+
+.spin {
+  animation: batchSpin 0.8s linear infinite;
+}
+
+@keyframes batchPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 0%, transparent);
+  }
+}
+
+@keyframes batchSpin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapse,
+  .bar,
+  .spark,
+  .spin {
+    animation: none;
+    transition: none;
+  }
+}

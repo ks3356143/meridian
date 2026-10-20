@@ -161,18 +161,33 @@
   width: 100%;
 }
 
-/* 行标签列：浅灰底、居中加粗、上下居中（测试项详情 itemTable 同口径）。 */
+/* 行标签列：轻渐变面 + 左侧主色刻线，静态标签也有明确层级而不抢输入区。 */
 .sheet th[scope="row"] {
-  background: color-mix(in srgb, var(--muted-foreground) 7%, var(--card));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--muted-foreground) 5%, var(--card)),
+    color-mix(in srgb, var(--muted-foreground) 9%, var(--card))
+  );
   border: 1px solid var(--border);
-  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--primary) 18%, transparent);
+  color: color-mix(in srgb, var(--foreground) 70%, var(--muted-foreground));
   font-size: 0.72rem;
-  font-weight: 640;
+  font-weight: 650;
+  letter-spacing: 0.015em;
   padding: 0.35rem 0.5rem;
   text-align: center;
+  transition:
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
   vertical-align: middle;
   white-space: nowrap;
   width: 158px;
+}
+
+.sheet tr:hover > th[scope="row"] {
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--primary) 46%, transparent);
+  color: color-mix(in srgb, var(--foreground) 84%, var(--primary));
 }
 
 .sheet td {
@@ -190,8 +205,10 @@
 }
 
 .placeholderChip {
-  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 32%, transparent);
-  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  background: color-mix(in srgb, var(--muted-foreground) 4%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 34%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--muted-foreground) 20%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
   display: inline-flex;
   font-size: 0.7rem;
   padding: 1px 0.4rem 0;
@@ -355,11 +372,17 @@
 
 /* 列头一律居中（用例表、测试项详情同口径），数据列各自对齐。 */
 .stepsTable th {
-  background: color-mix(in srgb, var(--muted-foreground) 7%, var(--card));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--muted-foreground) 5%, var(--card)),
+    color-mix(in srgb, var(--muted-foreground) 9%, var(--card))
+  );
   border: 1px solid var(--border);
-  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--primary) 12%, transparent);
+  color: color-mix(in srgb, var(--foreground) 72%, var(--muted-foreground));
   font-size: 0.7rem;
-  font-weight: 620;
+  font-weight: 650;
+  letter-spacing: 0.015em;
   line-height: 1.35;
   padding: 0.3rem 0.35rem;
   text-align: center;
@@ -419,6 +442,21 @@
 
 .stepsTable td:nth-child(5) {
   text-align: center;
+}
+
+/* 测试项内查找命中：整行暖色脉冲 2.4 秒，落点不遮挡文字。 */
+.stepsTable tbody tr[data-search-hit="true"] td {
+  animation: searchRowGlow 2.4s cubic-bezier(0.32, 0.72, 0, 1) 1;
+}
+
+@keyframes searchRowGlow {
+  0% {
+    background: color-mix(in srgb, var(--warning) 34%, transparent);
+  }
+
+  100% {
+    background: transparent;
+  }
 }
 
 /* 行首状态色条：与用例行同口径（通过绿 / 未通过红 / 未执行灰）。 */
@@ -569,6 +607,11 @@
   .passButton,
   .stepAction {
     transition: none;
+  }
+
+  .stepsTable tbody tr[data-search-hit="true"] td {
+    animation: none;
+    background: color-mix(in srgb, var(--warning) 20%, transparent);
   }
 }
 

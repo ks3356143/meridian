@@ -338,25 +338,8 @@ func (s *Service) MoveCase(ctx context.Context, caseID string, targetItemID stri
 		}
 		ordered = append(ordered[:targetIndex], append([]string{caseID}, ordered[targetIndex:]...)...)
 
-		// 两阶段重排：先写临时序号避开唯一约束，再写最终序号与标识。
-		now := timeNow()
-		for index, idValue := range ordered {
-			if err := tx.Model(&Case{}).Where("id = ?", idValue).Updates(map[string]any{
-				"sort_order": index,
-				"seq":        -(index + 1),
-				"updated_at": now,
-			}).Error; err != nil {
-				return fmt.Errorf("重排用例失败: %w", err)
-			}
-		}
-		for index, idValue := range ordered {
-			if err := tx.Model(&Case{}).Where("id = ?", idValue).Updates(map[string]any{
-				"seq":        index + 1,
-				"identifier": caseIdentifier(targetItem.TypeCode, targetItem.Suffix, index+1),
-				"updated_at": now,
-			}).Error; err != nil {
-				return fmt.Errorf("重排用例失败: %w", err)
-			}
+		if err := writeCaseOrder(tx, targetItem, ordered); err != nil {
+			return err
 		}
 
 		if sourceItemID != targetItemID {

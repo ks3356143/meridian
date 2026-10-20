@@ -21,7 +21,34 @@ type BatchCreateFromRequirementsOutput struct {
 	Body testitemsservice.BatchCreateFromRequirementsResult
 }
 
+type RequirementTestItemPreviewInput struct {
+	Code string `path:"code" doc:"项目标识"`
+}
+
+type RequirementTestItemPreviewOutput struct {
+	Body testitemsservice.RequirementTestItemPreview
+}
+
 func registerBatchCreateFromRequirements(api huma.API, handler *Handler) {
+	huma.Register(api, huma.Operation{
+		OperationID: "preview-test-items-from-requirements",
+		Method:      http.MethodGet,
+		Path:        "/api/v1/projects/{code}/test-items/from-requirements/preview",
+		Summary:     "预览需求创建测试项",
+		Description: "返回已确认需求的映射类型、关联数量和可创建状态，供测试项页入口勾选。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *RequirementTestItemPreviewInput) (*RequirementTestItemPreviewOutput, error) {
+		projectID, err := handler.projectID(ctx, input.Code)
+		if err != nil {
+			return nil, toAPIError(err, "项目不存在")
+		}
+		preview, err := handler.service.PreviewRequirementTestItems(ctx, projectID)
+		if err != nil {
+			return nil, toAPIError(err, "读取需求创建候选失败")
+		}
+		return &RequirementTestItemPreviewOutput{Body: preview}, nil
+	})
+
 	huma.Register(api, huma.Operation{
 		OperationID: "batch-create-test-items-from-requirements",
 		Method:      http.MethodPost,

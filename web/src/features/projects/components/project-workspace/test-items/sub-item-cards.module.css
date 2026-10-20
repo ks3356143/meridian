@@ -218,6 +218,11 @@
   min-width: 0;
 }
 
+/* 同一行里较短的一栏保持自身高度并上下居中，和用例步骤表格的垂直对齐口径一致。 */
+.stepEditor {
+  margin-block: auto;
+}
+
 /* 字段标签：子项描述 / 操作步骤 / 通过准则共用（展示态方框上方一行小字）。 */
 .fieldLabel {
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);

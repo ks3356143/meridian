@@ -19,6 +19,7 @@ import {
   type TreeApi,
 } from "react-arborist";
 import { cn } from "cn";
+import { TruncatedText } from "@/components/shared/truncated-text";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -39,6 +40,8 @@ export type TestItemsTreeMove = {
   dragIds: string[];
   parentId: string | null;
   index: number;
+  /** 按住 Ctrl/Command 拖拽：复制而非移动。 */
+  copy: boolean;
 };
 
 /** 搜索/筛选态整树不参与拖拽：过滤后的落点序号与真实数据会错位。 */
@@ -138,13 +141,34 @@ function TestItemsTreeInner({
   forceExpanded?: boolean;
   onAction?: (node: TestItemsTreeNode, action: TestItemsTreeAction) => void;
   onRenameNode?: (node: TestItemsTreeNode, name: string) => void;
-  onMoveNode?: MoveHandler<TestItemsTreeNode>;
+  onMoveNode?: (move: TestItemsTreeMove) => void;
 }) {
   const { ref: shellRef, height } = useElementHeight<HTMLDivElement>();
   const [initialOpenState] = useState(() => readOpenState(storageKey));
   const forceExpandedRef = useRef(forceExpanded);
   // 右键菜单只挂一个（树级），按右键落点找目标行：每行一个 Radix 菜单会把整行重渲染成本抬高一倍。
   const [menuNode, setMenuNode] = useState<NodeApi<TestItemsTreeNode> | null>(null);
+  // react-arborist 的 onMove 不暴露原生事件，按键状态在树级监听；拖拽过程中按下/松开 Ctrl 都即时生效。
+  const copyModifierRef = useRef(false);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Control" || event.key === "Meta") copyModifierRef.current = true;
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Control" || event.key === "Meta") copyModifierRef.current = false;
+    };
+    const onBlur = () => {
+      copyModifierRef.current = false;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, []);
   // 树的 props 保持稳定引用：react-arborist 的拖拽/行渲染都以 props 变更为失效信号，
   // 每次渲染换新回调会让所有行重挂拖拽源，行数一多就掉帧。
   //
@@ -179,6 +203,10 @@ function TestItemsTreeInner({
       <TestItemsTreeRow node={node} style={style} dragHandle={dragHandle} />
     ),
     [],
+  );
+  const handleMove = useCallback<MoveHandler<TestItemsTreeNode>>(
+    (move) => onMoveNode?.({ ...move, copy: copyModifierRef.current }),
+    [onMoveNode],
   );
   const selectedKey = selectedCaseId
     ? `case:${selectedCaseId}`
@@ -239,7 +267,7 @@ function TestItemsTreeInner({
               disableMultiSelection
               disableDrag={forceExpanded ? blockDragDuringSearch : isNodeDraggable}
               disableDrop={isDropBlocked}
-              onMove={onMoveNode}
+              onMove={handleMove}
               onToggle={handleToggle}
               renderRow={renderRow}
             >
@@ -428,6 +456,11 @@ function TestItemsTreeRow({
     : data.kind === "case"
       ? ClipboardList
       : ListChecks;
+  const hasMeta =
+    data.count !== undefined ||
+    (data.kind === "group" && Boolean(data.typeCode)) ||
+    (data.kind === "item" && Boolean(data.staticBadge || data.implicit || data.incomplete)) ||
+    data.kind === "case";
 
   return (
     <div style={style} className={styles.row} ref={dragHandle}>
@@ -456,38 +489,44 @@ function TestItemsTreeRow({
       {node.isEditing ? (
         <TreeRenameInput node={node} />
       ) : (
-        // 行标签不做截断：react-arborist 的行是 min-width: max-content，宽度不够时树横向滚动，
-        // 标签永远不溢出 → 这里不挂 TruncatedText（否则每行白挂一个 Tooltip 根节点）。
-        <span className={styles.label}>{data.label}</span>
+        // 只在真实溢出时挂 Tooltip；长标签省略后不再挤开右侧状态徽章。
+        <TruncatedText value={data.label} tooltipValue={data.label} className={styles.label} />
       )}
-      {data.count !== undefined ? (
-        <span className={styles.count} data-tone={data.kind === "group" ? tone : undefined}>
-          {data.count}
-        </span>
-      ) : null}
-      {data.kind === "group" && data.typeCode ? (
-        <span className={styles.typeChip} data-tone={tone}>
-          {data.typeCode}
-        </span>
-      ) : null}
-      {data.kind === "item" ? (
-        <>
-          {data.implicit ? <span className={styles.implicitChip}>隐含</span> : null}
-          {data.incomplete ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className={styles.incomplete}>未完善</span>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                {data.missing?.length ? `缺：${data.missing.join("、")}` : "未完善"}
-              </TooltipContent>
-            </Tooltip>
+      {hasMeta ? (
+        <span className={styles.meta}>
+          {data.count !== undefined ? (
+            <span className={styles.count} data-tone={data.kind === "group" ? tone : undefined}>
+              {data.count}
+            </span>
           ) : null}
-        </>
-      ) : null}
-      {data.kind === "case" ? (
-        <span className={styles.caseStatus} data-status={data.status}>
-          {caseStatusLabel(data.status ?? "pending")}
+          {data.kind === "group" && data.typeCode ? (
+            <span className={styles.typeChip} data-tone={tone}>
+              {data.typeCode}
+            </span>
+          ) : null}
+          {data.kind === "item" ? (
+            <>
+              {data.staticBadge ? (
+                <span className={styles.staticProgress}>{data.staticBadge}</span>
+              ) : null}
+              {data.implicit ? <span className={styles.implicitChip}>隐含</span> : null}
+              {data.incomplete ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className={styles.incomplete}>未完善</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {data.missing?.length ? `缺：${data.missing.join("、")}` : "未完善"}
+                  </TooltipContent>
+                </Tooltip>
+              ) : null}
+            </>
+          ) : null}
+          {data.kind === "case" ? (
+            <span className={styles.caseStatus} data-status={data.status}>
+              {caseStatusLabel(data.status ?? "pending")}
+            </span>
+          ) : null}
         </span>
       ) : null}
     </div>

@@ -2,31 +2,65 @@
 
 .trigger {
   align-items: center;
-  background: transparent;
-  border: 1px solid transparent;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 96%, white 4%),
+    color-mix(in srgb, var(--muted) 12%, var(--card))
+  );
+  border: 1px solid color-mix(in srgb, var(--muted-foreground) 30%, var(--border));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card) 84%, transparent),
+    0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
   color: var(--foreground);
   cursor: pointer;
   display: inline-flex;
-  gap: 0.3rem;
+  font-size: 0.74rem;
+  font-weight: 560;
+  gap: 0.34rem;
   max-width: min(18rem, 100%);
-  min-height: 1.5rem;
-  padding: 0.08rem 0.42rem;
+  min-height: 2rem;
+  padding: 0.2rem 0.5rem;
   transition:
     background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
     border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1),
     color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .trigger:hover {
-  background: color-mix(in srgb, var(--primary) 6%, transparent);
-  border-color: color-mix(in srgb, var(--primary) 26%, transparent);
-  color: var(--primary);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 5%, var(--card)),
+    color-mix(in srgb, var(--primary) 9%, var(--card))
+  );
+  border-color: color-mix(in srgb, var(--primary) 48%, var(--border));
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--primary) 72%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--primary) 9%, transparent),
+    0 6px 18px -14px color-mix(in srgb, var(--primary) 80%, transparent);
+  color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
 }
 
 .trigger:focus-visible {
   border-color: var(--ring);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 45%, transparent);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--ring) 38%, transparent),
+    inset 2px 0 0 var(--ring);
   outline: none;
+}
+
+.trigger[data-state="open"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 8%, var(--card)),
+    color-mix(in srgb, var(--primary) 13%, var(--card))
+  );
+  border-color: color-mix(in srgb, var(--primary) 62%, var(--border));
+  box-shadow:
+    inset 2px 0 0 var(--primary),
+    0 0 0 2px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 8px 20px -16px color-mix(in srgb, var(--primary) 92%, transparent);
+  color: color-mix(in srgb, var(--primary) 92%, var(--foreground));
 }
 
 .trigger > span {
@@ -36,7 +70,31 @@
 }
 
 .trigger[data-empty="true"] {
-  color: var(--muted-foreground);
+  border-style: dashed;
+  color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
+}
+
+.avatar {
+  background: color-mix(in srgb, var(--muted-foreground) 9%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  flex: none;
+  height: 0.92rem;
+  padding: 0.1rem;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+  width: 0.92rem;
+}
+
+.trigger:not([data-empty="true"]) .avatar {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.trigger:hover .avatar,
+.trigger[data-state="open"] .avatar {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
 }
 
 .popover {
@@ -53,8 +111,21 @@
 
 .chevron {
   color: color-mix(in srgb, var(--muted-foreground) 76%, transparent);
+  flex: none;
   height: 0.75rem;
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease;
   width: 0.75rem;
+}
+
+.trigger:hover .chevron,
+.trigger[data-state="open"] .chevron {
+  color: var(--primary);
+}
+
+.trigger[data-state="open"] .chevron {
+  transform: rotate(180deg);
 }
 
 .check {
@@ -72,7 +143,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trigger {
+  .trigger,
+  .avatar,
+  .chevron {
     transition: none;
+  }
+
+  .trigger[data-state="open"] .chevron {
+    transform: none;
   }
 }

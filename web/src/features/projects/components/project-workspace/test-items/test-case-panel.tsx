@@ -48,6 +48,7 @@ function TestCasePanelInner({
   onBack,
   onPatchCase,
   onCaseChanged,
+  focusStep,
 }: {
   /** 所属测试项（Hero 里显示，返回按钮也回到它）。 */
   item: TestItemRecord;
@@ -64,6 +65,7 @@ function TestCasePanelInner({
   onBack: () => void;
   onPatchCase: (payload: UpdateCasePayload) => Promise<unknown>;
   onCaseChanged: () => void;
+  focusStep?: { stepId: string; nonce: number } | null;
 }) {
   // 综述「从描述回填」按钮：走同一条保存链路（保存脉冲、Ctrl+Z 撤销同源）。
   const summaryCellRef = useRef<EditableCellHandle>(null);
@@ -345,6 +347,7 @@ function TestCasePanelInner({
                     onCaseChanged={onCaseChanged}
                     recordChange={recordChange}
                     onOpenShortcuts={openShortcuts}
+                    focusStep={focusStep}
                   />
                 </td>
               </tr>

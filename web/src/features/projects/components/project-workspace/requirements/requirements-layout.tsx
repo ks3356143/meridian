@@ -4,7 +4,6 @@ import {
   Suspense,
   useCallback,
   useDeferredValue,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -26,6 +25,7 @@ import {
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { requirementsApi } from "@/features/requirements/api";
 import type { RequirementRecord, SaveRequirementPayload } from "@/features/requirements/types";
 import type { Project } from "../../../types";
@@ -79,7 +79,7 @@ type RequirementCreateSeed = {
 };
 
 export function RequirementsLayout({ project }: { project: Project }) {
-  const wideLayout = useWideLayout();
+  const wideLayout = useMediaQuery("(min-width: 1101px)");
   const {
     workbenchQuery,
     createMutation,
@@ -994,20 +994,6 @@ export function RequirementsLayout({ project }: { project: Project }) {
   );
 }
 
-function useWideLayout() {
-  const query = "(min-width: 1101px)";
-  const [wide, setWide] = useState(() => window.matchMedia(query).matches);
-
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const sync = () => setWide(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
-
-  return wide;
-}
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
     // 动态导入模块变更时不要保留旧 lazy 引用，直接整页失效重载。

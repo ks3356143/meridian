@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -74,6 +74,7 @@ type CaseStepRowProps = {
   index: number;
   stepCount: number;
   projectCode: string;
+  highlighted?: boolean;
   structurePending: boolean;
   canDeleteStep: boolean;
   onMove: (id: string, targetIndex: number) => void;
@@ -95,6 +96,7 @@ const CaseStepRow = memo(function CaseStepRowImpl({
   index,
   stepCount,
   projectCode,
+  highlighted = false,
   structurePending,
   canDeleteStep,
   onMove,
@@ -144,7 +146,12 @@ const CaseStepRow = memo(function CaseStepRowImpl({
   };
 
   return (
-    <tr data-status={step.passed} onKeyDown={handleKeyDown}>
+    <tr
+      data-status={step.passed}
+      data-step-id={step.id}
+      data-search-hit={highlighted ? "true" : undefined}
+      onKeyDown={handleKeyDown}
+    >
       <td className={styles.stepSeq}>{step.seq}</td>
       <td>
         <StepRichCell
@@ -242,12 +249,14 @@ function CaseStepsSectionInner({
   onCaseChanged,
   recordChange,
   onOpenShortcuts,
+  focusStep,
 }: {
   caseId: string;
   projectCode: string;
   onCaseChanged: () => void;
   recordChange: (label: string, restore: () => Promise<unknown>) => void;
   onOpenShortcuts: () => void;
+  focusStep?: { stepId: string; nonce: number } | null;
 }) {
   const {
     stepsQuery,
@@ -266,6 +275,15 @@ function CaseStepsSectionInner({
   // 跨用例复制步骤的剪贴板（localStorage 持久，切用例 / 刷新 / 跨标签页保留）。
   const [clipboard, setClipboard] = useState<StepClipboard | null>(() => readStepClipboard());
   const canDeleteStep = steps.length > 1;
+
+  // 查找命中后等步骤数据到齐再滚动；高亮由 focusStep 派生，切换用例或再次查找时自然更新。
+  useEffect(() => {
+    if (!focusStep || !stepsQuery.isSuccess) return;
+    const row = document.querySelector(`[data-step-id="${CSS.escape(focusStep.stepId)}"]`);
+    if (!row) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    row.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+  }, [focusStep, stepsQuery.isSuccess, steps.length]);
   const structurePending =
     createStepMutation.isPending ||
     duplicateStepMutation.isPending ||
@@ -369,6 +387,7 @@ function CaseStepsSectionInner({
             index={index}
             stepCount={steps.length}
             projectCode={projectCode}
+            highlighted={focusStep?.stepId === step.id}
             structurePending={structurePending}
             canDeleteStep={canDeleteStep}
             onMove={moveStepTo}

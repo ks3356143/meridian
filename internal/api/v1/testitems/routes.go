@@ -24,6 +24,8 @@ func Register(api huma.API, service *testitemsservice.Service) {
 	registerFolders(api, handler)
 	registerSubItems(api, handler)
 	registerCases(api, handler)
+	registerCaseEfficiency(api, handler)
+	registerStaticWorkbenches(api, handler)
 	registerSteps(api, handler)
 	registerLinks(api, handler)
 }
@@ -87,6 +89,10 @@ func (h *Handler) workspace(ctx context.Context, projectCode string) (WorkspaceB
 
 	round, err := h.service.EnsureRound(ctx, projectID)
 	if err != nil {
+		return WorkspaceBody{}, err
+	}
+	// 首次进入按安全等级补齐推荐静态测试项；用户主动删除后不自动回填。
+	if _, err := h.service.EnsureRecommendedStaticItems(ctx, projectID, false); err != nil {
 		return WorkspaceBody{}, err
 	}
 	// 历史静态测试项懒补齐默认测试方法子项（幂等，不覆盖用户改动）。
@@ -444,6 +450,20 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error400BadRequest("只能在同一项目内的用例之间复制步骤")
 	case errors.Is(err, testitemsservice.ErrRequirementSelectionRequired):
 		return huma.Error422UnprocessableEntity("请选择需求")
+	case errors.Is(err, testitemsservice.ErrCaseSelectionRequired):
+		return huma.Error422UnprocessableEntity("请选择用例")
+	case errors.Is(err, testitemsservice.ErrNothingToAssign):
+		return huma.Error422UnprocessableEntity("请至少选择一项要修改的内容")
+	case errors.Is(err, testitemsservice.ErrInvalidCaseStatus):
+		return huma.Error422UnprocessableEntity("用例状态不合法")
+	case errors.Is(err, testitemsservice.ErrInvalidExecDate):
+		return huma.Error422UnprocessableEntity("执行日期格式应为 YYYY-MM-DD")
+	case errors.Is(err, testitemsservice.ErrNotStaticTestItem):
+		return huma.Error400BadRequest("当前测试项不是静态测试项")
+	case errors.Is(err, testitemsservice.ErrStaticVersionConflict):
+		return huma.Error409Conflict("静态工作台已被其他窗口更新，请刷新后重试")
+	case errors.Is(err, testitemsservice.ErrStaticInvalidState):
+		return huma.Error422UnprocessableEntity("静态工作台数据不合法")
 	}
 	// 步骤富文本块的内容校验失败（如「输入及操作」出现表格）按 422 返回。
 	var validationErr *contentblocksservice.ValidationError

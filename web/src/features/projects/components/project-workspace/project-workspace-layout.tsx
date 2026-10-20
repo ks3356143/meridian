@@ -113,7 +113,11 @@ export function ProjectWorkspaceLayout({
           </Tabs>
         </nav>
 
-        <main key={location.pathname} className="workspace-route min-w-0 flex-1">
+        <main
+          key={location.pathname}
+          className="workspace-route min-w-0 flex-1"
+          data-workspace-section={activeSection}
+        >
           {switchingSection ? <QueryLoading label="正在加载工作区模块" rows={6} /> : children}
         </main>
       </div>

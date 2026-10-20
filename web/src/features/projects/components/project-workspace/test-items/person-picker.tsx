@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, UserRound } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -38,8 +38,10 @@ export function PersonPicker({
           type="button"
           className={styles.trigger}
           data-empty={person ? undefined : "true"}
+          aria-haspopup="dialog"
           aria-label={`${label}：${person ? person.displayName || person.username : "未指派"}，点击选择`}
         >
+          <UserRound className={styles.avatar} aria-hidden />
           <span>{person ? person.displayName || person.username : "未指派"}</span>
           <ChevronDown className={styles.chevron} aria-hidden />
         </button>

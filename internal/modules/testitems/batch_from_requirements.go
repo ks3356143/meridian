@@ -36,12 +36,11 @@ type BatchCreateFromRequirementsResult struct {
 }
 
 type batchRequirement struct {
-	ID                 string `gorm:"column:id"`
-	ChapterNumber      string `gorm:"column:chapter_number"`
-	Name               string `gorm:"column:name"`
-	Status             string `gorm:"column:status"`
-	TestItemTaskStatus string `gorm:"column:test_item_task_status"`
-	Description        string `gorm:"column:description"`
+	ID            string `gorm:"column:id"`
+	ChapterNumber string `gorm:"column:chapter_number"`
+	Name          string `gorm:"column:name"`
+	Status        string `gorm:"column:status"`
+	Description   string `gorm:"column:description"`
 }
 
 // CreateTestItemsFromRequirements 按需求批量创建测试项；默认跳过已关联和待补描述需求。
@@ -53,7 +52,7 @@ func (s *Service) CreateTestItemsFromRequirements(
 ) (BatchCreateFromRequirementsResult, error) {
 	result := BatchCreateFromRequirementsResult{}
 	query := s.db.WithContext(ctx).Table("software_requirements").
-		Select("id, chapter_number, name, status, test_item_task_status, description").
+		Select("id, chapter_number, name, status, description").
 		Where("project_id = ?", projectID)
 	if all {
 		query = query.Where("status = ?", "official").Order("chapter_number asc, name asc")
@@ -99,9 +98,7 @@ func (s *Service) CreateTestItemsFromRequirements(
 			result.Items = append(result.Items, item)
 			continue
 		}
-		if (strings.TrimSpace(requirement.TestItemTaskStatus) == "" ||
-			requirement.TestItemTaskStatus == "none") &&
-			strings.TrimSpace(requirement.Description) == "" {
+		if strings.TrimSpace(requirement.Description) == "" {
 			item.Outcome = BatchOutcomeSkippedIncomplete
 			item.Message = ErrRequirementIncomplete.Error()
 			result.Skipped++

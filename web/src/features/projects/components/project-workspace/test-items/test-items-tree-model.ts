@@ -20,6 +20,8 @@ export type TestItemsTreeNode = {
   /** 未完善原因（与详情页完善度同口径），树徽章 tooltip 用。 */
   missing?: string[];
   implicit?: boolean;
+  /** 静态测试进度徽标（已审/总数或文件数）。 */
+  staticBadge?: string;
   status?: string;
   refId?: string;
   /** 用例节点所属测试项 id（跨测试项移动 / 复制时定位目标）。 */
@@ -78,6 +80,14 @@ export function buildTestItemsTree(
     if (item.adequacy.trim() === "") missing.push("充分性要求");
     if (platform === "FPGA" && item.description.trim() === "") missing.push("测试项描述");
     const incomplete = type !== undefined && !type.isStatic && missing.length > 0;
+    const staticBadge =
+      type?.isStatic && item.typeCode === "CW"
+        ? `${typeCounts?.staticFileCount ?? 0} 文件`
+        : type?.isStatic && (item.typeCode === "DC" || item.typeCode === "CR")
+          ? (typeCounts?.staticTotal ?? 0) > 0
+            ? `已审 ${typeCounts?.staticReviewed ?? 0}/${typeCounts?.staticTotal ?? 0}`
+            : "未开始"
+          : undefined;
     return {
       id: `item:${item.id}`,
       kind: "item",
@@ -91,6 +101,7 @@ export function buildTestItemsTree(
       incomplete,
       missing: incomplete ? missing : undefined,
       implicit: item.implicitRequirement,
+      staticBadge,
       refId: item.id,
       children: buildCaseNodes(casesByItem.get(item.id) ?? []),
     };

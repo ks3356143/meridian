@@ -61,6 +61,24 @@ func TestBatchCreateTestItemsFromRequirementsFlow(t *testing.T) {
 		Kind:            "performance",
 	}, http.StatusOK)
 
+	previewRecorder := postJSONRecorder(t, handler, token, http.MethodGet,
+		"/api/v1/projects/"+projectCode+"/test-items/from-requirements/preview", nil)
+	if previewRecorder.Code != http.StatusOK {
+		t.Fatalf("需求创建预览状态码应为 200，实际 %d，响应: %s", previewRecorder.Code, previewRecorder.Body.String())
+	}
+	var preview struct {
+		Total      int `json:"total"`
+		Creatable  int `json:"creatable"`
+		Linked     int `json:"linked"`
+		Incomplete int `json:"incomplete"`
+	}
+	if err := json.Unmarshal(previewRecorder.Body.Bytes(), &preview); err != nil {
+		t.Fatalf("解析需求创建预览失败: %v", err)
+	}
+	if preview.Total != 3 || preview.Creatable != 2 || preview.Linked != 0 || preview.Incomplete != 1 {
+		t.Fatalf("需求创建预览分类不正确: %+v", preview)
+	}
+
 	batchPath := "/api/v1/projects/" + projectCode + "/test-items/from-requirements"
 	recorder := postJSONRecorder(t, handler, token, http.MethodPost, batchPath, map[string]any{
 		"requirementIds": []string{first.ID, second.ID, incomplete.ID},
@@ -106,13 +124,20 @@ func TestBatchCreateTestItemsFromRequirementsFlow(t *testing.T) {
 	}
 	var workspace struct {
 		Items []struct {
-			ID string `json:"id"`
+			ID       string `json:"id"`
+			TypeCode string `json:"typeCode"`
 		} `json:"items"`
 	}
 	if err := json.Unmarshal(workspaceRecorder.Body.Bytes(), &workspace); err != nil {
 		t.Fatalf("解析测试项工作台失败: %v", err)
 	}
-	if len(workspace.Items) != 3 {
-		t.Fatalf("两轮批量后应共有 3 个测试项，实际 %d", len(workspace.Items))
+	dynamicCount := 0
+	for _, item := range workspace.Items {
+		if item.TypeCode != "DC" && item.TypeCode != "SA" && item.TypeCode != "CR" && item.TypeCode != "CW" {
+			dynamicCount++
+		}
+	}
+	if dynamicCount != 3 {
+		t.Fatalf("两轮批量后应共有 3 个动态测试项，实际 %d", dynamicCount)
 	}
 }

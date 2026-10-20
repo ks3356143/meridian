@@ -28,7 +28,7 @@ export function WorkspacePanel({
   contentClassName?: string;
 }) {
   return (
-    <Card data-architecture-panel className={cn("gap-0", className)}>
+    <Card className={cn("gap-0", className)}>
       <CardHeader className="border-b">
         <span className="workspace-panel-icon">
           <Icon aria-hidden />

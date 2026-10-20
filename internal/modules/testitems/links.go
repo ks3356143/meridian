@@ -32,18 +32,17 @@ const requirementRefJoins = "JOIN software_requirements AS req ON req.id = link.
 	"JOIN work_objects AS wo ON wo.id = ver.work_object_id"
 
 type requirementForLink struct {
-	Status             string `gorm:"column:status"`
-	TestItemTaskStatus string `gorm:"column:test_item_task_status"`
-	PrimaryKind        string `gorm:"column:primary_kind"`
-	Name               string `gorm:"column:name"`
-	Description        string `gorm:"column:description"`
+	Status      string `gorm:"column:status"`
+	PrimaryKind string `gorm:"column:primary_kind"`
+	Name        string `gorm:"column:name"`
+	Description string `gorm:"column:description"`
 }
 
 // loadRequirementForLink 统一校验需求归属、正式状态和描述完整度。
 func loadRequirementForLink(tx *gorm.DB, projectID string, requirementID string) (requirementForLink, error) {
 	var requirement requirementForLink
 	err := tx.Table("software_requirements").
-		Select("status, test_item_task_status, primary_kind, name, description").
+		Select("status, primary_kind, name, description").
 		Where("id = ? AND project_id = ?", requirementID, projectID).
 		Take(&requirement).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -55,8 +54,7 @@ func loadRequirementForLink(tx *gorm.DB, projectID string, requirementID string)
 	if requirement.Status != "official" {
 		return requirement, ErrRequirementNotOfficial
 	}
-	if (strings.TrimSpace(requirement.TestItemTaskStatus) == "" || requirement.TestItemTaskStatus == "none") &&
-		strings.TrimSpace(requirement.Description) == "" {
+	if strings.TrimSpace(requirement.Description) == "" {
 		return requirement, ErrRequirementIncomplete
 	}
 	return requirement, nil

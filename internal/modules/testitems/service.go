@@ -2,6 +2,7 @@ package testitems
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -604,6 +605,10 @@ type ItemCounts struct {
 	RequirementCount int `json:"requirementCount"`
 	// IncompleteSubItemCount：操作步骤或通过准则为空的子项数（测试方法完善度、树徽章"未完善"共用）。
 	IncompleteSubItemCount int `json:"incompleteSubItemCount"`
+	// 静态工作台进度（DC/CR 已审 / 总数；CW 文件数）。
+	StaticReviewed  int `json:"staticReviewed,omitempty"`
+	StaticTotal     int `json:"staticTotal,omitempty"`
+	StaticFileCount int `json:"staticFileCount,omitempty"`
 	// SubItemNames：子项名称（树搜索按子项名匹配用）。
 	SubItemNames []string `json:"subItemNames"`
 }
@@ -668,6 +673,41 @@ func (s *Service) CountItemChildren(ctx context.Context, projectID string) (map[
 	for _, row := range nameRows {
 		entry := counts[row.TestItemID]
 		entry.SubItemNames = append(entry.SubItemNames, row.Name)
+		counts[row.TestItemID] = entry
+	}
+
+	var staticRows []staticWorkbenchRow
+	if err := s.db.WithContext(ctx).Where("project_id = ?", projectID).Find(&staticRows).Error; err != nil {
+		return nil, fmt.Errorf("统计静态测试进度失败: %w", err)
+	}
+	for _, row := range staticRows {
+		var state StaticState
+		if err := json.Unmarshal([]byte(row.Payload), &state); err != nil {
+			continue
+		}
+		entry := counts[row.TestItemID]
+		switch row.Kind {
+		case "DC":
+			for _, sheet := range state.ReviewSheets {
+				entry.StaticTotal += len(sheet.Checks)
+				for _, check := range sheet.Checks {
+					if check.Result != "" && check.Result != "unreviewed" {
+						entry.StaticReviewed++
+					}
+				}
+			}
+		case "CR":
+			for _, target := range state.ReviewTargets {
+				entry.StaticTotal += len(target.Checks)
+				for _, check := range target.Checks {
+					if check.Result != "" && check.Result != "unreviewed" {
+						entry.StaticReviewed++
+					}
+				}
+			}
+		case "CW":
+			entry.StaticFileCount = len(state.CodeFiles)
+		}
 		counts[row.TestItemID] = entry
 	}
 

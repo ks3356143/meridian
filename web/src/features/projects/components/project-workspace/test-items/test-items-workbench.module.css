@@ -40,6 +40,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  container-type: inline-size;
 }
 
 .toolbar {
@@ -55,6 +56,16 @@
   box-shadow: 0 10px 22px -16px color-mix(in srgb, var(--primary) 90%, transparent);
 }
 
+.requirementButton {
+  color: color-mix(in srgb, var(--info) 84%, var(--foreground));
+}
+
+.requirementButton:hover {
+  background: color-mix(in srgb, var(--info) 8%, transparent);
+  border-color: color-mix(in srgb, var(--info) 40%, var(--border));
+  color: var(--info);
+}
+
 .folderButton:hover {
   border-color: color-mix(in srgb, var(--info) 45%, transparent);
   box-shadow: 0 0 16px -10px color-mix(in srgb, var(--info) 85%, transparent);
@@ -66,11 +77,18 @@
   border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
   color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
   flex: none;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   margin-left: auto;
   /* 顶部 +1px / 底部 -1px：CJK 字形视觉重心下移 0.5px，总高不变。 */
   padding: calc(0.1rem + 0.5px) 0.4rem calc(0.1rem - 0.5px);
   white-space: nowrap;
+}
+
+/* 默认树宽 380px 时轮次已由详情 hero 展示，隐藏这里防止工具栏撑出横向滚动条。 */
+@container (max-width: 420px) {
+  .roundChip {
+    display: none;
+  }
 }
 
 .toolbarMeta {
@@ -90,7 +108,7 @@
   color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
   display: inline-flex;
   flex: none;
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   gap: 0.22rem;
   /* 顶部 +1px / 底部归零：CJK 字形视觉重心下移 0.5px（见 srs/07-前端体验/03）。 */
   padding: calc(0.05rem + 0.5px) 0.32rem calc(0.05rem - 0.5px);
@@ -257,8 +275,8 @@
 }
 
 .searchInput {
-  font-size: 12px;
-  height: 1.78rem;
+  font-size: 13px;
+  height: 1.9rem;
   padding-inline: 1.55rem 1.7rem;
 }
 
