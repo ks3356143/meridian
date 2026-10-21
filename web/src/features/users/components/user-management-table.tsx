@@ -41,11 +41,12 @@ export function UserManagementTable({
           cell: (info) => <TruncatedText value={info.getValue()} className="font-mono text-xs" />,
         }),
         columnHelper.accessor("displayName", {
-          header: "显示名称",
+          header: "显示名",
           cell: (info) => <TruncatedText value={info.getValue()} className="font-medium" />,
         }),
         columnHelper.accessor("createdAt", {
           header: "创建时间",
+          meta: { hiddenUntil: "lg" },
           cell: (info) =>
             new Date(info.getValue()).toLocaleDateString("zh-CN", { dateStyle: "medium" }),
         }),
@@ -85,5 +86,9 @@ export function UserManagementTable({
     onSortingChange,
   });
 
-  return <DataTable table={table} emptyContent="暂无用户，点击上方按钮添加。" />;
+  return (
+    <div className="panel-surface border-border overflow-hidden rounded-sm border">
+      <DataTable table={table} emptyContent="暂无用户，点击上方按钮添加。" />
+    </div>
+  );
 }

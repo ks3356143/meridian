@@ -47,13 +47,17 @@ export function UserManagementPage() {
       if (!containerRef.current || usersQuery.isPending) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-      gsap.from(".user-management-reveal", {
-        opacity: 0,
-        y: 14,
-        duration: 0.4,
-        stagger: 0.06,
-        ease: "power3.out",
-      });
+      gsap.fromTo(
+        ".user-management-reveal",
+        { opacity: 0.88 },
+        {
+          opacity: 1,
+          duration: 0.2,
+          stagger: 0.03,
+          ease: "power2.out",
+          clearProps: "opacity",
+        },
+      );
     },
     { scope: containerRef, dependencies: [usersQuery.isPending] },
   );

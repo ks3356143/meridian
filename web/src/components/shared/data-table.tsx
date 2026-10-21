@@ -8,7 +8,7 @@ import { DataTableRow } from "./data-table-row";
 import type { DataTableRowData } from "./data-table-types";
 import type { ManagementTableFeatures } from "./table-features";
 
-const DEFAULT_ROW_HEIGHT = 45;
+const DEFAULT_ROW_HEIGHT = 56;
 const DEFAULT_VIRTUAL_HEIGHT = 560;
 const DEFAULT_OVERSCAN = 8;
 const EMPTY_ALIGNED_COLUMNS: number[] = [];

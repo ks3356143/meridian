@@ -19,41 +19,37 @@ export function WorkspaceHome() {
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
       gsap
-        .timeline({ defaults: { ease: "power3.out" } })
+        .timeline({ defaults: { ease: "power2.out" } })
         .fromTo(
           "[data-home-hero]",
-          { opacity: 0, y: 10, scale: 0.998, willChange: "transform, opacity" },
+          { opacity: 0.9 },
           {
             opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.34,
+            duration: 0.2,
             clearProps: "transform,opacity,willChange",
           },
         )
         .fromTo(
           "[data-home-metric]",
-          { opacity: 0.2, y: 6, willChange: "transform, opacity" },
+          { opacity: 0.88 },
           {
             opacity: 1,
-            y: 0,
-            duration: 0.24,
-            stagger: 0.045,
+            duration: 0.18,
+            stagger: 0.02,
             clearProps: "transform,opacity,willChange",
           },
-          "-=0.28",
+          "-=0.16",
         )
         .fromTo(
           [".workspace-home-main", ".workspace-home-aside"],
-          { opacity: 0.25, y: 8, willChange: "transform, opacity" },
+          { opacity: 0.88 },
           {
             opacity: 1,
-            y: 0,
-            duration: 0.3,
-            stagger: 0.05,
+            duration: 0.18,
+            stagger: 0.03,
             clearProps: "transform,opacity,willChange",
           },
-          "-=0.2",
+          "-=0.12",
         );
     },
     { scope: containerRef },

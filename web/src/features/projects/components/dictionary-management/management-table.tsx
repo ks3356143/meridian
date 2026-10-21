@@ -65,8 +65,8 @@ export function ManagementSection({
 
   return (
     <section className="panel-surface border-border relative overflow-hidden rounded-sm border">
-      <span className={cn("absolute inset-y-0 left-0 w-[4px]", toneStyle.bar)} aria-hidden />
-      <div className="border-border flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3 pl-6">
+      <span className={cn("absolute inset-y-0 left-0 w-[3px]", toneStyle.bar)} aria-hidden />
+      <div className="border-border flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3.5 pl-6">
         <div className="flex min-w-0 items-center gap-3">
           <span
             className={cn(

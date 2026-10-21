@@ -46,7 +46,9 @@ export function PageHeader({
           </div>
         </div>
       </div>
-      {actions ? <div className="relative flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="relative flex flex-wrap items-center gap-2 sm:shrink-0">{actions}</div>
+      ) : null}
     </header>
   );
 }

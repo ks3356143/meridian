@@ -38,7 +38,7 @@ function DataTableRowImpl<TData extends DataTableRowData>(props: DataTableRowPro
           <TableCell
             key={cell.id}
             className={cn(
-              "border-border relative max-w-0 border-r px-3 py-2.5 last:border-r-0",
+              "border-border/75 relative max-w-0 border-r px-3 py-3 last:border-r-0",
               alignedColumns.has(index) ? "text-left" : "text-center",
               meta?.hiddenUntil && dataTableResponsiveClasses[meta.hiddenUntil],
             )}

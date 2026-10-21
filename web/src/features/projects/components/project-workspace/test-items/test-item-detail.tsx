@@ -296,7 +296,10 @@ function TestItemDetailPanelInner({
       <div ref={contentRef} className={styles.content}>
         <header className={styles.hero}>
           <div className={styles.heroMain}>
-            <span className={styles.heroIdent}>{item.identifier}</span>
+            <div className={styles.heroMetaLine}>
+              <span className={styles.heroKind}>TEST ITEM</span>
+              <span className={styles.heroIdent}>{item.identifier}</span>
+            </div>
             <div className={styles.heroTitleRow}>
               <span className={styles.titleBar} data-tone={tone} aria-hidden />
               <h2 className={styles.heroTitle}>{item.name}</h2>

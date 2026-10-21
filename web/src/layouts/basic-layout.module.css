@@ -1,3 +1,52 @@
+.sidebar {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--primary) 3.5%, var(--card)),
+      color-mix(in srgb, var(--card) 92%, var(--background))
+    ),
+    var(--card);
+  border-right: 1px solid color-mix(in srgb, var(--primary) 11%, var(--border));
+  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--card) 80%, transparent);
+}
+
+.brandBar {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 88%, transparent),
+    color-mix(in srgb, var(--primary) 3%, var(--card))
+  );
+  border-color: color-mix(in srgb, var(--border) 88%, transparent);
+}
+
+.navBody {
+  padding: 0.875rem;
+}
+
+.profileBar {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 94%, transparent),
+    color-mix(in srgb, var(--background) 72%, var(--card))
+  );
+  border-color: color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+.appHeader {
+  background: color-mix(in srgb, var(--background) 86%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  box-shadow: 0 1px 18px -16px color-mix(in srgb, var(--foreground) 46%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.04);
+  backdrop-filter: blur(12px) saturate(1.04);
+}
+
+.mainContent {
+  margin-inline: auto;
+  max-width: var(--content-max);
+  padding: var(--content-gutter);
+  width: 100%;
+}
+
 .sidebarLink {
   align-items: center;
   background: transparent;
@@ -31,11 +80,11 @@
 .sidebarLink:hover {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--primary) 9%, transparent),
-    color-mix(in srgb, var(--primary) 4%, transparent)
+    color-mix(in srgb, var(--primary) 6%, transparent),
+    color-mix(in srgb, var(--primary) 2%, transparent)
   );
-  border-color: color-mix(in srgb, var(--primary) 24%, transparent);
-  box-shadow: 0 7px 18px -15px color-mix(in srgb, var(--primary) 62%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 14%, transparent);
+  box-shadow: 0 6px 16px -17px color-mix(in srgb, var(--primary) 52%, transparent);
   color: var(--primary);
 }
 
@@ -46,15 +95,15 @@
 .sidebarLink[data-state="active"] {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--primary) 13%, transparent),
-    color-mix(in srgb, var(--info) 5%, transparent)
+    color-mix(in srgb, var(--primary) 9%, transparent),
+    color-mix(in srgb, var(--primary) 3%, transparent)
   );
-  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  border-color: transparent;
   box-shadow:
-    inset 3px 0 0 var(--primary),
-    0 8px 20px -18px color-mix(in srgb, var(--primary) 70%, transparent);
-  color: var(--primary);
-  font-weight: 700;
+    inset 2px 0 0 var(--primary),
+    0 8px 22px -21px color-mix(in srgb, var(--primary) 62%, transparent);
+  color: color-mix(in srgb, var(--primary) 74%, var(--foreground));
+  font-weight: 600;
 }
 
 .sidebarLink[data-state="active"] svg {
@@ -64,12 +113,13 @@
 .sidebarLink[data-state="active"]:hover {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--primary) 16%, transparent),
-    color-mix(in srgb, var(--info) 7%, transparent)
+    color-mix(in srgb, var(--primary) 12%, transparent),
+    color-mix(in srgb, var(--primary) 4%, transparent)
   );
+  border-color: transparent;
   box-shadow:
-    inset 3px 0 0 var(--primary),
-    0 9px 22px -17px color-mix(in srgb, var(--primary) 76%, transparent);
+    inset 2px 0 0 var(--primary),
+    0 9px 24px -21px color-mix(in srgb, var(--primary) 68%, transparent);
 }
 
 .sidebarLink[data-state]:active:not([aria-haspopup]) {

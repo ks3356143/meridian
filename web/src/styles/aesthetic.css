@@ -24,7 +24,7 @@ form > [data-slot="card"].project-create-reveal::before {
   position: absolute;
   inset-block: 0;
   left: 0;
-  width: 4px;
+  width: 3px;
   background: var(--primary);
 }
 

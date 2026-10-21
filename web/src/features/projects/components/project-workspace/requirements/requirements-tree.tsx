@@ -474,16 +474,21 @@ function RequirementsTreeImpl({
                 快捷键与功能说明
               </TooltipContent>
             </Tooltip>
-            <Button
-              type="button"
-              size="sm"
-              aria-label="新增确认需求"
-              className={styles.addButton}
-              onClick={onCreate}
-            >
-              <Plus data-icon="inline-start" aria-hidden />
-              <span className={styles.addLabel}>新增确认需求</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  aria-label="新增确认需求"
+                  className={styles.addButton}
+                  onClick={onCreate}
+                >
+                  <Plus data-icon="inline-start" aria-hidden />
+                  <span className={styles.addLabel}>新增确认需求</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">新增确认需求</TooltipContent>
+            </Tooltip>
           </div>
         </div>
         <div className={styles.searchPanel}>

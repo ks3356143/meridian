@@ -58,7 +58,7 @@ import styles from "./requirements-candidate-workbench.module.css";
 
 const features = managementTableFeatures;
 const CANDIDATE_TABLE_LEFT_ALIGNED_COLUMNS = [1, 2, 3, 4];
-const CANDIDATE_TABLE_VIRTUALIZED = { rowHeight: 45 };
+const CANDIDATE_TABLE_VIRTUALIZED = { rowHeight: 56 };
 
 const columnHelper = createColumnHelper<typeof features, RequirementRecord>();
 const nameIdentifierPrefixPattern = /^\s*\[RQGN[^\]]+\]\s*/i;

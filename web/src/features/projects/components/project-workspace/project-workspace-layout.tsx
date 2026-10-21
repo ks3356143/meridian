@@ -59,13 +59,19 @@ export function ProjectWorkspaceLayout({
 
       gsap.fromTo(
         ".workspace-topbar",
-        { opacity: 0, y: -14 },
-        { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" },
+        { opacity: 0.9 },
+        { opacity: 1, duration: 0.18, ease: "power2.out", clearProps: "opacity" },
       );
       gsap.fromTo(
         ".workspace-primary-nav",
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.3, delay: 0.05, ease: "power3.out" },
+        { opacity: 0.88 },
+        {
+          opacity: 1,
+          duration: 0.2,
+          delay: 0.02,
+          ease: "power2.out",
+          clearProps: "opacity",
+        },
       );
     },
     { scope: containerRef },

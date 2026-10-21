@@ -28,21 +28,24 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
     () => {
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-      gsap.from(".login-reveal", {
-        opacity: 0,
-        y: 16,
-        duration: 0.5,
-        ease: "power3.out",
-      });
+      gsap.fromTo(
+        ".login-reveal",
+        { opacity: 0.9 },
+        { opacity: 1, duration: 0.22, ease: "power2.out", clearProps: "opacity" },
+      );
 
-      gsap.from(".login-field", {
-        opacity: 0,
-        y: 12,
-        duration: 0.45,
-        stagger: 0.06,
-        ease: "power3.out",
-        delay: 0.1,
-      });
+      gsap.fromTo(
+        ".login-field",
+        { opacity: 0.9 },
+        {
+          opacity: 1,
+          duration: 0.18,
+          stagger: 0.03,
+          ease: "power2.out",
+          delay: 0.04,
+          clearProps: "opacity",
+        },
+      );
     },
     { scope: containerRef },
   );

@@ -21,7 +21,10 @@ function CommandInput({
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input>) {
   return (
-    <div data-slot="command-input-wrapper" className="flex h-9 items-center gap-2 border-b px-2">
+    <div
+      data-slot="command-input-wrapper"
+      className="border-border/80 flex h-10 items-center gap-2 border-b px-3 transition-[background-color,border-color] duration-200 ease-[var(--ease-out-strong)] focus-within:border-primary/30 focus-within:bg-primary/5"
+    >
       <Search className="text-muted-foreground size-4 shrink-0" aria-hidden />
       <CommandPrimitive.Input
         data-slot="command-input"
@@ -39,7 +42,7 @@ function CommandList({ className, ...props }: React.ComponentProps<typeof Comman
   return (
     <CommandPrimitive.List
       data-slot="command-list"
-      className={cn("max-h-64 scroll-py-1 overflow-y-auto p-1", className)}
+      className={cn("max-h-64 scroll-py-1 overflow-y-auto p-1.5", className)}
       {...props}
     />
   );
@@ -76,7 +79,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-primary/8 data-[selected=true]:text-primary data-[selected=true]:shadow-[inset_2px_0_0_var(--primary)]",
+        "relative flex cursor-pointer items-center gap-2 rounded-sm px-2.5 py-2 text-sm outline-none select-none transition-[color,background-color,box-shadow] duration-150 ease-[var(--ease-out-strong)] data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-primary/8 data-[selected=true]:text-primary data-[selected=true]:shadow-[inset_2px_0_0_var(--primary)]",
         className,
       )}
       {...props}

@@ -494,64 +494,70 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   const treePane = (
     <aside className={styles.treePane}>
       <div className={styles.toolbar}>
-        <Button size="sm" className={styles.createButton} onClick={() => setCreateOpen(true)}>
-          <Plus aria-hidden />
-          新增测试项
-        </Button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="outline"
-              className={styles.requirementButton}
-              aria-label="从已确认需求创建测试项"
-              onClick={() => setRequirementsOpen(true)}
-            >
-              <ListPlus aria-hidden />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">从已确认需求创建测试项</TooltipContent>
-        </Tooltip>
-        <Button
-          size="sm"
-          variant="outline"
-          className={styles.folderButton}
-          onClick={() => setFolderOpen(true)}
-        >
-          <FolderPlus aria-hidden />
-          新建文件夹
-        </Button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="outline"
-              aria-label="补齐推荐静态测试项"
-              disabled={ensureStaticItemsMutation.isPending}
-              onClick={() => ensureStaticItemsMutation.mutate()}
-            >
-              <Sparkles aria-hidden />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">按安全等级补齐静态测试项</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="outline"
-              aria-label="删除全部静态测试项"
-              disabled={staticItemCount === 0}
-              onClick={() => setStaticDeleteOpen(true)}
-            >
-              <Trash2 aria-hidden />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">删除全部静态测试项</TooltipContent>
-        </Tooltip>
+        <div className={styles.toolbarPrimary}>
+          <Button size="sm" className={styles.createButton} onClick={() => setCreateOpen(true)}>
+            <Plus aria-hidden />
+            新增测试项
+          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="outline"
+                className={styles.requirementButton}
+                aria-label="从已确认需求创建测试项"
+                onClick={() => setRequirementsOpen(true)}
+              >
+                <ListPlus aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">从已确认需求创建测试项</TooltipContent>
+          </Tooltip>
+          <Button
+            size="sm"
+            variant="outline"
+            className={styles.folderButton}
+            onClick={() => setFolderOpen(true)}
+          >
+            <FolderPlus aria-hidden />
+            新建文件夹
+          </Button>
+        </div>
+        <div className={styles.toolbarSecondary}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="outline"
+                className={styles.utilityButton}
+                aria-label="补齐推荐静态测试项"
+                disabled={ensureStaticItemsMutation.isPending}
+                onClick={() => ensureStaticItemsMutation.mutate()}
+              >
+                <Sparkles aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">按安全等级补齐静态测试项</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="outline"
+                className={`${styles.utilityButton} ${styles.utilityDanger}`}
+                aria-label="删除全部静态测试项"
+                disabled={staticItemCount === 0}
+                onClick={() => setStaticDeleteOpen(true)}
+              >
+                <Trash2 aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">删除全部静态测试项</TooltipContent>
+          </Tooltip>
+        </div>
         <span className={styles.roundChip}>{workspace.round.name}</span>
       </div>
       <div className={styles.searchRow}>

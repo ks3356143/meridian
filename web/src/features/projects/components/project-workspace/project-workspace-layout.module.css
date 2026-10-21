@@ -6,7 +6,7 @@
   position: relative;
   overflow-y: hidden;
   border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--primary) 40%, var(--border));
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
   background: var(--card);
   height: 2.5rem;
   padding: 0;
@@ -24,7 +24,7 @@
   bottom: 0;
   z-index: 0;
   height: 1px;
-  background: color-mix(in srgb, var(--primary) 40%, var(--border));
+  background: color-mix(in srgb, var(--primary) 30%, var(--border));
 }
 
 .tabTrigger {
@@ -32,7 +32,7 @@
   z-index: 1;
   isolation: isolate;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--border));
   border-bottom-color: transparent;
   border-radius: 0;
   height: calc(100% + 1px);
@@ -75,7 +75,7 @@
 }
 
 .tabTrigger:hover {
-  border-color: color-mix(in srgb, var(--primary) 36%, var(--border));
+  border-color: color-mix(in srgb, var(--primary) 26%, var(--border));
   border-bottom-color: transparent;
   background: linear-gradient(
     180deg,
@@ -86,19 +86,19 @@
 }
 
 .tabTrigger[data-state="active"] {
-  border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
   border-bottom-color: transparent;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--primary) 20%, var(--card)),
-    color-mix(in srgb, var(--primary) 10%, var(--card)) 58%,
+    color-mix(in srgb, var(--primary) 14%, var(--card)),
+    color-mix(in srgb, var(--primary) 7%, var(--card)) 58%,
     var(--card)
   );
   color: var(--primary);
   font-weight: 650;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--card) 82%, transparent),
-    inset 0 -3px 0 var(--primary),
+    inset 0 -2px 0 var(--primary),
     0 -6px 16px -16px color-mix(in srgb, var(--primary) 64%, transparent),
     0 6px 16px -16px color-mix(in srgb, var(--primary) 42%, transparent);
 }
@@ -118,12 +118,12 @@
 
 :global(.dark) .tabList,
 :global(.dark) .tabList::after {
-  border-color: color-mix(in srgb, var(--primary) 44%, var(--border));
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--border));
   background: color-mix(in srgb, var(--card) 94%, transparent);
 }
 
 :global(.dark) .tabTrigger {
-  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--border));
   border-bottom-color: transparent;
   background: linear-gradient(
     180deg,
@@ -133,19 +133,19 @@
 }
 
 :global(.dark) .tabTrigger[data-state="active"] {
-  border-color: color-mix(in srgb, var(--primary) 64%, var(--border));
+  border-color: color-mix(in srgb, var(--primary) 48%, var(--border));
   border-bottom-color: transparent;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--primary) 28%, var(--card)),
-    color-mix(in srgb, var(--primary) 14%, var(--card)) 58%,
+    color-mix(in srgb, var(--primary) 20%, var(--card)),
+    color-mix(in srgb, var(--primary) 10%, var(--card)) 58%,
     color-mix(in srgb, var(--card) 90%, transparent)
   );
   color: color-mix(in srgb, var(--primary) 84%, white);
   font-weight: 650;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
-    inset 0 -3px 0 color-mix(in srgb, var(--primary) 82%, white),
+    inset 0 -2px 0 color-mix(in srgb, var(--primary) 82%, white),
     0 -6px 16px -16px color-mix(in srgb, var(--primary) 68%, transparent);
 }
 @media (max-width: 600px) {

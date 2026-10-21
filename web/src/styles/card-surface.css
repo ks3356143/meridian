@@ -17,7 +17,7 @@
     var(--primary) 48%,
     color-mix(in srgb, var(--primary) 72%, var(--warning))
   );
-  width: 3px;
+  width: 2px;
   position: absolute;
   left: 0;
 }

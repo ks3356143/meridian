@@ -43,26 +43,26 @@ export function ProjectDetail({ project }: { project: Project }) {
 
       gsap.fromTo(
         ".project-detail-enter",
-        { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.34, stagger: 0.06, ease: "power3.out" },
+        { opacity: 0.9 },
+        { opacity: 1, duration: 0.2, stagger: 0.025, ease: "power2.out", clearProps: "opacity" },
       );
       gsap.fromTo(
         ".project-detail-enter-item",
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.28, stagger: 0.035, ease: "power3.out" },
+        { opacity: 0.9 },
+        { opacity: 1, duration: 0.18, stagger: 0.018, ease: "power2.out", clearProps: "opacity" },
       );
     },
     { scope: containerRef },
   );
 
   return (
-    <div ref={containerRef} className="flex min-w-0 flex-col gap-5">
+    <div ref={containerRef} className="flex min-w-0 flex-col gap-6">
       <header className="project-detail-hero project-detail-enter panel-surface relative overflow-hidden rounded-sm border">
         <span
-          className="from-primary via-info to-warning absolute inset-y-0 left-0 w-2 bg-gradient-to-b"
+          className="from-primary via-info to-warning absolute inset-y-0 left-0 w-1 bg-gradient-to-b"
           aria-hidden
         />
-        <div className="relative z-10 grid gap-5 p-4 pl-6 lg:grid-cols-[minmax(0,1fr)_310px] lg:items-start">
+        <div className="relative z-10 grid gap-5 p-5 pl-7 lg:grid-cols-[minmax(0,1fr)_310px] lg:items-start">
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex items-start gap-3">
               <Button

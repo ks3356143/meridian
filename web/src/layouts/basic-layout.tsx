@@ -83,20 +83,22 @@ export default function BasicLayout() {
 
   return (
     <div className="bg-background flex min-h-svh flex-col min-[900px]:grid min-[900px]:grid-cols-[236px_minmax(0,1fr)]">
-      <aside className="border-border bg-card/50 sticky top-0 z-20 hidden h-svh flex-col overflow-hidden border-r min-[900px]:flex [view-transition-name:app-sidebar]">
+      <aside
+        className={`${styles.sidebar} sticky top-0 z-20 hidden h-svh flex-col overflow-hidden min-[900px]:flex [view-transition-name:app-sidebar]`}
+      >
         <div
           className="visual-glow pointer-events-none absolute -top-24 -right-20 size-80 opacity-35"
           aria-hidden
         />
-        <div className="border-border relative flex h-14 items-center gap-2.5 border-b px-5">
+        <div className={`${styles.brandBar} relative flex h-14 items-center gap-2.5 border-b px-5`}>
           <BrandLogo className="text-primary size-8 shrink-0" />
           <div className="min-w-0">
             <p className="brand-wordmark truncate text-sm font-semibold">ChenMeridian</p>
             <p className="text-muted-foreground font-mono text-[10px]">V0.0.2</p>
           </div>
         </div>
-        <div className="relative flex flex-1 flex-col p-3">{navigation}</div>
-        <div className="border-border relative flex items-center gap-2 border-t px-5 py-3">
+        <div className={`${styles.navBody} relative flex flex-1 flex-col`}>{navigation}</div>
+        <div className={`${styles.profileBar} relative flex items-center gap-2 border-t px-5 py-3`}>
           <ShieldCheck className="text-primary size-4" aria-hidden />
           <div className="min-w-0">
             <p className="truncate text-xs font-medium">{user.displayName}</p>
@@ -105,7 +107,9 @@ export default function BasicLayout() {
       </aside>
 
       <div className="flex min-h-svh flex-col">
-        <header className="border-border bg-background/92 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-4 [view-transition-name:app-header] shadow-[0_1px_10px_-8px_rgb(20_42_30_/_0.32)] backdrop-blur">
+        <header
+          className={`${styles.appHeader} sticky top-0 z-10 flex h-14 items-center justify-between gap-4 px-4 [view-transition-name:app-header]`}
+        >
           <div className="flex min-w-0 items-center gap-3">
             <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
@@ -138,7 +142,7 @@ export default function BasicLayout() {
             </Button>
           </div>
         </header>
-        <main className="flex-1 p-5 sm:p-6 lg:p-8">
+        <main className={`${styles.mainContent} flex-1`}>
           <Outlet />
         </main>
       </div>

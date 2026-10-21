@@ -17,6 +17,14 @@
 .hero {
   align-items: flex-start;
   background:
+    linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--primary) 2.2%, transparent) 1px,
+        transparent 1px
+      )
+      0 0 / 28px 28px,
+    linear-gradient(0deg, color-mix(in srgb, var(--primary) 2.2%, transparent) 1px, transparent 1px)
+      0 0 / 28px 28px,
     linear-gradient(180deg, color-mix(in srgb, var(--primary) 6%, transparent), transparent 68%),
     color-mix(in srgb, var(--card) 97%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
@@ -25,6 +33,20 @@
   gap: 0.9rem;
   justify-content: space-between;
   padding: 1rem 1.1rem 0.85rem;
+  position: relative;
+}
+
+.hero::after {
+  border-right: 1px solid color-mix(in srgb, var(--primary) 38%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--primary) 38%, transparent);
+  content: "";
+  height: 10px;
+  opacity: 0.72;
+  pointer-events: none;
+  position: absolute;
+  right: 0.55rem;
+  top: 0.55rem;
+  width: 10px;
 }
 
 .heroMain {
@@ -41,6 +63,32 @@
   font-size: 0.86rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.heroMetaLine {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.heroKind {
+  align-items: center;
+  color: color-mix(in srgb, var(--primary) 78%, var(--muted-foreground));
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.heroKind::before {
+  background: color-mix(in srgb, var(--primary) 72%, transparent);
+  box-shadow: 0 0 7px -1px color-mix(in srgb, var(--primary) 75%, transparent);
+  content: "";
+  height: 4px;
+  margin-right: 0.34rem;
+  width: 4px;
 }
 
 .heroTitleRow {
@@ -302,10 +350,35 @@
   justify-content: center;
   min-width: 210px;
   padding: 0.4rem 0.5rem;
+  position: relative;
   transition:
     box-shadow 0.24s ease,
     background-color 0.24s ease;
   width: 232px;
+}
+
+.heroCompleteness::before,
+.heroCompleteness::after {
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+  content: "";
+  height: 7px;
+  pointer-events: none;
+  position: absolute;
+  width: 7px;
+}
+
+.heroCompleteness::before {
+  border-left: 1px solid;
+  border-top: 1px solid;
+  left: 3px;
+  top: 3px;
+}
+
+.heroCompleteness::after {
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+  bottom: 3px;
+  right: 3px;
 }
 
 .heroCompleteness[data-state="incomplete"] {
@@ -438,8 +511,12 @@
   align-items: center;
   backdrop-filter: blur(8px);
   position: sticky;
-  background: color-mix(in srgb, var(--background) 86%, transparent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--primary) 2%, transparent) 1px, transparent 1px)
+      0 0 / 24px 24px,
+    color-mix(in srgb, var(--background) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  box-shadow: 0 10px 20px -22px color-mix(in srgb, var(--primary) 72%, transparent);
   display: flex;
   gap: 0.35rem;
   padding: 0.4rem 6rem 0.4rem 1.1rem;
@@ -455,6 +532,7 @@
   font-size: 0.76rem;
   min-height: 1.5rem;
   padding: 0.18rem 0.5rem;
+  position: relative;
   transition:
     background-color 0.18s ease,
     color 0.18s ease,
@@ -462,18 +540,45 @@
   white-space: nowrap;
 }
 
+.sectionLink::after {
+  background: var(--primary);
+  bottom: 0;
+  content: "";
+  height: 1.5px;
+  left: 0.42rem;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0.42rem;
+  transform: scaleX(0.35);
+  transform-origin: left;
+  transition:
+    opacity 0.16s ease,
+    transform 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
 .sectionLink:hover {
   background: color-mix(in srgb, var(--primary) 7%, transparent);
   color: var(--foreground);
 }
 
+.sectionLink:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--primary) 62%, transparent);
+  outline-offset: -1px;
+}
+
 .sectionLink[data-active="true"] {
-  background: color-mix(in srgb, var(--primary) 13%, transparent);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--primary) 26%, transparent),
     0 0 14px -8px color-mix(in srgb, var(--primary) 80%, transparent);
   color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
   font-weight: 640;
+}
+
+.sectionLink[data-active="true"]::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 /* ---------- Word 表格 ---------- */
@@ -486,20 +591,28 @@
 
 .itemTable {
   background: color-mix(in srgb, var(--card) 97%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
   border-collapse: collapse;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent),
+    0 12px 28px -30px color-mix(in srgb, var(--primary) 72%, transparent);
   min-width: 860px;
   table-layout: fixed;
   width: 100%;
 }
 
 .itemTable th[scope="row"] {
-  background: color-mix(in srgb, var(--muted-foreground) 7%, var(--card));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 5%, var(--card)),
+    color-mix(in srgb, var(--muted-foreground) 7%, var(--card))
+  );
   border: 1px solid var(--border);
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
   font-size: 0.74rem;
   font-weight: 640;
   padding: 0.35rem 0.5rem;
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--primary) 24%, transparent);
   text-align: center;
   transition:
     background-color 0.2s ease,
@@ -870,14 +983,42 @@
 /* ---------- 用例概况 ---------- */
 
 .caseCard {
-  background: color-mix(in srgb, var(--card) 97%, transparent);
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 3%, transparent), transparent 38%),
+    color-mix(in srgb, var(--card) 97%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--border));
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent),
+    0 14px 30px -32px color-mix(in srgb, var(--primary) 72%, transparent);
   margin: 0.9rem 1.1rem 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.caseCard::before {
+  background: linear-gradient(
+    90deg,
+    var(--primary),
+    color-mix(in srgb, var(--info) 72%, var(--primary)) 34%,
+    transparent 82%
+  );
+  content: "";
+  height: 1px;
+  left: 0;
+  opacity: 0.64;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
 }
 
 .caseHeader {
   align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 5%, var(--card)),
+    color-mix(in srgb, var(--card) 96%, transparent)
+  );
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-wrap: wrap;
@@ -957,7 +1098,11 @@
 }
 
 .caseTable th {
-  background: color-mix(in srgb, var(--muted-foreground) 7%, var(--card));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 4%, var(--card)),
+    color-mix(in srgb, var(--muted-foreground) 7%, var(--card))
+  );
   border-bottom: 1px solid var(--border);
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
   font-size: 0.7rem;
@@ -1044,6 +1189,10 @@
   .unlinkButton,
   .caseTable td,
   .linkChip {
+    transition: none;
+  }
+
+  .sectionLink::after {
     transition: none;
   }
 
