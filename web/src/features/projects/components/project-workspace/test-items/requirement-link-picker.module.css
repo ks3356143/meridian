@@ -76,7 +76,7 @@
   min-width: 0;
   padding: 0.3rem 0.35rem;
   text-align: left;
-  transition: background-color 0.16s ease;
+  transition: background-color 0.16s var(--ease-out-strong);
 }
 
 .linkResult:hover {

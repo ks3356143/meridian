@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { DictionaryManagementTab } from "./dictionary-management-tab";
 import { StandardManagementTab } from "./standard-management-tab";
 import { RelatedPartyManagementTab } from "./related-party-management-tab";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 
 export function DictionaryManagementPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -13,24 +13,7 @@ export function DictionaryManagementPage() {
     "dictionaries",
   );
 
-  useGSAP(
-    () => {
-      if (!containerRef.current) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      gsap.fromTo(
-        ".dictionary-reveal",
-        { opacity: 0.88 },
-        {
-          opacity: 1,
-          duration: 0.2,
-          stagger: 0.03,
-          ease: "power2.out",
-          clearProps: "opacity",
-        },
-      );
-    },
-    { scope: containerRef },
-  );
+  useSubtleReveal(containerRef, ".dictionary-reveal");
 
   return (
     <div ref={containerRef} className="flex flex-col gap-6">
@@ -42,7 +25,10 @@ export function DictionaryManagementPage() {
       />
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-        <TabsList variant="line" className="dictionary-reveal w-full max-w-3xl justify-start">
+        <TabsList
+          variant="line"
+          className="dictionary-reveal w-full max-w-3xl justify-start overflow-x-auto"
+        >
           <TabsTrigger value="dictionaries">
             <BookMarked aria-hidden />
             技术字典

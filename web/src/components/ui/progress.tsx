@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as ProgressPrimitive from "radix-ui/progress";
 import { cn } from "cn";
+import styles from "./progress.module.css";
 
 function Progress({
   className,
@@ -16,8 +17,8 @@ function Progress({
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="bg-primary h-full w-full flex-none origin-left transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
-        style={{ transform: `translateX(-${100 - (value ?? 0)}%)` }}
+        className={cn("bg-primary h-full w-full flex-none origin-left", styles.indicator)}
+        style={{ "--progress-offset": `-${100 - (value ?? 0)}%` } as React.CSSProperties}
       />
     </ProgressPrimitive.Root>
   );

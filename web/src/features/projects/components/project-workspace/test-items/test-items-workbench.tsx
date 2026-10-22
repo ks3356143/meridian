@@ -514,15 +514,21 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             </TooltipTrigger>
             <TooltipContent side="bottom">从已确认需求创建测试项</TooltipContent>
           </Tooltip>
-          <Button
-            size="sm"
-            variant="outline"
-            className={styles.folderButton}
-            onClick={() => setFolderOpen(true)}
-          >
-            <FolderPlus aria-hidden />
-            新建文件夹
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className={styles.folderButton}
+                aria-label="新建文件夹"
+                onClick={() => setFolderOpen(true)}
+              >
+                <FolderPlus aria-hidden />
+                <span className={styles.folderLabel}>新建文件夹</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">新建文件夹</TooltipContent>
+          </Tooltip>
         </div>
         <div className={styles.toolbarSecondary}>
           <Tooltip>

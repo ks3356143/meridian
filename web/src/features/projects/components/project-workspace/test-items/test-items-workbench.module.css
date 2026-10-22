@@ -103,7 +103,7 @@
   box-shadow: 0 10px 22px -16px color-mix(in srgb, var(--primary) 90%, transparent);
   transition:
     transform 0.16s cubic-bezier(0.23, 1, 0.32, 1),
-    box-shadow 0.16s ease;
+    box-shadow 0.16s var(--ease-out-strong);
 }
 
 .createButton:hover {
@@ -135,9 +135,9 @@
 .folderButton {
   transition:
     transform 0.16s cubic-bezier(0.23, 1, 0.32, 1),
-    border-color 0.16s ease,
-    box-shadow 0.16s ease,
-    color 0.16s ease;
+    border-color 0.16s var(--ease-out-strong),
+    box-shadow 0.16s var(--ease-out-strong),
+    color 0.16s var(--ease-out-strong);
 }
 
 .folderButton:active,
@@ -150,9 +150,9 @@
   border-color: color-mix(in srgb, var(--border) 88%, transparent);
   transition:
     transform 0.16s cubic-bezier(0.23, 1, 0.32, 1),
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease;
+    background-color 0.16s var(--ease-out-strong),
+    border-color 0.16s var(--ease-out-strong),
+    color 0.16s var(--ease-out-strong);
 }
 
 .utilityButton:hover {
@@ -184,9 +184,21 @@
 }
 
 /* 默认树宽 380px 时轮次已由详情 hero 展示，隐藏这里防止工具栏撑出横向滚动条。 */
+.folderLabel {
+  white-space: nowrap;
+}
+
 @container (max-width: 420px) {
   .roundChip {
     display: none;
+  }
+
+  .folderLabel {
+    display: none;
+  }
+
+  .folderButton {
+    padding-inline: 0.55rem;
   }
 }
 
@@ -376,7 +388,7 @@
   position: absolute;
   width: 0.78rem;
   z-index: 1;
-  transition: color 0.16s ease;
+  transition: color 0.16s var(--ease-out-strong);
 }
 
 .searchField:focus-within .searchGlyph {
@@ -426,10 +438,10 @@
   border-color: color-mix(in srgb, var(--border) 90%, transparent);
   font-weight: 620;
   transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease,
-    color 0.16s ease;
+    background-color 0.16s var(--ease-out-strong),
+    border-color 0.16s var(--ease-out-strong),
+    box-shadow 0.16s var(--ease-out-strong),
+    color 0.16s var(--ease-out-strong);
 }
 
 .quickChip:hover {
@@ -472,9 +484,9 @@
   justify-content: center;
   transition:
     transform 0.16s cubic-bezier(0.23, 1, 0.32, 1),
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+    background-color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong),
+    color 0.18s var(--ease-out-strong);
   width: 1.5rem;
 }
 

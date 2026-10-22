@@ -63,6 +63,33 @@
   background: linear-gradient(to right, transparent 46%, var(--primary) 50%, transparent 54%);
 }
 
+.page-header-beam {
+  overflow: hidden;
+}
+
+.page-header-beam::after {
+  inset: -1px auto -1px -22%;
+  width: 22%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, var(--primary) 72%, transparent),
+    transparent
+  );
+  animation: page-header-beam-sweep var(--motion-loop) linear infinite;
+  will-change: transform;
+}
+
+@keyframes page-header-beam-sweep {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(560%);
+  }
+}
+
 .visual-glow {
   background: radial-gradient(
     circle,
@@ -159,8 +186,13 @@
   .shiny-text,
   .visual-wordmark,
   .globe-wireframe,
-  .orbit-spin {
+  .orbit-spin,
+  .page-header-beam::after {
     animation: none;
+  }
+
+  .page-header-beam::after {
+    opacity: 0;
   }
 
   .brand-wordmark {

@@ -164,7 +164,7 @@
       transparent 28rem
     ),
     var(--card);
-  animation: workspace-route-enter 0.28s ease-out;
+  animation: workspace-route-enter 220ms var(--ease-out-strong);
 }
 
 .workspace-route[data-workspace-section="assets"] {
@@ -207,12 +207,10 @@ main.workspace-route::-webkit-scrollbar-thumb {
 
 @keyframes workspace-route-enter {
   from {
-    opacity: 0.35;
-    transform: translateY(5px);
+    opacity: 0.88;
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -352,6 +350,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
     border-color 0.2s,
     background-color 0.2s,
     box-shadow 0.2s;
+  transition-timing-function: var(--ease-out-strong);
 }
 
 .workspace-task-row:hover {
@@ -364,7 +363,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
   align-self: stretch;
   width: 3px;
   flex: none;
-  transition: box-shadow 0.22s ease;
+  transition: box-shadow 0.22s var(--ease-out-strong);
 }
 
 .workspace-task-row:hover .workspace-task-rail {
@@ -520,6 +519,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
     border-color 0.2s,
     background-color 0.2s,
     box-shadow 0.2s;
+  transition-timing-function: var(--ease-out-strong);
 }
 
 .received-dropzone:hover,
@@ -603,6 +603,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
   transition:
     background-color 0.2s,
     box-shadow 0.2s;
+  transition-timing-function: var(--ease-out-strong);
 }
 
 .workspace-resizable-handle:hover,
@@ -875,6 +876,9 @@ main.workspace-route::-webkit-scrollbar-thumb {
   padding-inline: 0.625rem;
   font-size: 0.78rem;
   font-weight: 650;
+}
+
+.workspace-topbar-metric {
   display: inline-flex;
 }
 

@@ -113,8 +113,8 @@
   padding: 0.3rem 0.45rem;
   position: relative;
   transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    border-color 0.18s var(--ease-out-strong),
+    box-shadow 0.18s var(--ease-out-strong);
 }
 
 .stat::before {

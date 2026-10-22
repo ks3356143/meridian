@@ -160,10 +160,10 @@
   padding: 0.2rem 0.38rem;
   white-space: nowrap;
   transition:
-    background-color 0.22s ease,
-    border-color 0.22s ease,
-    box-shadow 0.22s ease,
-    color 0.22s ease;
+    background-color 0.22s var(--ease-out-strong),
+    border-color 0.22s var(--ease-out-strong),
+    box-shadow 0.22s var(--ease-out-strong),
+    color 0.22s var(--ease-out-strong);
 }
 
 .incompleteHint {
@@ -255,6 +255,7 @@
   flex-direction: column;
   gap: 0.45rem;
   min-height: 0;
+  min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
@@ -285,15 +286,6 @@
 
 .body::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--info) 62%, var(--muted));
-}
-
-.fabSentinel {
-  height: 500px;
-  left: 0;
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  width: 100%;
 }
 
 .bodyLoading {
@@ -356,7 +348,8 @@
 }
 
 .descriptionTitle::before {
-  transition: height 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+  scale: 1;
+  transition: scale 0.26s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .descriptionHeader[data-stuck="true"] .descriptionTitle {
@@ -364,7 +357,7 @@
 }
 
 .descriptionHeader[data-stuck="true"] .descriptionTitle::before {
-  height: 1.05rem;
+  scale: 1 1.1667;
 }
 
 .descriptionActions {
@@ -625,7 +618,8 @@
   }
 
   .body {
-    overflow: visible;
+    overflow-x: clip;
+    overflow-y: visible;
   }
 
   .grid {
@@ -720,8 +714,8 @@
     opacity 220ms cubic-bezier(0.32, 0.72, 0, 1),
     scale 220ms cubic-bezier(0.32, 0.72, 0, 1),
     translate 220ms cubic-bezier(0.32, 0.72, 0, 1),
-    overlay 220ms allow-discrete,
-    display 220ms allow-discrete;
+    overlay 220ms cubic-bezier(0.32, 0.72, 0, 1) allow-discrete,
+    display 220ms cubic-bezier(0.32, 0.72, 0, 1) allow-discrete;
   translate: 0 0.5rem;
   width: min(76rem, calc(100vw - 2rem));
 }
@@ -788,9 +782,9 @@
   margin-top: -0.15rem;
   padding: 0;
   transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+    background-color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong),
+    color 0.18s var(--ease-out-strong);
   width: 1.75rem;
 }
 

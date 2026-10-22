@@ -61,6 +61,7 @@ export function Component() {
         duration: 0.5,
         stagger: 0.07,
         ease: "power3.out",
+        clearProps: "transform,opacity",
       });
 
       const root = containerRef.current;
@@ -73,14 +74,8 @@ export function Component() {
           { innerText: target, duration: 0.8, ease: "power2.out", snap: { innerText: 1 } },
         );
       });
-
-      gsap.fromTo(
-        ".page-header .meridian-beam",
-        { xPercent: -100 },
-        { xPercent: 100, duration: 4.5, repeat: -1, repeatDelay: 0.8, ease: "none" },
-      );
     },
-    { scope: containerRef },
+    { scope: containerRef, dependencies: [projectsQuery.isPending] },
   );
 
   // 日期只在挂载时计算一次：渲染期不调用 Date（React purity），跨天刷新页面自然更新。

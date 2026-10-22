@@ -119,12 +119,16 @@
   color: var(--muted-foreground);
   cursor: pointer;
   display: inline-flex;
-  height: 1.1rem;
+  height: 1.35rem;
   justify-content: center;
-  width: 1.1rem;
+  transition:
+    background-color 0.16s var(--ease-out-strong),
+    color 0.16s var(--ease-out-strong);
+  width: 1.35rem;
 }
 
 .clearSearch:hover {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
   color: var(--foreground);
 }
 
@@ -143,8 +147,8 @@
 }
 
 .searchNav {
-  height: 1.15rem;
-  width: 1.15rem;
+  height: 1.35rem;
+  width: 1.35rem;
 }
 
 .searchNav svg {
@@ -188,8 +192,8 @@
   color: var(--muted-foreground);
   font-size: 10.5px;
   font-weight: 500;
-  height: 1.35rem;
-  padding-inline: 0.32rem;
+  height: 1.6rem;
+  padding-inline: 0.38rem;
 }
 
 .completenessFilter:hover {
@@ -200,7 +204,7 @@
 .completenessFilter[data-active="true"] {
   background: color-mix(in srgb, var(--primary) 10%, var(--card));
   border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
-  color: var(--primary);
+  color: var(--primary-ink);
 }
 
 .completenessFilter[aria-pressed="true"]:focus-visible {
@@ -448,6 +452,7 @@
   position: absolute;
   top: 0;
   transition: opacity 0.18s;
+  transition-timing-function: var(--ease-out-strong);
   width: 2px;
 }
 
@@ -526,6 +531,7 @@
     border-color 0.18s,
     box-shadow 0.18s,
     color 0.18s;
+  transition-timing-function: var(--ease-out-strong);
   width: 100%;
 }
 
@@ -538,7 +544,7 @@
   width: 4px;
   position: absolute;
   opacity: 0;
-  transition: opacity 0.18s ease;
+  transition: opacity 0.18s var(--ease-out-strong);
 }
 
 .row:hover {
@@ -588,7 +594,7 @@
 
 .chevron svg {
   height: 0.7rem;
-  transition: transform 0.18s ease;
+  transition: transform 0.18s var(--ease-out-strong);
   width: 0.7rem;
 }
 
@@ -643,8 +649,8 @@
   font-weight: 400;
   letter-spacing: 0;
   transition:
-    color 0.18s ease,
-    font-weight 0.18s ease;
+    color 0.18s var(--ease-out-strong),
+    font-weight 0.18s var(--ease-out-strong);
 }
 
 .row :global([data-slot="badge"]) {
@@ -656,7 +662,7 @@
 .row :global([data-slot="badge"]).countBadge {
   background: color-mix(in srgb, var(--primary) 18%, var(--card));
   border-color: color-mix(in srgb, var(--primary) 44%, var(--border));
-  color: var(--primary);
+  color: var(--primary-ink);
   height: 1.15rem;
   font-size: 10px;
   font-weight: 700;
@@ -819,7 +825,7 @@
   filter: drop-shadow(0 0 4px color-mix(in srgb, var(--warning) 68%, transparent));
   height: 1.05rem;
   justify-content: center;
-  transition: color 0.18s ease;
+  transition: color 0.18s var(--ease-out-strong);
   width: 1.05rem;
 }
 

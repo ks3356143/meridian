@@ -218,7 +218,7 @@ function RequirementDetailForm({
   const [descriptionStuck, setDescriptionStuck] = useState(false);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
   const descriptionSentinelRef = useRef<HTMLDivElement>(null);
-  const fabSentinelRef = useRef<HTMLDivElement>(null);
+  const fabTriggerRef = useRef<HTMLButtonElement>(null);
   const bodyDialogRef = useRef<HTMLDialogElement>(null);
   const bodyEditorHandleRef = useRef<RequirementBodyEditorHandle | null>(null);
   const bodyEditBaselineDocRef = useRef(bodyEditBaselineDoc);
@@ -721,8 +721,6 @@ function RequirementDetailForm({
             <FieldError id="detail-secondary-kind-error">{errors.secondaryKinds}</FieldError>
           </Field>
         </div>
-        <div ref={fabSentinelRef} className={styles.fabSentinel} aria-hidden />
-
         <section className={styles.related}>
           <header>
             <div>
@@ -734,6 +732,7 @@ function RequirementDetailForm({
             </div>
             <div className={styles.relatedActions}>
               <Button
+                ref={fabTriggerRef}
                 type="button"
                 size="xs"
                 disabled={!canCreateTestItem}
@@ -971,8 +970,7 @@ function RequirementDetailForm({
         </AlertDialog>
       </div>
       <RequirementFloatingCreateButton
-        rootRef={bodyScrollRef}
-        sentinelRef={fabSentinelRef}
+        triggerRef={fabTriggerRef}
         enabled={canCreateTestItem}
         onClick={handleCreateTestItem}
       />

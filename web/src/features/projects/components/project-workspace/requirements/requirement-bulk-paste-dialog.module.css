@@ -209,7 +209,7 @@
   filter: drop-shadow(0 0 4px color-mix(in srgb, var(--warning) 68%, transparent));
   height: 1.1rem;
   justify-content: center;
-  transition: color 0.18s ease;
+  transition: color 0.18s var(--ease-out-strong);
   width: 1.1rem;
 }
 

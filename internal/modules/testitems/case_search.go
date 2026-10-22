@@ -8,6 +8,8 @@ import (
 	"chenmeridian/internal/modules/contentblocks"
 )
 
+const maxCaseSearchHits = 60
+
 // CaseSearchHit 测试项内查找结果：用例字段命中或步骤字段命中。
 type CaseSearchHit struct {
 	Kind           string `json:"kind"`
@@ -69,6 +71,9 @@ func (s *Service) SearchCases(ctx context.Context, testItemID, query string) ([]
 				break
 			}
 		}
+		if len(hits) >= maxCaseSearchHits {
+			return hits, nil
+		}
 	}
 
 	var steps []CaseStep
@@ -123,12 +128,12 @@ func (s *Service) SearchCases(ctx context.Context, testItemID, query string) ([]
 			})
 			break
 		}
-		if len(hits) >= 60 {
+		if len(hits) >= maxCaseSearchHits {
 			break
 		}
 	}
-	if len(hits) > 60 {
-		hits = hits[:60]
+	if len(hits) > maxCaseSearchHits {
+		hits = hits[:maxCaseSearchHits]
 	}
 	return hits, nil
 }

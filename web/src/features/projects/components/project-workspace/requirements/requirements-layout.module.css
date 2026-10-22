@@ -18,14 +18,14 @@
 .workspaceTabsList {
   flex: 0 0 auto;
   gap: 0.15rem;
-  height: 1.85rem;
-  padding: 0.14rem;
+  height: 2rem;
+  padding: 0.1rem;
   width: fit-content;
 }
 
 .workspaceTab {
   flex: 0 0 auto;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   height: 100%;
   padding-inline: 0.45rem;
   white-space: nowrap;
@@ -41,7 +41,7 @@
   background: color-mix(in srgb, var(--primary) 16%, var(--card));
   border-color: color-mix(in srgb, var(--primary) 52%, var(--border));
   box-shadow: inset 0 -2px 0 var(--primary);
-  color: var(--primary);
+  color: var(--primary-ink);
   font-weight: 650;
 }
 
@@ -138,25 +138,8 @@
 }
 
 .tabContent[data-state="active"] {
-  animation: workbenchViewIn 0.18s ease-out both;
   position: relative;
   z-index: 1;
-}
-
-@keyframes workbenchViewIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tabContent[data-state="active"] {
-    animation: none;
-  }
 }
 
 .panelFrame {

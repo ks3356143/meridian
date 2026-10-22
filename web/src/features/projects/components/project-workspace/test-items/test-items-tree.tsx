@@ -50,7 +50,7 @@ function blockDragDuringSearch() {
 }
 
 /** 分组与文件夹只做容器，不允许被拖动。 */
-function isNodeDraggable(data: TestItemsTreeNode) {
+function isNodeDragDisabled(data: TestItemsTreeNode) {
   return data.kind === "group" || data.kind === "folder";
 }
 
@@ -265,7 +265,7 @@ function TestItemsTreeInner({
               initialOpenState={initialOpenState}
               selection={selectedKey || undefined}
               disableMultiSelection
-              disableDrag={forceExpanded ? blockDragDuringSearch : isNodeDraggable}
+              disableDrag={forceExpanded ? blockDragDuringSearch : isNodeDragDisabled}
               disableDrop={isDropBlocked}
               onMove={handleMove}
               onToggle={handleToggle}

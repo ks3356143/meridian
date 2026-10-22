@@ -20,7 +20,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "page-header relative flex flex-col gap-4 overflow-hidden sm:flex-row sm:items-end sm:justify-between",
+        "page-header relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between",
         className,
       )}
     >
@@ -42,7 +42,10 @@ export function PageHeader({
             </p>
           ) : null}
           <div className="border-border/70 relative mt-4 h-px w-full">
-            <span className="meridian-beam absolute inset-y-0 left-0 w-full" aria-hidden />
+            <span
+              className="meridian-beam page-header-beam absolute inset-y-0 left-0 w-full"
+              aria-hidden
+            />
           </div>
         </div>
       </div>

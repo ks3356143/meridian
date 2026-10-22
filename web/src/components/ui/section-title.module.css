@@ -16,6 +16,7 @@
   height: 0.9rem;
   /* flex 只居中盒子；汉字墨迹重心比盒子中心高约 0.04em，上移后上下出头相等 */
   transform: translateY(-0.04em);
+  animation: sectionRuleIn var(--motion-base) var(--ease-out-strong) both;
   width: 2px;
 }
 
@@ -26,4 +27,22 @@
 
 .lg::before {
   height: 1.1rem;
+}
+
+@keyframes sectionRuleIn {
+  from {
+    opacity: 0.35;
+    transform: translateY(-0.04em) scaleY(0.25);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-0.04em) scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title::before {
+    animation: none;
+  }
 }

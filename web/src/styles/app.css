@@ -11,14 +11,19 @@
   --content-gutter: clamp(1.25rem, 2.25vw, 2.25rem);
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --motion-fast: 140ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --motion-loop: 5.6s;
   --background: oklch(0.978 0.006 145);
   --foreground: oklch(0.215 0.02 150);
   --card: oklch(0.997 0.002 145);
   --card-foreground: oklch(0.215 0.02 150);
   --popover: oklch(0.997 0.003 145);
   --popover-foreground: oklch(0.215 0.02 150);
-  --primary: oklch(0.545 0.15 153);
+  --primary: oklch(0.535 0.15 153);
   --primary-foreground: oklch(0.99 0.01 153);
+  --primary-ink: color-mix(in oklch, var(--primary) 82%, var(--foreground));
   --secondary: oklch(0.945 0.012 135);
   --secondary-foreground: oklch(0.26 0.025 150);
   --muted: oklch(0.957 0.007 145);
@@ -30,10 +35,14 @@
   --destructive-foreground: oklch(0.99 0.01 27);
   --success: oklch(0.545 0.15 153);
   --success-foreground: oklch(0.99 0.01 153);
+  --success-ink: color-mix(in oklch, var(--success) 82%, var(--foreground));
   --warning: oklch(0.68 0.15 72);
   --warning-foreground: oklch(0.22 0.05 72);
+  --warning-ink: color-mix(in oklch, var(--warning) 64%, var(--foreground));
   --info: oklch(0.58 0.13 248);
   --info-foreground: oklch(0.99 0.01 248);
+  --info-ink: color-mix(in oklch, var(--info) 80%, var(--foreground));
+  --destructive-ink: color-mix(in oklch, var(--destructive) 82%, var(--foreground));
   --border: oklch(0.902 0.011 145);
   --input: oklch(0.875 0.013 145);
   --ring: oklch(0.64 0.12 152);
@@ -92,6 +101,11 @@
     #fb7185 78%,
     #c084fc
   );
+  --primary-ink: color-mix(in oklch, var(--primary) 82%, var(--foreground));
+  --success-ink: color-mix(in oklch, var(--success) 82%, var(--foreground));
+  --warning-ink: color-mix(in oklch, var(--warning) 64%, var(--foreground));
+  --info-ink: color-mix(in oklch, var(--info) 80%, var(--foreground));
+  --destructive-ink: color-mix(in oklch, var(--destructive) 82%, var(--foreground));
 }
 
 @theme inline {
@@ -99,6 +113,8 @@
     "PingFang SC", "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Microsoft YaHei", sans-serif;
   --font-mono: "Cascadia Mono", Consolas, "SF Mono", monospace;
+  --default-transition-duration: var(--motion-fast);
+  --default-transition-timing-function: var(--ease-out-strong);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -107,6 +123,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-ink: var(--primary-ink);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -116,12 +133,16 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-ink: var(--destructive-ink);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-ink: var(--success-ink);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-ink: var(--warning-ink);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-info-ink: var(--info-ink);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

@@ -2,6 +2,7 @@ package testitems
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -93,6 +94,32 @@ func TestSearchCasesFindsCaseFieldsAndStepBlocks(t *testing.T) {
 	blockHits, err := service.SearchCases(ctx, item.ID, "关键字")
 	if err != nil || len(blockHits) == 0 || blockHits[0].Field != "输入及操作" {
 		t.Fatalf("应命中步骤富文本正文，实际 %+v / %v", blockHits, err)
+	}
+}
+
+func TestSearchCasesCapsCaseHits(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "参数管理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	for index := 0; index < maxCaseSearchHits+1; index++ {
+		if _, err := service.CreateCase(ctx, item.ID, fmt.Sprintf("参数查询 %02d", index)); err != nil {
+			t.Fatalf("创建第 %d 条用例失败: %v", index, err)
+		}
+	}
+	hits, err := service.SearchCases(ctx, item.ID, "参数")
+	if err != nil {
+		t.Fatalf("测试项内查找失败: %v", err)
+	}
+	if len(hits) != maxCaseSearchHits {
+		t.Fatalf("命中数应截断到 %d，实际 %d", maxCaseSearchHits, len(hits))
+	}
+	for _, hit := range hits {
+		if hit.Kind != "case" {
+			t.Fatalf("达到用例命中上限后不应继续查询步骤: %+v", hit)
+		}
 	}
 }
 

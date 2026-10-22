@@ -21,9 +21,9 @@
   overflow-wrap: anywhere;
   padding: 8px 0.4rem;
   transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease !important;
+    background-color 0.16s var(--ease-out-strong),
+    border-color 0.16s var(--ease-out-strong),
+    box-shadow 0.16s var(--ease-out-strong) !important;
   white-space: pre-wrap;
   width: 100%;
 }

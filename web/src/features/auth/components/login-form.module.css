@@ -1,0 +1,44 @@
+.touchInput {
+  min-height: 0;
+}
+
+.touchButton {
+  min-height: 0;
+}
+
+@media (max-width: 1023px) {
+  .touchInput {
+    height: 2.75rem;
+  }
+
+  .touchButton {
+    height: 2.75rem;
+  }
+}
+
+.passwordField {
+  position: relative;
+}
+
+.passwordInput {
+  padding-right: 3rem;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 0.375rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.passwordButton {
+  height: 2rem;
+  width: 2rem;
+}
+
+@media (max-width: 1023px) {
+  .passwordButton {
+    height: 2.5rem;
+    width: 2.5rem;
+  }
+}

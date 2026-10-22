@@ -1,6 +1,6 @@
 import { createColumnHelper, useTable, type SortingState } from "@tanstack/react-table";
 import { ArrowRight, SearchX } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -146,6 +146,11 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
     [navigate],
   );
 
+  const handleRowActivate = useCallback(
+    (project: Project) => navigate(`/projects/${project.id}`),
+    [navigate],
+  );
+
   const table = useTable({
     features,
     columns,
@@ -159,7 +164,7 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
       <DataTable
         table={table}
         leftAlignedColumns={[1]}
-        onRowActivate={(project) => navigate(`/projects/${project.id}`)}
+        onRowActivate={handleRowActivate}
         emptyContent={
           <div className="flex flex-col items-center gap-3">
             <SearchX className="text-muted-foreground size-5" aria-hidden />

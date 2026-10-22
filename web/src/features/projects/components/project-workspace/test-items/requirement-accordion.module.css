@@ -5,8 +5,8 @@
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
   overflow: hidden;
   transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
+    box-shadow 0.2s var(--ease-out-strong),
+    border-color 0.2s var(--ease-out-strong);
 }
 
 .accordion[data-open="true"] {
@@ -33,7 +33,7 @@
   gap: 0.4rem;
   min-width: 0;
   padding: 0.32rem 0.4rem;
-  transition: background-color 0.18s ease;
+  transition: background-color 0.18s var(--ease-out-strong);
   width: 100%;
 }
 
@@ -47,7 +47,7 @@
   height: 0.78rem;
   margin-left: 0.45rem;
   transition:
-    color 0.18s ease,
+    color 0.18s var(--ease-out-strong),
     transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
   width: 0.78rem;
 }
@@ -70,9 +70,9 @@
   font-size: 0.62rem;
   padding: 0 0.28rem;
   transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+    background-color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong),
+    color 0.18s var(--ease-out-strong);
   white-space: nowrap;
 }
 
@@ -167,7 +167,7 @@
   scrollbar-gutter: stable;
   white-space: pre-wrap;
 
-  transition: opacity 0.26s ease;
+  transition: opacity 0.26s var(--ease-out-strong);
   opacity: 0;
 }
 

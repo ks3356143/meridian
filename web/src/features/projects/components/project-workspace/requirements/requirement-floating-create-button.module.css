@@ -3,11 +3,12 @@
   border-color: color-mix(in srgb, var(--primary) 46%, var(--border));
   bottom: 3rem;
   box-shadow: 0 10px 24px -18px color-mix(in srgb, var(--primary) 52%, transparent);
+  clip-path: inset(0 0 0 calc(100% - 2rem));
   color: var(--primary);
   font-size: 0.8rem;
   gap: 0;
   height: 2rem;
-  justify-content: center;
+  justify-content: flex-start;
   opacity: 0;
   padding-inline: 0;
   pointer-events: none;
@@ -15,16 +16,18 @@
   right: 1.5rem;
   transform: translateY(0.45rem) scale(0.96);
   transition:
-    color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    opacity 0.18s ease,
-    transform 0.18s ease,
-    width 0.24s cubic-bezier(0.22, 0.61, 0.36, 1),
-    gap 0.24s cubic-bezier(0.22, 0.61, 0.36, 1),
-    padding-inline 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
-  width: 2rem;
+    color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong),
+    box-shadow 0.18s var(--ease-out-strong),
+    opacity 0.18s var(--ease-out-strong),
+    transform 0.18s var(--ease-out-strong),
+    clip-path 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
+  width: 7.4rem;
   z-index: 5;
+}
+
+.floatingCreate:focus-visible {
+  outline-offset: -2px;
 }
 
 .floatingCreate::before {
@@ -38,20 +41,26 @@
   opacity: 0;
   pointer-events: none;
   position: absolute;
-  transition: opacity 0.18s ease;
+  transition: opacity 0.18s var(--ease-out-strong);
   z-index: -1;
 }
 
+.floatingCreateIcon {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
 .floatingCreateLabel {
-  display: block;
-  max-width: 0;
-  min-width: 0;
+  left: 1.9rem;
   opacity: 0;
-  overflow: hidden;
-  transform: translateX(-0.2rem);
+  position: absolute;
+  top: 50%;
+  transform: translate(-0.2rem, -50%);
   transition:
-    max-width 0.24s cubic-bezier(0.22, 0.61, 0.36, 1),
-    opacity 0.14s ease,
+    opacity 0.14s var(--ease-out-strong),
     transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
   white-space: nowrap;
 }
@@ -62,18 +71,14 @@
   transform: none;
 }
 
-/* 固定展开宽度为当前 5 字文案留出余量，改文案时同步调整。 */
 .floatingCreate[data-visible="true"]:hover,
 .floatingCreate[data-visible="true"]:focus-visible {
   border-color: color-mix(in srgb, var(--primary) 82%, white);
   box-shadow:
     0 16px 30px -12px color-mix(in srgb, var(--primary) 68%, transparent),
     0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+  clip-path: inset(0);
   color: var(--primary-foreground);
-  gap: 0.32rem;
-  justify-content: flex-start;
-  padding-inline: 0.62rem;
-  width: 7.4rem;
 }
 
 .floatingCreate[data-visible="true"]:hover::before,
@@ -81,16 +86,30 @@
   opacity: 1;
 }
 
+.floatingCreate[data-visible="true"]:hover .floatingCreateIcon,
+.floatingCreate[data-visible="true"]:focus-visible .floatingCreateIcon {
+  transform: translate(-5.4rem, -50%);
+}
+
 .floatingCreate[data-visible="true"]:hover .floatingCreateLabel,
 .floatingCreate[data-visible="true"]:focus-visible .floatingCreateLabel {
-  max-width: 5rem;
   opacity: 1;
-  transform: none;
+  transform: translate(0, -50%);
+}
+
+@media (max-width: 1100px) {
+  .floatingCreate {
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    position: fixed;
+    right: 1rem;
+    z-index: 30;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .floatingCreate,
   .floatingCreate::before,
+  .floatingCreateIcon,
   .floatingCreateLabel {
     transition: none;
   }

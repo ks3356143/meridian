@@ -1,5 +1,5 @@
 import { gsap, useGSAP } from "@/lib/gsap";
-import { Loader2, LogIn } from "lucide-react";
+import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import styles from "./login-form.module.css";
 
 interface FormValues {
   username: string;
@@ -23,6 +24,8 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
   const [errors, setErrors] = useState<FormValues>({ username: "", password: "" });
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const PasswordVisibilityIcon = showPassword ? EyeOff : Eye;
 
   useGSAP(
     () => {
@@ -116,6 +119,7 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
             name="username"
             autoComplete="username"
             spellCheck={false}
+            className={styles.touchInput}
             value={values.username}
             aria-invalid={Boolean(errors.username)}
             onChange={(event) => updateValue("username", event.target.value)}
@@ -125,20 +129,46 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
 
         <Field className="login-field" data-invalid={errors.password ? true : undefined}>
           <FieldLabel htmlFor="password">密码</FieldLabel>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={values.password}
-            aria-invalid={Boolean(errors.password)}
-            onChange={(event) => updateValue("password", event.target.value)}
-          />
+          <div className={styles.passwordField}>
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              className={`${styles.touchInput} ${styles.passwordInput}`}
+              value={values.password}
+              aria-invalid={Boolean(errors.password)}
+              onChange={(event) => updateValue("password", event.target.value)}
+            />
+            <span className={styles.passwordToggle}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                disableRipple
+                className={styles.passwordButton}
+                aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setShowPassword((visible) => !visible)}
+              >
+                <PasswordVisibilityIcon
+                  key={showPassword ? "hide-password" : "show-password"}
+                  className="animate-in fade-in-0 zoom-in-75 duration-150 motion-reduce:animate-none"
+                  aria-hidden
+                />
+              </Button>
+            </span>
+          </div>
           <FieldError>{errors.password}</FieldError>
         </Field>
       </FieldGroup>
 
-      <Button type="submit" size="lg" disabled={submitting} className="btn-sheen mt-1 h-11">
+      <Button
+        type="submit"
+        size="lg"
+        disabled={submitting}
+        className={`btn-sheen mt-1 ${styles.touchButton}`}
+      >
         {submitting ? (
           <Loader2 data-icon="inline-start" className="animate-spin" />
         ) : (

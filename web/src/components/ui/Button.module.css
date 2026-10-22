@@ -254,7 +254,6 @@
   overflow: hidden;
   pointer-events: none;
   position: absolute;
-  view-transition-name: button-ripple;
 }
 
 .ripple {

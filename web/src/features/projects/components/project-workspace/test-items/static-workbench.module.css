@@ -234,9 +234,9 @@
   padding: 0.45rem 0.48rem;
   text-align: left;
   transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    background-color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong),
+    box-shadow 0.18s var(--ease-out-strong);
   width: 100%;
 }
 
@@ -278,7 +278,7 @@
   position: absolute;
   right: 0.18rem;
   top: 0.18rem;
-  transition: opacity 0.16s ease;
+  transition: opacity 0.16s var(--ease-out-strong);
 }
 
 .sheetItem:hover .sheetDelete,

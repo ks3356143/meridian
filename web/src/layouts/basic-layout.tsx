@@ -8,7 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
-import { Navigate, NavLink, Outlet, useMatch } from "react-router";
+import { Navigate, NavLink, Outlet, useLocation, useMatch } from "react-router";
 import styles from "./basic-layout.module.css";
 import { BrandLogo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/provider/theme-toggle";
@@ -21,6 +21,7 @@ import { useAuthStore } from "@/stores/auth-store";
 
 export default function BasicLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const location = useLocation();
   const token = useAuthStore((state) => state.token);
   const setUser = useAuthStore((state) => state.setUser);
   const logout = useLogout();
@@ -84,7 +85,7 @@ export default function BasicLayout() {
   return (
     <div className="bg-background flex min-h-svh flex-col min-[900px]:grid min-[900px]:grid-cols-[236px_minmax(0,1fr)]">
       <aside
-        className={`${styles.sidebar} sticky top-0 z-20 hidden h-svh flex-col overflow-hidden min-[900px]:flex [view-transition-name:app-sidebar]`}
+        className={`${styles.sidebar} sticky top-0 z-20 hidden h-svh flex-col overflow-hidden min-[900px]:flex`}
       >
         <div
           className="visual-glow pointer-events-none absolute -top-24 -right-20 size-80 opacity-35"
@@ -108,7 +109,7 @@ export default function BasicLayout() {
 
       <div className="flex min-h-svh flex-col">
         <header
-          className={`${styles.appHeader} sticky top-0 z-10 flex h-14 items-center justify-between gap-4 px-4 [view-transition-name:app-header]`}
+          className={`${styles.appHeader} sticky top-0 z-10 flex h-14 items-center justify-between gap-4 px-4`}
         >
           <div className="flex min-w-0 items-center gap-3">
             <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -142,7 +143,10 @@ export default function BasicLayout() {
             </Button>
           </div>
         </header>
-        <main className={`${styles.mainContent} flex-1`}>
+        <main
+          key={location.pathname}
+          className={`${styles.mainContent} ${styles.routeContent} flex-1`}
+        >
           <Outlet />
         </main>
       </div>
@@ -181,7 +185,7 @@ function SidebarLink({
       className={styles.sidebarLink}
       data-state={active ? "active" : "inactive"}
     >
-      <NavLink to={to} end={end} onClick={handleClick} viewTransition>
+      <NavLink to={to} end={end} onClick={handleClick}>
         <Icon data-icon="inline-start" aria-hidden />
         {children}
       </NavLink>

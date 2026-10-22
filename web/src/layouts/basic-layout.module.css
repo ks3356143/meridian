@@ -47,6 +47,40 @@
   width: 100%;
 }
 
+.routeContent {
+  animation: routeContentIn var(--motion-slow) var(--ease-out-strong) both;
+}
+
+@keyframes routeContentIn {
+  from {
+    opacity: 0.78;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.sidebarLink::before {
+  background: var(--primary);
+  content: "";
+  inset-block: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: scaleY(0);
+  transition:
+    opacity 0.18s var(--ease-out-strong),
+    transform 0.18s var(--ease-out-strong);
+  width: 2px;
+}
+
+.sidebarLink[data-state="active"]::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
 .sidebarLink {
   align-items: center;
   background: transparent;
@@ -99,9 +133,7 @@
     color-mix(in srgb, var(--primary) 3%, transparent)
   );
   border-color: transparent;
-  box-shadow:
-    inset 2px 0 0 var(--primary),
-    0 8px 22px -21px color-mix(in srgb, var(--primary) 62%, transparent);
+  box-shadow: 0 8px 22px -21px color-mix(in srgb, var(--primary) 62%, transparent);
   color: color-mix(in srgb, var(--primary) 74%, var(--foreground));
   font-weight: 600;
 }
@@ -117,9 +149,7 @@
     color-mix(in srgb, var(--primary) 4%, transparent)
   );
   border-color: transparent;
-  box-shadow:
-    inset 2px 0 0 var(--primary),
-    0 9px 24px -21px color-mix(in srgb, var(--primary) 68%, transparent);
+  box-shadow: 0 9px 24px -21px color-mix(in srgb, var(--primary) 68%, transparent);
 }
 
 .sidebarLink[data-state]:active:not([aria-haspopup]) {
@@ -137,8 +167,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .routeContent {
+    animation: none;
+  }
+
   .sidebarLink,
-  .sidebarLink svg {
+  .sidebarLink svg,
+  .sidebarLink::before {
     transition: none;
   }
 }

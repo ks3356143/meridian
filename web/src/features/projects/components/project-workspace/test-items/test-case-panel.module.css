@@ -177,9 +177,9 @@
   padding: 0.35rem 0.5rem;
   text-align: center;
   transition:
-    background-color 0.18s ease,
-    box-shadow 0.18s ease,
-    color 0.18s ease;
+    background-color 0.18s var(--ease-out-strong),
+    box-shadow 0.18s var(--ease-out-strong),
+    color 0.18s var(--ease-out-strong);
   vertical-align: middle;
   white-space: nowrap;
   width: 158px;
@@ -492,9 +492,9 @@
   min-height: 1.5rem;
   padding: 1px 0.15rem 0;
   transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease;
+    background-color 0.16s var(--ease-out-strong),
+    border-color 0.16s var(--ease-out-strong),
+    color 0.16s var(--ease-out-strong);
   white-space: nowrap;
 }
 
@@ -564,9 +564,9 @@
   height: 1.5rem;
   justify-content: center;
   transition:
-    color 0.16s ease,
-    background-color 0.16s ease,
-    border-color 0.16s ease;
+    color 0.16s var(--ease-out-strong),
+    background-color 0.16s var(--ease-out-strong),
+    border-color 0.16s var(--ease-out-strong);
   width: 1.5rem;
 }
 

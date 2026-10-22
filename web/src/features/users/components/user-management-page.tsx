@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { usersApi } from "@/features/users/api";
 import { DeleteUserDialog } from "@/features/users/components/delete-user-dialog";
 import { UserFormDialog } from "@/features/users/components/user-form-dialog";
@@ -42,25 +42,7 @@ export function UserManagementPage() {
     queryFn: async () => (await usersApi.list()).users,
   });
 
-  useGSAP(
-    () => {
-      if (!containerRef.current || usersQuery.isPending) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-      gsap.fromTo(
-        ".user-management-reveal",
-        { opacity: 0.88 },
-        {
-          opacity: 1,
-          duration: 0.2,
-          stagger: 0.03,
-          ease: "power2.out",
-          clearProps: "opacity",
-        },
-      );
-    },
-    { scope: containerRef, dependencies: [usersQuery.isPending] },
-  );
+  useSubtleReveal(containerRef, ".user-management-reveal", !usersQuery.isPending);
 
   const invalidateUsers = useCallback(
     () => queryClient.invalidateQueries({ queryKey: ["users"] }),

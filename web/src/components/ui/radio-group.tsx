@@ -32,7 +32,7 @@ function RadioGroupItem({
         data-slot="radio-group-indicator"
         className="relative flex items-center justify-center"
       >
-        <span className="bg-primary size-2 rounded-full shadow-[0_0_8px_-1px_var(--primary)]" />
+        <span className="bg-primary size-2 animate-in rounded-full shadow-[0_0_8px_-1px_var(--primary)] fade-in-0 zoom-in-75 duration-150 motion-reduce:animate-none" />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   );

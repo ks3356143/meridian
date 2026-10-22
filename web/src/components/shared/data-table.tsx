@@ -80,6 +80,7 @@ export function DataTable<TData extends DataTableRowData>({
             onRowActivate={onRowActivate}
             alignedColumns={alignedColumns}
             renderVersion={table.options.columns}
+            animateEntry={!virtualized}
           />
         ))}
         {bottomSpacer > 0 ? (
@@ -101,7 +102,13 @@ export function DataTable<TData extends DataTableRowData>({
     </Table>
   );
 
-  if (!virtualized) return tableElement;
+  if (!virtualized) {
+    return (
+      <div className={styles.tableScroller} data-slot="data-table-scroll">
+        {tableElement}
+      </div>
+    );
+  }
 
   return (
     <div ref={scrollRef} className={styles.scrollArea} data-slot="data-table-scroll">

@@ -1,7 +1,7 @@
 import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { startTransition, useRef, useState, type ReactNode } from "react";
+import { startTransition, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +32,18 @@ const NAV_SECTIONS: Array<{
   { value: "delivery", label: "交付与文档", icon: FileText, path: "documents" },
 ];
 
+const SECTION_PRELOADERS: Partial<Record<WorkspaceSection, () => Promise<unknown>>> = {
+  tasks: () => import("@/pages/ProjectWorkspaceEntryPage"),
+  assets: () => import("@/pages/ProjectProfilePage"),
+  requirements: () => import("@/pages/ProjectRequirementsPage"),
+  execution: () => import("@/pages/ProjectTestItemsPage"),
+  delivery: () => import("@/pages/ProjectDocumentsPage"),
+};
+
+function preloadSection(section: WorkspaceSection) {
+  void SECTION_PRELOADERS[section]?.().catch(() => undefined);
+}
+
 export function ProjectWorkspaceLayout({
   project,
   children,
@@ -40,6 +52,7 @@ export function ProjectWorkspaceLayout({
   children: ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const [pendingSection, setPendingSection] = useState<{ fromPath: string } | null>(null);
@@ -51,6 +64,13 @@ export function ProjectWorkspaceLayout({
     project.openIssues.normal +
     project.openIssues.suggestion;
   const activeSection = getActiveSection(location.pathname, project.id);
+
+  useLayoutEffect(() => {
+    const activeTab = navRef.current?.querySelector<HTMLElement>(
+      '[data-slot="tabs-trigger"][data-state="active"]',
+    );
+    activeTab?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeSection]);
 
   useGSAP(
     () => {
@@ -100,6 +120,7 @@ export function ProjectWorkspaceLayout({
 
       <div className="workspace-body flex min-h-0 flex-1 flex-col">
         <nav
+          ref={navRef}
           aria-label="项目工作区一级导航"
           className={`workspace-primary-nav ${styles.primaryNav}`}
         >
@@ -110,6 +131,8 @@ export function ProjectWorkspaceLayout({
                   key={section.value}
                   value={section.value}
                   className={styles.tabTrigger}
+                  onFocus={() => preloadSection(section.value)}
+                  onPointerEnter={() => preloadSection(section.value)}
                 >
                   <section.icon className={styles.tabIcon} aria-hidden />
                   {section.label}

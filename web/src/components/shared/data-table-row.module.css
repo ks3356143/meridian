@@ -4,7 +4,7 @@
 
 @keyframes selectedRowIn {
   0% {
-    background-color: transparent;
+    background-color: color-mix(in srgb, var(--primary) 8%, transparent);
     box-shadow: 0 0 0 0 transparent;
   }
   55% {
@@ -19,6 +19,28 @@
 
 @media (prefers-reduced-motion: reduce) {
   .selectedRow {
+    animation: none;
+  }
+}
+
+.enterRow {
+  animation: enterRow var(--motion-base) var(--ease-out-strong) both;
+  animation-delay: min(calc(var(--row-index, 0) * 18ms), 144ms);
+}
+
+@keyframes enterRow {
+  from {
+    opacity: 0.72;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .enterRow {
     animation: none;
   }
 }

@@ -29,7 +29,7 @@
 .display {
   align-items: center;
   display: flex;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s var(--ease-out-strong);
 }
 
 .display:hover,

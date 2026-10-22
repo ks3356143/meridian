@@ -25,6 +25,7 @@ import {
 } from "@/features/projects/components/project-create/standard-field";
 import type { CreateProjectPayload, DictionaryOption } from "@/features/projects/types";
 import { gsap, useGSAP } from "@/lib/gsap";
+import styles from "./ProjectCreatePage.module.css";
 
 const initialDictionarySelections: DictionarySelections = {
   language: [],
@@ -70,9 +71,10 @@ export function Component() {
         duration: 0.45,
         stagger: 0.06,
         ease: "power3.out",
+        clearProps: "transform,opacity",
       });
     },
-    { scope: containerRef },
+    { scope: containerRef, dependencies: [optionsQuery.isPending] },
   );
 
   const dictionaryOptions = useMemo(() => {
@@ -284,16 +286,25 @@ export function Component() {
           </CardContent>
         </Card>
 
-        <div className="border-border bg-card/90 elevation-2 project-create-reveal sticky bottom-0 flex flex-wrap items-center justify-between gap-3 rounded-sm border p-3 backdrop-blur">
+        <div
+          className={`border-border bg-card/90 elevation-2 project-create-reveal sticky bottom-0 flex flex-wrap items-center justify-between gap-3 rounded-sm border p-3 backdrop-blur ${styles.actionBar}`}
+        >
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5" aria-live="polite">
             {missingGroups.length > 0 ? (
               missingGroups.map((group) => (
-                <Badge key={group} variant="warning" className="h-5 text-[11px]">
+                <Badge
+                  key={group}
+                  variant="warning"
+                  className="animate-in fade-in-0 h-5 text-[11px] duration-150 slide-in-from-left-1 motion-reduce:animate-none"
+                >
                   待填 {group}
                 </Badge>
               ))
             ) : (
-              <Badge variant="success" className="h-5 text-[11px]">
+              <Badge
+                variant="success"
+                className="animate-in fade-in-0 h-5 text-[11px] duration-150 slide-in-from-left-1 motion-reduce:animate-none"
+              >
                 必填项已齐
               </Badge>
             )}

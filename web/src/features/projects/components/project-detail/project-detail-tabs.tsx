@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { totalOpenIssues, type Project } from "../../types";
@@ -31,15 +32,20 @@ export function ProjectDetailTabs({
         ))}
       </TabsList>
 
-      <TabsContent value="overview" className="project-detail-tab mt-5">
+      <TabsContent value="overview" className="mt-5">
         <OverviewDetailTab project={project} onEnterWorkspace={() => openWorkspace()} />
       </TabsContent>
 
-      <TabsContent value="profile" className="project-detail-tab mt-5">
+      <TabsContent value="profile" className="mt-5">
         <ProfileDetailTab project={project} onOpenWorkspace={() => openWorkspace("profile")} />
       </TabsContent>
 
-      <DetailStatusTab value="dut" title="被测对象状态" action="处理被测对象">
+      <DetailStatusTab
+        value="dut"
+        title="被测对象状态"
+        action="处理被测对象"
+        onOpenWorkspace={openWorkspace}
+      >
         <Checklist
           items={[
             { label: "软件概述", state: "pending", detail: "富文本与模块组成待录入" },
@@ -50,7 +56,12 @@ export function ProjectDetailTabs({
         />
       </DetailStatusTab>
 
-      <DetailStatusTab value="requirements" title="需求追溯状态" action="处理需求追溯">
+      <DetailStatusTab
+        value="requirements"
+        title="需求追溯状态"
+        action="处理需求追溯"
+        onOpenWorkspace={openWorkspace}
+      >
         <Checklist
           items={[
             { label: "来源文档", state: "pending", detail: "需求规格与研制方交付文档待登记" },
@@ -61,7 +72,12 @@ export function ProjectDetailTabs({
         />
       </DetailStatusTab>
 
-      <DetailStatusTab value="test-items" title="测试设计状态" action="处理测试设计">
+      <DetailStatusTab
+        value="test-items"
+        title="测试设计状态"
+        action="处理测试设计"
+        onOpenWorkspace={openWorkspace}
+      >
         <div className="grid gap-3 sm:grid-cols-3">
           <MetricTile label="测试用例" value={project.casesTotal} />
           <MetricTile label="已形成执行记录" value={project.casesExecuted} />
@@ -80,7 +96,12 @@ export function ProjectDetailTabs({
         />
       </DetailStatusTab>
 
-      <DetailStatusTab value="rounds" title="轮次执行状态" action="处理轮次">
+      <DetailStatusTab
+        value="rounds"
+        title="轮次执行状态"
+        action="处理轮次"
+        onOpenWorkspace={openWorkspace}
+      >
         <div className="grid gap-3 sm:grid-cols-3">
           <MetricTile label="当前阶段" value={project.status} />
           <MetricTile label="执行记录" value={project.casesExecuted} />
@@ -98,7 +119,12 @@ export function ProjectDetailTabs({
         />
       </DetailStatusTab>
 
-      <DetailStatusTab value="issues" title="问题状态" action="处理问题单">
+      <DetailStatusTab
+        value="issues"
+        title="问题状态"
+        action="处理问题单"
+        onOpenWorkspace={openWorkspace}
+      >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricTile label="重大" value={project.openIssues.critical} tone="danger" />
           <MetricTile label="严重" value={project.openIssues.serious} tone="danger" />
@@ -118,7 +144,12 @@ export function ProjectDetailTabs({
         />
       </DetailStatusTab>
 
-      <DetailStatusTab value="documents" title="文档产出状态" action="处理文档">
+      <DetailStatusTab
+        value="documents"
+        title="文档产出状态"
+        action="处理文档"
+        onOpenWorkspace={openWorkspace}
+      >
         <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           {DETAIL_DOCUMENTS.map((documentName) => (
             <div
@@ -133,28 +164,29 @@ export function ProjectDetailTabs({
       </DetailStatusTab>
     </Tabs>
   );
-
-  function DetailStatusTab({
-    value,
-    title,
-    action,
-    children,
-  }: {
-    value: DetailTabValue;
-    title: string;
-    action: string;
-    children: React.ReactNode;
-  }) {
-    return (
-      <TabsContent value={value} className="project-detail-tab mt-5">
-        <StatusPanel title={title} action={action} onAction={() => openWorkspace(value)}>
-          {children}
-        </StatusPanel>
-      </TabsContent>
-    );
-  }
 }
 
+function DetailStatusTab({
+  value,
+  title,
+  action,
+  onOpenWorkspace,
+  children,
+}: {
+  value: DetailTabValue;
+  title: string;
+  action: string;
+  onOpenWorkspace: (tab: DetailTabValue) => void;
+  children: ReactNode;
+}) {
+  return (
+    <TabsContent value={value} className="mt-5">
+      <StatusPanel title={title} action={action} onAction={() => onOpenWorkspace(value)}>
+        {children}
+      </StatusPanel>
+    </TabsContent>
+  );
+}
 const DETAIL_DOCUMENTS = [
   "测评大纲",
   "测试说明",

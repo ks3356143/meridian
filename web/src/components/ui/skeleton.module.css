@@ -1,0 +1,29 @@
+.skeleton {
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--muted) 82%, var(--card)) 20%,
+    color-mix(in srgb, var(--card) 88%, var(--primary) 12%) 38%,
+    color-mix(in srgb, var(--muted) 82%, var(--card)) 56%
+  );
+  background-size: 220% 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: skeleton-sweep 1.8s ease-in-out infinite;
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 130% 0;
+  }
+
+  to {
+    background-position: -80% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: color-mix(in srgb, var(--muted) 76%, var(--card));
+  }
+}

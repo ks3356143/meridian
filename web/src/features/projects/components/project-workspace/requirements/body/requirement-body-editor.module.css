@@ -284,8 +284,8 @@
   margin: 0.5rem 0;
   padding: 0.4rem;
   transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+    background-color 0.2s var(--ease-out-strong),
+    border-color 0.2s var(--ease-out-strong);
 }
 
 .imageNode[data-align="left"] {
@@ -327,7 +327,7 @@
   display: inline-flex;
   gap: 0.2rem;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s var(--ease-out-strong);
 }
 
 .imageActionButton {

@@ -81,8 +81,8 @@
   height: 0.92rem;
   padding: 0.1rem;
   transition:
-    background-color 0.18s ease,
-    color 0.18s ease;
+    background-color 0.18s var(--ease-out-strong),
+    color 0.18s var(--ease-out-strong);
   width: 0.92rem;
 }
 
@@ -114,8 +114,8 @@
   flex: none;
   height: 0.75rem;
   transition:
-    color 0.18s ease,
-    transform 0.18s ease;
+    color 0.18s var(--ease-out-strong),
+    transform 0.18s var(--ease-out-strong);
   width: 0.75rem;
 }
 

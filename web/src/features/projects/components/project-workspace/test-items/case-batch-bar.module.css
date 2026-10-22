@@ -5,7 +5,7 @@
   pointer-events: none;
   transition:
     grid-template-rows 0.28s cubic-bezier(0.32, 0.72, 0, 1),
-    opacity 0.18s ease,
+    opacity 0.18s var(--ease-out-strong),
     visibility 0s linear 0.28s;
   visibility: hidden;
 }
@@ -16,7 +16,7 @@
   pointer-events: auto;
   transition:
     grid-template-rows 0.28s cubic-bezier(0.32, 0.72, 0, 1),
-    opacity 0.2s ease,
+    opacity 0.2s var(--ease-out-strong),
     visibility 0s;
   visibility: visible;
 }
