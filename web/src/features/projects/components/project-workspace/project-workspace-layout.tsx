@@ -1,7 +1,7 @@
 import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { startTransition, useRef, useState, type ReactNode } from "react";
+import { startTransition, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -118,6 +118,7 @@ export function ProjectWorkspaceLayout({
         <nav
           aria-label="项目工作区一级导航"
           className={`workspace-primary-nav ${styles.primaryNav}`}
+          style={{ "--tab-count": NAV_SECTIONS.length } as CSSProperties}
         >
           <Tabs value={activeSection} onValueChange={handleSectionChange}>
             <TabsList
