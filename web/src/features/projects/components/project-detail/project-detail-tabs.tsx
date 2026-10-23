@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRevealActiveTab } from "@/hooks/use-reveal-active-tab";
 import { totalOpenIssues, type Project } from "../../types";
 import { OverviewDetailTab } from "./overview-detail-tab";
 import { ProfileDetailTab } from "./profile-detail-tab";
@@ -18,12 +19,14 @@ export function ProjectDetailTabs({
   onTabChange: (tab: DetailTabValue) => void;
 }) {
   const navigate = useNavigate();
+  const listRef = useRef<HTMLDivElement>(null);
+  useRevealActiveTab(listRef, activeTab);
   const openWorkspace = (tab: DetailTabValue = "overview") =>
     navigate(workspacePath(project.id, tab));
 
   return (
     <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as DetailTabValue)}>
-      <TabsList variant="line" className="w-full overflow-x-auto">
+      <TabsList ref={listRef} variant="line" className="w-full overflow-x-auto">
         {DETAIL_TABS.map((tab) => (
           <TabsTrigger key={tab.value} value={tab.value} className="min-w-24 shrink-0 px-3">
             <tab.icon aria-hidden />

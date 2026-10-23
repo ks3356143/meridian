@@ -1,12 +1,13 @@
 import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { startTransition, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { startTransition, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useAuthStore } from "@/stores/auth-store";
+import { useRevealActiveTab } from "@/hooks/use-reveal-active-tab";
 import type { Project } from "@/features/projects/types";
 import { WorkspaceTopbar } from "./workspace-topbar";
 import styles from "./project-workspace-layout.module.css";
@@ -52,7 +53,7 @@ export function ProjectWorkspaceLayout({
   children: ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const navRef = useRef<HTMLElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const [pendingSection, setPendingSection] = useState<{ fromPath: string } | null>(null);
@@ -65,30 +66,7 @@ export function ProjectWorkspaceLayout({
     project.openIssues.suggestion;
   const activeSection = getActiveSection(location.pathname, project.id);
 
-  useLayoutEffect(() => {
-    const list = navRef.current?.querySelector<HTMLElement>('[role="tablist"]');
-    if (!list) return;
-    // 只做横向校正：scrollIntoView 会连带把文档纵向滚回顶部，窗口变窄时体验很差。
-    const revealActiveTab = () => {
-      const activeTab = list.querySelector<HTMLElement>(
-        '[data-slot="tabs-trigger"][data-state="active"]',
-      );
-      if (!activeTab) return;
-      const listRect = list.getBoundingClientRect();
-      const tabRect = activeTab.getBoundingClientRect();
-      if (tabRect.left < listRect.left) {
-        list.scrollLeft -= listRect.left - tabRect.left;
-      } else if (tabRect.right > listRect.right) {
-        list.scrollLeft += tabRect.right - listRect.right;
-      }
-    };
-    revealActiveTab();
-    // 字体换入后 Tab 宽度会变而 Tab 条自身宽度不变，ResizeObserver 不会触发，需要补一次。
-    void document.fonts.ready.then(revealActiveTab);
-    const observer = new ResizeObserver(revealActiveTab);
-    observer.observe(list);
-    return () => observer.disconnect();
-  }, [activeSection]);
+  useRevealActiveTab(listRef, activeSection);
 
   useGSAP(
     () => {
@@ -138,12 +116,15 @@ export function ProjectWorkspaceLayout({
 
       <div className="workspace-body flex min-h-0 flex-1 flex-col">
         <nav
-          ref={navRef}
           aria-label="项目工作区一级导航"
           className={`workspace-primary-nav ${styles.primaryNav}`}
         >
           <Tabs value={activeSection} onValueChange={handleSectionChange}>
-            <TabsList variant="default" className={`${styles.tabList} w-full overflow-x-auto`}>
+            <TabsList
+              ref={listRef}
+              variant="default"
+              className={`${styles.tabList} w-full overflow-x-auto`}
+            >
               {NAV_SECTIONS.map((section) => (
                 <TabsTrigger
                   key={section.value}
