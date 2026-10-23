@@ -8,7 +8,7 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        "input-elevated size-4 shrink-0 rounded-[3px] border border-input bg-card/85 transition-[color,border-color,background-color,box-shadow,transform] duration-200 ease-[var(--ease-out-strong)] outline-none hover:border-primary/40 hover:bg-card hover:shadow-[0_2px_8px_-4px_color-mix(in_oklch,var(--primary)_55%,transparent)] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground active:scale-95 dark:bg-input/40 dark:data-[state=checked]:bg-primary dark:data-[state=checked]:text-primary-foreground",
+        "input-elevated size-4 shrink-0 rounded-[2px] border border-input bg-card/85 transition-[color,border-color,background-color,box-shadow,transform] duration-200 ease-[var(--ease-out-strong)] outline-none hover:border-primary/40 hover:bg-card hover:shadow-[0_2px_8px_-4px_color-mix(in_oklch,var(--primary)_55%,transparent)] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground active:scale-95 dark:bg-input/40 dark:data-[state=checked]:bg-primary dark:data-[state=checked]:text-primary-foreground",
         className,
       )}
       {...props}

@@ -381,6 +381,13 @@
   right: 3px;
 }
 
+/* 静态项只有一行说明：盒子随内容收紧，避免固定高度撑出一块空白。 */
+.heroCompleteness[data-state="static"] {
+  height: auto;
+  padding-block: 0.4rem;
+  width: auto;
+}
+
 .heroCompleteness[data-state="incomplete"] {
   animation: incompleteGlow 2.4s ease-in-out infinite;
   background: color-mix(in srgb, var(--warning) 8%, transparent);
@@ -538,23 +545,62 @@
     color 0.18s var(--ease-out-strong),
     box-shadow 0.18s var(--ease-out-strong);
   white-space: nowrap;
+  overflow: hidden;
 }
 
+/* 活动线整条从左向右长出来；深色高光由 ::before 单独从左扫到右后淡出，不循环。 */
 .sectionLink::after {
   background: var(--primary);
   bottom: 0;
   content: "";
-  height: 1.5px;
-  left: 0.42rem;
+  height: 2px;
+  left: 0;
   opacity: 0;
   pointer-events: none;
   position: absolute;
-  right: 0.42rem;
-  transform: scaleX(0.35);
+  right: 0;
+  transform: scaleX(0);
   transform-origin: left;
   transition:
-    opacity 0.16s var(--ease-out-strong),
-    transform 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    opacity 0.14s var(--ease-out-strong),
+    transform 0.26s var(--ease-out-strong);
+}
+
+.sectionLink::before {
+  background: color-mix(in srgb, var(--primary) 52%, var(--foreground));
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-100%);
+  width: 45%;
+}
+
+.sectionLink[data-active="true"]::before {
+  animation: sectionLinkSweep 720ms var(--ease-out-strong) 160ms 1 both;
+}
+
+@keyframes sectionLinkSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  12% {
+    opacity: 0.9;
+  }
+
+  68% {
+    opacity: 0.72;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(240%);
+  }
 }
 
 .sectionLink:hover {
@@ -1194,6 +1240,10 @@
 
   .sectionLink::after {
     transition: none;
+  }
+
+  .sectionLink::before {
+    display: none;
   }
 
   .heroCompleteness[data-state="incomplete"],

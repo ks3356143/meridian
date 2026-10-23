@@ -128,7 +128,7 @@
   );
   width: 34%;
   box-shadow: 0 0 10px var(--topbar-beam-glow);
-  animation: 5.2s linear infinite workspace-topbar-sweep;
+  animation: workspace-topbar-sweep 1.4s var(--ease-out-strong) 180ms 1 both;
   position: absolute;
   left: 0;
   transform: translate(-120%);

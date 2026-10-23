@@ -10,7 +10,7 @@
 
 .title::before {
   background: var(--section-tone, var(--primary));
-  border-radius: 999px;
+  border-radius: 0;
   content: "";
   flex: 0 0 auto;
   height: 0.9rem;

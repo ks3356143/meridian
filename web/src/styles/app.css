@@ -14,7 +14,6 @@
   --motion-fast: 140ms;
   --motion-base: 180ms;
   --motion-slow: 240ms;
-  --motion-loop: 5.6s;
   --background: oklch(0.978 0.006 145);
   --foreground: oklch(0.215 0.02 150);
   --card: oklch(0.997 0.002 145);
@@ -198,6 +197,14 @@
     scrollbar-width: thin;
   }
 
+  /* 横向溢出的 Tab 条不显示滚动条（与工作区一级导航一致）：滚轮 / 触控板 / 拖动仍然可用。 */
+  [data-slot="tabs-list"] {
+    scrollbar-width: none;
+  }
+
+  [data-slot="tabs-list"]::-webkit-scrollbar {
+    display: none;
+  }
   [data-slot="textarea"]::-webkit-scrollbar {
     height: 8px;
     width: 8px;

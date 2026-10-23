@@ -76,6 +76,13 @@
   width: 0.82rem;
 }
 
+/* 纯图标按钮必须正方形：size=xs 高度 1.75rem，宽度对齐同一尺寸；带文字的按钮仍按内容撑开。 */
+.toolbarButton:has(svg) {
+  justify-content: center;
+  min-width: 1.75rem;
+  padding-inline: 0;
+}
+
 .hiddenInput {
   display: none;
 }

@@ -17,6 +17,9 @@
 
 .tableScroller {
   max-width: 100%;
+  /* 非虚拟化表格没有固定高度，纵向本来就滚不动；contain 会把滚轮锁在容器里，
+     导致鼠标停在表格上时整页滚不动。纵向必须保留链式滚动，只锁横向。 */
+  overscroll-behavior-y: auto;
   width: 100%;
 }
 

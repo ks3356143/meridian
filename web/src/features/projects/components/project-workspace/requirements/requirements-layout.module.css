@@ -89,13 +89,6 @@
   mix-blend-mode: screen;
   opacity: 0.56;
   pointer-events: none;
-  animation: candidateOrbSweep 2.8s linear infinite;
-}
-
-@keyframes candidateOrbSweep {
-  to {
-    transform: rotate(1turn);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

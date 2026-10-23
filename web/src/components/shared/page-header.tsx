@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "cn";
+import styles from "./page-header.module.css";
 
 export function PageHeader({
   icon: Icon,
@@ -24,6 +25,8 @@ export function PageHeader({
         className,
       )}
     >
+      <span className={cn(styles.corner, styles.cornerTopLeft)} aria-hidden />
+      <span className={cn(styles.corner, styles.cornerBottomRight)} aria-hidden />
       <div className="relative flex min-w-0 items-start gap-4">
         <span className="border-primary/25 bg-primary/10 text-primary relative flex size-11 shrink-0 items-center justify-center rounded-sm border">
           <span className="bg-primary/15 absolute -top-px -right-px size-8 blur-md" aria-hidden />

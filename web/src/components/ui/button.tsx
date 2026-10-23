@@ -44,7 +44,7 @@ export function buttonVariants({
     styles.button,
     variant ? buttonVariantClasses[variant] : undefined,
     size ? buttonSizeClasses[size] : undefined,
-    sheen ? styles.sheen : undefined,
+    sheen || variant === "default" ? styles.sheen : undefined,
     className,
   );
 }

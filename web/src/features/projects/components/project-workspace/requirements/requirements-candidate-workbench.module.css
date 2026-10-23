@@ -100,7 +100,6 @@
   width: 200%;
   height: 200%;
   background: var(--parse-edge);
-  animation: parseButtonSpin 4s linear infinite;
   pointer-events: none;
   z-index: -2;
 }
@@ -132,6 +131,11 @@
   box-shadow:
     0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent),
     0 0 18px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+.parseButton.parseButton:hover:not(:disabled)::before,
+.parseButton.parseButton:focus-visible::before {
+  animation: parseButtonSpin 1.1s linear 1;
 }
 
 .parseButton.parseButton:active:not(:disabled) {

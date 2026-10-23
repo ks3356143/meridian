@@ -10,16 +10,6 @@
   position: relative;
 }
 
-@keyframes detail-gradient-flow {
-  0% {
-    background-position: 0%;
-  }
-
-  to {
-    background-position: 200%;
-  }
-}
-
 @keyframes detail-soft-sheen {
   0% {
     opacity: 0;
@@ -87,6 +77,12 @@
   padding: 0.6rem;
   display: flex;
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+/* 阶段条允许横向拖动，但不显示滚动条：6 段取整会多出 1px，露出滚动条很难看。 */
+.detail-stage-strip::-webkit-scrollbar {
+  display: none;
 }
 
 .detail-stage-item {
@@ -133,7 +129,7 @@
   );
   background-size: 220% 100%;
   font-weight: 650;
-  animation: 3.4s linear infinite detail-gradient-flow;
+  background-position: 20% 0;
 }
 
 .detail-stage-active:after {
@@ -145,7 +141,7 @@
     transparent 82%
   );
   pointer-events: none;
-  animation: 2.8s cubic-bezier(0.32, 0.72, 0, 1) infinite detail-soft-sheen;
+  animation: 820ms var(--ease-out-strong) 1 both detail-soft-sheen;
   position: absolute;
   inset: 0;
   transform: translate(-120%);
@@ -169,7 +165,7 @@
     transparent 78%
   );
   pointer-events: none;
-  animation: 3.2s cubic-bezier(0.32, 0.72, 0, 1) infinite detail-soft-sheen;
+  animation: 900ms var(--ease-out-strong) 1 both detail-soft-sheen;
   position: absolute;
   inset: 0;
   transform: translate(-110%);
@@ -184,7 +180,7 @@
     color-mix(in srgb, var(--panel-tone) 17%, var(--card))
   );
   background-size: 220% 100%;
-  animation: 3.4s linear infinite detail-gradient-flow;
+  background-position: 20% 0;
 }
 
 .detail-module-card[data-module-focus="true"]:after {
@@ -196,7 +192,7 @@
     transparent 80%
   );
   pointer-events: none;
-  animation: 3.1s cubic-bezier(0.32, 0.72, 0, 1) infinite detail-soft-sheen;
+  animation: 820ms var(--ease-out-strong) 1 both detail-soft-sheen;
   position: absolute;
   inset: 0;
   transform: translate(-115%);
@@ -212,7 +208,6 @@
     color-mix(in srgb, var(--panel-tone) 68%, var(--card))
   );
   background-size: 180% 100%;
-  animation: 3.2s linear infinite detail-gradient-flow;
 }
 
 .detail-checklist {

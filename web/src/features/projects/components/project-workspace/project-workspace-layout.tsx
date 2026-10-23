@@ -66,10 +66,28 @@ export function ProjectWorkspaceLayout({
   const activeSection = getActiveSection(location.pathname, project.id);
 
   useLayoutEffect(() => {
-    const activeTab = navRef.current?.querySelector<HTMLElement>(
-      '[data-slot="tabs-trigger"][data-state="active"]',
-    );
-    activeTab?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const list = navRef.current?.querySelector<HTMLElement>('[role="tablist"]');
+    if (!list) return;
+    // 只做横向校正：scrollIntoView 会连带把文档纵向滚回顶部，窗口变窄时体验很差。
+    const revealActiveTab = () => {
+      const activeTab = list.querySelector<HTMLElement>(
+        '[data-slot="tabs-trigger"][data-state="active"]',
+      );
+      if (!activeTab) return;
+      const listRect = list.getBoundingClientRect();
+      const tabRect = activeTab.getBoundingClientRect();
+      if (tabRect.left < listRect.left) {
+        list.scrollLeft -= listRect.left - tabRect.left;
+      } else if (tabRect.right > listRect.right) {
+        list.scrollLeft += tabRect.right - listRect.right;
+      }
+    };
+    revealActiveTab();
+    // 字体换入后 Tab 宽度会变而 Tab 条自身宽度不变，ResizeObserver 不会触发，需要补一次。
+    void document.fonts.ready.then(revealActiveTab);
+    const observer = new ResizeObserver(revealActiveTab);
+    observer.observe(list);
+    return () => observer.disconnect();
   }, [activeSection]);
 
   useGSAP(

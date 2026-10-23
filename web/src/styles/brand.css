@@ -76,7 +76,7 @@
     color-mix(in oklch, var(--primary) 72%, transparent),
     transparent
   );
-  animation: page-header-beam-sweep var(--motion-loop) linear infinite;
+  animation: page-header-beam-sweep 1.25s var(--ease-out-strong) 180ms 1 both;
   will-change: transform;
 }
 
