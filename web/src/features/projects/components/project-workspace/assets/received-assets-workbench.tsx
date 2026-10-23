@@ -34,6 +34,9 @@ import { UploadProgressOverlay } from "./components/upload-progress-overlay";
 import { WorkObjectReasonDialog } from "./components/work-object-reason-dialog";
 import { WorkObjectHistoryDialog } from "./components/work-object-history-dialog";
 import { WorkObjectCorrectionDialog } from "./components/work-object-correction-dialog";
+import styles from "./received-assets-workbench.module.css";
+
+const INTAKE_FLOW = ["资料接收", "工作对象", "需求解析", "版本比对"] as const;
 
 export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
   const navigate = useNavigate();
@@ -61,28 +64,62 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
       className="received-assets-workbench"
       aria-labelledby="received-assets-title"
     >
-      <header className="received-header" data-assets-panel>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="h-6 px-2">
+      <header className={styles.header} data-assets-panel>
+        <div className={styles.heroMain}>
+          <div className={styles.eyebrowRow}>
+            <Badge variant="secondary" className={styles.contextBadge}>
               <Boxes data-icon="inline-start" aria-hidden />
               资料与对象
             </Badge>
             <Badge
-              variant={workbench.workObjectsQuery.isError ? "destructive" : "outline"}
-              className="h-6 px-2"
+              variant="outline"
+              className={styles.dataBadge}
+              data-state={
+                workbench.workObjectsQuery.isError
+                  ? "error"
+                  : workbench.workObjectsQuery.isPending
+                    ? "syncing"
+                    : "live"
+              }
             >
-              {workbench.workObjectsQuery.isError ? "加载失败" : "真实数据"}
+              {workbench.workObjectsQuery.isError
+                ? "加载失败"
+                : workbench.workObjectsQuery.isPending
+                  ? "同步中"
+                  : "真实数据"}
             </Badge>
           </div>
-          <h2 id="received-assets-title" className="mt-3 text-xl font-semibold tracking-tight">
-            接收文件录入
-          </h2>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+
+          <div className={styles.titleBlock}>
+            <span className={styles.kicker}>ASSET INTAKE · 资料接收</span>
+            <div className={styles.titleRow}>
+              <span className={styles.titleAccent} aria-hidden />
+              <h2 id="received-assets-title" className={styles.title}>
+                接收文件录入
+              </h2>
+            </div>
+          </div>
+
+          <p className={styles.description}>
             把客户交付资料登记为工作对象，再进入需求解析和版本比对。
           </p>
+
+          <ol className={styles.flow} aria-label="资料处理流程">
+            {INTAKE_FLOW.map((step, index) => (
+              <li
+                key={step}
+                className={styles.flowStep}
+                data-active={index === 0 ? "true" : undefined}
+                aria-current={index === 0 ? "step" : undefined}
+              >
+                {index > 0 ? <ArrowRight className={styles.flowArrow} aria-hidden /> : null}
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
         </div>
-        <dl className="received-summary">
+
+        <dl className={styles.summary}>
           <SummaryTile label="待确认" value={workbench.summary.draftCount} tone="warning" />
           <SummaryTile label="已确认" value={workbench.summary.confirmedCount} tone="primary" />
           <SummaryTile label="历史版本" value={workbench.summary.historicalCount} tone="info" />
@@ -239,9 +276,9 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
           <Tabs
             value={workbench.queueFilter}
             onValueChange={workbench.changeQueueFilter}
-            className="gap-3"
+            className="w-full min-w-0 gap-3"
           >
-            <TabsList className="w-full sm:w-auto">
+            <TabsList className="w-full overflow-x-auto sm:w-auto [&_[data-slot='tabs-trigger']]:flex-none">
               <TabsTrigger value="draft" className="px-3 text-xs">
                 待确认 {workbench.summary.draftCount}
               </TabsTrigger>
@@ -403,9 +440,12 @@ function SummaryTile({
   tone: "warning" | "primary" | "info" | "neutral";
 }) {
   return (
-    <div data-summary-tone={tone}>
+    <div className={styles.summaryItem} data-summary-tone={tone}>
       <dt>{label}</dt>
-      <dd className="font-mono">{value}</dd>
+      <dd className="font-mono">
+        {value}
+        <small>项</small>
+      </dd>
     </div>
   );
 }

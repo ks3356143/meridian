@@ -430,52 +430,6 @@ main.workspace-route::-webkit-scrollbar-thumb {
   min-width: 0;
 }
 
-.received-header {
-  align-items: flex-end;
-  border: 1px solid var(--border);
-  background:
-    linear-gradient(110deg, color-mix(in srgb, var(--info) 7%, var(--card)), var(--card) 64%),
-    var(--card);
-  box-shadow: 0 8px 22px -20px color-mix(in srgb, var(--primary) 48%, transparent);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.5rem;
-  justify-content: space-between;
-  padding: clamp(1rem, 2vw, 1.5rem);
-}
-
-.received-summary {
-  border-inline-start: 1px solid var(--border);
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(4, minmax(4.25rem, 1fr));
-  padding-inline-start: clamp(1rem, 2vw, 1.5rem);
-}
-
-.received-summary dt {
-  color: var(--muted-foreground);
-  font-size: 0.75rem;
-  font-weight: 650;
-}
-
-.received-summary dd {
-  font-size: 1.25rem;
-  font-weight: 750;
-  margin-top: 0.2rem;
-}
-
-.received-summary [data-summary-tone="warning"] dd {
-  color: var(--warning);
-}
-
-.received-summary [data-summary-tone="primary"] dd {
-  color: var(--primary);
-}
-
-.received-summary [data-summary-tone="info"] dd {
-  color: var(--info);
-}
-
 .received-assets-grid {
   align-items: start;
   display: grid;
@@ -702,14 +656,6 @@ main.workspace-route::-webkit-scrollbar-thumb {
 
   .workspace-flow-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .received-summary {
-    border-inline-start: 0;
-    border-top: 1px solid var(--border);
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 1rem 0 0;
-    width: 100%;
   }
 
   .workspace-task-row {
