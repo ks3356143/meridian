@@ -1,7 +1,7 @@
 import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { startTransition, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,7 +56,10 @@ export function ProjectWorkspaceLayout({
   const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const [pendingSection, setPendingSection] = useState<{ fromPath: string } | null>(null);
+  const [pendingSection, setPendingSection] = useState<{
+    fromPath: string;
+    section: WorkspaceSection;
+  } | null>(null);
   const token = useAuthStore((state) => state.token);
   const executionRate = Math.round((project.casesExecuted / Math.max(project.casesTotal, 1)) * 100);
   const openIssues =
@@ -65,8 +68,10 @@ export function ProjectWorkspaceLayout({
     project.openIssues.normal +
     project.openIssues.suggestion;
   const activeSection = getActiveSection(location.pathname, project.id);
+  const switchingSection = pendingSection !== null && location.pathname === pendingSection.fromPath;
+  const displayedSection = switchingSection ? pendingSection.section : activeSection;
 
-  useRevealActiveTab(listRef, activeSection);
+  useRevealActiveTab(listRef, displayedSection);
 
   const indicatorRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
@@ -75,7 +80,7 @@ export function ProjectWorkspaceLayout({
     if (!list || !indicator) return;
     // 按真实宽度定位：Tab 不等宽或处于横向滚动时仍然对齐。
     const measure = () => {
-      const activeIndex = NAV_SECTIONS.findIndex((section) => section.value === activeSection);
+      const activeIndex = NAV_SECTIONS.findIndex((section) => section.value === displayedSection);
       const active = list.querySelectorAll<HTMLElement>('[data-slot="tabs-trigger"]')[activeIndex];
       if (!active) return;
       indicator.style.width = `${active.offsetWidth}px`;
@@ -86,7 +91,7 @@ export function ProjectWorkspaceLayout({
     const observer = new ResizeObserver(measure);
     observer.observe(list);
     return () => observer.disconnect();
-  }, [activeSection]);
+  }, [displayedSection]);
 
   useGSAP(
     () => {
@@ -113,8 +118,6 @@ export function ProjectWorkspaceLayout({
     { scope: containerRef },
   );
 
-  const switchingSection = pendingSection !== null && location.pathname === pendingSection.fromPath;
-
   if (!token) {
     return <Navigate to="/login" replace />;
   }
@@ -125,7 +128,7 @@ export function ProjectWorkspaceLayout({
 
     const target = `/projects/${project.id}/workspace${section.path ? `/${section.path}` : ""}`;
     if (target !== location.pathname) {
-      startTransition(() => setPendingSection({ fromPath: location.pathname }));
+      setPendingSection({ fromPath: location.pathname, section: section.value });
     }
     navigate(target);
   };
@@ -139,7 +142,7 @@ export function ProjectWorkspaceLayout({
           aria-label="项目工作区一级导航"
           className={`workspace-primary-nav ${styles.primaryNav}`}
         >
-          <Tabs value={activeSection} onValueChange={handleSectionChange}>
+          <Tabs value={displayedSection} onValueChange={handleSectionChange}>
             <TabsList
               ref={listRef}
               variant="default"
