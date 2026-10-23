@@ -31,7 +31,7 @@ const tabsListVariants = cva(
     variants: {
       variant: {
         default: "border-border/85 bg-card/75 elevation-1 gap-1 rounded-sm border p-1",
-        line: "border-border/80 bg-card/55 w-full gap-0 rounded-none border-b p-0",
+        line: "bg-card/55 w-full gap-0 rounded-none p-0",
       },
     },
     defaultVariants: {
@@ -49,7 +49,11 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       data-variant={variant}
-      className={cn(tabsListVariants({ variant }), className)}
+      className={cn(
+        tabsListVariants({ variant }),
+        variant === "line" && styles.lineList,
+        className,
+      )}
       {...props}
     />
   );

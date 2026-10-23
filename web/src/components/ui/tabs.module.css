@@ -1,3 +1,15 @@
+.lineList {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--border) 80%, transparent) 0 1px,
+    transparent 1px
+  );
+  background-position: bottom;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border: 0;
+}
+
 .content:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--ring) 52%, transparent);
   outline-offset: -2px;
