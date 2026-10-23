@@ -327,7 +327,9 @@ function TestItemDetailPanelInner({
         : section.id === SECTION_METHOD
           ? methodOk
           : detail.cases.length > 0;
-    return { ...section, step: index + 1, count, done };
+    const unit =
+      section.id === SECTION_METHOD ? "个子项" : section.id === SECTION_CASES ? "条用例" : "";
+    return { ...section, step: index + 1, count, done, unit };
   });
   return (
     <div className={styles.detail} ref={scrollRef}>
@@ -449,7 +451,7 @@ function TestItemDetailPanelInner({
               className={styles.sectionLink}
               data-active={activeSection === section.id ? "true" : undefined}
               aria-current={activeSection === section.id ? "location" : undefined}
-              aria-label={`第 ${section.step} 步 ${section.label}，${section.done ? "已完成" : "未完成"}`}
+              aria-label={`第 ${section.step} 步 ${section.label}，${section.done ? "已完成" : "未完成"}${section.count !== null && section.count > 0 ? `，${section.count} ${section.unit}` : ""}`}
               onClick={() => jumpTo(section.id)}
             >
               <span
@@ -461,8 +463,13 @@ function TestItemDetailPanelInner({
               </span>
               {section.label}
               {section.count !== null && section.count > 0 ? (
-                <span className={styles.sectionCount} aria-hidden>
+                <span
+                  className={styles.sectionCount}
+                  title={`${section.count} ${section.unit}`}
+                  aria-hidden
+                >
                   {section.count}
+                  <span className={styles.sectionCountUnit}>{section.unit}</span>
                 </span>
               ) : null}
             </button>

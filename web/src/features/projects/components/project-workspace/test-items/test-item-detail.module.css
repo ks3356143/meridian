@@ -652,6 +652,19 @@
   text-align: center;
 }
 
+.sectionCountUnit {
+  font-size: 0.56rem;
+  font-weight: 600;
+  margin-left: 0.12rem;
+}
+
+/* 窄屏空间不足，只留数字；单位仍保留在 title 与 aria-label 里。 */
+@media (max-width: 639px) {
+  .sectionCountUnit {
+    display: none;
+  }
+}
+
 .sectionLink:hover {
   background: color-mix(in srgb, var(--primary) 7%, transparent);
   color: var(--foreground);
