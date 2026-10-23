@@ -310,10 +310,6 @@ function TestItemDetailPanelInner({
     }
   };
 
-  useEffect(() => {
-    setCaseFilter("all");
-    setSelectedCaseIds([]);
-  }, [item.id]);
   const sectionSteps = SECTION_LINKS.map((section, index) => {
     const count =
       section.id === SECTION_METHOD

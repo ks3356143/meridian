@@ -757,6 +757,7 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
           aria-busy={detailQuery.isPlaceholderData || undefined}
         >
           <TestItemDetailPanel
+            // 切项直接重建面板，筛选与勾选无需再在 effect 里重置。
             key={detail.item.id}
             detail={detail}
             type={activeTypes.find((type) => type.code === detail.item.typeCode)}
