@@ -61,6 +61,14 @@ const SECTION_LINKS = [
 ] as const;
 
 const PRIORITIES = ["高", "中", "低"];
+type CaseFilter = "all" | "passed" | "failed" | "pending";
+
+const CASE_FILTERS: { value: CaseFilter; label: string }[] = [
+  { value: "all", label: "全部" },
+  { value: "pending", label: "待执行" },
+  { value: "passed", label: "已通过" },
+  { value: "failed", label: "未通过" },
+];
 
 function TestItemDetailPanelInner({
   detail,
@@ -121,6 +129,7 @@ function TestItemDetailPanelInner({
   const [activeSection, setActiveSection] = useState<string>(SECTION_BASIC);
   const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
   const [batchPending, setBatchPending] = useState(false);
+  const [caseFilter, setCaseFilter] = useState<CaseFilter>("all");
   const isStatic = type?.isStatic ?? false;
 
   // 保存状态芯片（对齐需求详情的即时编辑口径）：待自动保存 / 保存中 / 已自动保存 / 保存失败。
@@ -271,12 +280,20 @@ function TestItemDetailPanelInner({
   const tone = type ? categoryTone(type.category) : "green";
   const complete = completeness !== null && completeness.done === completeness.total;
   const selectedCaseSet = new Set(selectedCaseIds);
+  const visibleCases =
+    caseFilter === "all"
+      ? detail.cases
+      : detail.cases.filter((record) => record.status === caseFilter);
   const allCasesSelected =
-    detail.cases.length > 0 && detail.cases.every((record) => selectedCaseSet.has(record.id));
+    visibleCases.length > 0 && visibleCases.every((record) => selectedCaseSet.has(record.id));
   const someCasesSelected = selectedCaseIds.length > 0 && !allCasesSelected;
   const toggleAllCases = (checked: boolean | "indeterminate") => {
-    setSelectedCaseIds(checked === true ? detail.cases.map((record) => record.id) : []);
+    setSelectedCaseIds(checked === true ? visibleCases.map((record) => record.id) : []);
   };
+  const memberNames = useMemo(
+    () => new Map(members.map((member) => [member.id, member.displayName])),
+    [members],
+  );
   const toggleCase = (caseId: string, checked: boolean | "indeterminate") => {
     setSelectedCaseIds((current) =>
       checked === true ? [...new Set([...current, caseId])] : current.filter((id) => id !== caseId),
@@ -293,6 +310,10 @@ function TestItemDetailPanelInner({
     }
   };
 
+  useEffect(() => {
+    setCaseFilter("all");
+    setSelectedCaseIds([]);
+  }, [item.id]);
   const sectionSteps = SECTION_LINKS.map((section, index) => {
     const count =
       section.id === SECTION_METHOD
@@ -769,6 +790,31 @@ function TestItemDetailPanelInner({
             </EmptyHint>
           ) : (
             <>
+              <div className={styles.caseFilters} role="group" aria-label="按用例状态筛选">
+                {CASE_FILTERS.map((filter) => {
+                  const count =
+                    filter.value === "all"
+                      ? detail.cases.length
+                      : filter.value === "passed"
+                        ? passedCount
+                        : filter.value === "failed"
+                          ? failedCount
+                          : pendingCount;
+                  return (
+                    <button
+                      key={filter.value}
+                      type="button"
+                      className={styles.caseFilterChip}
+                      data-active={caseFilter === filter.value ? "true" : undefined}
+                      aria-pressed={caseFilter === filter.value}
+                      onClick={() => setCaseFilter(filter.value)}
+                    >
+                      {filter.label}
+                      <span className={styles.caseFilterCount}>{count}</span>
+                    </button>
+                  );
+                })}
+              </div>{" "}
               <CaseBatchBar
                 selectedCount={selectedCaseIds.length}
                 members={members}
@@ -790,6 +836,7 @@ function TestItemDetailPanelInner({
                     </th>
                     <th scope="col">用例标识</th>
                     <th scope="col">用例名称</th>
+                    <th scope="col">负责人</th>
                     <th scope="col">状态</th>
                     <th scope="col">
                       <span className={styles.visuallyHidden}>操作</span>
@@ -797,7 +844,7 @@ function TestItemDetailPanelInner({
                   </tr>
                 </thead>
                 <tbody>
-                  {detail.cases.map((record) => (
+                  {visibleCases.map((record) => (
                     <tr
                       key={record.id}
                       data-status={record.status}
@@ -819,6 +866,9 @@ function TestItemDetailPanelInner({
                         >
                           {record.name}
                         </button>
+                      </td>
+                      <td className={styles.caseOwner}>
+                        {memberNames.get(record.testerId ?? record.designerId ?? "") ?? "未指派"}
                       </td>
                       <td>
                         <span className={styles.caseStatus} data-status={record.status}>
@@ -855,6 +905,13 @@ function TestItemDetailPanelInner({
                       </td>
                     </tr>
                   ))}
+                  {visibleCases.length === 0 ? (
+                    <tr>
+                      <td className={styles.caseEmptyRow} colSpan={6}>
+                        该状态下没有用例，切换筛选或到「测试方法」生成用例。
+                      </td>
+                    </tr>
+                  ) : null}
                 </tbody>
               </table>
             </>
