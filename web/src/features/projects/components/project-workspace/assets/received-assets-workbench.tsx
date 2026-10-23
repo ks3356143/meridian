@@ -103,7 +103,9 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
           <p className={styles.description}>
             把客户交付资料登记为工作对象，再进入需求解析和版本比对。
           </p>
+        </div>
 
+        <div className={styles.heroAside}>
           <ol className={styles.flow} aria-label="资料处理流程">
             {INTAKE_FLOW.map((step, index) => (
               <li
@@ -117,14 +119,14 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
               </li>
             ))}
           </ol>
-        </div>
 
-        <dl className={styles.summary}>
-          <SummaryTile label="待确认" value={workbench.summary.draftCount} tone="warning" />
-          <SummaryTile label="已确认" value={workbench.summary.confirmedCount} tone="primary" />
-          <SummaryTile label="历史版本" value={workbench.summary.historicalCount} tone="info" />
-          <SummaryTile label="代码包" value={workbench.summary.codePackageCount} tone="neutral" />
-        </dl>
+          <dl className={styles.summary}>
+            <SummaryTile label="待确认" value={workbench.summary.draftCount} tone="warning" />
+            <SummaryTile label="已确认" value={workbench.summary.confirmedCount} tone="primary" />
+            <SummaryTile label="历史版本" value={workbench.summary.historicalCount} tone="info" />
+            <SummaryTile label="代码包" value={workbench.summary.codePackageCount} tone="neutral" />
+          </dl>
+        </div>
       </header>
 
       <div className="received-assets-grid">

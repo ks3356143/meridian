@@ -1,0 +1,280 @@
+.hero {
+  --workspace-progress: 0;
+  align-items: center;
+  background:
+    linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--primary) 2.2%, transparent) 1px,
+        transparent 1px
+      )
+      0 0 / 28px 28px,
+    linear-gradient(0deg, color-mix(in srgb, var(--primary) 2.2%, transparent) 1px, transparent 1px)
+      0 0 / 28px 28px,
+    linear-gradient(110deg, color-mix(in srgb, var(--primary) 6%, var(--card)), var(--card) 62%),
+    var(--card);
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+  box-shadow:
+    0 1px 2px #142a1e0a,
+    0 10px 24px -24px color-mix(in srgb, var(--primary) 54%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  overflow: hidden;
+  padding: clamp(0.85rem, 1.3vw, 1.1rem);
+  position: relative;
+}
+
+.hero::before {
+  background: linear-gradient(to bottom, var(--primary), var(--info));
+  content: "";
+  inset-block: 0;
+  left: 0;
+  position: absolute;
+  width: 4px;
+}
+
+.hero::after {
+  animation: workspaceProgressCharge 0.86s cubic-bezier(0.22, 0.85, 0.24, 1) 0.16s both;
+  background: linear-gradient(90deg, var(--primary), var(--info));
+  bottom: 0;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent),
+    0 0 14px color-mix(in srgb, var(--primary) 34%, transparent);
+  content: "";
+  height: 2px;
+  inset-inline: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: scaleX(var(--workspace-progress));
+  transform-origin: left;
+}
+
+@keyframes workspaceProgressCharge {
+  from {
+    opacity: 0.35;
+    transform: scaleX(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleX(var(--workspace-progress));
+  }
+}
+
+.heroMain {
+  display: flex;
+  flex: 1 1 28rem;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrowRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.36rem;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.08rem;
+}
+
+.kicker {
+  align-items: center;
+  color: color-mix(in srgb, var(--primary) 64%, var(--muted-foreground));
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  font-weight: 720;
+  gap: 0.34rem;
+  letter-spacing: 0.13em;
+}
+
+.kicker::before {
+  background: color-mix(in srgb, var(--primary) 72%, transparent);
+  box-shadow: 0 0 8px -1px color-mix(in srgb, var(--primary) 76%, transparent);
+  content: "";
+  height: 4px;
+  width: 4px;
+}
+
+.titleRow {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.titleAccent {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 60%, white), var(--info));
+  box-shadow: 0 0 12px -2px color-mix(in srgb, var(--primary) 72%, transparent);
+  flex: 0 0 auto;
+  height: 1.55rem;
+  width: 3px;
+}
+
+.title {
+  color: color-mix(in srgb, var(--foreground) 94%, var(--primary));
+  font-size: clamp(1.3rem, 1.5vw, 1.55rem);
+  font-weight: 770;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
+  font-size: 0.8rem;
+  line-height: 1.65;
+  margin: 0.05rem 0 0;
+  max-width: 47rem;
+}
+
+.metrics {
+  align-content: center;
+  align-self: stretch;
+  border-left: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(3, minmax(6.4rem, 1fr));
+  margin: 0;
+  min-width: 27rem;
+  padding-left: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.metricItem {
+  --metric-tone: color-mix(in srgb, var(--muted-foreground) 48%, transparent);
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 92%, transparent),
+    color-mix(in srgb, var(--metric-tone) 6%, var(--card))
+  );
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.5rem 0.55rem 0.46rem 0.64rem;
+  position: relative;
+}
+
+.metricItem::before {
+  background: var(--metric-tone);
+  bottom: 0;
+  box-shadow: 0 0 9px -2px var(--metric-tone);
+  content: "";
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 2px;
+}
+
+.metricItem[data-tone="primary"] {
+  --metric-tone: var(--primary);
+}
+
+.metricItem[data-tone="warning"] {
+  --metric-tone: var(--warning);
+}
+
+.metricItem[data-tone="info"] {
+  --metric-tone: var(--info);
+}
+
+.metricIcon {
+  align-items: center;
+  background: color-mix(in srgb, var(--metric-tone) 9%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--metric-tone) 26%, var(--border));
+  color: var(--metric-tone);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.metricIcon svg {
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.metricCopy {
+  min-width: 0;
+}
+
+.metricCopy dt {
+  color: var(--muted-foreground);
+  font-size: 0.64rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.metricCopy dd {
+  color: color-mix(in srgb, var(--foreground) 92%, var(--metric-tone));
+  font-size: 1.28rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 760;
+  line-height: 1;
+  margin: 0.2rem 0 0;
+}
+
+@media (max-width: 900px) {
+  .metrics {
+    align-self: stretch;
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+    flex-basis: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-width: 100%;
+    padding: 0.65rem 0 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .hero {
+    padding: 0.82rem;
+  }
+
+  .title {
+    font-size: 1.3rem;
+  }
+
+  .metrics {
+    gap: 0.28rem;
+  }
+
+  .metricItem {
+    gap: 0.34rem;
+    padding: 0.42rem 0.4rem 0.4rem 0.5rem;
+  }
+
+  .metricIcon {
+    height: 1.55rem;
+    width: 1.55rem;
+  }
+
+  .metricCopy dt {
+    font-size: 0.58rem;
+  }
+
+  .metricCopy dd {
+    font-size: 1.12rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero::after {
+    animation: none;
+  }
+}

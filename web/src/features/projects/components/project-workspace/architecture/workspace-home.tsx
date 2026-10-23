@@ -1,5 +1,6 @@
 import { useOutletContext } from "react-router";
 import { useRef, type CSSProperties } from "react";
+import { Activity, CircleAlert, ListChecks, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { gsap, useGSAP } from "@/lib/gsap";
 import type { ProjectWorkspaceOutletContext } from "../project-workspace-layout";
@@ -8,6 +9,7 @@ import { DataFlowPanel } from "./components/data-flow-panel";
 import { ReadinessPanel } from "./components/readiness-panel";
 import { RequirementIntakePanel } from "./components/requirement-intake-panel";
 import { TestItemTreePanel } from "./components/test-item-tree-panel";
+import styles from "./workspace-home.module.css";
 
 export function WorkspaceHome() {
   const { project, executionRate, openIssues } = useOutletContext<ProjectWorkspaceOutletContext>();
@@ -58,7 +60,7 @@ export function WorkspaceHome() {
   return (
     <div ref={containerRef} className="workspace-home">
       <section
-        className="workspace-home-hero"
+        className={styles.hero}
         data-home-hero
         style={
           {
@@ -66,32 +68,37 @@ export function WorkspaceHome() {
           } as CSSProperties
         }
       >
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className={styles.heroMain}>
+          <div className={styles.eyebrowRow}>
             <Badge variant={project.status === "已完成" ? "default" : "secondary"}>
               {project.status}
             </Badge>
             <Badge variant="outline">{project.platform}</Badge>
             <Badge variant="outline">安全 {project.level}</Badge>
           </div>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight">从当前任务进入项目</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+
+          <div className={styles.titleBlock}>
+            <span className={styles.kicker}>WORKBENCH · 作业台</span>
+            <div className={styles.titleRow}>
+              <span className={styles.titleAccent} aria-hidden />
+              <h2 className={styles.title}>从当前任务进入项目</h2>
+            </div>
+          </div>
+
+          <p className={styles.description}>
             阶段是推荐路径，不是流程牢笼；工作对象沉淀事实数据，文档与时间口径在生成阶段投影。
           </p>
         </div>
-        <dl className="workspace-home-metrics">
-          <div data-home-metric>
-            <dt>用例执行</dt>
-            <dd className="font-mono">{executionRate}%</dd>
-          </div>
-          <div data-home-metric>
-            <dt>未闭环问题</dt>
-            <dd className="font-mono">{openIssues}</dd>
-          </div>
-          <div data-home-metric>
-            <dt>测试用例</dt>
-            <dd className="font-mono">{project.casesTotal}</dd>
-          </div>
+
+        <dl className={styles.metrics}>
+          <MetricTile icon={Activity} label="用例执行" value={`${executionRate}%`} tone="primary" />
+          <MetricTile
+            icon={CircleAlert}
+            label="未闭环问题"
+            value={openIssues}
+            tone={openIssues > 0 ? "warning" : "neutral"}
+          />
+          <MetricTile icon={ListChecks} label="测试用例" value={project.casesTotal} tone="info" />
         </dl>
       </section>
 
@@ -105,6 +112,30 @@ export function WorkspaceHome() {
           <RequirementIntakePanel />
           <ReadinessPanel />
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function MetricTile({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+  tone: "primary" | "warning" | "info" | "neutral";
+}) {
+  return (
+    <div className={styles.metricItem} data-home-metric data-tone={tone}>
+      <span className={styles.metricIcon} aria-hidden>
+        <Icon />
+      </span>
+      <div className={styles.metricCopy}>
+        <dt>{label}</dt>
+        <dd className="font-mono">{value}</dd>
       </div>
     </div>
   );

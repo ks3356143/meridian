@@ -1,5 +1,5 @@
 .header {
-  align-items: stretch;
+  align-items: center;
   background:
     linear-gradient(
         90deg,
@@ -18,11 +18,11 @@
     inset 0 1px 0 color-mix(in srgb, white 64%, transparent);
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem 1.5rem;
+  gap: 0.85rem 1.2rem;
   justify-content: space-between;
-  min-height: 9.25rem;
+  min-height: 7.75rem;
   overflow: hidden;
-  padding: clamp(1rem, 1.8vw, 1.45rem);
+  padding: clamp(0.85rem, 1.4vw, 1.15rem);
   position: relative;
 }
 
@@ -52,9 +52,9 @@
 
 .heroMain {
   display: flex;
-  flex: 1 1 32rem;
+  flex: 1 1 28rem;
   flex-direction: column;
-  gap: 0.48rem;
+  gap: 0.42rem;
   min-width: 0;
   position: relative;
   z-index: 1;
@@ -171,7 +171,7 @@
 
 .title {
   color: color-mix(in srgb, var(--foreground) 94%, var(--primary));
-  font-size: clamp(1.45rem, 1.8vw, 1.85rem);
+  font-size: clamp(1.35rem, 1.55vw, 1.7rem);
   font-weight: 780;
   letter-spacing: -0.025em;
   line-height: 1.15;
@@ -226,15 +226,28 @@
   width: 0.66rem;
 }
 
-.summary {
-  align-self: center;
+.heroAside {
+  align-self: stretch;
   border-left: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  display: flex;
+  flex: 0 1 34rem;
+  flex-direction: column;
+  gap: 0.55rem;
+  justify-content: center;
+  min-width: 29rem;
+  padding-left: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.summary {
+  align-self: stretch;
   display: grid;
   gap: 0.35rem;
   grid-template-columns: repeat(4, minmax(4.2rem, 1fr));
   margin: 0;
-  min-width: min(100%, 29rem);
-  padding-left: 1rem;
+  min-width: 100%;
+  padding: 0;
   position: relative;
   z-index: 1;
 }
@@ -302,36 +315,74 @@
 }
 
 @media (max-width: 1080px) {
-  .summary {
+  .heroAside {
+    align-self: stretch;
     border-left: 0;
     border-top: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+    flex-basis: 100%;
+    min-width: 100%;
+    padding: 0.7rem 0 0;
+  }
+
+  .summary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     min-width: 100%;
-    padding: 0.75rem 0 0;
   }
 }
 
 @media (max-width: 620px) {
   .header {
     border-left-width: 2px;
-    padding: 0.9rem;
+    padding: 0.82rem;
   }
 
-  .summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding-top: 0.65rem;
+  .heroAside {
+    gap: 0.42rem;
+    padding-top: 0.55rem;
   }
 
-  .title {
-    font-size: 1.35rem;
+  .flow {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .flow::-webkit-scrollbar {
+    display: none;
   }
 
   .flowStep {
-    font-size: 0.61rem;
+    flex: 0 0 auto;
+    font-size: 0.58rem;
   }
 
   .flowStep > span {
-    padding-inline: 0.3rem;
+    padding-inline: 0.25rem;
+  }
+
+  .summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding-top: 0;
+  }
+
+  .summaryItem {
+    padding: 0.42rem 0.3rem 0.38rem 0.45rem;
+  }
+
+  .summaryItem dt {
+    font-size: 0.58rem;
+  }
+
+  .summaryItem dd {
+    font-size: 1.05rem;
+  }
+
+  .summaryItem dd small {
+    font-size: 0.5rem;
+  }
+
+  .title {
+    font-size: 1.3rem;
   }
 }
 

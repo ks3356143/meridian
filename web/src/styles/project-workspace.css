@@ -224,91 +224,6 @@ main.workspace-route::-webkit-scrollbar-thumb {
   min-width: 0;
 }
 
-.workspace-home-hero {
-  --workspace-progress: 0;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem 1.5rem;
-  border: 1px solid var(--border);
-  background:
-    linear-gradient(110deg, color-mix(in srgb, var(--primary) 6%, var(--card)), var(--card) 62%),
-    var(--card);
-  box-shadow:
-    0 1px 2px #142a1e0a,
-    0 8px 20px -18px color-mix(in srgb, var(--primary) 46%, transparent);
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-  overflow: hidden;
-  padding: clamp(1rem, 2vw, 1.5rem);
-  position: relative;
-}
-
-.workspace-home-hero:before {
-  content: "";
-  background: linear-gradient(to bottom, var(--primary), var(--info));
-  width: 4px;
-  position: absolute;
-  inset-block: 0;
-  left: 0;
-}
-
-/* 首页唯一的一次性信号：执行率在 hero 底边充能，不循环扫动。 */
-.workspace-home-hero::after {
-  animation: workspace-progress-charge 0.86s cubic-bezier(0.22, 0.85, 0.24, 1) 0.16s both;
-  background: linear-gradient(90deg, var(--primary), var(--info));
-  bottom: 0;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent),
-    0 0 14px color-mix(in srgb, var(--primary) 34%, transparent);
-  content: "";
-  height: 2px;
-  inset-inline: 0;
-  pointer-events: none;
-  position: absolute;
-  transform: scaleX(var(--workspace-progress));
-  transform-origin: left;
-}
-
-@keyframes workspace-progress-charge {
-  from {
-    opacity: 0.35;
-    transform: scaleX(0);
-  }
-
-  to {
-    opacity: 1;
-    transform: scaleX(var(--workspace-progress));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .workspace-home-hero::after {
-    animation: none;
-  }
-}
-
-.workspace-home-metrics {
-  border-inline-start: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: repeat(3, minmax(5.5rem, 1fr));
-  gap: 0.75rem;
-  padding-inline-start: 1.25rem;
-}
-
-.workspace-home-metrics dt {
-  color: var(--muted-foreground);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.workspace-home-metrics dd {
-  font-size: 1.375rem;
-  font-weight: 750;
-  font-variant-numeric: tabular-nums;
-  margin-top: 0.25rem;
-}
-
 .workspace-home-grid {
   align-items: start;
   display: grid;
@@ -646,14 +561,6 @@ main.workspace-route::-webkit-scrollbar-thumb {
 }
 
 @media (max-width: 720px) {
-  .workspace-home-metrics {
-    border-inline-start: 0;
-    border-top: 1px solid var(--border);
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    padding: 1rem 0 0;
-    width: 100%;
-  }
-
   .workspace-flow-grid {
     grid-template-columns: minmax(0, 1fr);
   }
