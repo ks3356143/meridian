@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import {
   AlertTriangle,
   Info,
+  Check,
   CheckCircle2,
   CloudUpload,
   CopyPlus,
@@ -198,6 +199,7 @@ function TestItemDetailPanelInner({
     container.addEventListener("touchstart", releaseJumpLock, { passive: true });
     container.addEventListener("keydown", releaseJumpLock);
     handleScroll();
+
     return () => {
       container.removeEventListener("scroll", handleScroll);
       container.removeEventListener("wheel", releaseJumpLock);
@@ -291,6 +293,21 @@ function TestItemDetailPanelInner({
     }
   };
 
+  const sectionSteps = SECTION_LINKS.map((section, index) => {
+    const count =
+      section.id === SECTION_METHOD
+        ? detail.subItems.length
+        : section.id === SECTION_CASES
+          ? detail.cases.length
+          : null;
+    const done =
+      section.id === SECTION_BASIC
+        ? item.name.trim() !== ""
+        : section.id === SECTION_METHOD
+          ? methodOk
+          : detail.cases.length > 0;
+    return { ...section, step: index + 1, count, done };
+  });
   return (
     <div className={styles.detail} ref={scrollRef}>
       <div ref={contentRef} className={styles.content}>
@@ -404,16 +421,29 @@ function TestItemDetailPanelInner({
               </>
             )}
           </span>
-          {SECTION_LINKS.map((section) => (
+          {sectionSteps.map((section) => (
             <button
               key={section.id}
               type="button"
               className={styles.sectionLink}
               data-active={activeSection === section.id ? "true" : undefined}
               aria-current={activeSection === section.id ? "location" : undefined}
+              aria-label={`第 ${section.step} 步 ${section.label}，${section.done ? "已完成" : "未完成"}`}
               onClick={() => jumpTo(section.id)}
             >
+              <span
+                className={styles.sectionStep}
+                data-done={section.done ? "true" : undefined}
+                aria-hidden
+              >
+                {section.done ? <Check aria-hidden /> : section.step}
+              </span>
               {section.label}
+              {section.count !== null && section.count > 0 ? (
+                <span className={styles.sectionCount} aria-hidden>
+                  {section.count}
+                </span>
+              ) : null}
             </button>
           ))}
         </nav>

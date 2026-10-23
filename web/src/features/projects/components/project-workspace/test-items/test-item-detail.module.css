@@ -603,6 +603,55 @@
   }
 }
 
+/* 构造步骤：编号 + 完成勾 + 子项/用例计数，让"基本信息 → 测试方法 → 用例概况"的顺序一眼可见。 */
+.sectionStep {
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--muted-foreground) 32%, transparent);
+  color: var(--muted-foreground);
+  display: inline-flex;
+  font-size: 0.58rem;
+  font-weight: 700;
+  height: 0.95rem;
+  justify-content: center;
+  line-height: 1;
+  width: 0.95rem;
+}
+
+.sectionStep[data-done="true"] {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+}
+
+.sectionStep svg {
+  animation: sectionStepCheckIn 180ms var(--ease-out-strong) 1 both;
+  height: 0.6rem;
+  width: 0.6rem;
+}
+
+@keyframes sectionStepCheckIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sectionCount {
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  color: color-mix(in srgb, var(--primary) 72%, var(--foreground));
+  font-size: 0.6rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05rem;
+  min-width: 1.05rem;
+  padding-inline: 0.18rem;
+  text-align: center;
+}
+
 .sectionLink:hover {
   background: color-mix(in srgb, var(--primary) 7%, transparent);
   color: var(--foreground);
@@ -1244,6 +1293,10 @@
 
   .sectionLink::before {
     display: none;
+  }
+
+  .sectionStep svg {
+    animation: none;
   }
 
   .heroCompleteness[data-state="incomplete"],
