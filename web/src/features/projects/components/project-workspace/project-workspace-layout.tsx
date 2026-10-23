@@ -80,11 +80,13 @@ export function ProjectWorkspaceLayout({
     if (!list || !indicator) return;
     // 按真实宽度定位：Tab 不等宽或处于横向滚动时仍然对齐。
     const measure = () => {
+      list.removeAttribute("data-indicator-ready");
       const activeIndex = NAV_SECTIONS.findIndex((section) => section.value === displayedSection);
       const active = list.querySelectorAll<HTMLElement>('[data-slot="tabs-trigger"]')[activeIndex];
       if (!active) return;
       indicator.style.width = `${active.offsetWidth}px`;
       indicator.style.transform = `translateX(${active.offsetLeft}px)`;
+      list.dataset.indicatorReady = "true";
     };
     measure();
     void document.fonts.ready.then(measure);

@@ -26,7 +26,7 @@
     transform 320ms var(--ease-out-strong),
     width 320ms var(--ease-out-strong);
   width: 0;
-  z-index: 2;
+  z-index: 3;
 }
 
 .tabList::after {
@@ -34,7 +34,7 @@
   position: absolute;
   inset-inline: 0;
   bottom: 0;
-  z-index: 0;
+  z-index: 2;
   height: 1px;
   background: color-mix(in srgb, var(--primary) 30%, var(--border));
 }
@@ -177,6 +177,19 @@
   background-size: 190% 100%;
   box-shadow: 0 0 6px -2px color-mix(in srgb, var(--primary) 36%, transparent);
   animation: workspaceTabLineSheen 560ms var(--ease-out-strong) 1 both;
+}
+
+/* 测量完成前先由活动 Tab 自己兜底，避免宽度从 0 开始时短暂没有边界。 */
+.tabList:not([data-indicator-ready="true"]) .tabTrigger[data-state="active"] {
+  border-bottom-color: var(--primary);
+  z-index: 3;
+}
+
+.tabList:not([data-indicator-ready="true"]) .tabTrigger[data-state="active"]::after {
+  animation: none;
+  background-color: var(--primary);
+  background-image: none;
+  box-shadow: none;
 }
 
 @keyframes workspaceTabLineSheen {
