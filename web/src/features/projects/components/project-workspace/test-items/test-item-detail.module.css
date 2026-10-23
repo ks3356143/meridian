@@ -526,9 +526,21 @@
   box-shadow: 0 10px 20px -22px color-mix(in srgb, var(--primary) 72%, transparent);
   display: flex;
   gap: 0.5rem;
+  overflow-x: auto;
   padding: 0.4rem 6rem 0.4rem 1.1rem;
+  scrollbar-width: none;
   top: 0;
   z-index: 3;
+}
+
+.sectionNav::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .sectionNav {
+    padding-right: 0.75rem;
+  }
 }
 
 .sectionLink {
@@ -537,9 +549,11 @@
   cursor: pointer;
   display: inline-flex;
   font-size: 0.76rem;
+  flex: 0 0 auto;
   gap: 0.42rem;
   min-height: 1.75rem;
   padding: 0.28rem 0.62rem;
+  scroll-margin-inline: 0.5rem;
   position: relative;
   transition:
     background-color 0.18s var(--ease-out-strong),
@@ -620,9 +634,16 @@
 }
 
 .sectionStep[data-done="true"] {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 38%, transparent);
+  color: color-mix(in srgb, var(--success) 78%, var(--foreground));
+}
+
+.sectionLink[data-state="active"] .sectionStep {
   background: color-mix(in srgb, var(--primary) 14%, transparent);
-  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
-  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+  border-color: color-mix(in srgb, var(--primary) 44%, transparent);
+  color: color-mix(in srgb, var(--primary) 84%, var(--foreground));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .sectionStep svg {
@@ -655,6 +676,7 @@
   line-height: 1.15rem;
   min-width: 1.35rem;
   padding-inline: 0.34rem;
+  pointer-events: none;
   white-space: nowrap;
 }
 

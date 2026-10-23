@@ -450,6 +450,9 @@ function TestItemDetailPanelInner({
               type="button"
               className={styles.sectionLink}
               data-active={activeSection === section.id ? "true" : undefined}
+              data-state={
+                activeSection === section.id ? "active" : section.done ? "done" : "pending"
+              }
               aria-current={activeSection === section.id ? "location" : undefined}
               aria-label={`第 ${section.step} 步 ${section.label}，${section.done ? "已完成" : "未完成"}${section.count !== null && section.count > 0 ? `，${section.count} ${section.unit}` : ""}`}
               onClick={() => jumpTo(section.id)}
