@@ -14,7 +14,7 @@
   gap: 0;
 }
 
-/* 单条滑动活动线：切换一级 Tab 时按 --tab-count 等分平移，取代每个 Tab 各画一条线。 */
+/* 单条滑动活动线：按当前 Tab 实测宽度与偏移定位，Tab 不等宽也能对齐。 */
 .tabIndicator {
   background: var(--primary);
   bottom: 0;
@@ -23,8 +23,10 @@
   left: 0;
   pointer-events: none;
   position: absolute;
-  transition: transform 320ms var(--ease-out-strong);
-  width: calc(100% / var(--tab-count, 5));
+  transition:
+    transform 320ms var(--ease-out-strong),
+    width 320ms var(--ease-out-strong);
+  width: 0;
   z-index: 2;
 }
 
@@ -234,15 +236,6 @@
 
   .tabTrigger {
     flex: 0 0 auto;
-  }
-
-  /* 滚动模式下 Tab 不再等宽，等分指示器会错位；改回当前 Tab 自己画底线。 */
-  .tabIndicator {
-    display: none;
-  }
-
-  .tabTrigger[data-state="active"]::after {
-    background-color: var(--primary);
   }
 }
 

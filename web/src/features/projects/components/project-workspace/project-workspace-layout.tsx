@@ -1,7 +1,7 @@
 import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { startTransition, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { startTransition, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,6 +68,26 @@ export function ProjectWorkspaceLayout({
 
   useRevealActiveTab(listRef, activeSection);
 
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const indicator = indicatorRef.current;
+    if (!list || !indicator) return;
+    // 按真实宽度定位：Tab 不等宽或处于横向滚动时仍然对齐。
+    const measure = () => {
+      const activeIndex = NAV_SECTIONS.findIndex((section) => section.value === activeSection);
+      const active = list.querySelectorAll<HTMLElement>('[data-slot="tabs-trigger"]')[activeIndex];
+      if (!active) return;
+      indicator.style.width = `${active.offsetWidth}px`;
+      indicator.style.transform = `translateX(${active.offsetLeft}px)`;
+    };
+    measure();
+    void document.fonts.ready.then(measure);
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [activeSection]);
+
   useGSAP(
     () => {
       if (!containerRef.current) return;
@@ -118,7 +138,6 @@ export function ProjectWorkspaceLayout({
         <nav
           aria-label="项目工作区一级导航"
           className={`workspace-primary-nav ${styles.primaryNav}`}
-          style={{ "--tab-count": NAV_SECTIONS.length } as CSSProperties}
         >
           <Tabs value={activeSection} onValueChange={handleSectionChange}>
             <TabsList
@@ -138,20 +157,9 @@ export function ProjectWorkspaceLayout({
                   {section.label}
                 </TabsTrigger>
               ))}
+              <span ref={indicatorRef} className={styles.tabIndicator} aria-hidden />
             </TabsList>
           </Tabs>
-          <span
-            className={styles.tabIndicator}
-            style={{
-              transform: `translateX(${
-                Math.max(
-                  0,
-                  NAV_SECTIONS.findIndex((s) => s.value === activeSection),
-                ) * 100
-              }%)`,
-            }}
-            aria-hidden
-          />
         </nav>
 
         <main
