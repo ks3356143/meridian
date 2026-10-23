@@ -7,7 +7,6 @@
   position: relative;
   overflow-y: hidden;
   border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
   background: var(--card);
   height: 2.5rem;
   padding: 0;
