@@ -91,14 +91,15 @@
   border-bottom-color: transparent;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--primary) 14%, var(--card)),
-    color-mix(in srgb, var(--primary) 7%, var(--card)) 58%,
+    color-mix(in srgb, var(--primary) 18%, var(--card)),
+    color-mix(in srgb, var(--primary) 9%, var(--card)) 58%,
     var(--card)
   );
   color: var(--primary-ink);
   font-weight: 650;
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 82%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 66%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--primary) 12%, transparent),
     0 -6px 16px -16px color-mix(in srgb, var(--primary) 64%, transparent),
     0 6px 16px -16px color-mix(in srgb, var(--primary) 42%, transparent);
 }
@@ -107,9 +108,45 @@
   color: var(--primary);
 }
 
+/* 切到该 Tab 时表面斜向扫过一次；结束移出可见区，不常驻、不循环。 */
 .tabTrigger[data-state="active"]::before {
-  opacity: 1;
-  transform: translateX(0);
+  animation: workspaceTabScan 620ms var(--ease-out-strong) 1 both;
+}
+
+@keyframes workspaceTabScan {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(120%);
+  }
+}
+
+.tabTrigger[data-state="active"] .tabIcon {
+  animation: workspaceTabIconPop 240ms var(--ease-out-strong) 1 both;
+}
+
+@keyframes workspaceTabIconPop {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.82);
+  }
+
+  62% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .tabTrigger[data-state="active"]::after {
@@ -187,7 +224,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tabTrigger::before,
-  .tabTrigger::after {
+  .tabTrigger::after,
+  .tabIcon {
     animation: none !important;
     transition: none !important;
   }
