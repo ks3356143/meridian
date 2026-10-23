@@ -180,6 +180,8 @@
 }
 
 main.workspace-route {
+  /* 宽表/树必须自己滚；工作区路由不产生第二层横向滚动条。 */
+  overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;

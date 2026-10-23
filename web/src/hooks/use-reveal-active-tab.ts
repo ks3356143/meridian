@@ -8,8 +8,10 @@ export function useRevealActiveTab(listRef: RefObject<HTMLElement | null>, activ
   useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
+    let cancelled = false;
 
     const reveal = () => {
+      if (cancelled) return;
       const activeTab = list.querySelector<HTMLElement>(
         '[data-slot="tabs-trigger"][data-state="active"]',
       );
@@ -28,6 +30,9 @@ export function useRevealActiveTab(listRef: RefObject<HTMLElement | null>, activ
     void document.fonts.ready.then(reveal);
     const observer = new ResizeObserver(reveal);
     observer.observe(list);
-    return () => observer.disconnect();
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
   }, [listRef, activeKey]);
 }

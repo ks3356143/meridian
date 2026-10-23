@@ -200,6 +200,8 @@ export function useReceivedAssetsWorkbench(project: Project) {
     let draftCount = 0;
     let confirmedCount = 0;
     let historicalCount = 0;
+    let supersededCount = 0;
+    let revokedCount = 0;
     let parseableCount = 0;
     let codePackageCount = 0;
     let confirmedDocumentCount = 0;
@@ -210,7 +212,13 @@ export function useReceivedAssetsWorkbench(project: Project) {
         confirmedCount++;
         if (asset.objectKind !== "code_package") confirmedDocumentCount++;
       }
-      if (asset.status === "superseded" || asset.status === "revoked") historicalCount++;
+      if (asset.status === "superseded") {
+        historicalCount++;
+        supersededCount++;
+      } else if (asset.status === "revoked") {
+        historicalCount++;
+        revokedCount++;
+      }
       if (getParseState(asset).tone === "ready") parseableCount++;
       if (asset.objectKind === "code_package") codePackageCount++;
     }
@@ -219,6 +227,8 @@ export function useReceivedAssetsWorkbench(project: Project) {
       draftCount,
       confirmedCount,
       historicalCount,
+      supersededCount,
+      revokedCount,
       parseableCount,
       codePackageCount,
       confirmedDocumentCount,

@@ -288,10 +288,10 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
                 已确认 {workbench.summary.confirmedCount}
               </TabsTrigger>
               <TabsTrigger value="superseded" className="px-3 text-xs">
-                已替代 {workbench.assets.filter((asset) => asset.status === "superseded").length}
+                已替代 {workbench.summary.supersededCount}
               </TabsTrigger>
               <TabsTrigger value="revoked" className="px-3 text-xs">
-                已作废 {workbench.assets.filter((asset) => asset.status === "revoked").length}
+                已作废 {workbench.summary.revokedCount}
               </TabsTrigger>
               <TabsTrigger value="all" className="px-3 text-xs">
                 全部 {workbench.assets.length}

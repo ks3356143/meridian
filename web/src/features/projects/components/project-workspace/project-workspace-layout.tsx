@@ -78,8 +78,10 @@ export function ProjectWorkspaceLayout({
     const list = listRef.current;
     const indicator = indicatorRef.current;
     if (!list || !indicator) return;
+    let cancelled = false;
     // 按真实宽度定位：Tab 不等宽或处于横向滚动时仍然对齐。
     const measure = () => {
+      if (cancelled) return;
       list.removeAttribute("data-indicator-ready");
       const activeIndex = NAV_SECTIONS.findIndex((section) => section.value === displayedSection);
       const active = list.querySelectorAll<HTMLElement>('[data-slot="tabs-trigger"]')[activeIndex];
@@ -92,7 +94,10 @@ export function ProjectWorkspaceLayout({
     void document.fonts.ready.then(measure);
     const observer = new ResizeObserver(measure);
     observer.observe(list);
-    return () => observer.disconnect();
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
   }, [displayedSection]);
 
   useGSAP(
