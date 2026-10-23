@@ -1,5 +1,6 @@
 .primaryNav {
   margin-top: 2px;
+  position: relative;
 }
 
 .tabList {
@@ -11,6 +12,20 @@
   height: 2.5rem;
   padding: 0;
   gap: 0;
+}
+
+/* 单条滑动活动线：切换一级 Tab 时在 5 等分之间平移，取代每个 Tab 各画一条线。 */
+.tabIndicator {
+  background: var(--primary);
+  bottom: 0;
+  box-shadow: 0 0 10px -2px color-mix(in srgb, var(--primary) 55%, transparent);
+  height: 2px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: transform 320ms var(--ease-out-strong);
+  width: calc(100% / 5);
+  z-index: 2;
 }
 
 .tabList::after {
@@ -150,7 +165,7 @@
 }
 
 .tabTrigger[data-state="active"]::after {
-  background-color: var(--primary);
+  background-color: transparent;
   background-image: linear-gradient(
     100deg,
     transparent 41%,
@@ -179,7 +194,21 @@
 }
 
 :global(.dark) .tabList,
-:global(.dark) .tabList::after {
+:global(.dark) /* 单条滑动活动线：切换一级 Tab 时在 5 等分之间平移，取代每个 Tab 各画一条线。 */
+.tabIndicator {
+  background: var(--primary);
+  bottom: 0;
+  box-shadow: 0 0 10px -2px color-mix(in srgb, var(--primary) 55%, transparent);
+  height: 2px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: transform 320ms var(--ease-out-strong);
+  width: calc(100% / 5);
+  z-index: 2;
+}
+
+.tabList::after {
   border-color: color-mix(in srgb, var(--primary) 34%, var(--border));
   background: color-mix(in srgb, var(--card) 94%, transparent);
 }

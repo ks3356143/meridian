@@ -139,6 +139,18 @@ export function ProjectWorkspaceLayout({
               ))}
             </TabsList>
           </Tabs>
+          <span
+            className={styles.tabIndicator}
+            style={{
+              transform: `translateX(${
+                Math.max(
+                  0,
+                  NAV_SECTIONS.findIndex((s) => s.value === activeSection),
+                ) * 100
+              }%)`,
+            }}
+            aria-hidden
+          />
         </nav>
 
         <main
