@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SortingState } from "@tanstack/react-table";
-import { Plus, Users } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { Plus, Search, Users } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { usersApi } from "@/features/users/api";
 import { DeleteUserDialog } from "@/features/users/components/delete-user-dialog";
@@ -36,11 +37,19 @@ export function UserManagementPage() {
   const [formValues, setFormValues] = useState<UserFormValues>(emptyFormValues);
   const [formErrors, setFormErrors] = useState<UserFormErrors>({});
   const [sorting, setSorting] = useState<SortingState>([{ id: "createdAt", desc: false }]);
+  const [keyword, setKeyword] = useState("");
 
   const usersQuery = useQuery({
     queryKey: ["users"],
     queryFn: async () => (await usersApi.list()).users,
   });
+  const filteredUsers = useMemo(() => {
+    const query = keyword.trim().toLowerCase();
+    if (!query) return usersQuery.data ?? [];
+    return (usersQuery.data ?? []).filter((user) =>
+      [user.username, user.displayName].some((value) => value.toLowerCase().includes(query)),
+    );
+  }, [keyword, usersQuery.data]);
 
   useSubtleReveal(containerRef, ".user-management-reveal", !usersQuery.isPending);
 
@@ -156,14 +165,56 @@ export function UserManagementPage() {
           <QueryError title="加载用户列表失败" onRetry={() => usersQuery.refetch()} />
         ) : null}
         {usersQuery.isSuccess ? (
-          <UserManagementTable
-            users={usersQuery.data}
-            currentUserId={currentUserId}
-            sorting={sorting}
-            onSortingChange={setSorting}
-            onEdit={openEdit}
-            onDelete={setDeleteTarget}
-          />
+          <div className="flex flex-col gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2" role="search">
+              <div className="relative min-w-48 flex-1 sm:max-w-sm">
+                <Search
+                  className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
+                  aria-hidden
+                />
+                <Input
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  aria-label="搜索用户"
+                  placeholder="搜索用户名或显示名"
+                  className="pl-8"
+                />
+              </div>
+              {keyword ? (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setKeyword("")}>
+                  清空搜索
+                </Button>
+              ) : null}
+              <span className="text-muted-foreground font-mono text-xs" aria-live="polite">
+                {filteredUsers.length}/{usersQuery.data.length}
+              </span>
+            </div>
+            <UserManagementTable
+              users={filteredUsers}
+              currentUserId={currentUserId}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              onEdit={openEdit}
+              onDelete={setDeleteTarget}
+              emptyContent={
+                keyword ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Search className="text-muted-foreground size-5" aria-hidden />
+                    <p className="text-muted-foreground text-sm">没有匹配的用户</p>
+                    <p className="text-muted-foreground text-xs">清空搜索后可查看全部用户</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setKeyword("")}
+                    >
+                      清空搜索
+                    </Button>
+                  </div>
+                ) : undefined
+              }
+            />
+          </div>
         ) : null}
       </div>
 

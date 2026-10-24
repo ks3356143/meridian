@@ -1,4 +1,5 @@
 import { ArrowLeft, LogOut, ShieldCheck } from "lucide-react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { ThemeToggle } from "@/components/provider/theme-toggle";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +13,12 @@ export function WorkspaceTopbar({
   project,
   executionRate,
   openIssues,
+  quickSwitcher,
 }: {
   project: Project;
   executionRate: number;
   openIssues: number;
+  quickSwitcher?: ReactNode;
 }) {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -64,6 +67,7 @@ export function WorkspaceTopbar({
             value={String(openIssues)}
             tone={openIssues > 0 ? "danger" : "default"}
           />
+          {quickSwitcher}
           <span className="workspace-topbar-divider hidden h-6 xl:block" aria-hidden />
           <span className="workspace-topbar-user hidden min-w-0 items-center gap-2 xl:flex">
             <ShieldCheck className="size-3.5" aria-hidden />

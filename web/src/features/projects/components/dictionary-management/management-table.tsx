@@ -27,10 +27,12 @@ export function ManagementTable<TData extends RowData & { id: string }>({
   table,
   selectedId,
   leftAlignedColumns = [],
+  emptyContent,
 }: {
   table: ReactTable<ManagementTableFeatures, TData>;
   selectedId?: string;
   leftAlignedColumns?: number[];
+  emptyContent?: ReactNode;
 }) {
   return (
     <DataTable
@@ -38,10 +40,12 @@ export function ManagementTable<TData extends RowData & { id: string }>({
       selectedId={selectedId}
       leftAlignedColumns={leftAlignedColumns}
       emptyContent={
-        <div className="flex flex-col items-center gap-2">
-          <Inbox className="text-muted-foreground size-5" aria-hidden />
-          <p className="text-muted-foreground text-sm">暂无字典数据</p>
-        </div>
+        emptyContent ?? (
+          <div className="flex flex-col items-center gap-2">
+            <Inbox className="text-muted-foreground size-5" aria-hidden />
+            <p className="text-muted-foreground text-sm">暂无字典数据</p>
+          </div>
+        )
       }
     />
   );
@@ -52,12 +56,14 @@ export function ManagementSection({
   total,
   enabledCount,
   action,
+  toolbar,
   children,
 }: {
   title: string;
   total: number;
   enabledCount: number;
   action: ReactNode;
+  toolbar?: ReactNode;
   children: ReactNode;
 }) {
   const inferred = inferManagementAppearance(title);
@@ -85,6 +91,7 @@ export function ManagementSection({
         </div>
         <div className="flex shrink-0 items-center gap-2">{action}</div>
       </div>
+      {toolbar ? <div className="border-border border-b px-5 py-3">{toolbar}</div> : null}
       {children}
     </section>
   );

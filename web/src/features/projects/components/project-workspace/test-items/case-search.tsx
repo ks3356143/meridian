@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CornerDownRight, FileSearch, Search } from "lucide-react";
+import { CornerDownRight, FileSearch, Search, X } from "lucide-react";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { testItemsApi } from "@/features/test-items/api";
 import type { TestCaseSearchHit } from "@/features/test-items/types";
@@ -35,6 +35,7 @@ export function CaseSearch({
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(input.trim()), 180);
@@ -56,6 +57,7 @@ export function CaseSearch({
         <div className={styles.searchField}>
           <Search className={styles.searchIcon} aria-hidden />
           <input
+            ref={inputRef}
             className={styles.input}
             value={input}
             placeholder="查找用例 / 步骤…"
@@ -72,6 +74,21 @@ export function CaseSearch({
               }
             }}
           />
+          {input ? (
+            <button
+              type="button"
+              className={styles.clearButton}
+              aria-label="清空测试项查找"
+              onClick={() => {
+                setInput("");
+                setQuery("");
+                setOpen(false);
+                inputRef.current?.focus();
+              }}
+            >
+              <X aria-hidden />
+            </button>
+          ) : null}
         </div>
       </PopoverAnchor>
       <PopoverContent

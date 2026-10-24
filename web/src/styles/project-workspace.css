@@ -916,6 +916,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
 
 [data-module-card] {
   --section-tone: var(--module-tone);
+  animation: workspaceModuleCardIn 200ms var(--ease-out-strong) both;
   border-color: color-mix(in srgb, var(--module-tone) 20%, transparent);
   background: color-mix(in srgb, var(--module-tone) 5%, var(--card));
   transition:
@@ -924,8 +925,42 @@ main.workspace-route::-webkit-scrollbar-thumb {
     box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+[data-module-card]:nth-child(2) {
+  animation-delay: 24ms;
+}
+
+[data-module-card]:nth-child(3) {
+  animation-delay: 48ms;
+}
+
+[data-module-card]:nth-child(4) {
+  animation-delay: 72ms;
+}
+
+[data-module-card]:nth-child(5) {
+  animation-delay: 96ms;
+}
+
+@keyframes workspaceModuleCardIn {
+  from {
+    opacity: 0.72;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 [data-module-card]:hover {
   border-color: color-mix(in srgb, var(--module-tone) 36%, transparent);
   background: color-mix(in srgb, var(--module-tone) 9%, var(--card));
   box-shadow: 0 5px 12px -10px color-mix(in srgb, var(--module-tone) 52%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-module-card] {
+    animation: none;
+  }
 }

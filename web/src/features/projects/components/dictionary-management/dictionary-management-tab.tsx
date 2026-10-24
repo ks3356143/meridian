@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createColumnHelper, useTable, type SortingState } from "@tanstack/react-table";
-import { CircleCheck, CircleOff, Plus } from "lucide-react";
+import { CircleCheck, CircleOff, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { projectsApi } from "@/features/projects/api";
 import { DictionaryEditor } from "./dictionary-editor";
@@ -30,6 +31,7 @@ export function DictionaryManagementTab() {
   const [selected, setSelected] = useState<DictionaryOption | null>(null);
   const [editorMode, setEditorMode] = useState<"idle" | "create" | "edit">("idle");
   const [editorSession, setEditorSession] = useState(0);
+  const [keyword, setKeyword] = useState("");
   const [sorting, setSorting] = useState<SortingState>([
     { id: "category", desc: false },
     { id: "sortOrder", desc: false },
@@ -140,10 +142,19 @@ export function DictionaryManagementTab() {
   const table = useTable({
     features,
     columns,
-    data: dictionariesQuery.data ?? [],
+    data: (dictionariesQuery.data ?? []).filter((item) => {
+      const query = keyword.trim().toLowerCase();
+      return (
+        query.length === 0 ||
+        item.name.toLowerCase().includes(query) ||
+        categoryLabels[item.category].toLowerCase().includes(query)
+      );
+    }),
     state: { sorting },
     onSortingChange: setSorting,
   });
+  const filteredRows = table.getFilteredRowModel().rows;
+  const filteredCount = filteredRows.length;
 
   if (dictionariesQuery.isPending) return <LoadingCard label="正在加载技术字典" />;
   if (dictionariesQuery.isError) return <ErrorCard onRetry={dictionariesQuery.refetch} />;
@@ -152,8 +163,8 @@ export function DictionaryManagementTab() {
     <div className="dictionary-reveal min-w-0">
       <ManagementSection
         title="技术字典"
-        total={dictionariesQuery.data.length}
-        enabledCount={dictionariesQuery.data.filter((item) => item.isEnabled).length}
+        total={filteredCount}
+        enabledCount={filteredRows.filter((row) => row.original.isEnabled).length}
         action={
           <Button
             size="sm"
@@ -167,8 +178,47 @@ export function DictionaryManagementTab() {
             新增
           </Button>
         }
+        toolbar={
+          <div className="flex min-w-0 flex-wrap items-center gap-2" role="search">
+            <div className="relative min-w-48 flex-1">
+              <Search
+                className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
+                aria-hidden
+              />
+              <Input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                aria-label="搜索技术字典"
+                placeholder="搜索字典类型或展示名"
+                className="pl-8"
+              />
+            </div>
+            {keyword && filteredCount > 0 ? (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setKeyword("")}>
+                清空搜索
+              </Button>
+            ) : null}
+            <span className="text-muted-foreground font-mono text-xs" aria-live="polite">
+              {filteredCount}/{dictionariesQuery.data.length}
+            </span>
+          </div>
+        }
       >
-        <ManagementTable table={table} selectedId={selected?.id} leftAlignedColumns={[1]} />
+        <ManagementTable
+          table={table}
+          selectedId={selected?.id}
+          leftAlignedColumns={[1]}
+          emptyContent={
+            <div className="flex flex-col items-center gap-2">
+              <Search className="text-muted-foreground size-5" aria-hidden />
+              <p className="text-muted-foreground text-sm">没有匹配的技术字典</p>
+              <p className="text-muted-foreground text-xs">清空搜索后可查看全部字典项</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => setKeyword("")}>
+                清空搜索
+              </Button>
+            </div>
+          }
+        />
       </ManagementSection>
 
       <DictionaryEditor

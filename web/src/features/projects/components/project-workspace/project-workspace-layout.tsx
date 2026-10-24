@@ -1,9 +1,18 @@
-import { Boxes, CircleCheck, FileText, GitBranch, ListChecks } from "lucide-react";
+import {
+  Boxes,
+  CircleCheck,
+  FileText,
+  FolderKanban,
+  GitBranch,
+  LayoutDashboard,
+  ListChecks,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
+import { AppQuickSwitcher } from "@/components/shared/app-quick-switcher";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useAuthStore } from "@/stores/auth-store";
@@ -23,14 +32,45 @@ type WorkspaceSection = "tasks" | "assets" | "requirements" | "execution" | "del
 const NAV_SECTIONS: Array<{
   value: WorkspaceSection;
   label: string;
+  description: string;
   icon: LucideIcon;
   path: string;
 }> = [
-  { value: "tasks", label: "作业台", icon: CircleCheck, path: "" },
-  { value: "assets", label: "资料与对象", icon: Boxes, path: "profile" },
-  { value: "requirements", label: "需求与追踪", icon: GitBranch, path: "requirements" },
-  { value: "execution", label: "测试与执行", icon: ListChecks, path: "test-items" },
-  { value: "delivery", label: "交付与文档", icon: FileText, path: "documents" },
+  {
+    value: "tasks",
+    label: "作业台",
+    description: "当前任务、数据链路与模块状态",
+    icon: CircleCheck,
+    path: "",
+  },
+  {
+    value: "assets",
+    label: "资料与对象",
+    description: "接收文件、工作对象与版本",
+    icon: Boxes,
+    path: "profile",
+  },
+  {
+    value: "requirements",
+    label: "需求与追踪",
+    description: "需求树、候选确认与追踪",
+    icon: GitBranch,
+    path: "requirements",
+  },
+  {
+    value: "execution",
+    label: "测试与执行",
+    description: "测试项树、用例与静态测试",
+    icon: ListChecks,
+    path: "test-items",
+  },
+  {
+    value: "delivery",
+    label: "交付与文档",
+    description: "文档清单、预检与交付导出",
+    icon: FileText,
+    path: "documents",
+  },
 ];
 
 const SECTION_PRELOADERS: Partial<Record<WorkspaceSection, () => Promise<unknown>>> = {
@@ -40,6 +80,21 @@ const SECTION_PRELOADERS: Partial<Record<WorkspaceSection, () => Promise<unknown
   execution: () => import("@/pages/ProjectTestItemsPage"),
   delivery: () => import("@/pages/ProjectDocumentsPage"),
 };
+
+const PROJECT_QUICK_SWITCH_ITEMS = [
+  {
+    value: "project-detail",
+    label: "项目详情",
+    description: "返回当前项目总览",
+    icon: LayoutDashboard,
+  },
+  {
+    value: "projects",
+    label: "项目列表",
+    description: "浏览全部测评项目",
+    icon: FolderKanban,
+  },
+] as const;
 
 function preloadSection(section: WorkspaceSection) {
   void SECTION_PRELOADERS[section]?.().catch(() => undefined);
@@ -142,7 +197,32 @@ export function ProjectWorkspaceLayout({
 
   return (
     <div ref={containerRef} className="workspace-shell flex h-svh min-h-0 flex-col">
-      <WorkspaceTopbar project={project} executionRate={executionRate} openIssues={openIssues} />
+      <WorkspaceTopbar
+        project={project}
+        executionRate={executionRate}
+        openIssues={openIssues}
+        quickSwitcher={
+          <AppQuickSwitcher
+            items={[...NAV_SECTIONS, ...PROJECT_QUICK_SWITCH_ITEMS]}
+            activeValue={displayedSection}
+            onSelect={(value) => {
+              if (value === "project-detail") {
+                navigate(`/projects/${project.id}`);
+                return;
+              }
+              if (value === "projects") {
+                navigate("/");
+                return;
+              }
+              handleSectionChange(value);
+            }}
+            onPreload={(value) => {
+              const section = NAV_SECTIONS.find((item) => item.value === value);
+              if (section) preloadSection(section.value);
+            }}
+          />
+        }
+      />
 
       <div className="workspace-body flex min-h-0 flex-1 flex-col">
         <nav

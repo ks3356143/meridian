@@ -60,7 +60,7 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
         }),
         columnHelper.accessor("platform", {
           header: "平台",
-          meta: { hiddenUntil: "xl" },
+          meta: { hiddenUntil: "wide" },
           cell: (info) => <TruncatedText value={info.getValue()} />,
         }),
         columnHelper.accessor("organization", {
@@ -121,7 +121,7 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
         }),
         columnHelper.accessor("updatedAt", {
           header: "更新时间",
-          meta: { hiddenUntil: "xl" },
+          meta: { hiddenUntil: "wide" },
           cell: (info) => <TruncatedText value={info.getValue()} className="font-mono text-xs" />,
         }),
         columnHelper.display({

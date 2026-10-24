@@ -42,6 +42,31 @@
   color: var(--muted-foreground);
 }
 
+.clearButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: color-mix(in srgb, var(--muted-foreground) 82%, transparent);
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  height: 1.35rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.35rem;
+}
+
+.clearButton:hover,
+.clearButton:focus-visible {
+  color: var(--foreground);
+  outline: none;
+}
+
+.clearButton svg {
+  height: 0.72rem;
+  width: 0.72rem;
+}
+
 .popover {
   gap: 0;
   max-height: min(28rem, 62vh);

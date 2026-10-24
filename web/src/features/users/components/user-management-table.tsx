@@ -5,7 +5,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { Pencil, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { managementTableFeatures } from "@/components/shared/table-features";
@@ -23,6 +23,7 @@ interface UserManagementTableProps {
   onSortingChange: OnChangeFn<SortingState>;
   onEdit: (user: ManagedUser) => void;
   onDelete: (user: ManagedUser) => void;
+  emptyContent?: ReactNode;
 }
 
 export function UserManagementTable({
@@ -32,6 +33,7 @@ export function UserManagementTable({
   onSortingChange,
   onEdit,
   onDelete,
+  emptyContent,
 }: UserManagementTableProps) {
   const columns = useMemo(
     () =>
@@ -88,7 +90,7 @@ export function UserManagementTable({
 
   return (
     <div className="panel-surface border-border overflow-hidden rounded-sm border">
-      <DataTable table={table} emptyContent="暂无用户，点击上方按钮添加。" />
+      <DataTable table={table} emptyContent={emptyContent ?? "暂无用户，点击上方按钮添加。"} />
     </div>
   );
 }

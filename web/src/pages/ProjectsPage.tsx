@@ -148,17 +148,17 @@ export function Component() {
         <KpiBar projects={filteredProjects} />
       </div>
 
-      <RiskActivityBar projects={filteredProjects} />
-
-      <div className="dash-reveal">
-        <TodoPanel projects={filteredProjects} />
-      </div>
-
       <div className="dash-reveal min-w-0">
         <ProjectsTable
           projects={filteredProjects}
           onClearFilters={() => setFilters(emptyProjectFilters)}
         />
+      </div>
+
+      <RiskActivityBar projects={filteredProjects} />
+
+      <div className="dash-reveal">
+        <TodoPanel projects={filteredProjects} />
       </div>
 
       <p className="text-muted-foreground dash-reveal flex items-center gap-1.5 text-xs">

@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   FolderKanban,
+  FolderPlus,
+  LayoutDashboard,
   LogOut,
   MenuIcon,
   ShieldCheck,
@@ -8,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
-import { Navigate, NavLink, Outlet, useLocation, useMatch } from "react-router";
+import { Navigate, NavLink, Outlet, useLocation, useMatch, useNavigate } from "react-router";
 import styles from "./basic-layout.module.css";
 import { BrandLogo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/provider/theme-toggle";
@@ -18,10 +20,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { authApi } from "@/features/auth/api";
 import { useLogout } from "@/features/auth/use-logout";
 import { useAuthStore } from "@/stores/auth-store";
+import { AppQuickSwitcher, type AppQuickSwitchItem } from "@/components/shared/app-quick-switcher";
 
 export default function BasicLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const token = useAuthStore((state) => state.token);
   const setUser = useAuthStore((state) => state.setUser);
   const logout = useLogout();
@@ -63,6 +67,68 @@ export default function BasicLayout() {
   }
 
   const user = currentUserQuery.data;
+  const projectMatch = location.pathname.match(/^\/projects\/([^/]+)/);
+  const projectCode = projectMatch?.[1] && projectMatch[1] !== "new" ? projectMatch[1] : null;
+  const quickSwitchItems: Array<AppQuickSwitchItem & { path: string }> = [
+    {
+      value: "projects",
+      label: "项目列表",
+      description: "筛选、浏览全部项目",
+      icon: FolderKanban,
+      path: "/",
+    },
+    ...(projectCode
+      ? [
+          {
+            value: "project-detail",
+            label: "项目详情",
+            description: "当前项目总览与资料入口",
+            icon: LayoutDashboard,
+            path: `/projects/${projectCode}`,
+          },
+          {
+            value: "workspace",
+            label: "项目工作区",
+            description: "作业台、需求、测试与交付",
+            icon: LayoutDashboard,
+            path: `/projects/${projectCode}/workspace`,
+          },
+        ]
+      : []),
+    {
+      value: "project-create",
+      label: "新建项目",
+      description: "创建新的测评项目",
+      icon: FolderPlus,
+      path: "/projects/new",
+    },
+    {
+      value: "dictionaries",
+      label: "字典配置",
+      description: "技术字典、依据标准与相关方",
+      icon: SlidersHorizontal,
+      path: "/settings/dictionaries",
+    },
+    {
+      value: "users",
+      label: "用户管理",
+      description: "团队成员账号与权限入口",
+      icon: Users,
+      path: "/settings/users",
+    },
+  ];
+  const activeQuickSwitch =
+    location.pathname === "/"
+      ? "projects"
+      : location.pathname === "/projects/new"
+        ? "project-create"
+        : location.pathname.startsWith("/settings/dictionaries")
+          ? "dictionaries"
+          : location.pathname.startsWith("/settings/users")
+            ? "users"
+            : location.pathname.includes("/workspace")
+              ? "workspace"
+              : "project-detail";
   const navigation = (
     <nav className="flex flex-1 flex-col gap-2" aria-label="主导航">
       <SidebarLink to="/" end icon={FolderKanban} onClick={() => setMobileNavOpen(false)}>
@@ -136,6 +202,14 @@ export default function BasicLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AppQuickSwitcher
+              items={quickSwitchItems}
+              activeValue={activeQuickSwitch}
+              onSelect={(value) => {
+                const target = quickSwitchItems.find((item) => item.value === value);
+                if (target) navigate(target.path);
+              }}
+            />
             <ThemeToggle />
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut data-icon="inline-start" />
