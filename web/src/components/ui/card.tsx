@@ -1,21 +1,28 @@
 import * as React from "react";
 import { cn } from "cn";
+import spotlightStyles from "@/components/shared/spotlight-surface.module.css";
 
 function Card({
   className,
   size = "default",
+  children,
   ...props
 }: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
   return (
     <div
+      {...props}
       data-slot="card"
       data-size={size}
+      data-spotlight=""
       className={cn(
-        "panel-surface group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-sm py-(--card-spacing) text-sm text-card-foreground ring-1 ring-border [--card-spacing:1.125rem] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:0.875rem] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-sm *:[img:last-child]:rounded-b-sm",
+        spotlightStyles.card,
+        "panel-surface group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-sm py-(--card-spacing) text-sm text-card-foreground ring-1 ring-border [--card-spacing:1.125rem] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:0.875rem] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-sm *:[img:last-of-type]:rounded-b-sm",
         className,
       )}
-      {...props}
-    />
+    >
+      {children}
+      <span className={spotlightStyles.sheen} aria-hidden />
+    </div>
   );
 }
 

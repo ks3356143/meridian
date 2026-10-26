@@ -2,6 +2,7 @@ import { Archive, ClipboardPaste, Sparkles } from "lucide-react";
 import { memo, useMemo } from "react";
 import type { RequirementRecord } from "@/features/requirements/types";
 import { Button } from "@/components/ui/button";
+import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import styles from "./requirements-hero.module.css";
 
 function RequirementsHeroImpl({
@@ -43,7 +44,7 @@ function RequirementsHeroImpl({
   }, [requirements]);
 
   return (
-    <header className={styles.card} aria-label="需求任务卡片容器">
+    <SpotlightSurface as="header" className={styles.card} aria-label="需求任务卡片容器">
       <div className={styles.copy}>
         <h2>软件需求基线</h2>
         <p>手动树状录入与 SRS 解析汇入同一个需求池；正式需求默认记录测试项待创建契约。</p>
@@ -90,7 +91,7 @@ function RequirementsHeroImpl({
           批量粘贴建树
         </Button>
       </div>
-    </header>
+    </SpotlightSurface>
   );
 }
 export const RequirementsHero = memo(RequirementsHeroImpl);

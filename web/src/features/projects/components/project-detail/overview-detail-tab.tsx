@@ -2,6 +2,7 @@ import { ClipboardList } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import type { Project } from "../../types";
 import { getProjectReadiness, getProjectStages, getStageIndex } from "./status-model";
 import { DETAIL_TABS, MODULE_TONES } from "./tab-meta";
@@ -79,7 +80,8 @@ function ModuleStatusTile({
   const Icon = tab?.icon ?? ClipboardList;
 
   return (
-    <div
+    <SpotlightSurface
+      as="div"
       data-tonal-panel={MODULE_TONES[module.key]}
       data-module-state={module.state}
       data-module-focus={isFocus ? "true" : undefined}
@@ -103,6 +105,6 @@ function ModuleStatusTile({
         <p className="truncate text-xs font-medium">{module.primary}</p>
         <p className="text-muted-foreground mt-1 truncate text-[11px]">{module.secondary}</p>
       </div>
-    </div>
+    </SpotlightSurface>
   );
 }

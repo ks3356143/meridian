@@ -13,6 +13,7 @@ import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { levelVariant, statusVariant } from "../../status-style";
 import { totalOpenIssues, type Project } from "../../types";
@@ -57,7 +58,10 @@ export function ProjectDetail({ project }: { project: Project }) {
 
   return (
     <div ref={containerRef} className="flex min-w-0 flex-col gap-6">
-      <header className="project-detail-hero project-detail-enter panel-surface relative overflow-hidden rounded-sm border">
+      <SpotlightSurface
+        as="header"
+        className="project-detail-hero project-detail-enter panel-surface relative overflow-hidden rounded-sm border"
+      >
         <span
           className="from-primary via-info to-warning absolute inset-y-0 left-0 w-1 bg-gradient-to-b"
           aria-hidden
@@ -179,7 +183,7 @@ export function ProjectDetail({ project }: { project: Project }) {
             detail="项目状态快照"
           />
         </div>
-      </header>
+      </SpotlightSurface>
 
       <div className="project-detail-enter min-w-0">
         <ProjectDetailTabs project={project} activeTab={activeTab} onTabChange={setActiveTab} />

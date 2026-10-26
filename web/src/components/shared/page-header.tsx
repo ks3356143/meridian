@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "cn";
+import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import styles from "./page-header.module.css";
 
 export function PageHeader({
@@ -19,7 +20,8 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header
+    <SpotlightSurface
+      as="header"
       className={cn(
         "page-header relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between",
         className,
@@ -55,6 +57,6 @@ export function PageHeader({
       {actions ? (
         <div className="relative flex flex-wrap items-center gap-2 sm:shrink-0">{actions}</div>
       ) : null}
-    </header>
+    </SpotlightSurface>
   );
 }

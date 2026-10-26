@@ -74,6 +74,7 @@ export function RequirementFloatingCreateButton({
       <span className={styles.floatingCreateLabel} aria-hidden>
         创建测试项
       </span>
+      <span className={styles.floatingCreateEdge} aria-hidden />
     </Button>
   );
 }

@@ -4,6 +4,8 @@ import { RouterProvider } from "react-router";
 import { AppProviders } from "@/components/provider/app-providers";
 import { installDeferredHmrReload } from "@/lib/deferred-hmr-reload";
 import { installBackgroundAnimationPause } from "@/lib/pause-background-animations";
+import { installPointerSpotlight } from "@/lib/install-pointer-spotlight";
+
 import { router } from "@/router";
 import "@/styles/app.css";
 import "@/styles/brand.css";
@@ -22,6 +24,7 @@ import "@/styles/aesthetic.css";
 import "@/styles/background-animation.css";
 
 installBackgroundAnimationPause();
+installPointerSpotlight();
 installDeferredHmrReload();
 
 createRoot(document.getElementById("root")!).render(

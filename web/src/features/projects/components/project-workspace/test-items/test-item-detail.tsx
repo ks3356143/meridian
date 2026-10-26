@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyHint } from "@/components/shared/empty-hint";
+import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePanelSwitchMotion } from "./use-panel-switch-motion";
@@ -330,7 +331,7 @@ function TestItemDetailPanelInner({
   return (
     <div className={styles.detail} ref={scrollRef}>
       <div ref={contentRef} className={styles.content}>
-        <header className={styles.hero}>
+        <SpotlightSurface as="header" className={styles.hero}>
           <div className={styles.heroMain}>
             <div className={styles.heroMetaLine}>
               <span className={styles.heroKind}>TEST ITEM</span>
@@ -412,7 +413,7 @@ function TestItemDetailPanelInner({
               )}
             </div>
           </div>
-        </header>
+        </SpotlightSurface>
 
         <nav className={styles.sectionNav} aria-label="测试项分区导航">
           <span

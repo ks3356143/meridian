@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 
 import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import type { UpdateCasePayload } from "@/features/test-items/api";
@@ -137,7 +138,7 @@ function TestCasePanelInner({
 
   return (
     <div className={styles.panel}>
-      <header className={styles.hero}>
+      <SpotlightSurface as="header" className={styles.hero}>
         <div className={styles.heroMain}>
           <span className={styles.heroIdent}>{caseRecord.identifier}</span>
           <div className={styles.heroTitleRow}>
@@ -201,7 +202,7 @@ function TestCasePanelInner({
             返回测试项
           </Button>
         </div>
-      </header>
+      </SpotlightSurface>
 
       <div className={styles.body} ref={scrollRef}>
         <div ref={bodyRef}>

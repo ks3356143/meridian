@@ -2,6 +2,7 @@ import { useOutletContext } from "react-router";
 import { useRef, type CSSProperties } from "react";
 import { Activity, CircleAlert, ListChecks, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { gsap, useGSAP } from "@/lib/gsap";
 import type { ProjectWorkspaceOutletContext } from "../project-workspace-layout";
 import { CurrentTaskPanel } from "./components/current-task-panel";
@@ -59,7 +60,8 @@ export function WorkspaceHome() {
 
   return (
     <div ref={containerRef} className="workspace-home">
-      <section
+      <SpotlightSurface
+        as="section"
         className={styles.hero}
         data-home-hero
         style={
@@ -100,7 +102,7 @@ export function WorkspaceHome() {
           />
           <MetricTile icon={ListChecks} label="测试用例" value={project.casesTotal} tone="info" />
         </dl>
-      </section>
+      </SpotlightSurface>
 
       <div className="workspace-home-grid">
         <div className="workspace-home-main">

@@ -1,0 +1,110 @@
+.surface,
+.card {
+  isolation: isolate;
+  position: relative;
+}
+
+.glow,
+.card::after {
+  --spotlight-x: 0px;
+  --spotlight-y: 0px;
+  background: radial-gradient(
+    circle closest-side,
+    color-mix(in srgb, var(--primary) 15%, transparent),
+    color-mix(in srgb, var(--primary) 5%, transparent) 46%,
+    transparent 74%
+  );
+  border-radius: inherit;
+  height: 18rem;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  transform: translate3d(calc(var(--spotlight-x) - 9rem), calc(var(--spotlight-y) - 9rem), 0);
+  transition: opacity 180ms var(--ease-out-strong);
+  width: 18rem;
+  z-index: -1;
+}
+
+.glow {
+  display: block;
+}
+
+.card::after {
+  content: "";
+}
+
+.surface:hover > .glow,
+.surface:focus-within > .glow,
+.card:hover::after,
+.card:focus-within::after {
+  opacity: 1;
+}
+
+.sheen {
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    color-mix(in srgb, white 28%, transparent) 48%,
+    transparent 66%
+  );
+  height: 100%;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  transform: translate3d(-135%, 0, 0) skewX(-12deg);
+  width: 42%;
+  z-index: -1;
+}
+
+.surface:hover > .sheen,
+.surface:focus-within > .sheen,
+.card:hover > .sheen,
+.card:focus-within > .sheen {
+  animation: cardPingPongSheen 3.4s cubic-bezier(0.32, 0.72, 0, 1) 1 both;
+}
+
+@keyframes cardPingPongSheen {
+  0% {
+    opacity: 0;
+    transform: translate3d(-135%, 0, 0) skewX(-12deg);
+  }
+
+  10% {
+    opacity: 0.42;
+  }
+
+  35% {
+    opacity: 0.36;
+    transform: translate3d(135%, 0, 0) skewX(-12deg);
+  }
+
+  85% {
+    opacity: 0.2;
+    transform: translate3d(-135%, 0, 0) skewX(-12deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(-135%, 0, 0) skewX(-12deg);
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .glow,
+  .sheen,
+  .card::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow,
+  .sheen,
+  .card::after {
+    display: none;
+  }
+}

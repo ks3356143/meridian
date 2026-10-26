@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { useNavigate } from "react-router";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { Badge } from "@/components/ui/badge";
+import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,7 +65,7 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
       className="received-assets-workbench"
       aria-labelledby="received-assets-title"
     >
-      <header className={styles.header} data-assets-panel>
+      <SpotlightSurface as="header" className={styles.header} data-assets-panel>
         <div className={styles.heroMain}>
           <div className={styles.eyebrowRow}>
             <Badge variant="secondary" className={styles.contextBadge}>
@@ -127,7 +128,7 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
             <SummaryTile label="代码包" value={workbench.summary.codePackageCount} tone="neutral" />
           </dl>
         </div>
-      </header>
+      </SpotlightSurface>
 
       <div className="received-assets-grid">
         <div className="received-assets-sidebar">
