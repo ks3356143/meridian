@@ -32,3 +32,6 @@ reports/*
 __pycache__/
 *.py[cod]
 ~$*
+
+# 用户真实资料，禁止提交
+knowledge-base/接收文件/
