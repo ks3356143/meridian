@@ -24,9 +24,16 @@ func (s *Service) ListSteps(ctx context.Context, caseID string) ([]CaseStep, err
 
 // StepView 用例步骤视图：步骤行 + 「输入及操作 / 实测结果」两块富文本（切片 5b）。
 type StepView struct {
-	CaseStep
-	Op  contentblocks.BlockView `json:"op"`
-	Act contentblocks.BlockView `json:"act"`
+	ID         string                  `json:"id"`
+	TestCaseID string                  `json:"testCaseId"`
+	Seq        int                     `json:"seq"`
+	ExpectText string                  `json:"expectText"`
+	Passed     string                  `json:"passed"`
+	SortOrder  int                     `json:"sortOrder"`
+	CreatedAt  time.Time               `json:"createdAt"`
+	UpdatedAt  time.Time               `json:"updatedAt"`
+	Op         contentblocks.BlockView `json:"op"`
+	Act        contentblocks.BlockView `json:"act"`
 }
 
 // ListStepsWithBlocks 返回步骤及其富文本块；无块记录的步骤带空视图。
@@ -58,7 +65,11 @@ func (s *Service) ListStepsWithBlocks(ctx context.Context, caseID string) ([]Ste
 }
 
 func assembleStepView(step CaseStep, blocks map[string]contentblocks.BlockView) StepView {
-	view := StepView{CaseStep: step, Op: contentblocks.EmptyBlockView(), Act: contentblocks.EmptyBlockView()}
+	view := StepView{
+		ID: step.ID, TestCaseID: step.TestCaseID, Seq: step.Seq, ExpectText: step.ExpectText,
+		Passed: step.Passed, SortOrder: step.SortOrder, CreatedAt: step.CreatedAt, UpdatedAt: step.UpdatedAt,
+		Op: contentblocks.EmptyBlockView(), Act: contentblocks.EmptyBlockView(),
+	}
 	if block, ok := blocks[contentblocks.StepBlockKey(step.ID, contentblocks.StepKindOp)]; ok {
 		view.Op = block
 	}

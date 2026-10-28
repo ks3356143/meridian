@@ -98,6 +98,85 @@ func TestOpenAPIAndDocs(t *testing.T) {
 	}
 }
 
+func TestStepViewSchemaLinkIncludesEmbeddedFields(t *testing.T) {
+	handler := newTestHandler(t)
+	token := loginForProjectTest(t, handler)
+	projectCode := createWorkObjectTestProject(t, handler, token)
+
+	item := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/test-items", map[string]string{
+			"typeCode": "SU",
+			"name":     "步骤视图 schema 回归",
+		}, http.StatusOK)
+	itemID, _ := item["id"].(string)
+	if itemID == "" {
+		t.Fatalf("创建测试项响应缺少 id: %+v", item)
+	}
+
+	itemCase := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/test-items/"+itemID+"/cases", map[string]string{"name": "步骤视图用例"}, http.StatusOK)
+	caseID, _ := itemCase["id"].(string)
+	if caseID == "" {
+		t.Fatalf("创建用例响应缺少 id: %+v", itemCase)
+	}
+
+	step := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/test-cases/"+caseID+"/steps", map[string]string{"expectText": "预期结果"}, http.StatusOK)
+	stepID, _ := step["id"].(string)
+	if stepID == "" {
+		t.Fatalf("创建步骤响应缺少 id: %+v", step)
+	}
+
+	recorder := postJSONRecorder(t, handler, token, http.MethodPut,
+		"/api/v1/test-case-steps/"+stepID+"/blocks", map[string]any{
+			"op": map[string]any{
+				"type": "doc",
+				"content": []any{map[string]any{
+					"type":    "paragraph",
+					"content": []any{map[string]any{"type": "text", "text": "步骤操作"}},
+				}},
+			},
+		})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("保存步骤块状态码应为 200，实际 %d，响应: %s", recorder.Code, recorder.Body.String())
+	}
+	if link := recorder.Header().Get("Link"); !strings.Contains(link, "/schemas/StepView.json") {
+		t.Fatalf("步骤响应缺少 schema 链接头: %q，响应: %s", link, recorder.Body.String())
+	}
+
+	var view map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &view); err != nil {
+		t.Fatalf("解析步骤响应失败: %v", err)
+	}
+	expected := []string{
+		"$schema", "id", "testCaseId", "seq", "expectText", "passed", "sortOrder",
+		"createdAt", "updatedAt", "op", "act",
+	}
+	for _, key := range expected {
+		if _, ok := view[key]; !ok {
+			t.Fatalf("步骤视图缺少字段 %q: %+v", key, view)
+		}
+	}
+	if view["id"] != stepID {
+		t.Fatalf("步骤 id 不正确: %+v", view)
+	}
+
+	schemaRecorder := postJSONRecorder(t, handler, token, http.MethodGet, "/schemas/StepView.json", nil)
+	if schemaRecorder.Code != http.StatusOK {
+		t.Fatalf("步骤 schema 状态码应为 200，实际 %d", schemaRecorder.Code)
+	}
+	var schema struct {
+		Properties map[string]any `json:"properties"`
+	}
+	if err := json.Unmarshal(schemaRecorder.Body.Bytes(), &schema); err != nil {
+		t.Fatalf("解析步骤 schema 失败: %v", err)
+	}
+	for _, key := range []string{"id", "expectText", "op", "act"} {
+		if _, ok := schema.Properties[key]; !ok {
+			t.Fatalf("步骤 schema 缺少字段 %q", key)
+		}
+	}
+}
 func TestRootRedirectsToDocs(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
