@@ -215,6 +215,11 @@ function TestCasePanelInner({
         request={quickIssueRequest}
         onRequest={setQuickIssueRequest}
       />
+      {caseRecord.previousRoundAvailable ? (
+        <div className={styles.previousRoundStandalone}>
+          <PreviousRoundResultSection caseId={caseRecord.id} projectCode={projectCode} />
+        </div>
+      ) : null}
 
       <div className={styles.body} ref={scrollRef}>
         <div ref={bodyRef}>
@@ -448,11 +453,6 @@ function TestCasePanelInner({
               </tr>
             </tbody>
           </table>
-          {caseRecord.previousRoundAvailable ? (
-            <div className={styles.previousRoundStandalone}>
-              <PreviousRoundResultSection caseId={caseRecord.id} projectCode={projectCode} />
-            </div>
-          ) : null}
         </div>
       </div>
       <TestCaseShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />

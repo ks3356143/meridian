@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, History, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -38,9 +38,41 @@ export function RoundSwitcher({
 }) {
   const [open, setOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const optionsRef = useRef<HTMLDivElement>(null);
   const current = rounds.find((round) => round.id === roundId);
   const label = roundId === ALL_ROUNDS_ID ? "全部轮次" : (current?.name ?? "选择轮次");
   const latestRound = rounds.at(-1);
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const options = optionsRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]');
+      const selected = optionsRef.current?.querySelector<HTMLButtonElement>(
+        '[role="option"][aria-selected="true"]',
+      );
+      (selected ?? options?.[0])?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, roundId]);
+
+  const moveOptionFocus = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const options = Array.from(
+      optionsRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? [],
+    );
+    if (options.length === 0) return;
+    event.preventDefault();
+    const activeIndex = options.indexOf(document.activeElement as HTMLButtonElement);
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? options.length - 1
+          : event.key === "ArrowDown"
+            ? (activeIndex + 1 + options.length) % options.length
+            : (activeIndex - 1 + options.length) % options.length;
+    options[nextIndex]?.focus();
+  };
 
   const choose = (nextRoundId: string) => {
     setOpen(false);
@@ -66,12 +98,20 @@ export function RoundSwitcher({
         </PopoverTrigger>
         <PopoverContent align="end" className={styles.menu}>
           <div className={styles.menuTitle}>选择轮次</div>
-          <div role="listbox" aria-label="轮次" className={styles.options}>
+          <div
+            ref={optionsRef}
+            role="listbox"
+            aria-label="轮次"
+            tabIndex={-1}
+            className={styles.options}
+            onKeyDown={moveOptionFocus}
+          >
             {allowAll ? (
               <button
                 type="button"
                 role="option"
                 aria-selected={roundId === ALL_ROUNDS_ID}
+                tabIndex={roundId === ALL_ROUNDS_ID ? 0 : -1}
                 className={styles.option}
                 onClick={() => choose(ALL_ROUNDS_ID)}
               >
@@ -88,6 +128,7 @@ export function RoundSwitcher({
                 type="button"
                 role="option"
                 aria-selected={round.id === roundId}
+                tabIndex={round.id === roundId ? 0 : -1}
                 className={styles.option}
                 onClick={() => choose(round.id)}
               >
@@ -277,6 +318,7 @@ function NewRoundWizard({
             <Input
               value={search}
               placeholder="搜索测试项名称 / 标识"
+              aria-label="搜索测试项名称或标识"
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>

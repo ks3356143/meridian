@@ -130,6 +130,10 @@
   overflow: auto;
 }
 
+.list .screenshot {
+  max-height: 8rem;
+}
+
 .noteActions {
   display: flex;
   gap: 0.2rem;

@@ -356,8 +356,9 @@
 }
 
 .previousRoundStandalone {
-  margin-top: 0.6rem;
+  border-bottom: 1px solid var(--border);
   min-width: 0;
+  padding: 0.7rem 0.8rem;
   width: 100%;
 }
 

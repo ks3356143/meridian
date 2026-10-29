@@ -178,8 +178,15 @@ export function QuickIssuesPanel({
           onOpenChange={(open) => {
             if (!open) onRequest(null);
           }}
-          onSaved={() => {
+          onSaved={(savedNote) => {
             onRequest(null);
+            queryClient.setQueryData<QuickIssueNote[]>(
+              ["test-cases", caseId, "quick-issues"],
+              (current = []) =>
+                current.some((note) => note.id === savedNote.id)
+                  ? current.map((note) => (note.id === savedNote.id ? savedNote : note))
+                  : [savedNote, ...current],
+            );
             void queryClient.invalidateQueries({
               queryKey: ["test-cases", caseId, "quick-issues"],
             });
@@ -226,7 +233,7 @@ function QuickIssueDialog({
   projectCode: string;
   request: QuickIssueComposerRequest;
   onOpenChange: (open: boolean) => void;
-  onSaved: () => void;
+  onSaved: (note: QuickIssueNote) => void;
 }) {
   const fileInputId = useId();
   const originalAssetId = request.note?.screenshotAssetId ?? "";
@@ -248,7 +255,7 @@ function QuickIssueDialog({
     mutationFn: async () => {
       const text = noteText.trim();
       if (isEditing && request.note) {
-        await quickIssuesApi.update(request.note.id, {
+        return await quickIssuesApi.update(request.note.id, {
           noteText: text,
           ...(screenshotAssetId === originalAssetId
             ? {}
@@ -256,17 +263,16 @@ function QuickIssueDialog({
               ? { screenshotAssetId }
               : { clearScreenshot: true }),
         });
-        return;
       }
-      await quickIssuesApi.create(caseId, {
+      return await quickIssuesApi.create(caseId, {
         noteText: text,
         ...(request.stepId ? { testCaseStepId: request.stepId } : {}),
         ...(screenshotAssetId ? { screenshotAssetId } : {}),
       });
     },
-    onSuccess: () => {
+    onSuccess: (savedNote) => {
       toast.success(isEditing ? "问题草稿已更新" : "问题草稿已记录");
-      onSaved();
+      onSaved(savedNote);
     },
   });
   const busy = uploadMutation.isPending || saveMutation.isPending;
