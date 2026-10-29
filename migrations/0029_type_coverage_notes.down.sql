@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS idx_type_coverage_notes_project_round;
+DROP TABLE IF EXISTS test_item_type_coverage_notes;

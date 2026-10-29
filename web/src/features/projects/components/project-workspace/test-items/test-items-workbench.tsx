@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import type { TreeApi } from "react-arborist";
+import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import {
@@ -28,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type {
@@ -46,6 +48,7 @@ import { TestCasePanel } from "./test-case-panel";
 import { TestItemsFromRequirementsDialog } from "./test-items-from-requirements-dialog";
 import { TestItemDetailPanel } from "./test-item-detail";
 import { TestItemsTree, type TestItemsTreeAction, type TestItemsTreeMove } from "./test-items-tree";
+import { TypeCoverageView } from "./type-coverage-view";
 import {
   buildTestItemsTree,
   filterTestItemsTree,
@@ -61,6 +64,8 @@ let treePanelLayout: Record<string, number> | undefined;
 
 // 稳定引用：detail 未就绪时 siblingCases 用同一空数组，避免切用例监听见步重挂（props 默认值 hoist）。
 const EMPTY_CASES: TestCaseRecord[] = [];
+type TestItemsView = "tree" | "coverage";
+const TEST_ITEMS_VIEWS: TestItemsView[] = ["tree", "coverage"];
 
 /** 树里的删除都是破坏性动作：统一走二次确认，确认文案按节点类型区分。 */
 type PendingDelete =
@@ -126,13 +131,79 @@ export function TestItemsWorkbench({
   const [searchQuery, setSearchQuery] = useState("");
   const [quickFilter, setQuickFilter] = useState<TestItemsQuickFilter>("all");
 
-  // 150ms 防抖：逐键过滤会重算整棵过滤树，防抖后再提交（老项目同口径）。
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const view: TestItemsView = TEST_ITEMS_VIEWS.includes(requestedView as TestItemsView)
+    ? (requestedView as TestItemsView)
+    : "tree";
+  const typeFilter = searchParams.get("type") ?? "";
+
+  useEffect(() => {
+    if (requestedView === view) return;
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("view", view);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [requestedView, setSearchParams, view]);
+
+  const changeView = useCallback(
+    (nextView: string) => {
+      if (!TEST_ITEMS_VIEWS.includes(nextView as TestItemsView)) return;
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        next.set("view", nextView);
+        if (nextView !== "tree") next.delete("type");
+        return next;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const openTypeInTree = useCallback(
+    (typeCode: string) => {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        next.set("view", "tree");
+        next.set("type", typeCode);
+        return next;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const clearTypeFilter = useCallback(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete("type");
+      return next;
+    });
+  }, [setSearchParams]);
+
+  // 150ms 防抖：逐键过滤会逐键重算整棵过滤树，防抖后再提交（老项目同口径）。
   useEffect(() => {
     const timer = window.setTimeout(() => setSearchQuery(searchInput), 150);
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
   const workspace = workbenchQuery.data;
+  const scopedWorkspace = useMemo(() => {
+    if (!workspace || typeFilter === "") return workspace;
+    const items = workspace.items.filter((item) => item.typeCode === typeFilter);
+    const itemIds = new Set(items.map((item) => item.id));
+    return {
+      ...workspace,
+      items,
+      cases: workspace.cases.filter((itemCase) => itemIds.has(itemCase.testItemId)),
+      folders: workspace.folders.filter((folder) => folder.typeCode === typeFilter),
+      counts: Object.fromEntries(
+        Object.entries(workspace.counts).filter(([itemId]) => itemIds.has(itemId)),
+      ),
+    };
+  }, [typeFilter, workspace]);
   const activeTypes = useMemo(
     () =>
       (workspace?.types ?? [])
@@ -141,12 +212,12 @@ export function TestItemsWorkbench({
     [project.platform, workspace?.types],
   );
   const treeNodes = useMemo(
-    () => (workspace ? buildTestItemsTree(workspace, project.platform) : []),
-    [project.platform, workspace],
+    () => (scopedWorkspace ? buildTestItemsTree(scopedWorkspace, project.platform) : []),
+    [project.platform, scopedWorkspace],
   );
   const searchActive = searchQuery.trim() !== "" || quickFilter !== "all";
-  const staticItemCount = workspace
-    ? workspace.items.filter(
+  const staticItemCount = scopedWorkspace
+    ? scopedWorkspace.items.filter(
         (item) => activeTypes.find((type) => type.code === item.typeCode)?.isStatic,
       ).length
     : 0;
@@ -177,16 +248,16 @@ export function TestItemsWorkbench({
     );
     return [
       ...new Set(
-        (workspace?.items ?? [])
+        (scopedWorkspace?.items ?? [])
           .map((item) => item.typeCode)
           .filter((code) => staticCodes.has(code)),
       ),
     ];
-  }, [activeTypes, workspace?.items]);
+  }, [activeTypes, scopedWorkspace?.items]);
 
   useEffect(() => {
-    if (!workspace) return;
-    if (workspace.allRounds) {
+    if (!scopedWorkspace) return;
+    if (scopedWorkspace.allRounds) {
       if (selectedId !== "") {
         // oxlint-disable-next-line react/set-state-in-effect
         setSelectedId("");
@@ -195,8 +266,8 @@ export function TestItemsWorkbench({
       }
       return;
     }
-    if (workspace.round.id !== roundId) return;
-    if (targetItemId && workspace.items.some((item) => item.id === targetItemId)) {
+    if (scopedWorkspace.round.id !== roundId) return;
+    if (targetItemId && scopedWorkspace.items.some((item) => item.id === targetItemId)) {
       // oxlint-disable-next-line react/set-state-in-effect
       setSelectedId(targetItemId);
       setSelectedCaseId("");
@@ -204,10 +275,10 @@ export function TestItemsWorkbench({
       onTargetItemHandled?.();
       return;
     }
-    if (selectedId && workspace.items.some((item) => item.id === selectedId)) return;
+    if (selectedId && scopedWorkspace.items.some((item) => item.id === selectedId)) return;
     const firstItem = activeTypes
       .map((type) => {
-        const matches = workspace.items
+        const matches = scopedWorkspace.items
           .filter((item) => item.typeCode === type.code)
           .sort((left, right) => left.sortOrder - right.sortOrder);
         return matches[0];
@@ -222,7 +293,7 @@ export function TestItemsWorkbench({
     selectedId,
     setSelectedId,
     targetItemId,
-    workspace,
+    scopedWorkspace,
   ]);
 
   const detail = detailQuery.data;
@@ -546,6 +617,48 @@ export function TestItemsWorkbench({
     return created;
   };
 
+  const viewBar = (
+    <div className={styles.viewBar}>
+      <Tabs value={view} onValueChange={changeView}>
+        <TabsList variant="line" className={styles.viewTabs} aria-label="测试项视图">
+          <TabsTrigger value="tree">
+            <Rows3 aria-hidden />
+            树视图
+          </TabsTrigger>
+          <TabsTrigger value="coverage">
+            <ListChecks aria-hidden />
+            类型覆盖
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+      {view === "tree" && typeFilter !== "" ? (
+        <button type="button" className={styles.typeFilterChip} onClick={clearTypeFilter}>
+          类型 {typeFilter}
+          <X aria-hidden />
+        </button>
+      ) : null}
+      <span className={styles.viewMeta}>
+        {workspace.allRounds ? "跨轮只读" : workspace.round.name} ·{" "}
+        {scopedWorkspace?.items.length ?? 0} 项 · {scopedWorkspace?.cases.length ?? 0} 用例
+      </span>
+    </div>
+  );
+
+  if (view === "coverage") {
+    return (
+      <section className={styles.workbench}>
+        {viewBar}
+        <div className={styles.viewBody}>
+          <TypeCoverageView
+            projectCode={project.id}
+            roundId={roundId}
+            onOpenType={openTypeInTree}
+          />
+        </div>
+      </section>
+    );
+  }
+
   const treePane = (
     <aside className={styles.treePane}>
       <div className={styles.toolbar}>
@@ -713,7 +826,7 @@ export function TestItemsWorkbench({
       <div className={styles.toolbarMeta}>
         <span className={styles.metaChip} data-tone="blue">
           <ListChecks aria-hidden />
-          测试项 {workspace.items.length}
+          测试项 {scopedWorkspace?.items.length ?? 0}
         </span>
         <span className={styles.metaChip} data-tone="green">
           <Rows3 aria-hidden />
@@ -806,7 +919,7 @@ export function TestItemsWorkbench({
           <p className={styles.emptyTitle}>全部轮次为只读聚合</p>
           <p className={styles.emptyText}>点选左侧测试项或用例，进入它所属的轮次继续查看和编辑。</p>
         </div>
-      ) : workspace.items.length === 0 ? (
+      ) : (scopedWorkspace?.items.length ?? 0) === 0 ? (
         <div className={styles.detailEmpty}>
           <p className={styles.emptyTitle}>还没有测试项</p>
           <p className={styles.emptyText}>先新增测试项，再在这里填写字段。</p>
@@ -865,35 +978,38 @@ export function TestItemsWorkbench({
 
   return (
     <section className={styles.workbench}>
-      {wideLayout ? (
-        <ResizablePanelGroup
-          id="test-items-container-layout"
-          defaultLayout={treePanelLayout}
-          onLayoutChanged={(layout) => {
-            treePanelLayout = layout;
-          }}
-          resizeTargetMinimumSize={{ coarse: 36, fine: 24 }}
-        >
-          <ResizablePanel
-            id="test-items-tree-panel"
-            className={styles.panelFrame}
-            defaultSize={380}
-            minSize="380px"
-            maxSize="680px"
+      {viewBar}
+      <div className={styles.viewBody}>
+        {wideLayout ? (
+          <ResizablePanelGroup
+            id="test-items-container-layout"
+            defaultLayout={treePanelLayout}
+            onLayoutChanged={(layout) => {
+              treePanelLayout = layout;
+            }}
+            resizeTargetMinimumSize={{ coarse: 36, fine: 24 }}
           >
+            <ResizablePanel
+              id="test-items-tree-panel"
+              className={styles.panelFrame}
+              defaultSize={380}
+              minSize="380px"
+              maxSize="680px"
+            >
+              {treePane}
+            </ResizablePanel>
+            <ResizableHandle id="test-items-tree-handle" aria-label="调整测试项目录宽度" />
+            <ResizablePanel id="test-items-right-panel" className={styles.panelFrame}>
+              {detailPane}
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <>
             {treePane}
-          </ResizablePanel>
-          <ResizableHandle id="test-items-tree-handle" aria-label="调整测试项目录宽度" />
-          <ResizablePanel id="test-items-right-panel" className={styles.panelFrame}>
             {detailPane}
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      ) : (
-        <>
-          {treePane}
-          {detailPane}
-        </>
-      )}
+          </>
+        )}
+      </div>
 
       {detail ? (
         <ChangeItemTypeDialog

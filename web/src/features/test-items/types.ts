@@ -176,6 +176,70 @@ export interface CaseStepRecord {
   updatedAt: string;
 }
 
+export type TypeCoverageStatus = "covered" | "explained" | "missing" | "not_applicable";
+
+export interface TypeCoverageNote {
+  id: string;
+  projectId: string;
+  roundId: string;
+  typeCode: string;
+  reasonText: string;
+  updatedBy: string;
+  updatedByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TypeCoverageRoundSlice {
+  roundId: string;
+  roundNumber: number;
+  roundName: string;
+  applicable: boolean;
+  status: TypeCoverageStatus;
+  itemCount: number;
+  caseCount: number;
+  passedCount: number;
+  failedCount: number;
+  pendingCount: number;
+  passRate: number | null;
+  note: TypeCoverageNote | null;
+}
+
+export interface TypeCoverageCard {
+  code: string;
+  name: string;
+  category: string;
+  isStatic: boolean;
+  outputOrder: number;
+  applicable: boolean;
+  status: TypeCoverageStatus;
+  itemCount: number;
+  caseCount: number;
+  passedCount: number;
+  failedCount: number;
+  pendingCount: number;
+  passRate: number | null;
+  note: TypeCoverageNote | null;
+  rounds: TypeCoverageRoundSlice[];
+}
+
+export interface TypeCoverageSummary {
+  applicable: number;
+  covered: number;
+  explained: number;
+  missing: number;
+  notApplicable: number;
+  testItemCount: number;
+  caseCount: number;
+}
+
+export interface TypeCoverageResult {
+  allRounds: boolean;
+  round: TestRoundRecord | null;
+  rounds: TestRoundRecord[];
+  summary: TypeCoverageSummary;
+  types: TypeCoverageCard[];
+}
 export interface TestRoundRecord {
   id: string;
   projectId: string;

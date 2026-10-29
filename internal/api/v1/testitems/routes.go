@@ -30,6 +30,7 @@ func Register(api huma.API, service *testitemsservice.Service) {
 	registerStaticWorkbenches(api, handler)
 	registerSteps(api, handler)
 	registerPreviousRoundResult(api, handler)
+	registerAnalysisViews(api, handler)
 	registerLinks(api, handler)
 }
 
@@ -467,6 +468,14 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error404NotFound("没有可用的上轮实测记录")
 	case errors.Is(err, testitemsservice.ErrRoundMismatch):
 		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrCoverageReasonRequired):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrCoverageRoundRequired):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrCoverageNotApplicable):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrCoverageTypeCovered):
+		return huma.Error409Conflict(err.Error())
 	case errors.Is(err, testitemsservice.ErrRoundCopyItemOutsideSource):
 		return huma.Error422UnprocessableEntity(err.Error())
 	case errors.Is(err, testitemsservice.ErrRoundCopyStaticForbidden):

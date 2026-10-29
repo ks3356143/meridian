@@ -19,6 +19,8 @@ import type {
   RoundCopyResult,
   TestRoundRecord,
   PreviousRoundResult,
+  TypeCoverageResult,
+  TypeCoverageNote,
 } from "./types";
 
 export interface CreateTestItemPayload {
@@ -92,6 +94,23 @@ export const testItemsApi = {
     ),
   rounds: (projectCode: string) =>
     request<TestRoundRecord[]>("GET", `/api/v1/projects/${projectCode}/test-rounds`),
+  typeCoverage: (projectCode: string, roundId: string) =>
+    request<TypeCoverageResult>(
+      "GET",
+      `/api/v1/projects/${projectCode}/type-coverage?roundId=${encodeURIComponent(roundId)}`,
+    ),
+  saveTypeCoverageNote: (
+    projectCode: string,
+    roundId: string,
+    typeCode: string,
+    reasonText: string,
+  ) =>
+    request<TypeCoverageNote>(
+      "PUT",
+      `/api/v1/projects/${projectCode}/type-coverage/${encodeURIComponent(typeCode)}/note?roundId=${encodeURIComponent(roundId)}`,
+      {},
+      { reasonText },
+    ),
   roundCopyPreview: (projectCode: string, sourceRoundId: string) =>
     request<RoundCopyPreview>(
       "GET",

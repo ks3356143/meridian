@@ -227,3 +227,18 @@ type Round struct {
 }
 
 func (Round) TableName() string { return "test_rounds" }
+
+// TypeCoverageNote 类型覆盖说明：某个轮次中某类型没有测试项时填写的不测评说明。
+type TypeCoverageNote struct {
+	ID            string    `gorm:"column:id;primaryKey" json:"id"`
+	ProjectID     string    `gorm:"column:project_id" json:"projectId"`
+	RoundID       string    `gorm:"column:round_id" json:"roundId"`
+	TypeCode      string    `gorm:"column:type_code" json:"typeCode"`
+	ReasonText    string    `gorm:"column:reason_text" json:"reasonText"`
+	UpdatedBy     string    `gorm:"column:updated_by" json:"updatedBy"`
+	UpdatedByName string    `gorm:"-" json:"updatedByName"`
+	CreatedAt     time.Time `gorm:"column:created_at" json:"createdAt"`
+	UpdatedAt     time.Time `gorm:"column:updated_at" json:"updatedAt"`
+}
+
+func (TypeCoverageNote) TableName() string { return "test_item_type_coverage_notes" }
