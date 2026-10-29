@@ -60,11 +60,13 @@ function resultTone(outcome: string) {
 export function TestItemsFromRequirementsDialog({
   open,
   projectCode,
+  roundId,
   onOpenChange,
   onCreated,
 }: {
   open: boolean;
   projectCode: string;
+  roundId: string;
   onOpenChange: (open: boolean) => void;
   onCreated: (result: BatchCreateTestItemsResult) => void;
 }) {
@@ -77,19 +79,19 @@ export function TestItemsFromRequirementsDialog({
   const deferredQuery = useDeferredValue(queryText.trim().toLowerCase());
 
   const previewQuery = useQuery({
-    queryKey: ["projects", projectCode, "test-items", "from-requirements-preview"],
-    queryFn: () => testItemsApi.requirementCreatePreview(projectCode),
+    queryKey: ["projects", projectCode, "test-items", "from-requirements-preview", roundId],
+    queryFn: () => testItemsApi.requirementCreatePreview(projectCode, roundId),
     enabled: open,
     staleTime: 15_000,
   });
   const createMutation = useMutation({
     mutationFn: (requirementIds: string[]) =>
-      testItemsApi.createFromRequirements(projectCode, { requirementIds }),
+      testItemsApi.createFromRequirements(projectCode, roundId, { requirementIds }),
     onSuccess: (created) => {
       setResult(created);
       setSelected(new Set());
       void queryClient.invalidateQueries({
-        queryKey: ["projects", projectCode, "test-items", "from-requirements-preview"],
+        queryKey: ["projects", projectCode, "test-items", "from-requirements-preview", roundId],
       });
       onCreated(created);
       const skipped = created.skipped > 0 ? `，跳过 ${created.skipped} 个` : "";

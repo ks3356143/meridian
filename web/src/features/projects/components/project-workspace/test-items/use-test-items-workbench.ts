@@ -41,18 +41,19 @@ function applyItemPatch(item: TestItemRecord, payload: UpdateTestItemPayload): T
   return next;
 }
 
-export function useTestItemsWorkbench(project: Project) {
+export function useTestItemsWorkbench(project: Project, roundId: string) {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState("");
   const workbenchKey = useMemo(
-    () => ["projects", project.id, "test-items", "workbench"],
-    [project.id],
+    () => ["projects", project.id, "test-items", "workbench", roundId],
+    [project.id, roundId],
   );
   const detailKey = useCallback((testItemId: string) => ["test-items", "detail", testItemId], []);
 
   const workbenchQuery = useQuery({
     queryKey: workbenchKey,
-    queryFn: () => testItemsApi.workspace(project.id),
+    queryFn: () => testItemsApi.workspace(project.id, roundId),
+    placeholderData: keepPreviousData,
   });
   const detailQuery = useQuery({
     queryKey: detailKey(selectedId),
@@ -81,7 +82,8 @@ export function useTestItemsWorkbench(project: Project) {
   }, [project.id, queryClient]);
 
   const createItemMutation = useMutation({
-    mutationFn: (payload: CreateTestItemPayload) => testItemsApi.createItem(project.id, payload),
+    mutationFn: (payload: CreateTestItemPayload) =>
+      testItemsApi.createItem(project.id, roundId, payload),
     onSuccess: (item) => {
       toast.success(`已新增测试项 ${item.identifier}`);
       void invalidateWorkbench();
@@ -166,7 +168,7 @@ export function useTestItemsWorkbench(project: Project) {
 
   const createFolderMutation = useMutation({
     mutationFn: (payload: CreateTestItemFolderPayload) =>
-      testItemsApi.createFolder(project.id, payload),
+      testItemsApi.createFolder(project.id, roundId, payload),
     onSuccess: (folder) => {
       toast.success(`已新建文件夹「${folder.name}」`);
       void invalidateWorkbench();

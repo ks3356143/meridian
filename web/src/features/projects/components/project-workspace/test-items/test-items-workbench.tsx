@@ -68,7 +68,19 @@ type PendingDelete =
   | { kind: "folder"; id: string; label: string; count: number }
   | { kind: "case"; id: string; testItemId: string; label: string };
 
-export function TestItemsWorkbench({ project }: { project: Project }) {
+export function TestItemsWorkbench({
+  project,
+  roundId,
+  targetItemId,
+  onTargetItemHandled,
+  onOpenItemRound,
+}: {
+  project: Project;
+  roundId: string;
+  targetItemId?: string;
+  onTargetItemHandled?: () => void;
+  onOpenItemRound?: (roundId: string, itemId: string) => void;
+}) {
   const {
     workbenchQuery,
     detailQuery,
@@ -99,7 +111,7 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
     moveCaseMutation,
     ensureStaticItemsMutation,
     deleteStaticItemsMutation,
-  } = useTestItemsWorkbench(project);
+  } = useTestItemsWorkbench(project, roundId);
   const wideLayout = useMediaQuery("(min-width: 1321px)");
   const treeRef = useRef<TreeApi<TestItemsTreeNode>>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -173,10 +185,45 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   }, [activeTypes, workspace?.items]);
 
   useEffect(() => {
-    if (selectedId !== "" || treeNodes.length === 0) return;
-    const firstItem = workspace?.items[0];
-    if (firstItem) setSelectedId(firstItem.id);
-  }, [selectedId, setSelectedId, treeNodes.length, workspace?.items]);
+    if (!workspace) return;
+    if (workspace.allRounds) {
+      if (selectedId !== "") {
+        // oxlint-disable-next-line react/set-state-in-effect
+        setSelectedId("");
+        // oxlint-disable-next-line react/set-state-in-effect
+        setSelectedCaseId("");
+      }
+      return;
+    }
+    if (workspace.round.id !== roundId) return;
+    if (targetItemId && workspace.items.some((item) => item.id === targetItemId)) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setSelectedId(targetItemId);
+      setSelectedCaseId("");
+      setStepFocus(null);
+      onTargetItemHandled?.();
+      return;
+    }
+    if (selectedId && workspace.items.some((item) => item.id === selectedId)) return;
+    const firstItem = activeTypes
+      .map((type) => {
+        const matches = workspace.items
+          .filter((item) => item.typeCode === type.code)
+          .sort((left, right) => left.sortOrder - right.sortOrder);
+        return matches[0];
+      })
+      .find(Boolean);
+    // oxlint-disable-next-line react/set-state-in-effect
+    setSelectedId(firstItem?.id ?? "");
+  }, [
+    activeTypes,
+    onTargetItemHandled,
+    roundId,
+    selectedId,
+    setSelectedId,
+    targetItemId,
+    workspace,
+  ]);
 
   const detail = detailQuery.data;
   // 详情面板是重子树（表格 + 子项卡片），树的选择、弹窗开关、面板拖拽都会让工作区重渲染；
@@ -220,6 +267,10 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
 
   const handleSelectNode = useCallback(
     (node: TestItemsTreeNode) => {
+      if (workspace?.allRounds) {
+        if (node.refId && node.roundId) onOpenItemRound?.(node.roundId, node.itemId ?? node.refId);
+        return;
+      }
       if (node.kind === "item" && node.refId) {
         setSelectedId(node.refId);
         setSelectedCaseId("");
@@ -232,7 +283,7 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
         if (node.itemId) setSelectedId(node.itemId);
       }
     },
-    [setSelectedId],
+    [onOpenItemRound, setSelectedId, workspace?.allRounds],
   );
   /** 详情用例行 → 树：展开所属测试项、滚动并在树里高亮该用例。 */
   const handleSelectCase = useCallback((caseId: string) => {
@@ -411,6 +462,7 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   // 键盘流：F2 重命名 / Delete 删除（二次确认）/ Ctrl+D 复制新增，作用于树里获得焦点的节点。
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (workspace?.allRounds) return;
       const target = event.target as HTMLElement | null;
       // 快捷键只在树获得焦点时生效，避免在详情按钮/空白处按 Delete 误删树节点。
       if (!target?.closest('[role="tree"]')) return;
@@ -430,9 +482,12 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleRenameNode, handleTreeAction]);
+  }, [handleRenameNode, handleTreeAction, workspace?.allRounds]);
 
-  if (workbenchQuery.isPending) {
+  const workspaceReady =
+    !workspace || (roundId === "all" ? workspace.allRounds : workspace.round.id === roundId);
+
+  if (workbenchQuery.isPending || !workspaceReady) {
     return <QueryLoading label="正在加载测试项" rows={8} />;
   }
   if (workbenchQuery.isError || !workspace) {
@@ -494,77 +549,85 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
   const treePane = (
     <aside className={styles.treePane}>
       <div className={styles.toolbar}>
-        <div className={styles.toolbarPrimary}>
-          <Button size="sm" className={styles.createButton} onClick={() => setCreateOpen(true)}>
-            <Plus aria-hidden />
-            新增测试项
-          </Button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="outline"
-                className={styles.requirementButton}
-                aria-label="从已确认需求创建测试项"
-                onClick={() => setRequirementsOpen(true)}
-              >
-                <ListPlus aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">从已确认需求创建测试项</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                variant="outline"
-                className={styles.folderButton}
-                aria-label="新建文件夹"
-                onClick={() => setFolderOpen(true)}
-              >
-                <FolderPlus aria-hidden />
-                <span className={styles.folderLabel}>新建文件夹</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">新建文件夹</TooltipContent>
-          </Tooltip>
-        </div>
-        <div className={styles.toolbarSecondary}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="outline"
-                className={styles.utilityButton}
-                aria-label="补齐推荐静态测试项"
-                disabled={ensureStaticItemsMutation.isPending}
-                onClick={() => ensureStaticItemsMutation.mutate()}
-              >
-                <Sparkles aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">按安全等级补齐静态测试项</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="outline"
-                className={`${styles.utilityButton} ${styles.utilityDanger}`}
-                aria-label="删除全部静态测试项"
-                disabled={staticItemCount === 0}
-                onClick={() => setStaticDeleteOpen(true)}
-              >
-                <Trash2 aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">删除全部静态测试项</TooltipContent>
-          </Tooltip>
-        </div>
-        <span className={styles.roundChip}>{workspace.round.name}</span>
+        {!workspace.allRounds ? (
+          <div className={styles.toolbarPrimary}>
+            <Button size="sm" className={styles.createButton} onClick={() => setCreateOpen(true)}>
+              <Plus aria-hidden />
+              新增测试项
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  className={styles.requirementButton}
+                  aria-label="从已确认需求创建测试项"
+                  onClick={() => setRequirementsOpen(true)}
+                >
+                  <ListPlus aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">从已确认需求创建测试项</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={styles.folderButton}
+                  aria-label="新建文件夹"
+                  onClick={() => setFolderOpen(true)}
+                >
+                  <FolderPlus aria-hidden />
+                  <span className={styles.folderLabel}>新建文件夹</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">新建文件夹</TooltipContent>
+            </Tooltip>
+          </div>
+        ) : (
+          <span className={styles.readOnlyChip}>跨轮聚合 · 只读</span>
+        )}
+        {!workspace.allRounds ? (
+          <div className={styles.toolbarSecondary}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  className={styles.utilityButton}
+                  aria-label="补齐推荐静态测试项"
+                  disabled={ensureStaticItemsMutation.isPending}
+                  onClick={() => ensureStaticItemsMutation.mutate()}
+                >
+                  <Sparkles aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">按安全等级补齐静态测试项</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  className={`${styles.utilityButton} ${styles.utilityDanger}`}
+                  aria-label="删除全部静态测试项"
+                  disabled={staticItemCount === 0}
+                  onClick={() => setStaticDeleteOpen(true)}
+                >
+                  <Trash2 aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">删除全部静态测试项</TooltipContent>
+            </Tooltip>
+          </div>
+        ) : null}
+        <span className={styles.roundChip}>
+          {workspace.allRounds ? `${workspace.rounds.length} 轮` : workspace.round.name}
+        </span>
       </div>
       <div className={styles.searchRow}>
         <div className={styles.searchField}>
@@ -665,14 +728,20 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
       <div className={styles.treeBody}>
         {treeNodes.length === 0 ? (
           <div className={styles.emptyGuide}>
-            <p className={styles.emptyTitle}>还没有测试项</p>
-            <p className={styles.emptyText}>
-              从类型开始建第一条测试项，充分性要求与通过准则会按类型自动预填。
+            <p className={styles.emptyTitle}>
+              {workspace.allRounds ? "还没有任何轮次测试项" : "还没有测试项"}
             </p>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus aria-hidden />
-              新增测试项
-            </Button>
+            <p className={styles.emptyText}>
+              {workspace.allRounds
+                ? "切换到一个具体轮次后可新增测试项。"
+                : "从类型开始建第一条测试项，充分性要求与通过准则会按类型自动预填。"}
+            </p>
+            {!workspace.allRounds ? (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus aria-hidden />
+                新增测试项
+              </Button>
+            ) : null}
           </div>
         ) : searchActive && filteredTree.nodes.length === 0 ? (
           <div className={styles.emptyResult}>
@@ -697,9 +766,10 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             treeRef={treeRef}
             forceExpanded={searchActive}
             onSelect={handleSelectNode}
-            onAction={handleTreeAction}
-            onRenameNode={handleRenameNode}
-            onMoveNode={handleTreeMove}
+            onAction={workspace.allRounds ? undefined : handleTreeAction}
+            onRenameNode={workspace.allRounds ? undefined : handleRenameNode}
+            onMoveNode={workspace.allRounds ? undefined : handleTreeMove}
+            readOnly={workspace.allRounds}
           />
         )}
       </div>
@@ -730,6 +800,11 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
             onCaseChanged={invalidateCaseData}
             focusStep={stepFocus}
           />
+        </div>
+      ) : workspace.allRounds ? (
+        <div className={styles.detailEmpty}>
+          <p className={styles.emptyTitle}>全部轮次为只读聚合</p>
+          <p className={styles.emptyText}>点选左侧测试项或用例，进入它所属的轮次继续查看和编辑。</p>
         </div>
       ) : workspace.items.length === 0 ? (
         <div className={styles.detailEmpty}>
@@ -845,6 +920,7 @@ export function TestItemsWorkbench({ project }: { project: Project }) {
       <TestItemsFromRequirementsDialog
         open={requirementsOpen}
         projectCode={project.id}
+        roundId={workspace.round.id}
         onOpenChange={setRequirementsOpen}
         onCreated={(created) => {
           setSearchInput("");

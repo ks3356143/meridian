@@ -139,8 +139,8 @@ export function useRequirementsWorkbench(project: Project) {
   });
 
   const bulkCreateTestItemsMutation = useMutation({
-    mutationFn: (payload: Parameters<typeof testItemsApi.createFromRequirements>[1]) =>
-      testItemsApi.createFromRequirements(project.id, payload),
+    mutationFn: (payload: Parameters<typeof testItemsApi.createFromRequirements>[2]) =>
+      testItemsApi.createFromRequirements(project.id, "", payload),
     onSuccess: async (result) => {
       const createdRequirementIDs = result.items
         .filter((item) => item.outcome === "created")

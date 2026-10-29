@@ -14,11 +14,13 @@ export function WorkspaceTopbar({
   executionRate,
   openIssues,
   quickSwitcher,
+  roundSwitcher,
 }: {
   project: Project;
   executionRate: number;
   openIssues: number;
   quickSwitcher?: ReactNode;
+  roundSwitcher?: ReactNode;
 }) {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -46,6 +48,8 @@ export function WorkspaceTopbar({
             </div>
             <h1 className="workspace-topbar-title mt-1 truncate">{project.name}</h1>
           </div>
+
+          {roundSwitcher}
 
           <Badge variant={statusVariant[project.status]} className="hidden lg:inline-flex">
             <span className="status-dot" aria-hidden />

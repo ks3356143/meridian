@@ -259,7 +259,8 @@
 .count,
 .typeChip,
 .implicitChip,
-.incomplete {
+.incomplete,
+.roundBadge {
   align-items: center;
   display: inline-flex;
   flex: none;
@@ -268,6 +269,12 @@
   line-height: 1;
   padding: 1px 0.32rem 0;
   white-space: nowrap;
+}
+
+.roundBadge {
+  background: color-mix(in srgb, var(--chart-5) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chart-5) 30%, transparent);
+  color: color-mix(in srgb, var(--chart-5) 88%, var(--foreground));
 }
 
 .count {

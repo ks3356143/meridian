@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
 
@@ -49,17 +50,19 @@ func nonNil[T any](items []T) []T {
 
 // WorkspaceBody 测试项页首屏数据：当前轮、类型字典、文件夹、测试项、用例摘要与树徽章计数。
 type WorkspaceBody struct {
-	Round   testitemsservice.Round                 `json:"round"`
-	Types   []testitemsservice.ItemType            `json:"types"`
-	Folders []testitemsservice.Folder              `json:"folders"`
-	Items   []testitemsservice.TestItem            `json:"items"`
-	Cases   []testitemsservice.Case                `json:"cases"`
-	Counts  map[string]testitemsservice.ItemCounts `json:"counts"`
+	Round     testitemsservice.Round                 `json:"round"`
+	AllRounds bool                                   `json:"allRounds"`
+	Rounds    []testitemsservice.Round               `json:"rounds"`
+	Types     []testitemsservice.ItemType            `json:"types"`
+	Folders   []testitemsservice.Folder              `json:"folders"`
+	Items     []testitemsservice.TestItem            `json:"items"`
+	Cases     []testitemsservice.Case                `json:"cases"`
+	Counts    map[string]testitemsservice.ItemCounts `json:"counts"`
 }
 
 type WorkspaceInput struct {
 	Code    string `path:"code" doc:"项目标识"`
-	RoundID string `query:"roundId" doc:"轮次 id；省略时取当前轮次"`
+	RoundID string `query:"roundId" doc:"轮次 id；传 all 返回跨轮只读聚合；省略时取当前轮次"`
 }
 
 type WorkspaceOutput struct {
@@ -89,7 +92,12 @@ func (h *Handler) workspace(ctx context.Context, projectCode, roundID string) (W
 		return WorkspaceBody{}, err
 	}
 
-	round, err := h.service.ResolveRound(ctx, projectID, roundID)
+	allRounds := strings.EqualFold(strings.TrimSpace(roundID), "all")
+	resolvedRoundID := roundID
+	if allRounds {
+		resolvedRoundID = ""
+	}
+	round, err := h.service.ResolveRound(ctx, projectID, resolvedRoundID)
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
@@ -102,6 +110,10 @@ func (h *Handler) workspace(ctx context.Context, projectCode, roundID string) (W
 		return WorkspaceBody{}, err
 	}
 	types, err := h.service.ListTypes(ctx)
+	if err != nil {
+		return WorkspaceBody{}, err
+	}
+	rounds, err := h.service.ListRounds(ctx, projectID)
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
@@ -121,14 +133,34 @@ func (h *Handler) workspace(ctx context.Context, projectCode, roundID string) (W
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
+	if allRounds {
+		folders, err = h.service.ListFoldersByRound(ctx, projectID, "")
+		if err != nil {
+			return WorkspaceBody{}, err
+		}
+		items, err = h.service.ListTestItemsByRound(ctx, projectID, "")
+		if err != nil {
+			return WorkspaceBody{}, err
+		}
+		cases, err = h.service.ListCasesByProjectRound(ctx, projectID, "")
+		if err != nil {
+			return WorkspaceBody{}, err
+		}
+		counts, err = h.service.CountItemChildrenByRound(ctx, projectID, "")
+		if err != nil {
+			return WorkspaceBody{}, err
+		}
+	}
 
 	return WorkspaceBody{
-		Round:   round,
-		Types:   nonNil(types),
-		Folders: nonNil(folders),
-		Items:   nonNil(items),
-		Cases:   nonNil(cases),
-		Counts:  counts,
+		Round:     round,
+		AllRounds: allRounds,
+		Rounds:    nonNil(rounds),
+		Types:     nonNil(types),
+		Folders:   nonNil(folders),
+		Items:     nonNil(items),
+		Cases:     nonNil(cases),
+		Counts:    counts,
 	}, nil
 }
 

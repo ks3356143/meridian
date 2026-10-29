@@ -9,7 +9,7 @@ import type {
 
 export type TestItemsTreeNode = {
   id: string;
-  kind: "group" | "folder" | "item" | "case";
+  kind: "round" | "group" | "folder" | "item" | "case";
   label: string;
   identifier?: string;
   count?: number;
@@ -24,6 +24,9 @@ export type TestItemsTreeNode = {
   staticBadge?: string;
   status?: string;
   refId?: string;
+  /** 跨轮聚合视图：节点所属轮次与轮次号。 */
+  roundId?: string;
+  roundNumber?: number;
   /** 用例节点所属测试项 id（跨测试项移动 / 复制时定位目标）。 */
   itemId?: string;
   /** 小写搜索文本（名称 / 标识 / 子项名 / 用例名 / YL_ID），树搜索用。 */
@@ -37,7 +40,7 @@ export function platformApplies(scope: string, platform: ProjectPlatform) {
   return true;
 }
 
-function buildCaseNodes(cases: TestCaseRecord[]): TestItemsTreeNode[] {
+function buildCaseNodes(cases: TestCaseRecord[], roundId: string): TestItemsTreeNode[] {
   return cases.map((record) => ({
     id: `case:${record.id}`,
     kind: "case" as const,
@@ -46,6 +49,7 @@ function buildCaseNodes(cases: TestCaseRecord[]): TestItemsTreeNode[] {
     status: record.status,
     refId: record.id,
     itemId: record.testItemId,
+    roundId,
     searchText: `${record.name}\n${record.identifier}`.toLowerCase(),
   }));
 }
@@ -103,9 +107,47 @@ export function buildTestItemsTree(
       implicit: item.implicitRequirement,
       staticBadge,
       refId: item.id,
-      children: buildCaseNodes(casesByItem.get(item.id) ?? []),
+      roundId: item.roundId,
+      roundNumber: workspace.rounds.find((round) => round.id === item.roundId)?.roundNumber,
+      children: buildCaseNodes(casesByItem.get(item.id) ?? [], item.roundId),
     };
   };
+
+  if (workspace.allRounds) {
+    return [...workspace.rounds].reverse().flatMap((round) => {
+      const roundItems = items.filter((item) => item.roundId === round.id);
+      if (roundItems.length === 0) return [];
+      const typeGroups: TestItemsTreeNode[] = [];
+      for (const type of types) {
+        const typeItems = roundItems
+          .filter((item) => item.typeCode === type.code)
+          .sort((left, right) => left.sortOrder - right.sortOrder);
+        if (typeItems.length === 0) continue;
+        typeGroups.push({
+          id: `round:${round.id}:group:${type.code}`,
+          kind: "group",
+          label: type.name,
+          typeCode: type.code,
+          category: type.category,
+          count: typeItems.length,
+          roundId: round.id,
+          roundNumber: round.roundNumber,
+          children: typeItems.map(buildItemNode),
+        });
+      }
+      return [
+        {
+          id: `round:${round.id}`,
+          kind: "round" as const,
+          label: `${round.name} · 第 ${round.roundNumber} 轮`,
+          count: roundItems.length,
+          roundId: round.id,
+          roundNumber: round.roundNumber,
+          children: typeGroups,
+        },
+      ];
+    });
+  }
 
   // 分组按类型（老项目口径）：文档审查 / 静态分析 / 代码审查 / 代码走查 / 功能测试……，有内容才显示。
   const nodes: TestItemsTreeNode[] = [];
@@ -242,7 +284,7 @@ export function filterTestItemsTree(
 
   const counters = { items: 0, cases: 0 };
   const filterNode = (node: TestItemsTreeNode): TestItemsTreeNode | null => {
-    if (node.kind === "group" || node.kind === "folder") {
+    if (node.kind === "round" || node.kind === "group" || node.kind === "folder") {
       const children = (node.children ?? [])
         .map(filterNode)
         .filter((child): child is TestItemsTreeNode => child !== null);

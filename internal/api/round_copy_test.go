@@ -166,6 +166,35 @@ func TestRoundCopyHTTPEndpoints(t *testing.T) {
 	if empty["testItemCount"] != float64(0) || empty["caseCount"] != float64(0) {
 		t.Fatalf("空轮次计数不正确: %+v", empty)
 	}
+
+	roundsRecorder := postJSONRecorder(t, handler, token, http.MethodGet,
+		"/api/v1/projects/"+projectCode+"/test-rounds", nil)
+	if roundsRecorder.Code != http.StatusOK {
+		t.Fatalf("轮次列表状态码应为 200，实际 %d: %s", roundsRecorder.Code, roundsRecorder.Body.String())
+	}
+	var roundList []map[string]any
+	if err := json.Unmarshal(roundsRecorder.Body.Bytes(), &roundList); err != nil {
+		t.Fatalf("解析轮次列表失败: %v", err)
+	}
+	if len(roundList) != 3 {
+		t.Fatalf("轮次列表应有 3 轮，实际 %d: %+v", len(roundList), roundList)
+	}
+	aggregate := postJSONMap(t, handler, token, http.MethodGet,
+		"/api/v1/projects/"+projectCode+"/test-items?roundId=all", nil, http.StatusOK)
+	if aggregate["allRounds"] != true {
+		t.Fatalf("全部模式未标记 allRounds: %+v", aggregate)
+	}
+	aggregateItems, _ := aggregate["items"].([]any)
+	wantAggregate := len(workspaceItemIDs(workspace)) + len(workspaceItemIDs(targetWorkspace))
+	if len(aggregateItems) != wantAggregate {
+		t.Fatalf("全部模式应聚合 %d 个测试项，实际 %d: %+v", wantAggregate, len(aggregateItems), aggregateItems)
+	}
+	for _, raw := range aggregateItems {
+		item, _ := raw.(map[string]any)
+		if item["roundId"] == "" {
+			t.Fatalf("全部模式测试项缺少轮次归属: %+v", item)
+		}
+	}
 }
 
 func workspaceItemIDs(workspace map[string]any) []string {

@@ -5,6 +5,7 @@ import {
   CopyPlus,
   Folder,
   FolderOpen,
+  History,
   ListChecks,
   Pencil,
   Trash2,
@@ -51,7 +52,7 @@ function blockDragDuringSearch() {
 
 /** 分组与文件夹只做容器，不允许被拖动。 */
 function isNodeDragDisabled(data: TestItemsTreeNode) {
-  return data.kind === "group" || data.kind === "folder";
+  return data.kind === "round" || data.kind === "group" || data.kind === "folder";
 }
 
 /**
@@ -129,6 +130,7 @@ function TestItemsTreeInner({
   onAction,
   onRenameNode,
   onMoveNode,
+  readOnly = false,
 }: {
   nodes: TestItemsTreeNode[];
   storageKey: string;
@@ -142,6 +144,7 @@ function TestItemsTreeInner({
   onAction?: (node: TestItemsTreeNode, action: TestItemsTreeAction) => void;
   onRenameNode?: (node: TestItemsTreeNode, name: string) => void;
   onMoveNode?: (move: TestItemsTreeMove) => void;
+  readOnly?: boolean;
 }) {
   const { ref: shellRef, height } = useElementHeight<HTMLDivElement>();
   const [initialOpenState] = useState(() => readOpenState(storageKey));
@@ -237,6 +240,10 @@ function TestItemsTreeInner({
           className={styles.shell}
           ref={shellRef}
           onContextMenu={(event) => {
+            if (readOnly) {
+              event.preventDefault();
+              return;
+            }
             const target = event.target as HTMLElement | null;
             const row = target?.closest?.('[role="treeitem"]');
             const id = row?.getAttribute("data-id") ?? "";
@@ -265,7 +272,7 @@ function TestItemsTreeInner({
               initialOpenState={initialOpenState}
               selection={selectedKey || undefined}
               disableMultiSelection
-              disableDrag={forceExpanded ? blockDragDuringSearch : isNodeDragDisabled}
+              disableDrag={forceExpanded || readOnly ? blockDragDuringSearch : isNodeDragDisabled}
               disableDrop={isDropBlocked}
               onMove={handleMove}
               onToggle={handleToggle}
@@ -294,7 +301,7 @@ function handleNodeClick(
   onSelect?: (node: TestItemsTreeNode) => void,
 ) {
   const data = node.data;
-  if (data.kind === "group" || data.kind === "folder") {
+  if (data.kind === "round" || data.kind === "group" || data.kind === "folder") {
     node.toggle();
     return;
   }
@@ -447,19 +454,23 @@ function TestItemsTreeRow({
 }) {
   const data = node.data;
   const tone = categoryTone(data.category ?? "");
-  const isContainer = data.kind === "group" || data.kind === "folder";
+  const isContainer = data.kind === "round" || data.kind === "group" || data.kind === "folder";
   // 每层都给类型图标：文件夹 Folder / 测试项 ListChecks / 用例 ClipboardList，层级一眼分清。
-  const Icon = isContainer
-    ? node.isOpen
-      ? FolderOpen
-      : Folder
-    : data.kind === "case"
-      ? ClipboardList
-      : ListChecks;
+  const Icon =
+    data.kind === "round"
+      ? History
+      : isContainer
+        ? node.isOpen
+          ? FolderOpen
+          : Folder
+        : data.kind === "case"
+          ? ClipboardList
+          : ListChecks;
   const hasMeta =
     data.count !== undefined ||
     (data.kind === "group" && Boolean(data.typeCode)) ||
-    (data.kind === "item" && Boolean(data.staticBadge || data.implicit || data.incomplete)) ||
+    (data.kind === "item" &&
+      Boolean(data.staticBadge || data.implicit || data.incomplete || data.roundNumber)) ||
     data.kind === "case";
 
   return (
@@ -506,6 +517,9 @@ function TestItemsTreeRow({
           ) : null}
           {data.kind === "item" ? (
             <>
+              {data.roundNumber ? (
+                <span className={styles.roundBadge}>第 {data.roundNumber} 轮</span>
+              ) : null}
               {data.staticBadge ? (
                 <span className={styles.staticProgress}>{data.staticBadge}</span>
               ) : null}

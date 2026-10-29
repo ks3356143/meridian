@@ -1,0 +1,285 @@
+.trigger {
+  max-width: min(14rem, 42vw);
+  min-width: 8.5rem;
+}
+
+.triggerLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  margin-left: auto;
+  transition: transform 200ms var(--ease-out-strong);
+}
+
+.chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.menu {
+  min-width: 15rem;
+  padding: 0.45rem;
+}
+
+.menuTitle {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.4rem 0.4rem;
+}
+
+.options {
+  display: grid;
+  gap: 0.18rem;
+  max-height: 17rem;
+  overflow-y: auto;
+}
+
+.option {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  transition:
+    background-color 180ms var(--ease-out-strong),
+    border-color 180ms var(--ease-out-strong),
+    color 180ms var(--ease-out-strong);
+  width: 100%;
+}
+
+.option:hover,
+.option[aria-selected="true"] {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+  color: var(--primary);
+}
+
+.option > span {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.option strong {
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option small {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+}
+
+.option svg {
+  flex: none;
+  height: 0.82rem;
+  width: 0.82rem;
+}
+
+.menuFooter {
+  border-top: 1px solid var(--border);
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+}
+
+.newRoundButton {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.wizard {
+  max-width: min(46rem, calc(100vw - 2rem));
+}
+
+.formGrid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.formGrid label,
+.fullField {
+  display: grid;
+  font-size: 0.72rem;
+  font-weight: 650;
+  gap: 0.35rem;
+}
+
+.fullField {
+  grid-column: 1 / -1;
+}
+
+.rangeHeader,
+.rangeTools {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  justify-content: space-between;
+}
+
+.rangeHeader > div {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.rangeHeader strong {
+  font-size: 0.82rem;
+}
+
+.rangeHeader span {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+}
+
+.selectionCount {
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+  color: var(--primary) !important;
+  flex: none;
+  padding: 0.22rem 0.45rem;
+}
+
+.rangeTools {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.searchField {
+  flex: 1 1 14rem;
+  min-width: 0;
+  position: relative;
+}
+
+.searchField svg {
+  color: var(--muted-foreground);
+  height: 0.8rem;
+  left: 0.55rem;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.8rem;
+}
+
+.searchField input {
+  padding-left: 1.75rem;
+}
+
+.candidates {
+  border: 1px solid var(--border);
+  max-height: 18rem;
+  min-height: 8rem;
+  overflow-y: auto;
+}
+
+.candidate {
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  cursor: pointer;
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  transition: background-color 160ms var(--ease-out-strong);
+}
+
+.candidate:last-child {
+  border-bottom: 0;
+}
+
+.candidate:hover {
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+.candidateMain {
+  display: grid;
+  flex: 1;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.candidateName {
+  font-size: 0.78rem;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.candidateMeta {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+}
+
+.candidateStats {
+  display: flex;
+  flex: none;
+  font-size: 0.62rem;
+  gap: 0.42rem;
+}
+
+.candidateStats [data-tone="pass"] {
+  color: var(--success);
+}
+
+.candidateStats [data-tone="fail"] {
+  color: var(--destructive);
+}
+
+.state,
+.stateError {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.stateError {
+  color: var(--destructive);
+}
+
+@media (max-width: 600px) {
+  .trigger {
+    max-width: 10.5rem;
+    min-width: 0;
+  }
+
+  .wizard {
+    gap: 0.7rem;
+    max-height: calc(100svh - 1rem);
+    padding: 0.85rem;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fullField {
+    grid-column: auto;
+  }
+
+  .candidateStats {
+    display: grid;
+    gap: 0.06rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron,
+  .option,
+  .candidate {
+    transition: none;
+  }
+}

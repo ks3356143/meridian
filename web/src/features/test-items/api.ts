@@ -14,6 +14,10 @@ import type {
   TestItemRequirementRef,
   TestItemsWorkspace,
   TestSubItemRecord,
+  RoundCopyPreview,
+  CreateRoundCopyPayload,
+  RoundCopyResult,
+  TestRoundRecord,
 } from "./types";
 
 export interface CreateTestItemPayload {
@@ -80,12 +84,29 @@ export interface UpdateCasePayload {
 }
 
 export const testItemsApi = {
-  workspace: (projectCode: string) =>
-    request<TestItemsWorkspace>("GET", `/api/v1/projects/${projectCode}/test-items`),
+  workspace: (projectCode: string, roundId: string) =>
+    request<TestItemsWorkspace>(
+      "GET",
+      `/api/v1/projects/${projectCode}/test-items?roundId=${encodeURIComponent(roundId)}`,
+    ),
+  rounds: (projectCode: string) =>
+    request<TestRoundRecord[]>("GET", `/api/v1/projects/${projectCode}/test-rounds`),
+  roundCopyPreview: (projectCode: string, sourceRoundId: string) =>
+    request<RoundCopyPreview>(
+      "GET",
+      `/api/v1/projects/${projectCode}/test-rounds/${sourceRoundId}/copy-preview`,
+    ),
+  createRoundCopy: (projectCode: string, payload: CreateRoundCopyPayload) =>
+    request<RoundCopyResult>("POST", `/api/v1/projects/${projectCode}/test-rounds`, {}, payload),
   detail: (testItemId: string) =>
     request<TestItemDetail>("GET", `/api/v1/test-items/${testItemId}`),
-  createItem: (projectCode: string, payload: CreateTestItemPayload) =>
-    request<TestItemRecord>("POST", `/api/v1/projects/${projectCode}/test-items`, {}, payload),
+  createItem: (projectCode: string, roundId: string, payload: CreateTestItemPayload) =>
+    request<TestItemRecord>(
+      "POST",
+      `/api/v1/projects/${projectCode}/test-items?roundId=${encodeURIComponent(roundId)}`,
+      {},
+      payload,
+    ),
   /** 按需求默认值创建并关联测试项；createAnother 为真时跳过同类型同名称复用。 */
   createFromRequirement: (projectCode: string, requirementId: string, createAnother = false) =>
     request<TestItemRecord>(
@@ -97,19 +118,20 @@ export const testItemsApi = {
   /** 全部或选中的已确认需求批量创建测试项；已关联和待补描述默认跳过。 */
   createFromRequirements: (
     projectCode: string,
+    roundId: string,
     payload: { all?: boolean; requirementIds?: string[] },
   ) =>
     request<BatchCreateTestItemsResult>(
       "POST",
-      `/api/v1/projects/${projectCode}/test-items/from-requirements`,
+      `/api/v1/projects/${projectCode}/test-items/from-requirements?roundId=${encodeURIComponent(roundId)}`,
       {},
       payload,
     ),
   /** 测试项页入口：已确认需求的创建候选与关联状态。 */
-  requirementCreatePreview: (projectCode: string) =>
+  requirementCreatePreview: (projectCode: string, roundId: string) =>
     request<RequirementTestItemPreview>(
       "GET",
-      `/api/v1/projects/${projectCode}/test-items/from-requirements/preview`,
+      `/api/v1/projects/${projectCode}/test-items/from-requirements/preview?roundId=${encodeURIComponent(roundId)}`,
     ),
   /** 需求详情侧的已关联测试项。 */
   requirementItems: (requirementId: string) =>
@@ -120,10 +142,10 @@ export const testItemsApi = {
   /** 复制新增：内容字段与子项一起复制，标识按「-副本」重排；静态类型后端拒绝。 */
   duplicateItem: (testItemId: string) =>
     request<TestItemRecord>("POST", `/api/v1/test-items/${testItemId}/duplicate`),
-  createFolder: (projectCode: string, payload: CreateTestItemFolderPayload) =>
+  createFolder: (projectCode: string, roundId: string, payload: CreateTestItemFolderPayload) =>
     request<TestItemFolder>(
       "POST",
-      `/api/v1/projects/${projectCode}/test-item-folders`,
+      `/api/v1/projects/${projectCode}/test-item-folders?roundId=${encodeURIComponent(roundId)}`,
       {},
       payload,
     ),

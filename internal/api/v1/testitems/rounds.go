@@ -21,6 +21,14 @@ type RoundCopyPreviewOutput struct {
 	Body testitemsservice.RoundCopyPreview
 }
 
+type RoundListInput struct {
+	Code string `path:"code" doc:"项目标识"`
+}
+
+type RoundListOutput struct {
+	Body []testitemsservice.Round
+}
+
 // CreateRoundCopyInput 新建后续轮并复制选定测试项树。
 type CreateRoundCopyInput struct {
 	Code string `path:"code" doc:"项目标识"`
@@ -42,6 +50,25 @@ type CreateRoundCopyOutput struct {
 }
 
 func registerRounds(api huma.API, handler *Handler) {
+	huma.Register(api, huma.Operation{
+		OperationID: "list-test-rounds",
+		Method:      http.MethodGet,
+		Path:        "/api/v1/projects/{code}/test-rounds",
+		Summary:     "项目轮次列表",
+		Description: "返回项目全部轮次，按轮次号升序，供工作区轮次切换与新建向导使用。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *RoundListInput) (*RoundListOutput, error) {
+		projectID, err := handler.projectID(ctx, input.Code)
+		if err != nil {
+			return nil, toAPIError(err, "项目不存在")
+		}
+		rounds, err := handler.service.ListRounds(ctx, projectID)
+		if err != nil {
+			return nil, toAPIError(err, "读取轮次列表失败")
+		}
+		return &RoundListOutput{Body: nonNil(rounds)}, nil
+	})
+
 	huma.Register(api, huma.Operation{
 		OperationID: "preview-round-copy",
 		Method:      http.MethodGet,

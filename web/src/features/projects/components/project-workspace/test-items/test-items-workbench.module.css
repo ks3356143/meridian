@@ -183,6 +183,19 @@
   white-space: nowrap;
 }
 
+.readOnlyChip {
+  align-items: center;
+  background: color-mix(in srgb, var(--chart-5) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chart-5) 24%, var(--border));
+  color: color-mix(in srgb, var(--chart-5) 86%, var(--foreground));
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 650;
+  min-height: 1.8rem;
+  padding: 0 0.5rem;
+  white-space: nowrap;
+}
+
 /* 默认树宽 380px 时轮次已由详情 hero 展示，隐藏这里防止工具栏撑出横向滚动条。 */
 .folderLabel {
   white-space: nowrap;

@@ -18,6 +18,7 @@ export interface TestItemType {
 export interface TestItemFolder {
   id: string;
   projectId: string;
+  roundId: string;
   typeCode: string;
   parentId: string | null;
   name: string;
@@ -29,6 +30,7 @@ export interface TestItemFolder {
 export interface TestItemRecord {
   id: string;
   projectId: string;
+  roundId: string;
   typeCode: string;
   identifier: string;
   suffix: string;
@@ -172,6 +174,44 @@ export interface TestRoundRecord {
   updatedAt: string;
 }
 
+export interface RoundCopyCandidate {
+  testItemId: string;
+  identifier: string;
+  name: string;
+  typeCode: string;
+  typeName: string;
+  defaultSelected: boolean;
+  passedCount: number;
+  failedCount: number;
+}
+
+export interface RoundCopyPreview {
+  sourceRound: TestRoundRecord;
+  testItems: RoundCopyCandidate[];
+}
+
+export interface CreateRoundCopyPayload {
+  sourceRoundId: string;
+  testItemIds: string[];
+  name?: string;
+  dutVersion?: string;
+  startedOn?: string;
+  endedOn?: string;
+  changeReason?: string;
+  reasonSummary?: string;
+}
+
+export interface RoundCopyResult {
+  round: TestRoundRecord;
+  folderCount: number;
+  testItemCount: number;
+  subItemCount: number;
+  caseCount: number;
+  stepCount: number;
+  requirementLinkCount: number;
+  opBlockCount: number;
+}
+
 export interface TestItemRequirementRef {
   id: string;
   chapterNumber: string;
@@ -197,6 +237,8 @@ export interface TestItemCounts {
 
 export interface TestItemsWorkspace {
   round: TestRoundRecord;
+  allRounds: boolean;
+  rounds: TestRoundRecord[];
   types: TestItemType[];
   folders: TestItemFolder[];
   items: TestItemRecord[];

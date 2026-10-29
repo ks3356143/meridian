@@ -19,6 +19,8 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useRevealActiveTab } from "@/hooks/use-reveal-active-tab";
 import type { Project } from "@/features/projects/types";
 import { WorkspaceTopbar } from "./workspace-topbar";
+import { RoundSwitcher } from "./round-switcher";
+import { ALL_ROUNDS_ID, useRoundSelection } from "./use-round-selection";
 import styles from "./project-workspace-layout.module.css";
 
 export interface ProjectWorkspaceOutletContext {
@@ -123,6 +125,12 @@ export function ProjectWorkspaceLayout({
     project.openIssues.normal +
     project.openIssues.suggestion;
   const activeSection = getActiveSection(location.pathname, project.id);
+  const workspaceSegment = getWorkspaceSegment(location.pathname, project.id);
+  const showRoundSwitcher = ["test-items", "rounds", "issues", "documents"].includes(
+    workspaceSegment,
+  );
+  const allowAllRounds = workspaceSegment === "test-items";
+  const roundSelection = useRoundSelection(project.id, showRoundSwitcher, allowAllRounds);
   const switchingSection = pendingSection !== null && location.pathname === pendingSection.fromPath;
   const displayedSection = switchingSection ? pendingSection.section : activeSection;
 
@@ -188,7 +196,18 @@ export function ProjectWorkspaceLayout({
     const section = NAV_SECTIONS.find((item) => item.value === value);
     if (!section) return;
 
-    const target = `/projects/${project.id}/workspace${section.path ? `/${section.path}` : ""}`;
+    let target = `/projects/${project.id}/workspace${section.path ? `/${section.path}` : ""}`;
+    const targetSupportsRound = section.value === "execution" || section.value === "delivery";
+    if (targetSupportsRound) {
+      const fallbackRound =
+        roundSelection.rounds.filter((round) => round.status !== "closed").at(-1) ??
+        roundSelection.rounds.at(-1);
+      const targetRound =
+        roundSelection.roundId === ALL_ROUNDS_ID
+          ? fallbackRound?.id
+          : roundSelection.roundId || fallbackRound?.id;
+      if (targetRound) target += `?roundId=${encodeURIComponent(targetRound)}`;
+    }
     if (target !== location.pathname) {
       setPendingSection({ fromPath: location.pathname, section: section.value });
     }
@@ -201,6 +220,18 @@ export function ProjectWorkspaceLayout({
         project={project}
         executionRate={executionRate}
         openIssues={openIssues}
+        roundSwitcher={
+          showRoundSwitcher ? (
+            <RoundSwitcher
+              projectCode={project.id}
+              rounds={roundSelection.rounds}
+              roundId={roundSelection.roundId}
+              allowAll={allowAllRounds}
+              loading={roundSelection.isLoading}
+              onRoundChange={roundSelection.setRoundId}
+            />
+          ) : undefined
+        }
         quickSwitcher={
           <AppQuickSwitcher
             items={[...NAV_SECTIONS, ...PROJECT_QUICK_SWITCH_ITEMS]}
@@ -281,4 +312,9 @@ function getActiveSection(pathname: string, projectCode: string): WorkspaceSecti
   if (segment === "documents") return "delivery";
   if (segment === "requirements") return "requirements";
   return "tasks";
+}
+
+function getWorkspaceSegment(pathname: string, projectCode: string) {
+  const prefix = `/projects/${projectCode}/workspace/`;
+  return pathname.startsWith(prefix) ? pathname.slice(prefix.length).split("/")[0] : "";
 }

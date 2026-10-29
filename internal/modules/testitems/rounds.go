@@ -74,6 +74,19 @@ type RoundCopyResult struct {
 	OpBlockCount         int   `json:"opBlockCount"`
 }
 
+// ListRounds 返回项目全部轮次，按轮次号升序；历史项目首次访问时补齐第 1 轮。
+func (s *Service) ListRounds(ctx context.Context, projectID string) ([]Round, error) {
+	if _, err := s.EnsureRound(ctx, projectID); err != nil {
+		return nil, err
+	}
+	var rounds []Round
+	if err := s.db.WithContext(ctx).Where("project_id = ?", projectID).
+		Order("round_number asc").Find(&rounds).Error; err != nil {
+		return nil, fmt.Errorf("查询轮次列表失败: %w", err)
+	}
+	return rounds, nil
+}
+
 // ResolveRound 解析当前轮次：有 roundId 时严格校验；没有时取最新未关闭轮次，全部关闭则取最新轮次。
 func (s *Service) ResolveRound(ctx context.Context, projectID, roundID string) (Round, error) {
 	return resolveRound(ctx, s.db, projectID, roundID)
