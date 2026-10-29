@@ -355,6 +355,12 @@
   vertical-align: top;
 }
 
+.previousRoundStandalone {
+  margin-top: 0.6rem;
+  min-width: 0;
+  width: 100%;
+}
+
 .stepsToolbar {
   align-items: center;
   display: flex;

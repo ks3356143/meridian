@@ -152,8 +152,10 @@ type Case struct {
 	NotExecutedReason string     `gorm:"column:not_executed_reason" json:"notExecutedReason"`
 	SortOrder         int        `gorm:"column:sort_order" json:"sortOrder"`
 	LineageKey        string     `gorm:"column:lineage_key" json:"lineageKey"`
-	CreatedAt         time.Time  `gorm:"column:created_at" json:"createdAt"`
-	UpdatedAt         time.Time  `gorm:"column:updated_at" json:"updatedAt"`
+	// PreviousRoundAvailable 工作台摘要字段：存在按 lineage 对齐的上轮用例。
+	PreviousRoundAvailable bool      `gorm:"-" json:"previousRoundAvailable"`
+	CreatedAt              time.Time `gorm:"column:created_at" json:"createdAt"`
+	UpdatedAt              time.Time `gorm:"column:updated_at" json:"updatedAt"`
 }
 
 func (Case) TableName() string { return "test_cases" }

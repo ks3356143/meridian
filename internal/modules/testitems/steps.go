@@ -26,6 +26,7 @@ func (s *Service) ListSteps(ctx context.Context, caseID string) ([]CaseStep, err
 type StepView struct {
 	ID         string                  `json:"id"`
 	TestCaseID string                  `json:"testCaseId"`
+	LineageKey string                  `json:"lineageKey"`
 	Seq        int                     `json:"seq"`
 	ExpectText string                  `json:"expectText"`
 	Passed     string                  `json:"passed"`
@@ -66,7 +67,7 @@ func (s *Service) ListStepsWithBlocks(ctx context.Context, caseID string) ([]Ste
 
 func assembleStepView(step CaseStep, blocks map[string]contentblocks.BlockView) StepView {
 	view := StepView{
-		ID: step.ID, TestCaseID: step.TestCaseID, Seq: step.Seq, ExpectText: step.ExpectText,
+		ID: step.ID, TestCaseID: step.TestCaseID, LineageKey: step.LineageKey, Seq: step.Seq, ExpectText: step.ExpectText,
 		Passed: step.Passed, SortOrder: step.SortOrder, CreatedAt: step.CreatedAt, UpdatedAt: step.UpdatedAt,
 		Op: contentblocks.EmptyBlockView(), Act: contentblocks.EmptyBlockView(),
 	}

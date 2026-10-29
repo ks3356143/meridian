@@ -29,6 +29,7 @@ func Register(api huma.API, service *testitemsservice.Service) {
 	registerCaseEfficiency(api, handler)
 	registerStaticWorkbenches(api, handler)
 	registerSteps(api, handler)
+	registerPreviousRoundResult(api, handler)
 	registerLinks(api, handler)
 }
 
@@ -150,6 +151,10 @@ func (h *Handler) workspace(ctx context.Context, projectCode, roundID string) (W
 		if err != nil {
 			return WorkspaceBody{}, err
 		}
+	}
+	cases, err = h.service.AnnotatePreviousRoundAvailability(ctx, cases)
+	if err != nil {
+		return WorkspaceBody{}, err
 	}
 
 	return WorkspaceBody{
@@ -458,6 +463,8 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error404NotFound("项目不存在")
 	case errors.Is(err, testitemsservice.ErrRoundNotFound):
 		return huma.Error404NotFound("轮次不存在")
+	case errors.Is(err, testitemsservice.ErrNoPreviousRoundResult):
+		return huma.Error404NotFound("没有可用的上轮实测记录")
 	case errors.Is(err, testitemsservice.ErrRoundMismatch):
 		return huma.Error422UnprocessableEntity(err.Error())
 	case errors.Is(err, testitemsservice.ErrRoundCopyItemOutsideSource):

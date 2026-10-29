@@ -16,6 +16,7 @@ import type { ProjectMember } from "../../../types";
 import { CaseStepsSection } from "./case-steps-section";
 import { EditableCell, type EditableCellHandle } from "./editable-cell";
 import { PersonPicker } from "./person-picker";
+import { PreviousRoundResultSection } from "./previous-round-result-section";
 import { SummaryBackfillPicker } from "./summary-backfill-picker";
 import { TestCaseShortcutsDialog } from "./test-case-shortcuts-dialog";
 import { caseStatusLabel } from "./test-items-design";
@@ -429,6 +430,11 @@ function TestCasePanelInner({
               </tr>
             </tbody>
           </table>
+          {caseRecord.previousRoundAvailable ? (
+            <div className={styles.previousRoundStandalone}>
+              <PreviousRoundResultSection caseId={caseRecord.id} projectCode={projectCode} />
+            </div>
+          ) : null}
         </div>
       </div>
       <TestCaseShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />

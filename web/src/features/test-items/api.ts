@@ -18,6 +18,7 @@ import type {
   CreateRoundCopyPayload,
   RoundCopyResult,
   TestRoundRecord,
+  PreviousRoundResult,
 } from "./types";
 
 export interface CreateTestItemPayload {
@@ -206,6 +207,10 @@ export const testItemsApi = {
     ).then((result) => result.hits),
   caseSteps: (caseId: string) =>
     request<CaseStepRecord[]>("GET", `/api/v1/test-cases/${caseId}/steps`),
+  previousRoundResult: (caseId: string) =>
+    request<PreviousRoundResult>("GET", `/api/v1/test-cases/${caseId}/previous-round-result`, {
+      skipErrorToast: true,
+    }),
   createCaseStep: (caseId: string, expectText: string) =>
     request<CaseStepRecord>("POST", `/api/v1/test-cases/${caseId}/steps`, {}, { expectText }),
   updateCaseStep: (stepId: string, payload: { expectText?: string; passed?: string }) =>

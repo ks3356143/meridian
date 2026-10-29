@@ -128,6 +128,8 @@ export interface TestCaseRecord {
   notes: string;
   notExecutedReason: string;
   sortOrder: number;
+  /** 工作台摘要：存在按 lineage 对齐的上轮用例。 */
+  previousRoundAvailable?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -138,6 +140,23 @@ export interface StepBlockView {
   doc: RequirementBlockNode | null;
   plainText: string;
   hasContent: boolean;
+}
+
+export interface PreviousRoundStep {
+  currentStepId: string | null;
+  previousStep: CaseStepRecord & { lineageKey: string };
+  change: "unchanged" | "added" | "removed";
+}
+
+export interface PreviousRoundResult {
+  currentCaseId: string;
+  lineageKey: string;
+  currentRound: TestRoundRecord;
+  previousRound: TestRoundRecord;
+  previousCase: TestCaseRecord;
+  testerId: string | null;
+  testerName: string;
+  steps: PreviousRoundStep[];
 }
 
 export interface CaseStepRecord {

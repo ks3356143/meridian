@@ -152,6 +152,24 @@ func TestRoundCopyHTTPEndpoints(t *testing.T) {
 	if len(workspaceItemIDs(targetWorkspace)) != 2 {
 		t.Fatalf("第二轮工作台应返回复制项和新增项: %+v", workspaceItemIDs(targetWorkspace))
 	}
+	targetCases, _ := targetWorkspace["cases"].([]any)
+	if len(targetCases) != 1 {
+		t.Fatalf("第二轮工作台应返回 1 条复制用例: %+v", targetCases)
+	}
+	copiedCase, _ := targetCases[0].(map[string]any)
+	if copiedCase["previousRoundAvailable"] != true {
+		t.Fatalf("复制用例应标记存在上轮记录: %+v", copiedCase)
+	}
+	copiedCaseID, _ := copiedCase["id"].(string)
+	previousResult := postJSONMap(t, handler, token, http.MethodGet,
+		"/api/v1/test-cases/"+copiedCaseID+"/previous-round-result", nil, http.StatusOK)
+	previousRound, _ := previousResult["previousRound"].(map[string]any)
+	if previousRound["id"] != sourceRoundID {
+		t.Fatalf("上轮实测接口轮次不正确: %+v", previousResult)
+	}
+	if previousResult["lineageKey"] != copiedCase["lineageKey"] {
+		t.Fatalf("上轮实测接口 lineage 不一致: %+v", previousResult)
+	}
 	currentWorkspace := postJSONMap(t, handler, token, http.MethodGet,
 		"/api/v1/projects/"+projectCode+"/test-items", nil, http.StatusOK)
 	currentRound, _ := currentWorkspace["round"].(map[string]any)
