@@ -22,11 +22,25 @@ func (s *Service) ListCases(ctx context.Context, testItemID string) ([]Case, err
 	return cases, nil
 }
 
-// ListCasesByProject 返回项目内全部用例（工作台摘要用）。
+// ListCasesByProject 返回项目内全部用例（跨轮查询；兼容既有调用）。
 func (s *Service) ListCasesByProject(ctx context.Context, projectID string) ([]Case, error) {
+	return s.listCasesByProject(ctx, projectID, "")
+}
+
+// ListCasesByProjectRound 返回指定轮次内的全部用例（工作台摘要用）。
+func (s *Service) ListCasesByProjectRound(ctx context.Context, projectID, roundID string) ([]Case, error) {
+	return s.listCasesByProject(ctx, projectID, roundID)
+}
+
+func (s *Service) listCasesByProject(ctx context.Context, projectID, roundID string) ([]Case, error) {
+	query := s.db.WithContext(ctx).Table("test_cases AS item").Where("item.project_id = ?", projectID)
+	if roundID != "" {
+		query = query.Joins("JOIN test_items AS test_item ON test_item.id = item.test_item_id").
+			Where("test_item.round_id = ?", roundID)
+	}
 	var cases []Case
-	if err := s.db.WithContext(ctx).Where("project_id = ?", projectID).
-		Order("test_item_id asc, sort_order asc, created_at asc").Find(&cases).Error; err != nil {
+	if err := query.Select("item.*").Order("item.test_item_id asc, item.sort_order asc, item.created_at asc").
+		Find(&cases).Error; err != nil {
 		return nil, fmt.Errorf("查询用例失败: %w", err)
 	}
 	return cases, nil

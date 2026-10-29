@@ -616,11 +616,23 @@ func deleteTestItemTreeBlocksTx(tx *gorm.DB, testItemID string) error {
 	return contentblocks.DeleteOwnerBlocksTx(tx, contentblocks.OwnerTypeTestItem, testItemID)
 }
 
-// ListTestItems 返回项目内测试项（按类型输出顺序、容器内排序）。
+// ListTestItems 返回项目内测试项（跨轮查询；兼容既有调用）。
 func (s *Service) ListTestItems(ctx context.Context, projectID string) ([]TestItem, error) {
+	return s.listTestItems(ctx, projectID, "")
+}
+
+// ListTestItemsByRound 返回指定轮次内的测试项（按类型、容器内排序）。
+func (s *Service) ListTestItemsByRound(ctx context.Context, projectID, roundID string) ([]TestItem, error) {
+	return s.listTestItems(ctx, projectID, roundID)
+}
+
+func (s *Service) listTestItems(ctx context.Context, projectID, roundID string) ([]TestItem, error) {
+	query := s.db.WithContext(ctx).Where("project_id = ?", projectID)
+	if roundID != "" {
+		query = query.Where("round_id = ?", roundID)
+	}
 	var items []TestItem
-	if err := s.db.WithContext(ctx).Where("project_id = ?", projectID).
-		Order("type_code asc, sort_order asc, created_at asc").Find(&items).Error; err != nil {
+	if err := query.Order("type_code asc, sort_order asc, created_at asc").Find(&items).Error; err != nil {
 		return nil, fmt.Errorf("查询测试项失败: %w", err)
 	}
 	return items, nil
@@ -640,8 +652,17 @@ type ItemCounts struct {
 	SubItemNames []string `json:"subItemNames"`
 }
 
-// CountItemChildren 按测试项统计子项数与关联需求数（树徽章、必填提醒与完善度提示共用）。
+// CountItemChildren 按测试项统计子项数与关联需求数（跨轮查询；兼容既有调用）。
 func (s *Service) CountItemChildren(ctx context.Context, projectID string) (map[string]ItemCounts, error) {
+	return s.countItemChildren(ctx, projectID, "")
+}
+
+// CountItemChildrenByRound 按指定轮次统计树徽章数据。
+func (s *Service) CountItemChildrenByRound(ctx context.Context, projectID, roundID string) (map[string]ItemCounts, error) {
+	return s.countItemChildren(ctx, projectID, roundID)
+}
+
+func (s *Service) countItemChildren(ctx context.Context, projectID, roundID string) (map[string]ItemCounts, error) {
 	counts := map[string]ItemCounts{}
 
 	var subRows []struct {
@@ -649,15 +670,17 @@ func (s *Service) CountItemChildren(ctx context.Context, projectID string) (map[
 		Total      int
 		Incomplete int
 	}
-	if err := s.db.WithContext(ctx).Table("test_sub_items AS sub").
+	subQuery := s.db.WithContext(ctx).Table("test_sub_items AS sub").
 		Select(`sub.test_item_id AS test_item_id, COUNT(*) AS total,
 			SUM(CASE WHEN TRIM(COALESCE(sub.ops, ''), ' ' || char(9) || char(10) || char(13)) = ''
 				OR TRIM(COALESCE(sub.expected, ''), ' ' || char(9) || char(10) || char(13)) = ''
 				THEN 1 ELSE 0 END) AS incomplete`).
 		Joins("JOIN test_items AS item ON item.id = sub.test_item_id").
-		Where("item.project_id = ?", projectID).
-		Group("sub.test_item_id").
-		Scan(&subRows).Error; err != nil {
+		Where("item.project_id = ?", projectID)
+	if roundID != "" {
+		subQuery = subQuery.Where("item.round_id = ?", roundID)
+	}
+	if err := subQuery.Group("sub.test_item_id").Scan(&subRows).Error; err != nil {
 		return nil, fmt.Errorf("统计测试子项失败: %w", err)
 	}
 	for _, row := range subRows {
@@ -671,11 +694,14 @@ func (s *Service) CountItemChildren(ctx context.Context, projectID string) (map[
 		TestItemID string
 		Total      int
 	}
-	if err := s.db.WithContext(ctx).Table("requirement_test_items").
-		Select("test_item_id AS test_item_id, COUNT(*) AS total").
-		Where("project_id = ?", projectID).
-		Group("test_item_id").
-		Scan(&linkRows).Error; err != nil {
+	linkQuery := s.db.WithContext(ctx).Table("requirement_test_items AS link").
+		Select("link.test_item_id AS test_item_id, COUNT(*) AS total").
+		Where("link.project_id = ?", projectID)
+	if roundID != "" {
+		linkQuery = linkQuery.Joins("JOIN test_items AS item ON item.id = link.test_item_id").
+			Where("item.round_id = ?", roundID)
+	}
+	if err := linkQuery.Group("link.test_item_id").Scan(&linkRows).Error; err != nil {
 		return nil, fmt.Errorf("统计关联需求失败: %w", err)
 	}
 	for _, row := range linkRows {
@@ -689,12 +715,14 @@ func (s *Service) CountItemChildren(ctx context.Context, projectID string) (map[
 		TestItemID string
 		Name       string
 	}
-	if err := s.db.WithContext(ctx).Table("test_sub_items AS sub").
+	nameQuery := s.db.WithContext(ctx).Table("test_sub_items AS sub").
 		Select("sub.test_item_id AS test_item_id, sub.name AS name").
 		Joins("JOIN test_items AS item ON item.id = sub.test_item_id").
-		Where("item.project_id = ?", projectID).
-		Order("sub.test_item_id, sub.sort_order, sub.seq").
-		Scan(&nameRows).Error; err != nil {
+		Where("item.project_id = ?", projectID)
+	if roundID != "" {
+		nameQuery = nameQuery.Where("item.round_id = ?", roundID)
+	}
+	if err := nameQuery.Order("sub.test_item_id, sub.sort_order, sub.seq").Scan(&nameRows).Error; err != nil {
 		return nil, fmt.Errorf("读取测试子项名称失败: %w", err)
 	}
 	for _, row := range nameRows {
@@ -704,7 +732,11 @@ func (s *Service) CountItemChildren(ctx context.Context, projectID string) (map[
 	}
 
 	var staticRows []staticWorkbenchRow
-	if err := s.db.WithContext(ctx).Where("project_id = ?", projectID).Find(&staticRows).Error; err != nil {
+	staticQuery := s.db.WithContext(ctx).Where("project_id = ?", projectID)
+	if roundID != "" {
+		staticQuery = staticQuery.Where("test_item_id IN (SELECT id FROM test_items WHERE project_id = ? AND round_id = ?)", projectID, roundID)
+	}
+	if err := staticQuery.Find(&staticRows).Error; err != nil {
 		return nil, fmt.Errorf("统计静态测试进度失败: %w", err)
 	}
 	for _, row := range staticRows {
@@ -898,11 +930,23 @@ func (s *Service) CreateFolder(ctx context.Context, input CreateFolderInput) (Fo
 	return created, nil
 }
 
-// ListFolders 返回项目内文件夹。
+// ListFolders 返回项目内文件夹（跨轮查询；兼容既有调用）。
 func (s *Service) ListFolders(ctx context.Context, projectID string) ([]Folder, error) {
+	return s.listFolders(ctx, projectID, "")
+}
+
+// ListFoldersByRound 返回指定轮次内的文件夹。
+func (s *Service) ListFoldersByRound(ctx context.Context, projectID, roundID string) ([]Folder, error) {
+	return s.listFolders(ctx, projectID, roundID)
+}
+
+func (s *Service) listFolders(ctx context.Context, projectID, roundID string) ([]Folder, error) {
+	query := s.db.WithContext(ctx).Where("project_id = ?", projectID)
+	if roundID != "" {
+		query = query.Where("round_id = ?", roundID)
+	}
 	var folders []Folder
-	if err := s.db.WithContext(ctx).Where("project_id = ?", projectID).
-		Order("type_code asc, sort_order asc, created_at asc").Find(&folders).Error; err != nil {
+	if err := query.Order("type_code asc, sort_order asc, created_at asc").Find(&folders).Error; err != nil {
 		return nil, fmt.Errorf("查询文件夹失败: %w", err)
 	}
 	return folders, nil

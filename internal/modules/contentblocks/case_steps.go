@@ -2,6 +2,7 @@ package contentblocks
 
 import (
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -45,6 +46,34 @@ func CopyStepBlockTx(tx *gorm.DB, sourceStepID, targetOwnerID, targetStepID, kin
 		newID, targetOwnerID, StepBlockKey(targetStepID, kind), OwnerTypeTestCase, StepBlockKey(sourceStepID, kind))
 	if result.Error != nil {
 		return fmt.Errorf("复制步骤内容块失败: %w", result.Error)
+	}
+	return nil
+}
+
+// CopyPrefixedOwnerBlocksTx 在同一事务内复制某个拥有者指定前缀下的全部块，
+// 并把 block_key 的旧前缀改写为目标前缀。子项历史富文本块复制使用此函数。
+func CopyPrefixedOwnerBlocksTx(
+	tx *gorm.DB,
+	sourceOwnerType, sourceOwnerID, sourcePrefix string,
+	targetOwnerType, targetOwnerID, targetPrefix string,
+) error {
+	var blocks []ContentBlock
+	if err := tx.Where("owner_type = ? AND owner_id = ? AND block_key LIKE ?",
+		sourceOwnerType, sourceOwnerID, sourcePrefix+"%").Find(&blocks).Error; err != nil {
+		return fmt.Errorf("查询待复制内容块失败: %w", err)
+	}
+	for _, block := range blocks {
+		newID, err := id.New()
+		if err != nil {
+			return err
+		}
+		block.ID = newID
+		block.OwnerType = targetOwnerType
+		block.OwnerID = targetOwnerID
+		block.BlockKey = targetPrefix + strings.TrimPrefix(block.BlockKey, sourcePrefix)
+		if err := tx.Create(&block).Error; err != nil {
+			return fmt.Errorf("复制内容块失败: %w", err)
+		}
 	}
 	return nil
 }

@@ -19,6 +19,7 @@ type Handler struct {
 func Register(api huma.API, service *testitemsservice.Service) {
 	handler := &Handler{service: service}
 	registerWorkspace(api, handler)
+	registerRounds(api, handler)
 	registerItems(api, handler)
 	registerBatchCreateFromRequirements(api, handler)
 	registerFolders(api, handler)
@@ -103,19 +104,19 @@ func (h *Handler) workspace(ctx context.Context, projectCode string) (WorkspaceB
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
-	folders, err := h.service.ListFolders(ctx, projectID)
+	folders, err := h.service.ListFoldersByRound(ctx, projectID, round.ID)
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
-	items, err := h.service.ListTestItems(ctx, projectID)
+	items, err := h.service.ListTestItemsByRound(ctx, projectID, round.ID)
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
-	cases, err := h.service.ListCasesByProject(ctx, projectID)
+	cases, err := h.service.ListCasesByProjectRound(ctx, projectID, round.ID)
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
-	counts, err := h.service.CountItemChildren(ctx, projectID)
+	counts, err := h.service.CountItemChildrenByRound(ctx, projectID, round.ID)
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
@@ -418,6 +419,16 @@ func toAPIError(err error, fallback string) error {
 	switch {
 	case errors.Is(err, testitemsservice.ErrProjectNotFound):
 		return huma.Error404NotFound("项目不存在")
+	case errors.Is(err, testitemsservice.ErrRoundNotFound):
+		return huma.Error404NotFound("来源轮次不存在")
+	case errors.Is(err, testitemsservice.ErrRoundCopyItemOutsideSource):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrRoundCopyStaticForbidden):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrRoundCopyItemIDRequired):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrRoundCopyFolderMissing):
+		return huma.Error422UnprocessableEntity(err.Error())
 	case errors.Is(err, testitemsservice.ErrNotFound):
 		return huma.Error404NotFound("目标不存在")
 	case errors.Is(err, testitemsservice.ErrNameRequired):
