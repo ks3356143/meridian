@@ -321,7 +321,7 @@ function renderGroup(
             <span className={styles.muted}>—</span>
           )}
         </td>
-        <td>
+        <td className={styles.statusCell}>
           <CaseStatus status={row.case?.status} />
         </td>
         <td className={styles.rateCell}>{formatRate(row.testItemPassRate)}</td>
