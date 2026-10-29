@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+
+	"gorm.io/gorm"
 )
 
 type projectStaticProfile struct {
@@ -98,11 +100,29 @@ ON CONFLICT(project_id) DO UPDATE SET
 
 // DeleteAllStaticItems 删除项目内全部静态测试项；用户主动删除后不再自动回填。
 func (s *Service) DeleteAllStaticItems(ctx context.Context, projectID string) (int64, error) {
-	result := s.db.WithContext(ctx).Exec(`
+	var removed int64
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var items []TestItem
+		if err := tx.Where(`project_id = ? AND type_code IN (SELECT code FROM test_item_types WHERE is_static = 1)`, projectID).
+			Find(&items).Error; err != nil {
+			return fmt.Errorf("查询静态测试项失败: %w", err)
+		}
+		for _, item := range items {
+			if err := deleteTestItemTreeBlocksTx(tx, item.ID); err != nil {
+				return err
+			}
+		}
+		result := tx.Exec(`
 DELETE FROM test_items
 WHERE project_id = ? AND type_code IN (SELECT code FROM test_item_types WHERE is_static = 1)`, projectID)
-	if result.Error != nil {
-		return 0, fmt.Errorf("删除静态测试项失败: %w", result.Error)
+		if result.Error != nil {
+			return fmt.Errorf("删除静态测试项失败: %w", result.Error)
+		}
+		removed = result.RowsAffected
+		return nil
+	})
+	if err != nil {
+		return 0, err
 	}
-	return result.RowsAffected, nil
+	return removed, nil
 }

@@ -293,6 +293,9 @@ func (s *Service) DeleteCase(ctx context.Context, caseID string) error {
 		if err := tx.Where("id = ?", caseID).First(&itemCase).Error; err != nil {
 			return ErrNotFound
 		}
+		if err := contentblocks.DeleteOwnerBlocksTx(tx, contentblocks.OwnerTypeTestCase, caseID); err != nil {
+			return err
+		}
 		if err := tx.Where("id = ?", caseID).Delete(&Case{}).Error; err != nil {
 			return fmt.Errorf("删除用例失败: %w", err)
 		}

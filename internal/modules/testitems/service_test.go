@@ -1346,3 +1346,118 @@ VALUES ('other-project-002', 'R88888', '另一个项目', '鉴定测评', 'CPU/�
 		t.Fatalf("跨项目复制步骤应被拒绝，实际 %v", err)
 	}
 }
+
+func TestDeleteCaseRemovesBlocks(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "删除用例清理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "待删除用例")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	step, err := service.CreateStep(ctx, itemCase.ID, "预期")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindOp, paraDoc("操作"), ""); err != nil {
+		t.Fatalf("保存 op 失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindAct, paraDoc("实测"), ""); err != nil {
+		t.Fatalf("保存 act 失败: %v", err)
+	}
+
+	if err := service.DeleteCase(ctx, itemCase.ID); err != nil {
+		t.Fatalf("删除用例失败: %v", err)
+	}
+	var count int64
+	if err := service.db.Model(&contentblocks.ContentBlock{}).
+		Where("owner_type = ? AND owner_id = ?", contentblocks.OwnerTypeTestCase, itemCase.ID).Count(&count).Error; err != nil {
+		t.Fatalf("统计用例块失败: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("删除用例后内容块残留 %d 条", count)
+	}
+}
+
+func TestDeleteTestItemRemovesBlocks(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "删除测试项清理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	itemCase, err := service.CreateCase(ctx, item.ID, "待删除用例")
+	if err != nil {
+		t.Fatalf("创建用例失败: %v", err)
+	}
+	step, err := service.CreateStep(ctx, itemCase.ID, "预期")
+	if err != nil {
+		t.Fatalf("创建步骤失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindOp, paraDoc("操作"), ""); err != nil {
+		t.Fatalf("保存 op 失败: %v", err)
+	}
+	if _, err := service.SaveStepBlock(ctx, step.ID, contentblocks.StepKindAct, paraDoc("实测"), ""); err != nil {
+		t.Fatalf("保存 act 失败: %v", err)
+	}
+
+	sub, err := service.CreateSubItem(ctx, item.ID, "子项")
+	if err != nil {
+		t.Fatalf("创建子项失败: %v", err)
+	}
+	if _, err := service.blocks.SaveBlock(ctx, projectID, contentblocks.OwnerTypeTestItem, item.ID, contentblocks.SubItemBlockPrefix(sub.ID)+"ops", paraDoc("子项操作"), contentblocks.SaveBlockOptions{}, "user-1"); err != nil {
+		t.Fatalf("保存子项块失败: %v", err)
+	}
+
+	if err := service.DeleteTestItem(ctx, item.ID); err != nil {
+		t.Fatalf("删除测试项失败: %v", err)
+	}
+	for _, owner := range []struct{ typ, id string }{
+		{contentblocks.OwnerTypeTestCase, itemCase.ID},
+		{contentblocks.OwnerTypeTestItem, item.ID},
+	} {
+		var count int64
+		if err := service.db.Model(&contentblocks.ContentBlock{}).
+			Where("owner_type = ? AND owner_id = ?", owner.typ, owner.id).Count(&count).Error; err != nil {
+			t.Fatalf("统计内容块失败: %v", err)
+		}
+		if count != 0 {
+			t.Fatalf("删除测试项后 %s/%s 残留 %d 条内容块", owner.typ, owner.id, count)
+		}
+	}
+}
+
+func TestDeleteSubItemRemovesBlocks(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "删除子项清理"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	sub, err := service.CreateSubItem(ctx, item.ID, "待删除子项")
+	if err != nil {
+		t.Fatalf("创建子项失败: %v", err)
+	}
+	prefix := contentblocks.SubItemBlockPrefix(sub.ID)
+	if _, err := service.blocks.SaveBlock(ctx, projectID, contentblocks.OwnerTypeTestItem, item.ID, prefix+"ops", paraDoc("子项操作"), contentblocks.SaveBlockOptions{}, "user-1"); err != nil {
+		t.Fatalf("保存子项块失败: %v", err)
+	}
+
+	if err := service.DeleteSubItem(ctx, sub.ID); err != nil {
+		t.Fatalf("删除子项失败: %v", err)
+	}
+	var count int64
+	if err := service.db.Model(&contentblocks.ContentBlock{}).
+		Where("owner_type = ? AND owner_id = ? AND block_key LIKE ?", contentblocks.OwnerTypeTestItem, item.ID, prefix+"%").Count(&count).Error; err != nil {
+		t.Fatalf("统计子项块失败: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("删除子项后内容块残留 %d 条", count)
+	}
+}

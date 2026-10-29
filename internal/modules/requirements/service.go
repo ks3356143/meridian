@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/id"
+	"chenmeridian/internal/modules/contentblocks"
 	"chenmeridian/internal/modules/users"
 )
 
@@ -872,6 +873,9 @@ func (s *Service) PurgeRequirement(ctx context.Context, input PurgeRequirementIn
 		if latestDelete == nil || latestDelete.FromStatus != StatusOfficial {
 			return ErrRequirementNotPurgeable
 		}
+		if err := contentblocks.DeleteOwnerBlocksTx(tx, contentblocks.OwnerTypeRequirement, current.ID); err != nil {
+			return err
+		}
 		if err := tx.Where("id = ?", current.ID).Delete(&Requirement{}).Error; err != nil {
 			return fmt.Errorf("彻底删除软件需求失败: %w", err)
 		}
@@ -944,6 +948,9 @@ func (s *Service) PurgeRequirements(ctx context.Context, input PurgeRequirements
 			if event.ID == "" || event.FromStatus != StatusOfficial {
 				return ErrRequirementNotPurgeable
 			}
+			if err := contentblocks.DeleteOwnerBlocksTx(tx, contentblocks.OwnerTypeRequirement, current.ID); err != nil {
+				return err
+			}
 			if err := tx.Where("id = ?", current.ID).Delete(&Requirement{}).Error; err != nil {
 				return fmt.Errorf("彻底删除软件需求失败: %w", err)
 			}
@@ -981,6 +988,16 @@ func (s *Service) Parse(ctx context.Context, projectCode string, sourceVersionID
 
 	result := ParseResult{}
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var staleCandidates []Requirement
+		if err := tx.Where("source_version_id = ? AND status = ? AND origin = ?", source.ID, StatusCandidate, OriginParsed).
+			Find(&staleCandidates).Error; err != nil {
+			return fmt.Errorf("查询旧候选需求失败: %w", err)
+		}
+		for _, stale := range staleCandidates {
+			if err := contentblocks.DeleteOwnerBlocksTx(tx, contentblocks.OwnerTypeRequirement, stale.ID); err != nil {
+				return err
+			}
+		}
 		if err := tx.Where("source_version_id = ? AND status = ? AND origin = ?", source.ID, StatusCandidate, OriginParsed).
 			Delete(&Requirement{}).Error; err != nil {
 			return fmt.Errorf("清理旧候选需求失败: %w", err)

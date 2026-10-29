@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"chenmeridian/internal/id"
+	"chenmeridian/internal/modules/contentblocks"
 )
 
 // ListSubItems 返回测试项内的测试子项（按序号）。
@@ -144,12 +145,15 @@ func (s *Service) UpdateSubItem(ctx context.Context, subItemID string, input Upd
 	return updated, nil
 }
 
-// DeleteSubItem 删除子项并重排剩余序号。
+// DeleteSubItem 删除子项并重排剩余序号，同时清理该子项的历史内容块。
 func (s *Service) DeleteSubItem(ctx context.Context, subItemID string) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var sub SubItem
 		if err := tx.Where("id = ?", subItemID).First(&sub).Error; err != nil {
 			return ErrNotFound
+		}
+		if err := contentblocks.DeleteBlocksTx(tx, contentblocks.OwnerTypeTestItem, sub.TestItemID, contentblocks.SubItemBlockPrefix(sub.ID)); err != nil {
+			return err
 		}
 		if err := tx.Where("id = ?", subItemID).Delete(&SubItem{}).Error; err != nil {
 			return fmt.Errorf("删除测试子项失败: %w", err)

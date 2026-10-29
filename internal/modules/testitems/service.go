@@ -577,16 +577,43 @@ func (s *Service) UpdateTestItem(ctx context.Context, testItemID string, input U
 	return updated, nil
 }
 
-// DeleteTestItem 删除测试项（用例/子项/步骤随外键级联删除）。
+// DeleteTestItem 删除测试项（用例/子项/步骤随外键级联删除），并清理其全部内容块。
 func (s *Service) DeleteTestItem(ctx context.Context, testItemID string) error {
-	result := s.db.WithContext(ctx).Where("id = ?", testItemID).Delete(&TestItem{})
-	if result.Error != nil {
-		return fmt.Errorf("删除测试项失败: %w", result.Error)
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var item TestItem
+		if err := tx.Where("id = ?", testItemID).First(&item).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("查询测试项失败: %w", err)
+		}
+		if err := deleteTestItemTreeBlocksTx(tx, item.ID); err != nil {
+			return err
+		}
+		result := tx.Where("id = ?", testItemID).Delete(&TestItem{})
+		if result.Error != nil {
+			return fmt.Errorf("删除测试项失败: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return nil
+	})
+}
+
+// deleteTestItemTreeBlocksTx 删除测试项自身、子项及用例树上的内容块。
+// content_blocks 是 owner_type + owner_id 的多态表，无法用单列外键级联。
+func deleteTestItemTreeBlocksTx(tx *gorm.DB, testItemID string) error {
+	var cases []Case
+	if err := tx.Where("test_item_id = ?", testItemID).Find(&cases).Error; err != nil {
+		return fmt.Errorf("查询测试项用例失败: %w", err)
 	}
-	if result.RowsAffected == 0 {
-		return ErrNotFound
+	for _, itemCase := range cases {
+		if err := contentblocks.DeleteOwnerBlocksTx(tx, contentblocks.OwnerTypeTestCase, itemCase.ID); err != nil {
+			return err
+		}
 	}
-	return nil
+	return contentblocks.DeleteOwnerBlocksTx(tx, contentblocks.OwnerTypeTestItem, testItemID)
 }
 
 // ListTestItems 返回项目内测试项（按类型输出顺序、容器内排序）。

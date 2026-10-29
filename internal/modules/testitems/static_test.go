@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"chenmeridian/internal/modules/contentblocks"
 )
 
 func TestStaticCatalogMatchesSource(t *testing.T) {
@@ -36,9 +38,42 @@ func TestEnsureRecommendedStaticItemsByLevelAndPlatform(t *testing.T) {
 	if err != nil || len(again) != 0 {
 		t.Fatalf("重复进入不应再生成: %+v / %v", again, err)
 	}
+	staticCaseIDs := make([]string, 0, len(created))
+	for _, item := range created {
+		if _, err := service.blocks.SaveBlock(ctx, projectID, contentblocks.OwnerTypeTestItem, item.ID, "sub_item.static.ops", paraDoc("静态子项"), contentblocks.SaveBlockOptions{}, "user-1"); err != nil {
+			t.Fatalf("保存静态测试项内容块失败: %v", err)
+		}
+		cases, caseErr := service.ListCases(ctx, item.ID)
+		if caseErr != nil {
+			t.Fatalf("查询静态壳用例失败: %v", caseErr)
+		}
+		for _, itemCase := range cases {
+			staticCaseIDs = append(staticCaseIDs, itemCase.ID)
+			if _, err := service.blocks.SaveBlock(ctx, projectID, contentblocks.OwnerTypeTestCase, itemCase.ID, "step.static.op", paraDoc("静态步骤"), contentblocks.SaveBlockOptions{}, "user-1"); err != nil {
+				t.Fatalf("保存静态用例内容块失败: %v", err)
+			}
+		}
+	}
 	removed, err := service.DeleteAllStaticItems(ctx, projectID)
 	if err != nil || removed != 3 {
 		t.Fatalf("删除静态项失败: removed=%d err=%v", removed, err)
+	}
+	var remaining int64
+	if err := service.db.Model(&contentblocks.ContentBlock{}).
+		Where("owner_type = ? AND owner_id IN ?", contentblocks.OwnerTypeTestItem, []string{created[0].ID, created[1].ID, created[2].ID}).
+		Count(&remaining).Error; err != nil {
+		t.Fatalf("统计删除后静态内容块失败: %v", err)
+	}
+	if remaining != 0 {
+		t.Fatalf("删除静态测试项后测试项内容块残留 %d 条", remaining)
+	}
+	if err := service.db.Model(&contentblocks.ContentBlock{}).
+		Where("owner_type = ? AND owner_id IN ?", contentblocks.OwnerTypeTestCase, staticCaseIDs).
+		Count(&remaining).Error; err != nil {
+		t.Fatalf("统计删除后静态用例内容块失败: %v", err)
+	}
+	if remaining != 0 {
+		t.Fatalf("删除静态测试项后用例内容块残留 %d 条", remaining)
 	}
 	afterDelete, err := service.EnsureRecommendedStaticItems(ctx, projectID, false)
 	if err != nil || len(afterDelete) != 0 {
