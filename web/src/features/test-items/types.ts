@@ -240,6 +240,56 @@ export interface TypeCoverageResult {
   summary: TypeCoverageSummary;
   types: TypeCoverageCard[];
 }
+
+export interface TraceabilityCase {
+  caseId: string;
+  identifier: string;
+  name: string;
+  status: "pending" | "passed" | "failed";
+  execDate: string | null;
+  testerName: string;
+}
+
+export interface TraceabilityRow {
+  roundId: string;
+  roundNumber: number;
+  roundName: string;
+  requirementId: string;
+  sourceName: string;
+  sourceVersion: string;
+  chapterNumber: string;
+  externalIdentifier: string;
+  requirementName: string;
+  testItemId: string;
+  testItemIdentifier: string;
+  testItemName: string;
+  testItemTypeCode: string;
+  testItemTypeName: string;
+  testItemPassRate: number | null;
+  case: TraceabilityCase | null;
+}
+
+export interface TraceabilitySummary {
+  requirements: number;
+  linkedRequirements: number;
+  unlinkedRequirements: number;
+  testItems: number;
+  implicitItems: number;
+  unlinkedItems: number;
+  cases: number;
+  passed: number;
+  failed: number;
+  pending: number;
+  passRate: number | null;
+}
+
+export interface TraceabilityResult {
+  allRounds: boolean;
+  round: TestRoundRecord | null;
+  rounds: TestRoundRecord[];
+  summary: TraceabilitySummary;
+  rows: TraceabilityRow[];
+}
 export interface TestRoundRecord {
   id: string;
   projectId: string;

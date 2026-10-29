@@ -3,6 +3,7 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   FolderPlus,
+  GitBranch,
   ListChecks,
   ListPlus,
   Plus,
@@ -48,6 +49,7 @@ import { TestCasePanel } from "./test-case-panel";
 import { TestItemsFromRequirementsDialog } from "./test-items-from-requirements-dialog";
 import { TestItemDetailPanel } from "./test-item-detail";
 import { TestItemsTree, type TestItemsTreeAction, type TestItemsTreeMove } from "./test-items-tree";
+import { TraceabilityView } from "./traceability-view";
 import { TypeCoverageView } from "./type-coverage-view";
 import {
   buildTestItemsTree,
@@ -64,8 +66,8 @@ let treePanelLayout: Record<string, number> | undefined;
 
 // 稳定引用：detail 未就绪时 siblingCases 用同一空数组，避免切用例监听见步重挂（props 默认值 hoist）。
 const EMPTY_CASES: TestCaseRecord[] = [];
-type TestItemsView = "tree" | "coverage";
-const TEST_ITEMS_VIEWS: TestItemsView[] = ["tree", "coverage"];
+type TestItemsView = "tree" | "coverage" | "trace";
+const TEST_ITEMS_VIEWS: TestItemsView[] = ["tree", "coverage", "trace"];
 
 /** 树里的删除都是破坏性动作：统一走二次确认，确认文案按节点类型区分。 */
 type PendingDelete =
@@ -77,14 +79,20 @@ export function TestItemsWorkbench({
   project,
   roundId,
   targetItemId,
+  targetCaseId,
   onTargetItemHandled,
+  onTargetCaseHandled,
   onOpenItemRound,
+  onOpenCaseRound,
 }: {
   project: Project;
   roundId: string;
   targetItemId?: string;
+  targetCaseId?: string;
   onTargetItemHandled?: () => void;
+  onTargetCaseHandled?: () => void;
   onOpenItemRound?: (roundId: string, itemId: string) => void;
+  onOpenCaseRound?: (roundId: string, itemId: string, caseId: string) => void;
 }) {
   const {
     workbenchQuery,
@@ -267,12 +275,37 @@ export function TestItemsWorkbench({
       return;
     }
     if (scopedWorkspace.round.id !== roundId) return;
+    const targetCase = targetCaseId
+      ? scopedWorkspace.cases.find((itemCase) => itemCase.id === targetCaseId)
+      : undefined;
     if (targetItemId && scopedWorkspace.items.some((item) => item.id === targetItemId)) {
       // oxlint-disable-next-line react/set-state-in-effect
       setSelectedId(targetItemId);
-      setSelectedCaseId("");
+      // oxlint-disable-next-line react/set-state-in-effect
+      setSelectedCaseId(targetCase?.id ?? "");
       setStepFocus(null);
       onTargetItemHandled?.();
+      onTargetCaseHandled?.();
+      if (targetCase) {
+        window.requestAnimationFrame(() => {
+          treeRef.current?.openParents(`case:${targetCase.id}`);
+          void treeRef.current?.scrollTo(`case:${targetCase.id}`);
+        });
+      }
+      return;
+    }
+    if (targetCase && scopedWorkspace.cases.some((itemCase) => itemCase.id === targetCase.id)) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setSelectedId(targetCase.testItemId);
+      // oxlint-disable-next-line react/set-state-in-effect
+      setSelectedCaseId(targetCase.id);
+      setStepFocus(null);
+      onTargetItemHandled?.();
+      onTargetCaseHandled?.();
+      window.requestAnimationFrame(() => {
+        treeRef.current?.openParents(`case:${targetCase.id}`);
+        void treeRef.current?.scrollTo(`case:${targetCase.id}`);
+      });
       return;
     }
     if (selectedId && scopedWorkspace.items.some((item) => item.id === selectedId)) return;
@@ -288,10 +321,12 @@ export function TestItemsWorkbench({
     setSelectedId(firstItem?.id ?? "");
   }, [
     activeTypes,
+    onTargetCaseHandled,
     onTargetItemHandled,
     roundId,
     selectedId,
     setSelectedId,
+    targetCaseId,
     targetItemId,
     scopedWorkspace,
   ]);
@@ -617,6 +652,29 @@ export function TestItemsWorkbench({
     return created;
   };
 
+  const openTraceTarget = (targetRoundId: string, itemId: string, caseId?: string) => {
+    if (targetRoundId !== roundId || workspace?.allRounds) {
+      if (caseId) onOpenCaseRound?.(targetRoundId, itemId, caseId);
+      else onOpenItemRound?.(targetRoundId, itemId);
+      return;
+    }
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set("view", "tree");
+      next.delete("type");
+      return next;
+    });
+    setSelectedId(itemId);
+    setSelectedCaseId(caseId ?? "");
+    setStepFocus(null);
+    if (caseId) {
+      window.setTimeout(() => {
+        treeRef.current?.openParents(`case:${caseId}`);
+        void treeRef.current?.scrollTo(`case:${caseId}`);
+      }, 0);
+    }
+  };
+
   const viewBar = (
     <div className={styles.viewBar}>
       <Tabs value={view} onValueChange={changeView}>
@@ -628,6 +686,10 @@ export function TestItemsWorkbench({
           <TabsTrigger value="coverage">
             <ListChecks aria-hidden />
             类型覆盖
+          </TabsTrigger>
+          <TabsTrigger value="trace">
+            <GitBranch aria-hidden />
+            追溯矩阵
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -653,6 +715,21 @@ export function TestItemsWorkbench({
             projectCode={project.id}
             roundId={roundId}
             onOpenType={openTypeInTree}
+          />
+        </div>
+      </section>
+    );
+  }
+
+  if (view === "trace") {
+    return (
+      <section className={styles.workbench}>
+        {viewBar}
+        <div className={styles.viewBody}>
+          <TraceabilityView
+            projectCode={project.id}
+            roundId={roundId}
+            onOpenTarget={openTraceTarget}
           />
         </div>
       </section>

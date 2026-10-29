@@ -14,6 +14,14 @@ type TypeCoverageInput struct {
 	RoundID string `query:"roundId" doc:"轮次 id；传 all 返回跨轮只读聚合；省略时取当前轮次"`
 }
 
+type TraceabilityInput struct {
+	Code    string `path:"code" doc:"项目标识"`
+	RoundID string `query:"roundId" doc:"轮次 id；传 all 返回跨轮只读矩阵；省略时取当前轮次"`
+}
+
+type TraceabilityOutput struct {
+	Body testitemsservice.TraceabilityResult
+}
 type TypeCoverageOutput struct {
 	Body testitemsservice.TypeCoverageResult
 }
@@ -53,6 +61,26 @@ func registerAnalysisViews(api huma.API, handler *Handler) {
 		return &TypeCoverageOutput{Body: result}, nil
 	})
 
+	huma.Register(api, huma.Operation{
+		OperationID: "get-traceability-matrix",
+		Method:      http.MethodGet,
+		Path:        "/api/v1/projects/{code}/traceability",
+		Summary:     "需求追溯矩阵",
+		Description: "按需求 × 测试项 × 用例返回追溯矩阵，覆盖正式需求、执行结果、测试项通过率和未关联缺口。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *TraceabilityInput) (*TraceabilityOutput, error) {
+		projectID, err := handler.projectID(ctx, input.Code)
+		if err != nil {
+			return nil, toAPIError(err, "项目不存在")
+		}
+		result, err := handler.service.Traceability(ctx, projectID, input.RoundID)
+		if err != nil {
+			return nil, toAPIError(err, "读取追溯矩阵失败")
+		}
+		result.Rows = nonNil(result.Rows)
+		result.Rounds = nonNil(result.Rounds)
+		return &TraceabilityOutput{Body: result}, nil
+	})
 	huma.Register(api, huma.Operation{
 		OperationID: "save-type-coverage-note",
 		Method:      http.MethodPut,

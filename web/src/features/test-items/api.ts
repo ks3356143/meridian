@@ -21,6 +21,7 @@ import type {
   PreviousRoundResult,
   TypeCoverageResult,
   TypeCoverageNote,
+  TraceabilityResult,
 } from "./types";
 
 export interface CreateTestItemPayload {
@@ -98,6 +99,11 @@ export const testItemsApi = {
     request<TypeCoverageResult>(
       "GET",
       `/api/v1/projects/${projectCode}/type-coverage?roundId=${encodeURIComponent(roundId)}`,
+    ),
+  traceability: (projectCode: string, roundId: string) =>
+    request<TraceabilityResult>(
+      "GET",
+      `/api/v1/projects/${projectCode}/traceability?roundId=${encodeURIComponent(roundId)}`,
     ),
   saveTypeCoverageNote: (
     projectCode: string,
