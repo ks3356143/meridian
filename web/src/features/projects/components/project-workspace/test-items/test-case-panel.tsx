@@ -17,6 +17,7 @@ import { CaseStepsSection } from "./case-steps-section";
 import { EditableCell, type EditableCellHandle } from "./editable-cell";
 import { PersonPicker } from "./person-picker";
 import { PreviousRoundResultSection } from "./previous-round-result-section";
+import { QuickIssuesPanel, type QuickIssueComposerRequest } from "./quick-issues-panel";
 import { SummaryBackfillPicker } from "./summary-backfill-picker";
 import { TestCaseShortcutsDialog } from "./test-case-shortcuts-dialog";
 import { caseStatusLabel } from "./test-items-design";
@@ -72,6 +73,9 @@ function TestCasePanelInner({
   // 综述「从描述回填」按钮：走同一条保存链路（保存脉冲、Ctrl+Z 撤销同源）。
   const summaryCellRef = useRef<EditableCellHandle>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [quickIssueRequest, setQuickIssueRequest] = useState<QuickIssueComposerRequest | null>(
+    null,
+  );
   const { recordChange } = useCellUndo();
   const currentCaseIndex = siblingCases.findIndex((record) => record.id === caseRecord.id);
   const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
@@ -204,6 +208,13 @@ function TestCasePanelInner({
           </Button>
         </div>
       </SpotlightSurface>
+
+      <QuickIssuesPanel
+        caseId={caseRecord.id}
+        projectCode={projectCode}
+        request={quickIssueRequest}
+        onRequest={setQuickIssueRequest}
+      />
 
       <div className={styles.body} ref={scrollRef}>
         <div ref={bodyRef}>
@@ -350,6 +361,13 @@ function TestCasePanelInner({
                     recordChange={recordChange}
                     onOpenShortcuts={openShortcuts}
                     focusStep={focusStep}
+                    onQuickIssue={(step) =>
+                      setQuickIssueRequest({
+                        nonce: Date.now(),
+                        stepId: step.id,
+                        stepSeq: step.seq,
+                      })
+                    }
                   />
                 </td>
               </tr>

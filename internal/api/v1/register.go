@@ -11,6 +11,7 @@ import (
 	contentblockapi "chenmeridian/internal/api/v1/contentblocks"
 	"chenmeridian/internal/api/v1/health"
 	projectapi "chenmeridian/internal/api/v1/projects"
+	quickissueapi "chenmeridian/internal/api/v1/quickissues"
 	requirementapi "chenmeridian/internal/api/v1/requirements"
 	testitemapi "chenmeridian/internal/api/v1/testitems"
 	userapi "chenmeridian/internal/api/v1/users"
@@ -18,6 +19,7 @@ import (
 	contentblockservice "chenmeridian/internal/modules/contentblocks"
 	"chenmeridian/internal/modules/officecli"
 	projectservice "chenmeridian/internal/modules/projects"
+	quickissueservice "chenmeridian/internal/modules/quickissues"
 	requirementservice "chenmeridian/internal/modules/requirements"
 	testitemservice "chenmeridian/internal/modules/testitems"
 	userservice "chenmeridian/internal/modules/users"
@@ -42,5 +44,6 @@ func Register(api huma.API, deps Dependencies) {
 		source: officecli.NewClient(""),
 	}))
 	testitemapi.Register(api, testitemservice.NewService(deps.DB).WithBlocks(contentBlockService))
+	quickissueapi.Register(api, quickissueservice.NewService(deps.DB))
 	userapi.Register(api, userservice.NewService(deps.DB), projectservice.NewService(deps.DB), deps.Auth)
 }

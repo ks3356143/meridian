@@ -6,6 +6,7 @@ import {
   ClipboardPaste,
   CopyPlus,
   Keyboard,
+  MessageSquarePlus,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -85,6 +86,7 @@ type CaseStepRowProps = {
   onTogglePassed: (step: CaseStepRecord) => Promise<unknown>;
   onCopy: (step: CaseStepRecord) => void;
   onRequestDelete: (step: CaseStepRecord) => void;
+  onQuickIssue: (step: CaseStepRecord) => void;
 };
 
 /**
@@ -107,6 +109,7 @@ const CaseStepRow = memo(function CaseStepRowImpl({
   onTogglePassed,
   onCopy,
   onRequestDelete,
+  onQuickIssue,
 }: CaseStepRowProps) {
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
     if (structurePending) return;
@@ -225,6 +228,9 @@ const CaseStepRow = memo(function CaseStepRowImpl({
           <StepActionButton label={`复制第 ${step.seq} 步到剪贴板`} onClick={() => onCopy(step)}>
             <ClipboardCopy aria-hidden />
           </StepActionButton>
+          <StepActionButton label={`记录第 ${step.seq} 步问题`} onClick={() => onQuickIssue(step)}>
+            <MessageSquarePlus aria-hidden />
+          </StepActionButton>
           <StepActionButton
             label={canDeleteStep ? `删除第 ${step.seq} 步` : "至少保留 1 个步骤"}
             destructive
@@ -250,6 +256,7 @@ function CaseStepsSectionInner({
   recordChange,
   onOpenShortcuts,
   focusStep,
+  onQuickIssue,
 }: {
   caseId: string;
   projectCode: string;
@@ -257,6 +264,7 @@ function CaseStepsSectionInner({
   recordChange: (label: string, restore: () => Promise<unknown>) => void;
   onOpenShortcuts: () => void;
   focusStep?: { stepId: string; nonce: number } | null;
+  onQuickIssue: (step: CaseStepRecord) => void;
 }) {
   const {
     stepsQuery,
@@ -398,6 +406,7 @@ function CaseStepsSectionInner({
             onTogglePassed={togglePassed}
             onCopy={copyStep}
             onRequestDelete={requestDelete}
+            onQuickIssue={onQuickIssue}
           />
         ))}
       </tbody>
