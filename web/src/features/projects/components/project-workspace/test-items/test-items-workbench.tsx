@@ -4,6 +4,7 @@ import {
   ChevronsUpDown,
   FolderPlus,
   GitBranch,
+  Highlighter,
   ListChecks,
   ListPlus,
   Plus,
@@ -14,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import type { TreeApi } from "react-arborist";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import {
@@ -41,7 +42,7 @@ import type {
   UpdateTestItemPayload,
 } from "@/features/test-items/api";
 import { testItemsApi } from "@/features/test-items/api";
-import type { TestCaseRecord, TestCaseSearchHit } from "@/features/test-items/types";
+import type { AnnotationRow, TestCaseRecord, TestCaseSearchHit } from "@/features/test-items/types";
 import type { Project } from "../../../types";
 import { ChangeItemTypeDialog } from "./test-item-change-type-dialog";
 import { CreateFolderDialog, CreateTestItemDialog } from "./test-item-create-dialog";
@@ -49,6 +50,7 @@ import { TestCasePanel } from "./test-case-panel";
 import { TestItemsFromRequirementsDialog } from "./test-items-from-requirements-dialog";
 import { TestItemDetailPanel } from "./test-item-detail";
 import { TestItemsTree, type TestItemsTreeAction, type TestItemsTreeMove } from "./test-items-tree";
+import { AnnotationsView } from "./annotations-view";
 import { TraceabilityView } from "./traceability-view";
 import { TypeCoverageView } from "./type-coverage-view";
 import {
@@ -66,8 +68,8 @@ let treePanelLayout: Record<string, number> | undefined;
 
 // 稳定引用：detail 未就绪时 siblingCases 用同一空数组，避免切用例监听见步重挂（props 默认值 hoist）。
 const EMPTY_CASES: TestCaseRecord[] = [];
-type TestItemsView = "tree" | "coverage" | "trace";
-const TEST_ITEMS_VIEWS: TestItemsView[] = ["tree", "coverage", "trace"];
+type TestItemsView = "tree" | "coverage" | "trace" | "annotations";
+const TEST_ITEMS_VIEWS: TestItemsView[] = ["tree", "coverage", "trace", "annotations"];
 
 /** 树里的删除都是破坏性动作：统一走二次确认，确认文案按节点类型区分。 */
 type PendingDelete =
@@ -80,19 +82,23 @@ export function TestItemsWorkbench({
   roundId,
   targetItemId,
   targetCaseId,
+  targetStepId,
   onTargetItemHandled,
   onTargetCaseHandled,
   onOpenItemRound,
   onOpenCaseRound,
+  onOpenStepRound,
 }: {
   project: Project;
   roundId: string;
   targetItemId?: string;
   targetCaseId?: string;
+  targetStepId?: string;
   onTargetItemHandled?: () => void;
   onTargetCaseHandled?: () => void;
   onOpenItemRound?: (roundId: string, itemId: string) => void;
   onOpenCaseRound?: (roundId: string, itemId: string, caseId: string) => void;
+  onOpenStepRound?: (roundId: string, itemId: string, caseId: string, stepId: string) => void;
 }) {
   const {
     workbenchQuery,
@@ -139,6 +145,7 @@ export function TestItemsWorkbench({
   const [searchQuery, setSearchQuery] = useState("");
   const [quickFilter, setQuickFilter] = useState<TestItemsQuickFilter>("all");
 
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedView = searchParams.get("view");
   const view: TestItemsView = TEST_ITEMS_VIEWS.includes(requestedView as TestItemsView)
@@ -283,7 +290,7 @@ export function TestItemsWorkbench({
       setSelectedId(targetItemId);
       // oxlint-disable-next-line react/set-state-in-effect
       setSelectedCaseId(targetCase?.id ?? "");
-      setStepFocus(null);
+      setStepFocus(targetStepId ? { stepId: targetStepId, nonce: Date.now() } : null);
       onTargetItemHandled?.();
       onTargetCaseHandled?.();
       if (targetCase) {
@@ -299,7 +306,7 @@ export function TestItemsWorkbench({
       setSelectedId(targetCase.testItemId);
       // oxlint-disable-next-line react/set-state-in-effect
       setSelectedCaseId(targetCase.id);
-      setStepFocus(null);
+      setStepFocus(targetStepId ? { stepId: targetStepId, nonce: Date.now() } : null);
       onTargetItemHandled?.();
       onTargetCaseHandled?.();
       window.requestAnimationFrame(() => {
@@ -328,6 +335,7 @@ export function TestItemsWorkbench({
     setSelectedId,
     targetCaseId,
     targetItemId,
+    targetStepId,
     scopedWorkspace,
   ]);
 
@@ -652,6 +660,32 @@ export function TestItemsWorkbench({
     return created;
   };
 
+  const openRequirement = (requirementId: string) => {
+    navigate(
+      `/projects/${project.id}/workspace/requirements?requirementId=${encodeURIComponent(requirementId)}`,
+    );
+  };
+
+  const openAnnotationStep = (row: AnnotationRow) => {
+    if (row.roundId !== roundId || workspace?.allRounds) {
+      onOpenStepRound?.(row.roundId, row.testItemId, row.caseId, row.stepId);
+      return;
+    }
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set("view", "tree");
+      next.delete("type");
+      return next;
+    });
+    setSelectedId(row.testItemId);
+    setSelectedCaseId(row.caseId);
+    setStepFocus({ stepId: row.stepId, nonce: Date.now() });
+    window.setTimeout(() => {
+      treeRef.current?.openParents(`case:${row.caseId}`);
+      void treeRef.current?.scrollTo(`case:${row.caseId}`);
+    }, 0);
+  };
+
   const openTraceTarget = (targetRoundId: string, itemId: string, caseId?: string) => {
     if (targetRoundId !== roundId || workspace?.allRounds) {
       if (caseId) onOpenCaseRound?.(targetRoundId, itemId, caseId);
@@ -690,6 +724,10 @@ export function TestItemsWorkbench({
           <TabsTrigger value="trace">
             <GitBranch aria-hidden />
             追溯矩阵
+          </TabsTrigger>
+          <TabsTrigger value="annotations">
+            <Highlighter aria-hidden />
+            标注总览
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -730,6 +768,22 @@ export function TestItemsWorkbench({
             projectCode={project.id}
             roundId={roundId}
             onOpenTarget={openTraceTarget}
+          />
+        </div>
+      </section>
+    );
+  }
+
+  if (view === "annotations") {
+    return (
+      <section className={styles.workbench}>
+        {viewBar}
+        <div className={styles.viewBody}>
+          <AnnotationsView
+            projectCode={project.id}
+            roundId={roundId}
+            onOpenRequirement={openRequirement}
+            onOpenStep={openAnnotationStep}
           />
         </div>
       </section>

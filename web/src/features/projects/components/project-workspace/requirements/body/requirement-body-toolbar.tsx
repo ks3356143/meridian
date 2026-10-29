@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   Bold as BoldIcon,
   Columns3,
+  Highlighter as HighlightIcon,
   ImagePlus,
   ListIndentDecrease,
   ListIndentIncrease,
@@ -35,6 +36,7 @@ import styles from "./requirement-body-editor.module.css";
 // 工具栏状态由宿主组件通过 useEditorState 计算后传入，便于编辑器核心与工具栏复用到其它业务域。
 export type RequirementBodyToolbarState = {
   bold: boolean;
+  highlight: boolean;
   paragraph: boolean;
   align: string;
   firstLineIndent: number;
@@ -89,6 +91,13 @@ export function RequirementBodyToolbar({
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <BoldIcon aria-hidden />
+        </ToolbarButton>
+        <ToolbarButton
+          label="高亮"
+          active={state.highlight}
+          onClick={() => editor.chain().focus().toggleHighlight().run()}
+        >
+          <HighlightIcon aria-hidden />
         </ToolbarButton>
         <ToolbarButton
           label="正文段落"

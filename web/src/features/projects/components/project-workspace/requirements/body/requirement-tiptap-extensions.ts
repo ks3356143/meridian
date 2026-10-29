@@ -2,6 +2,7 @@ import { Extension, type CommandProps } from "@tiptap/core";
 import { Bold } from "@tiptap/extension-bold";
 import { Document } from "@tiptap/extension-document";
 import { Heading } from "@tiptap/extension-heading";
+import { Highlight } from "@tiptap/extension-highlight";
 import { ListItem, ListKeymap, OrderedList } from "@tiptap/extension-list";
 import { Paragraph } from "@tiptap/extension-paragraph";
 import { Table, TableCell, TableHeader, TableRow, TableView } from "@tiptap/extension-table";
@@ -82,6 +83,14 @@ export const RequirementParagraph = Paragraph.extend({
           commands.updateAttributes(this.name, { firstLineIndent }),
       toggleTableCaption: () => captionToggle("tableCaption"),
       toggleFigureCaption: () => captionToggle("figureCaption"),
+    };
+  },
+});
+
+export const RequirementHighlight = Highlight.configure({ multicolor: false }).extend({
+  addKeyboardShortcuts() {
+    return {
+      "Mod-Shift-h": () => this.editor.commands.toggleHighlight(),
     };
   },
 });

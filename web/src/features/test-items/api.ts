@@ -22,6 +22,7 @@ import type {
   TypeCoverageResult,
   TypeCoverageNote,
   TraceabilityResult,
+  AnnotationResult,
 } from "./types";
 
 export interface CreateTestItemPayload {
@@ -104,6 +105,11 @@ export const testItemsApi = {
     request<TraceabilityResult>(
       "GET",
       `/api/v1/projects/${projectCode}/traceability?roundId=${encodeURIComponent(roundId)}`,
+    ),
+  annotations: (projectCode: string, roundId: string) =>
+    request<AnnotationResult>(
+      "GET",
+      `/api/v1/projects/${projectCode}/annotations?roundId=${encodeURIComponent(roundId)}`,
     ),
   saveTypeCoverageNote: (
     projectCode: string,

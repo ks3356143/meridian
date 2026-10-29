@@ -22,6 +22,15 @@ type TraceabilityInput struct {
 type TraceabilityOutput struct {
 	Body testitemsservice.TraceabilityResult
 }
+
+type AnnotationInput struct {
+	Code    string `path:"code" doc:"项目标识"`
+	RoundID string `query:"roundId" doc:"轮次 id；传 all 返回跨轮只读汇总；省略时取当前轮次"`
+}
+
+type AnnotationOutput struct {
+	Body testitemsservice.AnnotationResult
+}
 type TypeCoverageOutput struct {
 	Body testitemsservice.TypeCoverageResult
 }
@@ -81,6 +90,28 @@ func registerAnalysisViews(api huma.API, handler *Handler) {
 		result.Rounds = nonNil(result.Rounds)
 		return &TraceabilityOutput{Body: result}, nil
 	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-annotation-overview",
+		Method:      http.MethodGet,
+		Path:        "/api/v1/projects/{code}/annotations",
+		Summary:     "标注总览",
+		Description: "扫描需求正文与用例步骤中的高亮标记，按轮返回只读标注清单；需求正文为项目级数据。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *AnnotationInput) (*AnnotationOutput, error) {
+		projectID, err := handler.projectID(ctx, input.Code)
+		if err != nil {
+			return nil, toAPIError(err, "项目不存在")
+		}
+		result, err := handler.service.Annotations(ctx, projectID, input.RoundID)
+		if err != nil {
+			return nil, toAPIError(err, "读取标注总览失败")
+		}
+		result.Rows = nonNil(result.Rows)
+		result.Rounds = nonNil(result.Rounds)
+		return &AnnotationOutput{Body: result}, nil
+	})
+
 	huma.Register(api, huma.Operation{
 		OperationID: "save-type-coverage-note",
 		Method:      http.MethodPut,

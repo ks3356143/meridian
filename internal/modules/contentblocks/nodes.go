@@ -23,9 +23,10 @@ const (
 	NodePageBreak   = "pagebreak" // 仅用于历史数据兼容读取，保存时清洗。
 )
 
-// 行内标记白名单。需求正文只保留粗体。
+// 行内标记白名单。需求正文与用例步骤只保留粗体和高亮。
 const (
 	MarkBold      = "bold"
+	MarkHighlight = "highlight"
 	MarkItalic    = "italic"
 	MarkUnderline = "underline"
 )
@@ -103,7 +104,7 @@ var minChildren = map[string]int{
 	NodeTableRow:    1,
 }
 
-var allowedMarks = map[string]bool{MarkBold: true}
+var allowedMarks = map[string]bool{MarkBold: true, MarkHighlight: true}
 
 var allowedAlign = map[string]bool{
 	"inherit": true, "left": true, "center": true, "right": true,
@@ -377,7 +378,8 @@ func sanitizeNodes(nodes []Node) []Node {
 		if node.Type == NodeText {
 			marks := make([]Mark, 0, len(node.Marks))
 			for _, mark := range node.Marks {
-				if mark.Type == MarkBold {
+				if allowedMarks[mark.Type] {
+					mark.Attrs = nil
 					marks = append(marks, mark)
 				}
 			}

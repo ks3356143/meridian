@@ -1,4 +1,5 @@
 import { FileSearch } from "lucide-react";
+import { useSearchParams } from "react-router";
 import {
   lazy,
   Suspense,
@@ -80,6 +81,7 @@ type RequirementCreateSeed = {
 
 export function RequirementsLayout({ project }: { project: Project }) {
   const wideLayout = useMediaQuery("(min-width: 1101px)");
+  const [searchParams] = useSearchParams();
   const {
     workbenchQuery,
     createMutation,
@@ -108,7 +110,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkPasteOpen, setBulkPasteOpen] = useState(false);
   const [testItemCreateScope, setTestItemCreateScope] = useState<TestItemCreateScope | null>(null);
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedId, setSelectedId] = useState(() => searchParams.get("requirementId") ?? "");
   const [workbenchTab, setWorkbenchTab] = useState<WorkbenchTab>("confirmed");
   const [candidateActivated, setCandidateActivated] = useState(false);
   const [panelsReady, setPanelsReady] = useState(false);

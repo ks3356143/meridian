@@ -17,7 +17,10 @@ func para(text string) Node {
 func TestValidateDocumentAcceptsAllowedNodes(t *testing.T) {
 	document := doc(
 		Node{Type: NodeHeading, Attrs: map[string]any{"level": float64(3)}, Content: []Node{{Type: NodeText, Text: "标题"}}},
-		Node{Type: NodeParagraph, Attrs: map[string]any{"align": "left", "firstLineIndent": float64(2)}, Content: []Node{{Type: NodeText, Text: "正文段落"}}},
+		Node{Type: NodeParagraph, Attrs: map[string]any{"align": "left", "firstLineIndent": float64(2)}, Content: []Node{
+			{Type: NodeText, Text: "正文段落"},
+			{Type: NodeText, Text: "高亮", Marks: []Mark{{Type: MarkHighlight}}},
+		}},
 		Node{Type: NodeOrderedList, Attrs: map[string]any{"style": ListStyleOrderedParen}, Content: []Node{
 			{Type: NodeListItem, Content: []Node{para("第一项")}},
 		}},
@@ -192,7 +195,7 @@ func TestHasContentCountsImagesAndTables(t *testing.T) {
 func TestSanitizeDocumentRemovesUnsupportedContent(t *testing.T) {
 	document := doc(
 		Node{Type: NodeParagraph, Content: []Node{
-			{Type: NodeText, Text: "保留", Marks: []Mark{{Type: MarkBold}, {Type: MarkItalic}}},
+			{Type: NodeText, Text: "保留", Marks: []Mark{{Type: MarkBold}, {Type: MarkHighlight, Attrs: map[string]any{"color": "#fff"}}, {Type: MarkItalic}}},
 			{Type: NodeText, Text: "下划线", Marks: []Mark{{Type: MarkUnderline}}},
 		}},
 		Node{Type: NodeBulletList, Content: []Node{
@@ -208,8 +211,11 @@ func TestSanitizeDocumentRemovesUnsupportedContent(t *testing.T) {
 		t.Fatalf("无序列表应转换为有序列表，实际 %s", cleaned.Content[1].Type)
 	}
 	marks := cleaned.Content[0].Content[0].Marks
-	if len(marks) != 1 || marks[0].Type != MarkBold {
-		t.Fatalf("仅应保留粗体，实际 %+v", marks)
+	if len(marks) != 2 || marks[0].Type != MarkBold || marks[1].Type != MarkHighlight {
+		t.Fatalf("仅应保留粗体和高亮，实际 %+v", marks)
+	}
+	if len(marks[1].Attrs) != 0 {
+		t.Fatalf("高亮颜色属性应被清洗，实际 %+v", marks[1].Attrs)
 	}
 	if len(cleaned.Content[0].Content[1].Marks) != 0 {
 		t.Fatalf("下划线应被清洗，实际 %+v", cleaned.Content[0].Content[1].Marks)

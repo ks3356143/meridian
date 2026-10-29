@@ -339,7 +339,9 @@ function InlineContent({ content }: { content?: RequirementBlockNode[] }) {
 
 function TextRun({ node }: { node: RequirementBlockNode }) {
   const text = node.text ?? "";
-  return (node.marks ?? []).some((mark) => mark.type === "bold") ? <strong>{text}</strong> : text;
+  const marks = node.marks ?? [];
+  const content = marks.some((mark) => mark.type === "bold") ? <strong>{text}</strong> : text;
+  return marks.some((mark) => mark.type === "highlight") ? <mark>{content}</mark> : content;
 }
 
 function EmptyBody() {

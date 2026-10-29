@@ -1,5 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
-import { Bold as BoldIcon, ImagePlus, Redo2, Table2, Undo2 } from "lucide-react";
+import {
+  Bold as BoldIcon,
+  Highlighter as HighlightIcon,
+  ImagePlus,
+  Redo2,
+  Table2,
+  Undo2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Gapcursor, UndoRedo } from "@tiptap/extensions";
@@ -13,6 +20,7 @@ import {
   Document,
   ListItem,
   ListKeymap,
+  RequirementHighlight,
   RequirementOrderedList,
   RequirementParagraph,
   RequirementPasteCleanup,
@@ -74,6 +82,7 @@ export function StepRichEditor({
         Text,
         RequirementParagraph,
         Bold,
+        RequirementHighlight,
         UndoRedo,
         // 表格/图片独占单元格时靠 GapCursor 把光标落到块外。
         Gapcursor,
@@ -145,6 +154,7 @@ export function StepRichEditor({
     editor,
     selector: ({ editor: current }) => ({
       bold: current.isActive("bold"),
+      highlight: current.isActive("highlight"),
 
       canUndo: current.can().undo(),
       canRedo: current.can().redo(),
@@ -226,6 +236,13 @@ export function StepRichEditor({
           onClick={() => editor?.chain().focus().toggleBold().run()}
         >
           <BoldIcon aria-hidden />
+        </ToolButton>
+        <ToolButton
+          label="高亮"
+          active={state?.highlight}
+          onClick={() => editor?.chain().focus().toggleHighlight().run()}
+        >
+          <HighlightIcon aria-hidden />
         </ToolButton>
 
         <ToolButton label="插入图片" onClick={() => imageInputRef.current?.click()}>

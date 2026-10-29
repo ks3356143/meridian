@@ -60,3 +60,11 @@
   font-weight: 700;
   text-align: center;
 }
+/* 选区高亮：同一语义在需求正文、步骤预览和编辑器内保持一致。 */
+.surface mark {
+  background: color-mix(in srgb, var(--warning) 28%, transparent);
+  box-decoration-break: clone;
+  color: inherit;
+  padding: 0 0.08em;
+  -webkit-box-decoration-break: clone;
+}

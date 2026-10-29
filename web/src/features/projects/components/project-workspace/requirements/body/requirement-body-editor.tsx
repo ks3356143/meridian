@@ -17,6 +17,7 @@ import {
   Heading,
   ListItem,
   ListKeymap,
+  RequirementHighlight,
   RequirementOrderedList,
   RequirementParagraph,
   RequirementPasteCleanup,
@@ -75,6 +76,7 @@ function RequirementBodyEditorImpl({
         Text,
         RequirementParagraph,
         Bold,
+        RequirementHighlight,
         UndoRedo,
         // 表格/图片独占正文时，靠 GapCursor 把光标落到块外，否则点空白只能落进单元格。
         Gapcursor,
@@ -167,6 +169,7 @@ function RequirementBodyEditorImpl({
     selector: ({ editor: currentEditor }) => {
       return {
         bold: currentEditor.isActive("bold"),
+        highlight: currentEditor.isActive("highlight"),
         paragraph: currentEditor.isActive("paragraph"),
         align: String(currentEditor.getAttributes("paragraph").align ?? ""),
         firstLineIndent: Number(currentEditor.getAttributes("paragraph").firstLineIndent ?? 0),

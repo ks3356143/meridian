@@ -290,6 +290,52 @@ export interface TraceabilityResult {
   summary: TraceabilitySummary;
   rows: TraceabilityRow[];
 }
+export type AnnotationKind = "requirement_body" | "step_op" | "step_act";
+
+export interface AnnotationRow {
+  id: string;
+  kind: AnnotationKind;
+  blockId: string;
+  text: string;
+  contextBefore: string;
+  contextAfter: string;
+  updatedAt: string;
+  roundId: string;
+  roundNumber: number;
+  roundName: string;
+  requirementId: string;
+  sourceName: string;
+  sourceVersion: string;
+  chapterNumber: string;
+  externalIdentifier: string;
+  requirementName: string;
+  testItemId: string;
+  testItemIdentifier: string;
+  testItemName: string;
+  testItemTypeCode: string;
+  caseId: string;
+  caseIdentifier: string;
+  caseName: string;
+  stepId: string;
+  stepSeq: number;
+}
+
+export interface AnnotationSummary {
+  total: number;
+  requirementBody: number;
+  stepOp: number;
+  stepAct: number;
+  requirements: number;
+  cases: number;
+}
+
+export interface AnnotationResult {
+  allRounds: boolean;
+  round: TestRoundRecord | null;
+  rounds: TestRoundRecord[];
+  summary: AnnotationSummary;
+  rows: AnnotationRow[];
+}
 export interface TestRoundRecord {
   id: string;
   projectId: string;

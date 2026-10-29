@@ -9,6 +9,7 @@ export function TestItemsModule({ project }: { project: Project }) {
   const [, setSearchParams] = useSearchParams();
   const [targetItemId, setTargetItemId] = useState("");
   const [targetCaseId, setTargetCaseId] = useState("");
+  const [targetStepId, setTargetStepId] = useState("");
 
   return (
     <TestItemsWorkbench
@@ -16,10 +17,15 @@ export function TestItemsModule({ project }: { project: Project }) {
       roundId={roundId}
       targetItemId={targetItemId}
       targetCaseId={targetCaseId}
+      targetStepId={targetStepId}
       onTargetItemHandled={() => setTargetItemId("")}
-      onTargetCaseHandled={() => setTargetCaseId("")}
+      onTargetCaseHandled={() => {
+        setTargetCaseId("");
+        setTargetStepId("");
+      }}
       onOpenItemRound={(nextRoundId, itemId) => {
         setTargetCaseId("");
+        setTargetStepId("");
         setTargetItemId(itemId);
         setSearchParams((current) => {
           const next = new URLSearchParams(current);
@@ -32,6 +38,19 @@ export function TestItemsModule({ project }: { project: Project }) {
       onOpenCaseRound={(nextRoundId, itemId, caseId) => {
         setTargetItemId(itemId);
         setTargetCaseId(caseId);
+        setTargetStepId("");
+        setSearchParams((current) => {
+          const next = new URLSearchParams(current);
+          next.set("roundId", nextRoundId);
+          next.set("view", "tree");
+          next.delete("type");
+          return next;
+        });
+      }}
+      onOpenStepRound={(nextRoundId, itemId, caseId, stepId) => {
+        setTargetItemId(itemId);
+        setTargetCaseId(caseId);
+        setTargetStepId(stepId);
         setSearchParams((current) => {
           const next = new URLSearchParams(current);
           next.set("roundId", nextRoundId);

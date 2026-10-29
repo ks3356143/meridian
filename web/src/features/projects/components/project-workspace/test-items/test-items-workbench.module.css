@@ -597,15 +597,24 @@
 @media (max-width: 600px) {
   .viewBar {
     gap: 0.35rem;
-    overflow-x: auto;
+    overflow: visible;
     padding-inline: 0.45rem;
-    scrollbar-width: thin;
   }
 
   .viewTabs {
-    flex: none;
-    min-width: 13rem;
-    width: 13rem;
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .viewTabs button {
+    gap: 0;
+    padding-inline: 0.2rem;
+    font-size: 0.72rem;
+  }
+
+  .viewTabs button svg {
+    display: none;
   }
 
   .viewMeta {

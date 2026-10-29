@@ -1,0 +1,340 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.85rem;
+}
+
+.summary {
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--primary) 8%, var(--card)), var(--card) 46%),
+    var(--card);
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--border));
+  display: grid;
+  grid-template-columns: minmax(13rem, 1.35fr) repeat(6, minmax(4rem, 0.7fr));
+  overflow: hidden;
+}
+
+.summaryLead,
+.metric {
+  min-width: 0;
+  padding: 0.85rem 0.9rem;
+}
+
+.summaryLead {
+  border-right: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.summaryKicker {
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.summaryLead strong {
+  font-size: 0.82rem;
+}
+
+.summaryLead small {
+  color: var(--muted-foreground);
+  font-size: 0.63rem;
+}
+
+.metric {
+  align-items: center;
+  border-right: 1px solid color-mix(in srgb, var(--border) 64%, transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.metric:last-child {
+  border-right: 0;
+}
+
+.metric strong {
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+
+.metric span {
+  color: var(--muted-foreground);
+  font-size: 0.58rem;
+  margin-top: 0.18rem;
+}
+
+.notice {
+  align-items: center;
+  background: color-mix(in srgb, var(--warning) 5%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--warning) 28%, var(--border));
+  color: var(--muted-foreground);
+  display: flex;
+  font-size: 0.65rem;
+  gap: 0.9rem;
+  justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+}
+
+.notice span {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.notice svg {
+  color: var(--warning);
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.searchField {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  min-width: 10rem;
+  position: relative;
+}
+
+.searchField > svg {
+  color: var(--muted-foreground);
+  height: 0.9rem;
+  left: 0.65rem;
+  pointer-events: none;
+  position: absolute;
+  width: 0.9rem;
+}
+
+.searchField input {
+  padding-left: 2rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.28rem;
+}
+
+.resultCount {
+  color: var(--muted-foreground);
+  font-size: 0.62rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.list {
+  display: grid;
+  gap: 0.55rem;
+  min-height: 0;
+  padding-bottom: 0.5rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  content-visibility: auto;
+  contain-intrinsic-size: 8rem;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.78rem 0.9rem;
+  position: relative;
+}
+
+.card::before {
+  background: var(--info);
+  content: "";
+  inset: 0 auto 0 0;
+  position: absolute;
+  width: 3px;
+}
+
+.card[data-kind="step_op"]::before {
+  background: var(--primary);
+}
+
+.card[data-kind="step_act"]::before {
+  background: var(--success);
+}
+
+.cardHeader {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  grid-column: 1 / -1;
+}
+
+.kindBadge,
+.projectBadge,
+.roundBadge {
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--info) 32%, var(--border));
+  color: var(--info);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.59rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.25rem 0.38rem;
+}
+
+.kindBadge {
+  background: color-mix(in srgb, var(--info) 8%, transparent);
+}
+
+.projectBadge,
+.roundBadge {
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+  color: var(--primary);
+}
+
+.roundBadge {
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.roundBadge small {
+  color: var(--muted-foreground);
+  font-family: inherit;
+  font-size: 0.54rem;
+  font-weight: 500;
+}
+
+.cardHeader time {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  margin-left: auto;
+}
+
+.excerpt {
+  border-left: 2px solid color-mix(in srgb, var(--warning) 48%, var(--border));
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  grid-column: 1 / -1;
+  line-height: 1.65;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 0.08rem 0 0.08rem 0.6rem;
+}
+
+.excerpt mark {
+  background: color-mix(in srgb, var(--warning) 32%, transparent);
+  color: var(--foreground);
+  font-weight: 650;
+  padding: 0.03rem 0.12rem;
+}
+
+.meta {
+  color: var(--muted-foreground);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1.2rem;
+  min-width: 0;
+}
+
+.meta span {
+  display: inline-flex;
+  flex-wrap: wrap;
+  font-size: 0.64rem;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.meta b {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+.meta small {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+}
+
+.locateButton {
+  align-self: end;
+  white-space: nowrap;
+}
+
+.empty {
+  align-items: center;
+  color: var(--muted-foreground);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 12rem;
+}
+
+.empty p {
+  margin: 0;
+}
+
+.empty svg {
+  height: 1.4rem;
+  opacity: 0.55;
+  width: 1.4rem;
+}
+
+@media (max-width: 1100px) {
+  .summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .summaryLead {
+    grid-column: 1 / -1;
+  }
+  .metric:nth-child(4) {
+    border-right: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .view {
+    padding: 0.6rem;
+  }
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metric:nth-child(odd) {
+    border-right: 0;
+  }
+  .notice {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .filters {
+    flex-wrap: wrap;
+  }
+  .resultCount {
+    margin-left: 0;
+  }
+  .card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .locateButton {
+    justify-self: start;
+  }
+}

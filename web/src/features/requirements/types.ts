@@ -193,7 +193,7 @@ export type RequirementBlockNodeType =
   | "pagebreak";
 
 export interface RequirementBlockMark {
-  type: "bold" | "italic" | "underline";
+  type: "bold" | "highlight" | "italic" | "underline";
   attrs?: Record<string, unknown>;
 }
 
