@@ -829,98 +829,100 @@ function TestItemDetailPanelInner({
                 onApply={applyBatchAssign}
                 onClearSelection={() => setSelectedCaseIds([])}
               />
-              <table className={styles.caseTable}>
-                <thead>
-                  <tr>
-                    <th scope="col" className={styles.caseSelectHead}>
-                      <Checkbox
-                        checked={
-                          allCasesSelected ? true : someCasesSelected ? "indeterminate" : false
-                        }
-                        aria-label="全选用例"
-                        onCheckedChange={toggleAllCases}
-                      />
-                    </th>
-                    <th scope="col">用例标识</th>
-                    <th scope="col">用例名称</th>
-                    <th scope="col">负责人</th>
-                    <th scope="col">状态</th>
-                    <th scope="col">
-                      <span className={styles.visuallyHidden}>操作</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleCases.map((record) => (
-                    <tr
-                      key={record.id}
-                      data-status={record.status}
-                      data-active={record.id === activeCaseId ? "true" : undefined}
-                    >
-                      <td className={styles.caseSelectCell}>
-                        <Checkbox
-                          checked={selectedCaseSet.has(record.id)}
-                          aria-label={`选择 ${record.identifier}`}
-                          onCheckedChange={(checked) => toggleCase(record.id, checked)}
-                        />
-                      </td>
-                      <td className={styles.caseIdent}>{record.identifier}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className={styles.caseRowName}
-                          onClick={() => onSelectCase?.(record.id)}
-                        >
-                          {record.name}
-                        </button>
-                      </td>
-                      <td className={styles.caseOwner}>
-                        {memberNames.get(record.testerId ?? record.designerId ?? "") ?? "未指派"}
-                      </td>
-                      <td>
-                        <span className={styles.caseStatus} data-status={record.status}>
-                          {caseStatusLabel(record.status)}
-                        </span>
-                      </td>
-                      <td className={styles.caseRowActions} aria-label="用例操作">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              className={styles.caseRowAction}
-                              aria-label={`在目录中定位 ${record.identifier}`}
-                              onClick={() => onSelectCase?.(record.id)}
-                            >
-                              <Crosshair aria-hidden />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">在左侧目录中定位</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              className={styles.caseRowAction}
-                              aria-label={`复制 ${record.identifier}`}
-                              onClick={() => onDuplicateCase?.(record.id)}
-                            >
-                              <CopyPlus aria-hidden />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">复制用例（含步骤）</TooltipContent>
-                        </Tooltip>
-                      </td>
-                    </tr>
-                  ))}
-                  {visibleCases.length === 0 ? (
+              <div className={styles.caseTableScroll}>
+                <table className={styles.caseTable}>
+                  <thead>
                     <tr>
-                      <td className={styles.caseEmptyRow} colSpan={6}>
-                        该状态下没有用例，切换筛选或到「测试方法」生成用例。
-                      </td>
+                      <th scope="col" className={styles.caseSelectHead}>
+                        <Checkbox
+                          checked={
+                            allCasesSelected ? true : someCasesSelected ? "indeterminate" : false
+                          }
+                          aria-label="全选用例"
+                          onCheckedChange={toggleAllCases}
+                        />
+                      </th>
+                      <th scope="col">用例标识</th>
+                      <th scope="col">用例名称</th>
+                      <th scope="col">负责人</th>
+                      <th scope="col">状态</th>
+                      <th scope="col">
+                        <span className={styles.visuallyHidden}>操作</span>
+                      </th>
                     </tr>
-                  ) : null}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {visibleCases.map((record) => (
+                      <tr
+                        key={record.id}
+                        data-status={record.status}
+                        data-active={record.id === activeCaseId ? "true" : undefined}
+                      >
+                        <td className={styles.caseSelectCell}>
+                          <Checkbox
+                            checked={selectedCaseSet.has(record.id)}
+                            aria-label={`选择 ${record.identifier}`}
+                            onCheckedChange={(checked) => toggleCase(record.id, checked)}
+                          />
+                        </td>
+                        <td className={styles.caseIdent}>{record.identifier}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className={styles.caseRowName}
+                            onClick={() => onSelectCase?.(record.id)}
+                          >
+                            {record.name}
+                          </button>
+                        </td>
+                        <td className={styles.caseOwner}>
+                          {memberNames.get(record.testerId ?? record.designerId ?? "") ?? "未指派"}
+                        </td>
+                        <td>
+                          <span className={styles.caseStatus} data-status={record.status}>
+                            {caseStatusLabel(record.status)}
+                          </span>
+                        </td>
+                        <td className={styles.caseRowActions} aria-label="用例操作">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className={styles.caseRowAction}
+                                aria-label={`在目录中定位 ${record.identifier}`}
+                                onClick={() => onSelectCase?.(record.id)}
+                              >
+                                <Crosshair aria-hidden />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">在左侧目录中定位</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className={styles.caseRowAction}
+                                aria-label={`复制 ${record.identifier}`}
+                                onClick={() => onDuplicateCase?.(record.id)}
+                              >
+                                <CopyPlus aria-hidden />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">复制用例（含步骤）</TooltipContent>
+                          </Tooltip>
+                        </td>
+                      </tr>
+                    ))}
+                    {visibleCases.length === 0 ? (
+                      <tr>
+                        <td className={styles.caseEmptyRow} colSpan={6}>
+                          该状态下没有用例，切换筛选或到「测试方法」生成用例。
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </section>

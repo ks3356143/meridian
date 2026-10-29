@@ -1300,6 +1300,12 @@
   text-align: center;
 }
 
+.caseTableScroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
 .caseTable {
   border-collapse: collapse;
   width: 100%;

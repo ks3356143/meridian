@@ -239,15 +239,22 @@
     0 -6px 16px -16px color-mix(in srgb, var(--primary) 68%, transparent);
 }
 @media (max-width: 600px) {
-  /* 窄屏保留可读标签：顶部一级导航改为横向滚动，不把 5 个标签压成互相遮挡。 */
+  /* 375px 把 5 个标签等宽收进视口，避免横向滚动和首尾裁切。 */
   .tabList {
     justify-content: flex-start;
-    overflow-x: auto;
+    overflow-x: hidden;
     width: 100%;
   }
 
   .tabTrigger {
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    gap: 0;
+    padding-inline: 0.1rem;
+    font-size: 0.7rem;
+  }
+
+  .tabIcon {
+    display: none;
   }
 }
 
