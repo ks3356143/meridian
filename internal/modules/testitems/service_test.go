@@ -114,7 +114,7 @@ func TestCreateTestItemsFromRequirementsAllSkipsExistingAndIncomplete(t *testing
 		t.Fatalf("准备已关联需求失败: %v", err)
 	}
 
-	result, err := service.CreateTestItemsFromRequirements(ctx, projectID, nil, true)
+	result, err := service.CreateTestItemsFromRequirements(ctx, projectID, "", nil, true)
 	if err != nil {
 		t.Fatalf("批量创建全部测试项失败: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestCreateTestItemsFromRequirementsAllSkipsExistingAndIncomplete(t *testing
 		outcomes["req-batch-incomplete"] != BatchOutcomeSkippedIncomplete {
 		t.Fatalf("批量结果分类不正确: %+v", outcomes)
 	}
-	createdItems, err := service.ListTestItemsByRequirement(ctx, "req-batch-new")
+	createdItems, err := service.ListTestItemsByRequirement(ctx, "req-batch-new", "")
 	if err != nil || len(createdItems) != 1 {
 		t.Fatalf("新需求应创建并关联 1 个测试项: %+v, err=%v", createdItems, err)
 	}
@@ -153,6 +153,7 @@ func TestCreateTestItemsFromRequirementsSelectedIDs(t *testing.T) {
 	result, err := service.CreateTestItemsFromRequirements(
 		ctx,
 		projectID,
+		"",
 		[]string{"req-selected-1", "req-selected-3", "req-selected-1"},
 		false,
 	)
@@ -165,7 +166,7 @@ func TestCreateTestItemsFromRequirementsSelectedIDs(t *testing.T) {
 	if len(result.Items) != 2 {
 		t.Fatalf("重复需求 id 应去重，实际 %+v", result.Items)
 	}
-	notSelected, err := service.ListTestItemsByRequirement(ctx, "req-selected-2")
+	notSelected, err := service.ListTestItemsByRequirement(ctx, "req-selected-2", "")
 	if err != nil {
 		t.Fatalf("查询未选中需求关联失败: %v", err)
 	}

@@ -25,6 +25,13 @@ func (s *Service) CopyCaseTo(ctx context.Context, sourceID, targetItemID string,
 		if targetItem.ProjectID != source.ProjectID {
 			return ErrImportAcrossProjects
 		}
+		sourceItem, err := findTestItem(tx, source.TestItemID)
+		if err != nil {
+			return err
+		}
+		if sourceItem.RoundID != targetItem.RoundID {
+			return fmt.Errorf("%w：不能跨轮复制用例", ErrRoundMismatch)
+		}
 
 		var targetCases []Case
 		if err := tx.Where("test_item_id = ?", targetItemID).

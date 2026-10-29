@@ -328,6 +328,13 @@ func (s *Service) MoveCase(ctx context.Context, caseID string, targetItemID stri
 		if err != nil {
 			return err
 		}
+		sourceItem, err := findTestItem(tx, itemCase.TestItemID)
+		if err != nil {
+			return err
+		}
+		if sourceItem.RoundID != targetItem.RoundID {
+			return fmt.Errorf("%w：不能跨轮移动用例", ErrRoundMismatch)
+		}
 
 		sourceItemID := itemCase.TestItemID
 		if err := tx.Model(&Case{}).Where("id = ?", caseID).

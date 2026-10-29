@@ -30,7 +30,8 @@ type ItemsOutput struct {
 }
 
 type RequirementIDInput struct {
-	ID string `path:"id" doc:"需求 id"`
+	ID      string `path:"id" doc:"需求 id"`
+	RoundID string `query:"roundId" doc:"轮次 id；省略时取当前轮次"`
 }
 
 func registerLinks(api huma.API, handler *Handler) {
@@ -79,10 +80,10 @@ func registerLinks(api huma.API, handler *Handler) {
 		Method:      http.MethodGet,
 		Path:        "/api/v1/software-requirements/{id}/test-items",
 		Summary:     "需求关联的测试项",
-		Description: "返回关联到某需求的测试项（需求详情侧展示）。",
+		Description: "返回指定轮次内关联到某需求的测试项；省略 roundId 时取当前轮次。",
 		Tags:        []string{"测试项与执行"},
 	}, func(ctx context.Context, input *RequirementIDInput) (*ItemsOutput, error) {
-		items, err := handler.service.ListTestItemsByRequirement(ctx, input.ID)
+		items, err := handler.service.ListTestItemsByRequirement(ctx, input.ID, input.RoundID)
 		if err != nil {
 			return nil, toAPIError(err, "查询测试项失败")
 		}

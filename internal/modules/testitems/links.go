@@ -140,14 +140,26 @@ func (s *Service) UnlinkRequirement(ctx context.Context, testItemID string, requ
 	return nil
 }
 
-// ListTestItemsByRequirement 返回关联到某需求的测试项（需求详情侧使用）。
-func (s *Service) ListTestItemsByRequirement(ctx context.Context, requirementID string) ([]TestItem, error) {
+// ListTestItemsByRequirement 返回指定轮次内关联到某需求的测试项；roundId 为空时取当前轮次。
+func (s *Service) ListTestItemsByRequirement(ctx context.Context, requirementID, roundID string) ([]TestItem, error) {
+	var projectID string
+	if err := s.db.WithContext(ctx).Table("software_requirements").
+		Select("project_id").Where("id = ?", requirementID).Scan(&projectID).Error; err != nil {
+		return nil, fmt.Errorf("查询需求项目失败: %w", err)
+	}
+	if projectID == "" {
+		return nil, ErrNotFound
+	}
+	round, err := s.ResolveRound(ctx, projectID, roundID)
+	if err != nil {
+		return nil, err
+	}
 	var items []TestItem
 	if err := s.db.WithContext(ctx).
 		Table("test_items AS item").
 		Select("item.*").
 		Joins("JOIN requirement_test_items AS link ON link.test_item_id = item.id").
-		Where("link.requirement_id = ?", requirementID).
+		Where("link.requirement_id = ? AND item.round_id = ?", requirementID, round.ID).
 		Order("item.type_code asc, item.sort_order asc").
 		Scan(&items).Error; err != nil {
 		return nil, fmt.Errorf("查询测试项失败: %w", err)

@@ -47,7 +47,7 @@ func nonNil[T any](items []T) []T {
 	return items
 }
 
-// WorkspaceBody 测试项页首屏数据：类型字典 + 第 1 轮 + 文件夹 + 测试项 + 用例摘要 + 树徽章计数。
+// WorkspaceBody 测试项页首屏数据：当前轮、类型字典、文件夹、测试项、用例摘要与树徽章计数。
 type WorkspaceBody struct {
 	Round   testitemsservice.Round                 `json:"round"`
 	Types   []testitemsservice.ItemType            `json:"types"`
@@ -58,7 +58,8 @@ type WorkspaceBody struct {
 }
 
 type WorkspaceInput struct {
-	Code string `path:"code" doc:"项目标识"`
+	Code    string `path:"code" doc:"项目标识"`
+	RoundID string `query:"roundId" doc:"轮次 id；省略时取当前轮次"`
 }
 
 type WorkspaceOutput struct {
@@ -74,7 +75,7 @@ func registerWorkspace(api huma.API, handler *Handler) {
 		Description: "返回类型字典、当前轮次、文件夹、测试项与用例摘要；首次访问会懒补齐第 1 轮与静态测试项的默认测试方法。",
 		Tags:        []string{"测试项与执行"},
 	}, func(ctx context.Context, input *WorkspaceInput) (*WorkspaceOutput, error) {
-		body, err := handler.workspace(ctx, input.Code)
+		body, err := handler.workspace(ctx, input.Code, input.RoundID)
 		if err != nil {
 			return nil, toAPIError(err, "查询测试项工作台失败")
 		}
@@ -82,13 +83,13 @@ func registerWorkspace(api huma.API, handler *Handler) {
 	})
 }
 
-func (h *Handler) workspace(ctx context.Context, projectCode string) (WorkspaceBody, error) {
+func (h *Handler) workspace(ctx context.Context, projectCode, roundID string) (WorkspaceBody, error) {
 	projectID, err := h.projectID(ctx, projectCode)
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
 
-	round, err := h.service.EnsureRound(ctx, projectID)
+	round, err := h.service.ResolveRound(ctx, projectID, roundID)
 	if err != nil {
 		return WorkspaceBody{}, err
 	}
@@ -132,8 +133,9 @@ func (h *Handler) workspace(ctx context.Context, projectCode string) (WorkspaceB
 }
 
 type CreateItemInput struct {
-	Code string `path:"code" doc:"项目标识"`
-	Body struct {
+	Code    string `path:"code" doc:"项目标识"`
+	RoundID string `query:"roundId" doc:"轮次 id；省略时取当前轮次"`
+	Body    struct {
 		TypeCode     string  `json:"typeCode,omitempty" doc:"类型代号，如 SU；按需求创建时可留空"`
 		Name         string  `json:"name,omitempty" doc:"测试项名称；按需求创建时可留空"`
 		Suffix       string  `json:"suffix,omitempty" doc:"标识后缀，留空按名称自动生成"`
@@ -185,6 +187,7 @@ func registerItems(api huma.API, handler *Handler) {
 		}
 		item, err := handler.service.CreateTestItem(ctx, testitemsservice.CreateTestItemInput{
 			ProjectID:    projectID,
+			RoundID:      input.RoundID,
 			TypeCode:     input.Body.TypeCode,
 			Name:         input.Body.Name,
 			Suffix:       input.Body.Suffix,
@@ -325,8 +328,9 @@ type UpdateItemInput struct {
 }
 
 type CreateFolderInput struct {
-	Code string `path:"code"`
-	Body struct {
+	Code    string `path:"code"`
+	RoundID string `query:"roundId" doc:"轮次 id；省略时取当前轮次"`
+	Body    struct {
 		TypeCode string  `json:"typeCode"`
 		Name     string  `json:"name"`
 		ParentID *string `json:"parentId,omitempty"`
@@ -371,6 +375,7 @@ func registerFolders(api huma.API, handler *Handler) {
 		}
 		folder, err := handler.service.CreateFolder(ctx, testitemsservice.CreateFolderInput{
 			ProjectID: projectID,
+			RoundID:   input.RoundID,
 			TypeCode:  input.Body.TypeCode,
 			Name:      input.Body.Name,
 			ParentID:  input.Body.ParentID,
@@ -420,10 +425,16 @@ func toAPIError(err error, fallback string) error {
 	case errors.Is(err, testitemsservice.ErrProjectNotFound):
 		return huma.Error404NotFound("项目不存在")
 	case errors.Is(err, testitemsservice.ErrRoundNotFound):
-		return huma.Error404NotFound("来源轮次不存在")
+		return huma.Error404NotFound("轮次不存在")
+	case errors.Is(err, testitemsservice.ErrRoundMismatch):
+		return huma.Error422UnprocessableEntity(err.Error())
 	case errors.Is(err, testitemsservice.ErrRoundCopyItemOutsideSource):
 		return huma.Error422UnprocessableEntity(err.Error())
 	case errors.Is(err, testitemsservice.ErrRoundCopyStaticForbidden):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrRoundCopySourceNotPrevious):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrStaticAfterFirstRound):
 		return huma.Error422UnprocessableEntity(err.Error())
 	case errors.Is(err, testitemsservice.ErrRoundCopyItemIDRequired):
 		return huma.Error422UnprocessableEntity(err.Error())

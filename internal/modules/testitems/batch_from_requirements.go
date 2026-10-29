@@ -47,10 +47,15 @@ type batchRequirement struct {
 func (s *Service) CreateTestItemsFromRequirements(
 	ctx context.Context,
 	projectID string,
+	roundID string,
 	requirementIDs []string,
 	all bool,
 ) (BatchCreateFromRequirementsResult, error) {
 	result := BatchCreateFromRequirementsResult{}
+	round, err := s.ResolveRound(ctx, projectID, roundID)
+	if err != nil {
+		return result, err
+	}
 	query := s.db.WithContext(ctx).Table("software_requirements").
 		Select("id, chapter_number, name, status, description").
 		Where("project_id = ?", projectID)
@@ -74,10 +79,11 @@ func (s *Service) CreateTestItemsFromRequirements(
 	linkedRequirementIDs := make(map[string]struct{})
 	if len(requirements) > 0 {
 		var linkedIDs []string
-		if err := s.db.WithContext(ctx).Table("requirement_test_items").
-			Where("project_id = ?", projectID).
-			Distinct("requirement_id").
-			Pluck("requirement_id", &linkedIDs).Error; err != nil {
+		if err := s.db.WithContext(ctx).Table("requirement_test_items AS link").
+			Joins("JOIN test_items AS item ON item.id = link.test_item_id").
+			Where("link.project_id = ? AND item.round_id = ?", projectID, round.ID).
+			Distinct("link.requirement_id").
+			Pluck("link.requirement_id", &linkedIDs).Error; err != nil {
 			return result, fmt.Errorf("查询需求测试项关联失败: %w", err)
 		}
 		for _, requirementID := range linkedIDs {
@@ -116,6 +122,7 @@ func (s *Service) CreateTestItemsFromRequirements(
 
 		created, err := s.CreateTestItem(ctx, CreateTestItemInput{
 			ProjectID:     projectID,
+			RoundID:       round.ID,
 			RequirementID: requirement.ID,
 		})
 		if err != nil {

@@ -48,10 +48,14 @@ func (s *Service) EnsureRecommendedStaticItems(ctx context.Context, projectID st
 	if !force && seededLevel == profile.SecurityLevel && seededPlatform == profile.Platform {
 		return []TestItem{}, nil
 	}
+	firstRound, err := s.EnsureRound(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
 
 	var existing []TestItem
 	if err := s.db.WithContext(ctx).
-		Where("project_id = ? AND type_code IN ?", projectID, recommendedStaticCodes(profile.SecurityLevel, profile.Platform)).
+		Where("project_id = ? AND round_id = ? AND type_code IN ?", projectID, firstRound.ID, recommendedStaticCodes(profile.SecurityLevel, profile.Platform)).
 		Find(&existing).Error; err != nil {
 		return nil, fmt.Errorf("查询现有静态测试项失败: %w", err)
 	}
@@ -71,6 +75,7 @@ func (s *Service) EnsureRecommendedStaticItems(ctx context.Context, projectID st
 		}
 		item, err := s.CreateTestItem(ctx, CreateTestItemInput{
 			ProjectID: projectID,
+			RoundID:   firstRound.ID,
 			TypeCode:  code,
 			Name:      itemType.Name,
 			Priority:  "中",

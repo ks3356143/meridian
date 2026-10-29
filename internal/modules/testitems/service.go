@@ -35,6 +35,8 @@ var (
 	ErrStaticTypeLocked = errors.New("静态测试项的类型不可修改")
 	// ErrStaticTypeDuplicate 静态测试项不允许复制新增（同类静态每轮只能建一个）。
 	ErrStaticTypeDuplicate = errors.New("静态测试项不支持复制新增，请用「新增测试项」按类型创建")
+	// ErrStaticAfterFirstRound 静态测试项只存在于第 1 轮。
+	ErrStaticAfterFirstRound = errors.New("静态测试项只能存在于第 1 轮，不能出现在第二轮及以后轮次")
 	// ErrRequirementIncomplete 需求描述待补全，暂不能建立关联。
 	ErrRequirementIncomplete = errors.New("需求描述待补全，暂不能关联")
 	// ErrRequirementNotOfficial 只有已确认需求可以建立测试项关联。
@@ -198,6 +200,7 @@ func ensureRound(ctx context.Context, db *gorm.DB, projectID string) (Round, err
 // CreateTestItemInput 新建测试项入参。
 type CreateTestItemInput struct {
 	ProjectID    string
+	RoundID      string // 留空时使用当前轮次
 	TypeCode     string
 	Name         string
 	Suffix       string // 留空时按名称自动生成
@@ -218,6 +221,11 @@ type CreateTestItemInput struct {
 func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput) (TestItem, error) {
 	var created TestItem
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		round, err := resolveRound(ctx, tx, input.ProjectID, input.RoundID)
+		if err != nil {
+			return err
+		}
+		input.RoundID = round.ID
 		if input.RequirementID != "" {
 			requirement, err := loadRequirementForLink(tx, input.ProjectID, input.RequirementID)
 			if err != nil {
@@ -253,11 +261,24 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 		if !typeFitsPlatform(itemType.PlatformScope, platform) {
 			return ErrTypePlatformMismatch
 		}
-		// 当前创建入口只操作第 1 轮；首轮每个 DC/SA/CR/CW 只允许一个静态测试项。
+		if input.FolderID != nil {
+			var folder Folder
+			if err := tx.Where("id = ? AND project_id = ? AND round_id = ? AND type_code = ?",
+				*input.FolderID, input.ProjectID, input.RoundID, itemType.Code).First(&folder).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return ErrFolderMismatch
+				}
+				return fmt.Errorf("查询目标文件夹失败: %w", err)
+			}
+		}
+		if itemType.IsStatic && round.RoundNumber > 1 {
+			return ErrStaticAfterFirstRound
+		}
+		// 每个轮次内 DC/SA/CR/CW 各只允许一个静态测试项。
 		if itemType.IsStatic {
 			var existing int64
 			if err := tx.Model(&TestItem{}).
-				Where("project_id = ? AND type_code = ?", input.ProjectID, itemType.Code).
+				Where("project_id = ? AND round_id = ? AND type_code = ?", input.ProjectID, input.RoundID, itemType.Code).
 				Count(&existing).Error; err != nil {
 				return fmt.Errorf("查询静态测试项失败: %w", err)
 			}
@@ -272,8 +293,8 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 			err := tx.Table("test_items AS item").
 				Select("item.*").
 				Joins("JOIN requirement_test_items AS link ON link.test_item_id = item.id").
-				Where("link.requirement_id = ? AND item.project_id = ? AND item.type_code = ? AND item.name = ?",
-					input.RequirementID, input.ProjectID, itemType.Code, name).
+				Where("link.requirement_id = ? AND item.project_id = ? AND item.round_id = ? AND item.type_code = ? AND item.name = ?",
+					input.RequirementID, input.ProjectID, input.RoundID, itemType.Code, name).
 				Take(&existing).Error
 			if err == nil {
 				created = existing
@@ -286,13 +307,13 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 
 		suffix := strings.ToUpper(strings.TrimSpace(input.Suffix))
 		if suffix == "" {
-			generated, _, err := uniqueItemSuffix(tx, input.ProjectID, itemType.Code, name)
+			generated, _, err := uniqueItemSuffix(tx, input.ProjectID, input.RoundID, itemType.Code, name)
 			if err != nil {
 				return err
 			}
 			suffix = generated
 		} else {
-			free, err := itemSuffixFree(tx, input.ProjectID, itemType.Code, suffix)
+			free, err := itemSuffixFree(tx, input.ProjectID, input.RoundID, itemType.Code, suffix)
 			if err != nil {
 				return err
 			}
@@ -314,7 +335,7 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 			passCriteria = itemType.DefaultPassCriteria
 		}
 
-		sortOrder, err := nextItemSortOrder(tx, input.ProjectID, itemType.Code, input.FolderID)
+		sortOrder, err := nextItemSortOrder(tx, input.ProjectID, input.RoundID, itemType.Code, input.FolderID)
 		if err != nil {
 			return err
 		}
@@ -327,6 +348,7 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 		created = TestItem{
 			ID:           itemID,
 			ProjectID:    input.ProjectID,
+			RoundID:      input.RoundID,
 			TypeCode:     itemType.Code,
 			Identifier:   testItemIdentifier(itemType.Code, suffix),
 			Suffix:       suffix,
@@ -384,8 +406,8 @@ func requirementTestItemType(primaryKind string) string {
 	}
 }
 
-func nextItemSortOrder(tx *gorm.DB, projectID string, typeCode string, folderID *string) (int, error) {
-	query := tx.Model(&TestItem{}).Where("project_id = ? AND type_code = ?", projectID, typeCode)
+func nextItemSortOrder(tx *gorm.DB, projectID, roundID, typeCode string, folderID *string) (int, error) {
+	query := tx.Model(&TestItem{}).Where("project_id = ? AND round_id = ? AND type_code = ?", projectID, roundID, typeCode)
 	if folderID == nil {
 		query = query.Where("folder_id IS NULL")
 	} else {
@@ -452,10 +474,19 @@ func (s *Service) UpdateTestItem(ctx context.Context, testItemID string, input U
 				if !typeFitsPlatform(newType.PlatformScope, platform) {
 					return ErrTypePlatformMismatch
 				}
+				if newType.IsStatic && item.RoundID != "" {
+					var round Round
+					if err := tx.Where("id = ? AND project_id = ?", item.RoundID, item.ProjectID).First(&round).Error; err != nil {
+						return fmt.Errorf("查询测试项轮次失败: %w", err)
+					}
+					if round.RoundNumber > 1 {
+						return ErrStaticAfterFirstRound
+					}
+				}
 				if newType.IsStatic {
 					var siblings int64
 					if err := tx.Model(&TestItem{}).
-						Where("project_id = ? AND type_code = ? AND id <> ?", item.ProjectID, newType.Code, item.ID).
+						Where("project_id = ? AND round_id = ? AND type_code = ? AND id <> ?", item.ProjectID, item.RoundID, newType.Code, item.ID).
 						Count(&siblings).Error; err != nil {
 						return fmt.Errorf("查询同类型静态测试项失败: %w", err)
 					}
@@ -476,12 +507,12 @@ func (s *Service) UpdateTestItem(ctx context.Context, testItemID string, input U
 
 				// 后缀沿用；被新类型占用时按名称重新生成
 				suffix := item.Suffix
-				free, err := itemSuffixFree(tx, item.ProjectID, newType.Code, suffix)
+				free, err := itemSuffixFree(tx, item.ProjectID, item.RoundID, newType.Code, suffix)
 				if err != nil {
 					return err
 				}
 				if !free {
-					generated, _, err := uniqueItemSuffix(tx, item.ProjectID, newType.Code, item.Name)
+					generated, _, err := uniqueItemSuffix(tx, item.ProjectID, item.RoundID, newType.Code, item.Name)
 					if err != nil {
 						return err
 					}
@@ -516,7 +547,7 @@ func (s *Service) UpdateTestItem(ctx context.Context, testItemID string, input U
 				return ErrNameRequired
 			}
 			if suffix != item.Suffix {
-				free, err := itemSuffixFree(tx, item.ProjectID, item.TypeCode, suffix)
+				free, err := itemSuffixFree(tx, item.ProjectID, item.RoundID, item.TypeCode, suffix)
 				if err != nil {
 					return err
 				}
@@ -533,6 +564,18 @@ func (s *Service) UpdateTestItem(ctx context.Context, testItemID string, input U
 		if input.ClearFolder {
 			updates["folder_id"] = nil
 		} else if input.FolderID != nil {
+			folderType := item.TypeCode
+			if updatedType, ok := updates["type_code"].(string); ok {
+				folderType = updatedType
+			}
+			var folder Folder
+			if err := tx.Where("id = ? AND project_id = ? AND round_id = ? AND type_code = ?",
+				*input.FolderID, item.ProjectID, item.RoundID, folderType).First(&folder).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return ErrFolderMismatch
+				}
+				return fmt.Errorf("查询目标文件夹失败: %w", err)
+			}
 			updates["folder_id"] = *input.FolderID
 		}
 		if input.Description != nil {
@@ -826,6 +869,10 @@ func createDefaultMethodSubItem(tx *gorm.DB, item TestItem, itemType ItemType, m
 // EnsureStaticItemDefaults 为历史静态测试项懒补齐默认测试方法子项（幂等；已被用户改动过的不覆盖）。
 func (s *Service) EnsureStaticItemDefaults(ctx context.Context, projectID string) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		firstRound, err := ensureRound(ctx, tx, projectID)
+		if err != nil {
+			return err
+		}
 		var types []ItemType
 		if err := tx.Where("is_static = 1 AND (default_test_method <> '' OR default_test_method_fpga <> '')").
 			Find(&types).Error; err != nil {
@@ -845,7 +892,7 @@ func (s *Service) EnsureStaticItemDefaults(ctx context.Context, projectID string
 				continue
 			}
 			var items []TestItem
-			if err := tx.Where("project_id = ? AND type_code = ?", projectID, itemType.Code).
+			if err := tx.Where("project_id = ? AND round_id = ? AND type_code = ?", projectID, firstRound.ID, itemType.Code).
 				Find(&items).Error; err != nil {
 				return fmt.Errorf("查询静态测试项失败: %w", err)
 			}
@@ -870,6 +917,7 @@ func (s *Service) EnsureStaticItemDefaults(ctx context.Context, projectID string
 // CreateFolderInput 新建文件夹入参。
 type CreateFolderInput struct {
 	ProjectID string
+	RoundID   string // 留空时使用当前轮次
 	TypeCode  string
 	ParentID  *string
 	Name      string
@@ -884,13 +932,28 @@ func (s *Service) CreateFolder(ctx context.Context, input CreateFolderInput) (Fo
 
 	var created Folder
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		round, err := resolveRound(ctx, tx, input.ProjectID, input.RoundID)
+		if err != nil {
+			return err
+		}
+		input.RoundID = round.ID
 		itemType, err := findItemType(tx, input.TypeCode)
 		if err != nil {
 			return err
 		}
+		if input.ParentID != nil {
+			var parent Folder
+			if err := tx.Where("id = ? AND project_id = ? AND round_id = ? AND type_code = ?",
+				*input.ParentID, input.ProjectID, input.RoundID, itemType.Code).First(&parent).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return fmt.Errorf("%w：父文件夹不存在或不属于当前轮次", ErrRoundMismatch)
+				}
+				return fmt.Errorf("查询父文件夹失败: %w", err)
+			}
+		}
 		var maxOrder *int
 		query := tx.Model(&Folder{}).
-			Where("project_id = ? AND type_code = ?", input.ProjectID, itemType.Code)
+			Where("project_id = ? AND round_id = ? AND type_code = ?", input.ProjectID, input.RoundID, itemType.Code)
 		if input.ParentID == nil {
 			query = query.Where("parent_id IS NULL")
 		} else {
@@ -912,6 +975,7 @@ func (s *Service) CreateFolder(ctx context.Context, input CreateFolderInput) (Fo
 		created = Folder{
 			ID:        folderID,
 			ProjectID: input.ProjectID,
+			RoundID:   input.RoundID,
 			TypeCode:  itemType.Code,
 			ParentID:  input.ParentID,
 			Name:      name,
@@ -1012,7 +1076,7 @@ func (s *Service) MoveItem(ctx context.Context, itemID string, folderID *string,
 			if err := tx.Where("id = ?", *folderID).First(&folder).Error; err != nil {
 				return ErrNotFound
 			}
-			if folder.ProjectID != item.ProjectID || folder.TypeCode != item.TypeCode {
+			if folder.ProjectID != item.ProjectID || folder.RoundID != item.RoundID || folder.TypeCode != item.TypeCode {
 				return ErrFolderMismatch
 			}
 		}
@@ -1023,7 +1087,7 @@ func (s *Service) MoveItem(ctx context.Context, itemID string, folderID *string,
 			return fmt.Errorf("移动测试项失败: %w", err)
 		}
 
-		query := tx.Where("project_id = ? AND type_code = ?", item.ProjectID, item.TypeCode)
+		query := tx.Where("project_id = ? AND round_id = ? AND type_code = ?", item.ProjectID, item.RoundID, item.TypeCode)
 		if folderID == nil {
 			query = query.Where("folder_id IS NULL")
 		} else {
@@ -1076,7 +1140,7 @@ func (s *Service) DuplicateItem(ctx context.Context, testItemID string) (TestIte
 		if itemType.IsStatic {
 			return ErrStaticTypeDuplicate
 		}
-		suffix, _, err := uniqueItemSuffix(tx, source.ProjectID, source.TypeCode, source.Name+"-副本")
+		suffix, _, err := uniqueItemSuffix(tx, source.ProjectID, source.RoundID, source.TypeCode, source.Name+"-副本")
 		if err != nil {
 			return err
 		}
@@ -1088,6 +1152,7 @@ func (s *Service) DuplicateItem(ctx context.Context, testItemID string) (TestIte
 		created = TestItem{
 			ID:           itemID,
 			ProjectID:    source.ProjectID,
+			RoundID:      source.RoundID,
 			TypeCode:     source.TypeCode,
 			Identifier:   testItemIdentifier(source.TypeCode, suffix),
 			Suffix:       suffix,
@@ -1105,8 +1170,8 @@ func (s *Service) DuplicateItem(ctx context.Context, testItemID string) (TestIte
 			return fmt.Errorf("复制测试项失败: %w", err)
 		}
 		moveQuery := tx.Model(&TestItem{}).
-			Where("project_id = ? AND type_code = ? AND id <> ? AND sort_order > ?",
-				source.ProjectID, source.TypeCode, itemID, source.SortOrder)
+			Where("project_id = ? AND round_id = ? AND type_code = ? AND id <> ? AND sort_order > ?",
+				source.ProjectID, source.RoundID, source.TypeCode, itemID, source.SortOrder)
 		if source.FolderID == nil {
 			moveQuery = moveQuery.Where("folder_id IS NULL")
 		} else {

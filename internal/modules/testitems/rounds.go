@@ -15,8 +15,10 @@ import (
 )
 
 var (
-	// ErrRoundNotFound 来源轮次不存在或不属于当前项目。
-	ErrRoundNotFound = errors.New("来源轮次不存在")
+	// ErrRoundNotFound 轮次不存在或不属于当前项目。
+	ErrRoundNotFound = errors.New("轮次不存在")
+	// ErrRoundMismatch 目标对象不属于当前轮次，禁止跨轮写入。
+	ErrRoundMismatch = errors.New("目标对象不属于当前轮次")
 	// ErrRoundCopyItemOutsideSource 客户端提交了不属于来源轮次的测试项。
 	ErrRoundCopyItemOutsideSource = errors.New("所选测试项不属于来源轮次")
 	// ErrRoundCopyStaticForbidden 静态测试项不能带入第二轮及以后轮次。
@@ -25,6 +27,8 @@ var (
 	ErrRoundCopyItemIDRequired = errors.New("测试项 id 不能为空")
 	// ErrRoundCopyFolderMissing 来源测试项的文件夹链不完整。
 	ErrRoundCopyFolderMissing = errors.New("来源测试项的文件夹链不完整")
+	// ErrRoundCopySourceNotPrevious 只能从紧邻上一轮复制。
+	ErrRoundCopySourceNotPrevious = errors.New("来源轮次不是紧邻上一轮")
 )
 
 // RoundCopyCandidate 是轮次复制向导中的一个测试项候选。
@@ -70,6 +74,57 @@ type RoundCopyResult struct {
 	OpBlockCount         int   `json:"opBlockCount"`
 }
 
+// ResolveRound 解析当前轮次：有 roundId 时严格校验；没有时取最新未关闭轮次，全部关闭则取最新轮次。
+func (s *Service) ResolveRound(ctx context.Context, projectID, roundID string) (Round, error) {
+	return resolveRound(ctx, s.db, projectID, roundID)
+}
+
+func resolveRound(ctx context.Context, db *gorm.DB, projectID, roundID string) (Round, error) {
+	roundID = strings.TrimSpace(roundID)
+	if roundID != "" {
+		var round Round
+		err := db.WithContext(ctx).Where("id = ? AND project_id = ?", roundID, projectID).First(&round).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return Round{}, ErrRoundNotFound
+		}
+		if err != nil {
+			return Round{}, fmt.Errorf("查询轮次失败: %w", err)
+		}
+		return round, nil
+	}
+
+	var round Round
+	err := db.WithContext(ctx).Where("project_id = ? AND status <> ?", projectID, "closed").
+		Order("round_number desc").First(&round).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = db.WithContext(ctx).Where("project_id = ?", projectID).
+			Order("round_number desc").First(&round).Error
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ensureRound(ctx, db, projectID)
+	}
+	if err != nil {
+		return Round{}, fmt.Errorf("查询当前轮次失败: %w", err)
+	}
+	return round, nil
+}
+
+// sourceRoundMustBePrevious 返回下一个轮次号，并校验来源轮是当前最新轮次。
+func sourceRoundMustBePrevious(tx *gorm.DB, projectID string, source Round) (int, error) {
+	var maxNumber *int
+	if err := tx.Model(&Round{}).Where("project_id = ?", projectID).
+		Select("MAX(round_number)").Scan(&maxNumber).Error; err != nil {
+		return 0, fmt.Errorf("查询轮次编号失败: %w", err)
+	}
+	if maxNumber == nil {
+		return 0, ErrRoundNotFound
+	}
+	if source.RoundNumber != *maxNumber {
+		return 0, fmt.Errorf("%w：只能从第 %d 轮复制", ErrRoundCopySourceNotPrevious, *maxNumber)
+	}
+	return *maxNumber + 1, nil
+}
+
 type roundCopyPreviewRow struct {
 	TestItemID  string `gorm:"column:test_item_id"`
 	Identifier  string `gorm:"column:identifier"`
@@ -91,6 +146,9 @@ func (s *Service) PreviewRoundCopy(ctx context.Context, projectID, sourceRoundID
 	}
 	if err != nil {
 		return RoundCopyPreview{}, fmt.Errorf("查询来源轮次失败: %w", err)
+	}
+	if _, err := sourceRoundMustBePrevious(s.db.WithContext(ctx), projectID, sourceRound); err != nil {
+		return RoundCopyPreview{}, err
 	}
 
 	var rows []roundCopyPreviewRow
@@ -139,6 +197,10 @@ func (s *Service) CreateRoundCopy(ctx context.Context, input CreateRoundCopyInpu
 		} else if err != nil {
 			return fmt.Errorf("查询来源轮次失败: %w", err)
 		}
+		nextNumber, err := sourceRoundMustBePrevious(tx, input.ProjectID, sourceRound)
+		if err != nil {
+			return err
+		}
 
 		var sourceItems []TestItem
 		if err := tx.Where("project_id = ? AND round_id = ?", input.ProjectID, sourceRound.ID).
@@ -185,15 +247,6 @@ func (s *Service) CreateRoundCopy(ctx context.Context, input CreateRoundCopyInpu
 			return selected[i].CreatedAt.Before(selected[j].CreatedAt)
 		})
 
-		var maxNumber *int
-		if err := tx.Model(&Round{}).Where("project_id = ?", input.ProjectID).
-			Select("MAX(round_number)").Scan(&maxNumber).Error; err != nil {
-			return fmt.Errorf("查询轮次编号失败: %w", err)
-		}
-		nextNumber := 1
-		if maxNumber != nil {
-			nextNumber = *maxNumber + 1
-		}
 		roundID, err := id.New()
 		if err != nil {
 			return err

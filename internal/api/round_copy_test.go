@@ -74,6 +74,18 @@ func TestRoundCopyHTTPEndpoints(t *testing.T) {
 		t.Fatal("静态项不应出现在复制预览")
 	}
 
+	staticRecorder := postJSONRecorder(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/test-rounds", map[string]any{
+			"sourceRoundId": sourceRoundID,
+			"testItemIds":   []string{staticID},
+		})
+	if staticRecorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("静态项应返回 422，实际 %d，响应: %s", staticRecorder.Code, staticRecorder.Body.String())
+	}
+	if !strings.Contains(staticRecorder.Body.String(), "静态测试项不能带入第二轮及以后轮次") {
+		t.Fatalf("静态项错误信息不明确: %s", staticRecorder.Body.String())
+	}
+
 	createRecorder := postJSONRecorder(t, handler, token, http.MethodPost,
 		"/api/v1/projects/"+projectCode+"/test-rounds", map[string]any{
 			"sourceRoundId": sourceRoundID,
@@ -96,28 +108,60 @@ func TestRoundCopyHTTPEndpoints(t *testing.T) {
 		t.Fatalf("新轮次元数据不正确: %+v", createdRound)
 	}
 	workspaceAfter := postJSONMap(t, handler, token, http.MethodGet,
-		"/api/v1/projects/"+projectCode+"/test-items", nil, http.StatusOK)
+		"/api/v1/projects/"+projectCode+"/test-items?roundId="+sourceRoundID, nil, http.StatusOK)
 	beforeIDs := workspaceItemIDs(workspace)
 	afterIDs := workspaceItemIDs(workspaceAfter)
 	if strings.Join(beforeIDs, ",") != strings.Join(afterIDs, ",") {
-		t.Fatalf("复制后首个工作台不应混入后续轮测试项: before=%v after=%v", beforeIDs, afterIDs)
+		t.Fatalf("指定第 1 轮查询不应混入后续轮测试项: before=%v after=%v", beforeIDs, afterIDs)
 	}
 
-	staticRecorder := postJSONRecorder(t, handler, token, http.MethodPost,
-		"/api/v1/projects/"+projectCode+"/test-rounds", map[string]any{
-			"sourceRoundId": sourceRoundID,
-			"testItemIds":   []string{staticID},
-		})
-	if staticRecorder.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("静态项应返回 422，实际 %d，响应: %s", staticRecorder.Code, staticRecorder.Body.String())
+	targetRoundID, _ := createdRound["id"].(string)
+	if targetRoundID == "" {
+		t.Fatalf("新轮次缺少 id: %+v", createdRound)
 	}
-	if !strings.Contains(staticRecorder.Body.String(), "静态测试项不能带入第二轮及以后轮次") {
-		t.Fatalf("静态项错误信息不明确: %s", staticRecorder.Body.String())
+	staleCopy := postJSONRecorder(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/test-rounds", map[string]any{
+			"sourceRoundId": sourceRoundID, "testItemIds": []string{},
+		})
+	if staleCopy.Code != http.StatusUnprocessableEntity || !strings.Contains(staleCopy.Body.String(), "只能从第 2 轮复制") {
+		t.Fatalf("非紧邻来源轮错误不明确: %d %s", staleCopy.Code, staleCopy.Body.String())
+	}
+	newItem := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/test-items?roundId="+targetRoundID, map[string]any{
+			"typeCode": "SU", "name": "第二轮新增测试项",
+		}, http.StatusOK)
+	if newItem["roundId"] != targetRoundID {
+		t.Fatalf("第二轮新增测试项没有落在目标轮: %+v", newItem)
+	}
+	newFolder := postJSONMap(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/test-item-folders?roundId="+targetRoundID, map[string]any{
+			"typeCode": "SU", "name": "第二轮文件夹",
+		}, http.StatusOK)
+	if newFolder["roundId"] != targetRoundID {
+		t.Fatalf("第二轮新增文件夹没有落在目标轮: %+v", newFolder)
+	}
+	staticInSecond := postJSONRecorder(t, handler, token, http.MethodPost,
+		"/api/v1/projects/"+projectCode+"/test-items?roundId="+targetRoundID, map[string]any{
+			"typeCode": "DC", "name": "第二轮静态项",
+		})
+	if staticInSecond.Code != http.StatusUnprocessableEntity || !strings.Contains(staticInSecond.Body.String(), "静态测试项只能存在于第 1 轮") {
+		t.Fatalf("第二轮静态项错误不明确: %d %s", staticInSecond.Code, staticInSecond.Body.String())
+	}
+	targetWorkspace := postJSONMap(t, handler, token, http.MethodGet,
+		"/api/v1/projects/"+projectCode+"/test-items?roundId="+targetRoundID, nil, http.StatusOK)
+	if len(workspaceItemIDs(targetWorkspace)) != 2 {
+		t.Fatalf("第二轮工作台应返回复制项和新增项: %+v", workspaceItemIDs(targetWorkspace))
+	}
+	currentWorkspace := postJSONMap(t, handler, token, http.MethodGet,
+		"/api/v1/projects/"+projectCode+"/test-items", nil, http.StatusOK)
+	currentRound, _ := currentWorkspace["round"].(map[string]any)
+	if currentRound["id"] != targetRoundID {
+		t.Fatalf("省略 roundId 时应返回当前最新轮: %+v", currentRound)
 	}
 
 	empty := postJSONMap(t, handler, token, http.MethodPost,
 		"/api/v1/projects/"+projectCode+"/test-rounds", map[string]any{
-			"sourceRoundId": sourceRoundID, "testItemIds": []string{},
+			"sourceRoundId": targetRoundID, "testItemIds": []string{},
 		}, http.StatusOK)
 	if empty["testItemCount"] != float64(0) || empty["caseCount"] != float64(0) {
 		t.Fatalf("空轮次计数不正确: %+v", empty)

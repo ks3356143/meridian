@@ -28,7 +28,11 @@ type RequirementTestItemPreview struct {
 }
 
 // PreviewRequirementTestItems 返回已确认需求的可创建状态，供测试项页入口预览。
-func (s *Service) PreviewRequirementTestItems(ctx context.Context, projectID string) (RequirementTestItemPreview, error) {
+func (s *Service) PreviewRequirementTestItems(ctx context.Context, projectID, roundID string) (RequirementTestItemPreview, error) {
+	round, err := s.ResolveRound(ctx, projectID, roundID)
+	if err != nil {
+		return RequirementTestItemPreview{}, err
+	}
 	var rows []struct {
 		ID            string `gorm:"column:id"`
 		ChapterNumber string `gorm:"column:chapter_number"`
@@ -40,8 +44,9 @@ func (s *Service) PreviewRequirementTestItems(ctx context.Context, projectID str
 	if err := s.db.WithContext(ctx).Table("software_requirements AS requirement").
 		Select(`requirement.id, requirement.chapter_number, requirement.name,
 			requirement.primary_kind, requirement.description,
-			COUNT(link.id) AS linked_count`).
+			COUNT(item.id) AS linked_count`).
 		Joins("LEFT JOIN requirement_test_items AS link ON link.requirement_id = requirement.id").
+		Joins("LEFT JOIN test_items AS item ON item.id = link.test_item_id AND item.round_id = ?", round.ID).
 		Where("requirement.project_id = ? AND requirement.status = ?", projectID, "official").
 		Group("requirement.id").
 		Order("requirement.chapter_number ASC, requirement.name ASC").

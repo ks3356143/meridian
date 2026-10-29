@@ -65,7 +65,7 @@ func (folder *Folder) BeforeCreate(tx *gorm.DB) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	round, err := ensureRound(ctx, tx, folder.ProjectID)
+	round, err := resolveRound(ctx, tx, folder.ProjectID, "")
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (item *TestItem) BeforeCreate(tx *gorm.DB) error {
 		if ctx == nil {
 			ctx = context.Background()
 		}
-		round, err := ensureRound(ctx, tx, item.ProjectID)
+		round, err := resolveRound(ctx, tx, item.ProjectID, "")
 		if err != nil {
 			return err
 		}

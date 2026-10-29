@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"chenmeridian/internal/modules/contentblocks"
@@ -309,6 +310,17 @@ func TestCreateRoundCopyRejectsStaticAndAllowsEmptyRound(t *testing.T) {
 	folders := listRoundFoldersForTest(t, service, projectID, result.Round.ID)
 	if len(items) != 0 || len(folders) != 0 {
 		t.Fatalf("空轮次不应有树数据: items=%+v folders=%+v", items, folders)
+	}
+
+	if _, err := service.CreateRoundCopy(ctx, CreateRoundCopyInput{
+		ProjectID: projectID, SourceRoundID: sourceRound.ID, TestItemIDs: []string{},
+	}); !errors.Is(err, ErrRoundCopySourceNotPrevious) {
+		t.Fatalf("非紧邻来源轮复制应被拒绝，实际 %v", err)
+	} else if !strings.Contains(err.Error(), "只能从第 2 轮复制") {
+		t.Fatalf("紧邻来源轮错误信息不明确: %v", err)
+	}
+	if _, err := service.PreviewRoundCopy(ctx, projectID, sourceRound.ID); !errors.Is(err, ErrRoundCopySourceNotPrevious) {
+		t.Fatalf("非紧邻来源轮预览应被拒绝，实际 %v", err)
 	}
 }
 

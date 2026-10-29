@@ -49,10 +49,10 @@ func caseIdentifier(typeCode string, itemSuffix string, seq int) string {
 	return fmt.Sprintf("YL_%s_%s_%03d", typeCode, itemSuffix, seq)
 }
 
-// uniqueItemSuffix 生成项目内唯一的后缀；冲突时保留前 3 位并逐位替换尾字符。
-func uniqueItemSuffix(tx *gorm.DB, projectID string, typeCode string, name string) (string, bool, error) {
+// uniqueItemSuffix 生成同一轮次内唯一的后缀；冲突时保留前 3 位并逐位替换尾字符。
+func uniqueItemSuffix(tx *gorm.DB, projectID, roundID, typeCode, name string) (string, bool, error) {
 	seed := SuffixSeed(name)
-	free, err := itemSuffixFree(tx, projectID, typeCode, seed)
+	free, err := itemSuffixFree(tx, projectID, roundID, typeCode, seed)
 	if err != nil {
 		return "", false, err
 	}
@@ -69,7 +69,7 @@ func uniqueItemSuffix(tx *gorm.DB, projectID string, typeCode string, name strin
 	}
 	for _, ch := range identifierAlphabet {
 		candidate := base + string(ch)
-		free, err := itemSuffixFree(tx, projectID, typeCode, candidate)
+		free, err := itemSuffixFree(tx, projectID, roundID, typeCode, candidate)
 		if err != nil {
 			return "", false, err
 		}
@@ -80,10 +80,10 @@ func uniqueItemSuffix(tx *gorm.DB, projectID string, typeCode string, name strin
 	return "", false, ErrSuffixExhausted
 }
 
-func itemSuffixFree(tx *gorm.DB, projectID string, typeCode string, suffix string) (bool, error) {
+func itemSuffixFree(tx *gorm.DB, projectID, roundID, typeCode, suffix string) (bool, error) {
 	var count int64
 	err := tx.Model(&TestItem{}).
-		Where("project_id = ? AND identifier = ?", projectID, testItemIdentifier(typeCode, suffix)).
+		Where("project_id = ? AND round_id = ? AND identifier = ?", projectID, roundID, testItemIdentifier(typeCode, suffix)).
 		Count(&count).Error
 	return count == 0, err
 }

@@ -15,7 +15,7 @@ func TestPreviewRequirementTestItemsClassifiesCandidates(t *testing.T) {
 	if _, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, RequirementID: "req-preview-linked"}); err != nil {
 		t.Fatalf("准备已关联需求失败: %v", err)
 	}
-	preview, err := service.PreviewRequirementTestItems(ctx, projectID)
+	preview, err := service.PreviewRequirementTestItems(ctx, projectID, "")
 	if err != nil {
 		t.Fatalf("预览需求候选失败: %v", err)
 	}

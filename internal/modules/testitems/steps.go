@@ -415,6 +415,17 @@ func (s *Service) ImportStep(ctx context.Context, targetCaseID, sourceStepID str
 		if sourceCase.ProjectID != target.ProjectID {
 			return ErrImportAcrossProjects
 		}
+		sourceItem, err := findTestItem(tx, sourceCase.TestItemID)
+		if err != nil {
+			return err
+		}
+		targetItem, err := findTestItem(tx, target.TestItemID)
+		if err != nil {
+			return err
+		}
+		if sourceItem.RoundID != targetItem.RoundID {
+			return fmt.Errorf("%w：不能跨轮粘贴步骤", ErrRoundMismatch)
+		}
 		steps, err := listStepsTx(tx, targetCaseID)
 		if err != nil {
 			return err

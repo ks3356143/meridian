@@ -10,8 +10,9 @@ import (
 )
 
 type BatchCreateFromRequirementsInput struct {
-	Code string `path:"code" doc:"项目标识"`
-	Body struct {
+	Code    string `path:"code" doc:"项目标识"`
+	RoundID string `query:"roundId" doc:"轮次 id；省略时取当前轮次"`
+	Body    struct {
 		All            bool     `json:"all,omitempty" doc:"为项目内全部已确认需求创建测试项"`
 		RequirementIDs []string `json:"requirementIds,omitempty" doc:"选中的需求 id；all=false 时必填"`
 	}
@@ -22,7 +23,8 @@ type BatchCreateFromRequirementsOutput struct {
 }
 
 type RequirementTestItemPreviewInput struct {
-	Code string `path:"code" doc:"项目标识"`
+	Code    string `path:"code" doc:"项目标识"`
+	RoundID string `query:"roundId" doc:"轮次 id；省略时取当前轮次"`
 }
 
 type RequirementTestItemPreviewOutput struct {
@@ -35,14 +37,14 @@ func registerBatchCreateFromRequirements(api huma.API, handler *Handler) {
 		Method:      http.MethodGet,
 		Path:        "/api/v1/projects/{code}/test-items/from-requirements/preview",
 		Summary:     "预览需求创建测试项",
-		Description: "返回已确认需求的映射类型、关联数量和可创建状态，供测试项页入口勾选。",
+		Description: "返回当前轮次已确认需求的映射类型、关联数量和可创建状态，供测试项页入口勾选；可用 roundId 指定轮次。",
 		Tags:        []string{"测试项与执行"},
 	}, func(ctx context.Context, input *RequirementTestItemPreviewInput) (*RequirementTestItemPreviewOutput, error) {
 		projectID, err := handler.projectID(ctx, input.Code)
 		if err != nil {
 			return nil, toAPIError(err, "项目不存在")
 		}
-		preview, err := handler.service.PreviewRequirementTestItems(ctx, projectID)
+		preview, err := handler.service.PreviewRequirementTestItems(ctx, projectID, input.RoundID)
 		if err != nil {
 			return nil, toAPIError(err, "读取需求创建候选失败")
 		}
@@ -70,6 +72,7 @@ func registerBatchCreateFromRequirements(api huma.API, handler *Handler) {
 		result, err := handler.service.CreateTestItemsFromRequirements(
 			ctx,
 			projectID,
+			input.RoundID,
 			input.Body.RequirementIDs,
 			input.Body.All,
 		)
