@@ -108,7 +108,7 @@ func renumberCases(tx *gorm.DB, testItemID string) error {
 }
 
 // writeCaseOrder 按给定顺序两阶段写入用例序号、排序和标识。
-// 第一阶段先写 TMP 标识与负序号，避开 (project_id, identifier) / (test_item_id, seq) 唯一约束。
+// 第一阶段先写 TMP 标识与负序号，避开 (test_item_id, identifier) / (test_item_id, seq) 唯一约束。
 func writeCaseOrder(tx *gorm.DB, item TestItem, ordered []string) error {
 	if len(ordered) == 0 {
 		return nil

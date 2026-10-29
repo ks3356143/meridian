@@ -32,16 +32,18 @@ func newCountsFixture(t *testing.T) (*Service, *gorm.DB) {
 		 VALUES ('user-1', 'tester', '测试员', 'hash', datetime('now'), datetime('now'))`,
 		`INSERT INTO projects (id, code, name, nature, platform, software_type, classification, security_level, organization, owner_id, status, created_at, updated_at)
 		 VALUES ('project-1', 'R99999', '计数测试项目', '鉴定测评', 'CPU/非嵌', '新研', '内部', 'C', '测试单位', 'user-1', '编制大纲中', datetime('now'), datetime('now'))`,
-		`INSERT INTO test_items (id, project_id, type_code, identifier, suffix, name, created_at, updated_at)
-		 VALUES ('item-1', 'project-1', 'SU', 'XQ_SU_AAAA_001', 'AAAA', '测试项一', datetime('now'), datetime('now'))`,
-		`INSERT INTO test_items (id, project_id, type_code, identifier, suffix, name, created_at, updated_at)
-		 VALUES ('item-2', 'project-1', 'SU', 'XQ_SU_BBBB_001', 'BBBB', '测试项二', datetime('now'), datetime('now'))`,
-		`INSERT INTO test_cases (id, project_id, test_item_id, identifier, seq, name, status, sort_order, created_at, updated_at)
-		 VALUES ('case-1', 'project-1', 'item-1', 'YL_SU_AAAA_001', 1, '用例一', 'passed', 0, datetime('now'), datetime('now'))`,
-		`INSERT INTO test_cases (id, project_id, test_item_id, identifier, seq, name, status, sort_order, created_at, updated_at)
-		 VALUES ('case-2', 'project-1', 'item-1', 'YL_SU_AAAA_002', 2, '用例二', 'failed', 1, datetime('now'), datetime('now'))`,
-		`INSERT INTO test_cases (id, project_id, test_item_id, identifier, seq, name, status, sort_order, created_at, updated_at)
-		 VALUES ('case-3', 'project-1', 'item-2', 'YL_SU_BBBB_001', 1, '用例三', 'pending', 0, datetime('now'), datetime('now'))`,
+		`INSERT INTO test_rounds (id, project_id, round_number, name, round_type, status, created_at, updated_at)
+		 VALUES ('round-1', 'project-1', 1, '第 1 轮', 'initial', 'draft', datetime('now'), datetime('now'))`,
+		`INSERT INTO test_items (id, project_id, round_id, type_code, identifier, suffix, name, lineage_key, created_at, updated_at)
+		 VALUES ('item-1', 'project-1', 'round-1', 'SU', 'XQ_SU_AAAA_001', 'AAAA', '测试项一', 'item-1', datetime('now'), datetime('now'))`,
+		`INSERT INTO test_items (id, project_id, round_id, type_code, identifier, suffix, name, lineage_key, created_at, updated_at)
+		 VALUES ('item-2', 'project-1', 'round-1', 'SU', 'XQ_SU_BBBB_001', 'BBBB', '测试项二', 'item-2', datetime('now'), datetime('now'))`,
+		`INSERT INTO test_cases (id, project_id, test_item_id, identifier, seq, name, status, sort_order, lineage_key, created_at, updated_at)
+		 VALUES ('case-1', 'project-1', 'item-1', 'YL_SU_AAAA_001', 1, '用例一', 'passed', 0, 'case-1', datetime('now'), datetime('now'))`,
+		`INSERT INTO test_cases (id, project_id, test_item_id, identifier, seq, name, status, sort_order, lineage_key, created_at, updated_at)
+		 VALUES ('case-2', 'project-1', 'item-1', 'YL_SU_AAAA_002', 2, '用例二', 'failed', 1, 'case-2', datetime('now'), datetime('now'))`,
+		`INSERT INTO test_cases (id, project_id, test_item_id, identifier, seq, name, status, sort_order, lineage_key, created_at, updated_at)
+		 VALUES ('case-3', 'project-1', 'item-2', 'YL_SU_BBBB_001', 1, '用例三', 'pending', 0, 'case-3', datetime('now'), datetime('now'))`,
 	}
 	for _, statement := range statements {
 		if err := db.Exec(statement).Error; err != nil {

@@ -1,6 +1,13 @@
 package testitems
 
-import "time"
+import (
+	"context"
+	"time"
+
+	"gorm.io/gorm"
+
+	"chenmeridian/internal/id"
+)
 
 // ItemType 测试项类型字典（24 类，迁移 0019 种子）。
 type ItemType struct {
@@ -28,10 +35,11 @@ type ItemType struct {
 
 func (ItemType) TableName() string { return "test_item_types" }
 
-// Folder 测试项文件夹：纯容器，限装同一类型测试项，可嵌套。
+// Folder 测试项文件夹：纯容器，限装同一类型测试项，可嵌套；每轮独立。
 type Folder struct {
 	ID        string    `gorm:"column:id;primaryKey" json:"id"`
 	ProjectID string    `gorm:"column:project_id" json:"projectId"`
+	RoundID   string    `gorm:"column:round_id" json:"roundId"`
 	TypeCode  string    `gorm:"column:type_code" json:"typeCode"`
 	ParentID  *string   `gorm:"column:parent_id" json:"parentId"`
 	Name      string    `gorm:"column:name" json:"name"`
@@ -42,10 +50,34 @@ type Folder struct {
 
 func (Folder) TableName() string { return "test_item_folders" }
 
-// TestItem 项目级测试项逻辑定义（跨轮保持同一标识）。
+func (folder *Folder) BeforeCreate(tx *gorm.DB) error {
+	if folder.ID == "" {
+		generated, err := id.New()
+		if err != nil {
+			return err
+		}
+		folder.ID = generated
+	}
+	if folder.RoundID != "" {
+		return nil
+	}
+	ctx := tx.Statement.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	round, err := ensureRound(ctx, tx, folder.ProjectID)
+	if err != nil {
+		return err
+	}
+	folder.RoundID = round.ID
+	return nil
+}
+
+// TestItem 每轮的测试项实例；lineage_key 用于跨轮追同一业务对象。
 type TestItem struct {
 	ID           string  `gorm:"column:id;primaryKey" json:"id"`
 	ProjectID    string  `gorm:"column:project_id" json:"projectId"`
+	RoundID      string  `gorm:"column:round_id" json:"roundId"`
 	TypeCode     string  `gorm:"column:type_code" json:"typeCode"`
 	Identifier   string  `gorm:"column:identifier" json:"identifier"`
 	Suffix       string  `gorm:"column:suffix" json:"suffix"`
@@ -58,11 +90,27 @@ type TestItem struct {
 	PassCriteria string  `gorm:"column:pass_criteria" json:"passCriteria"`
 	// ImplicitRequirement 隐含需求：不关联需求时按隐含需求处理，完善度的"追踪关系"按已满足计。
 	ImplicitRequirement bool      `gorm:"column:implicit_requirement" json:"implicitRequirement"`
+	LineageKey          string    `gorm:"column:lineage_key" json:"lineageKey"`
 	CreatedAt           time.Time `gorm:"column:created_at" json:"createdAt"`
 	UpdatedAt           time.Time `gorm:"column:updated_at" json:"updatedAt"`
 }
 
 func (TestItem) TableName() string { return "test_items" }
+
+func (item *TestItem) BeforeCreate(tx *gorm.DB) error {
+	if item.RoundID == "" {
+		ctx := tx.Statement.Context
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		round, err := ensureRound(ctx, tx, item.ProjectID)
+		if err != nil {
+			return err
+		}
+		item.RoundID = round.ID
+	}
+	return ensureLineageKey(&item.ID, &item.LineageKey)
+}
 
 // SubItem 测试子项：测试方法内容，操作/预期富文本存 content_blocks（block_key = sub_item.{ID}.ops|exp）。
 type SubItem struct {
@@ -103,11 +151,16 @@ type Case struct {
 	Notes             string     `gorm:"column:notes" json:"notes"`
 	NotExecutedReason string     `gorm:"column:not_executed_reason" json:"notExecutedReason"`
 	SortOrder         int        `gorm:"column:sort_order" json:"sortOrder"`
+	LineageKey        string     `gorm:"column:lineage_key" json:"lineageKey"`
 	CreatedAt         time.Time  `gorm:"column:created_at" json:"createdAt"`
 	UpdatedAt         time.Time  `gorm:"column:updated_at" json:"updatedAt"`
 }
 
 func (Case) TableName() string { return "test_cases" }
+
+func (itemCase *Case) BeforeCreate(tx *gorm.DB) error {
+	return ensureLineageKey(&itemCase.ID, &itemCase.LineageKey)
+}
 
 // CaseStep 用例步骤；通过状态三态：none / pass / fail。
 type CaseStep struct {
@@ -117,11 +170,30 @@ type CaseStep struct {
 	ExpectText string    `gorm:"column:expect_text" json:"expectText"`
 	Passed     string    `gorm:"column:passed" json:"passed"`
 	SortOrder  int       `gorm:"column:sort_order" json:"sortOrder"`
+	LineageKey string    `gorm:"column:lineage_key" json:"lineageKey"`
 	CreatedAt  time.Time `gorm:"column:created_at" json:"createdAt"`
 	UpdatedAt  time.Time `gorm:"column:updated_at" json:"updatedAt"`
 }
 
 func (CaseStep) TableName() string { return "test_case_steps" }
+
+func (step *CaseStep) BeforeCreate(tx *gorm.DB) error {
+	return ensureLineageKey(&step.ID, &step.LineageKey)
+}
+
+func ensureLineageKey(recordID *string, lineageKey *string) error {
+	if *recordID == "" {
+		generated, err := id.New()
+		if err != nil {
+			return err
+		}
+		*recordID = generated
+	}
+	if *lineageKey == "" {
+		*lineageKey = *recordID
+	}
+	return nil
+}
 
 // RequirementLink 需求 ↔ 测试项多对多（静态测试项不建立关联）。
 type RequirementLink struct {
@@ -153,26 +225,3 @@ type Round struct {
 }
 
 func (Round) TableName() string { return "test_rounds" }
-
-// RoundItem 轮次纳入的测试项实例（第一版只写入，范围切片在切片 7 启用）。
-type RoundItem struct {
-	ID         string    `gorm:"column:id;primaryKey" json:"id"`
-	RoundID    string    `gorm:"column:round_id" json:"roundId"`
-	TestItemID string    `gorm:"column:test_item_id" json:"testItemId"`
-	SourceType string    `gorm:"column:source_type" json:"sourceType"`
-	SortOrder  int       `gorm:"column:sort_order" json:"sortOrder"`
-	CreatedAt  time.Time `gorm:"column:created_at" json:"createdAt"`
-}
-
-func (RoundItem) TableName() string { return "round_test_items" }
-
-// RoundCase 轮次纳入的用例实例。
-type RoundCase struct {
-	ID         string    `gorm:"column:id;primaryKey" json:"id"`
-	RoundID    string    `gorm:"column:round_id" json:"roundId"`
-	TestCaseID string    `gorm:"column:test_case_id" json:"testCaseId"`
-	SourceType string    `gorm:"column:source_type" json:"sourceType"`
-	CreatedAt  time.Time `gorm:"column:created_at" json:"createdAt"`
-}
-
-func (RoundCase) TableName() string { return "round_test_cases" }

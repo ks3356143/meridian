@@ -158,10 +158,10 @@ func EnsureFirstRound(ctx context.Context, tx *gorm.DB, projectID string) error 
 }
 
 func ensureRound(ctx context.Context, db *gorm.DB, projectID string) (Round, error) {
-	db = db.WithContext(ctx)
+	db = db.Session(&gorm.Session{NewDB: true}).WithContext(ctx)
 
 	var existing Round
-	err := db.Where("project_id = ? AND round_number = 1", projectID).First(&existing).Error
+	err := db.Table("test_rounds").Where("project_id = ? AND round_number = 1", projectID).First(&existing).Error
 	if err == nil {
 		return existing, nil
 	}
@@ -184,10 +184,10 @@ func ensureRound(ctx context.Context, db *gorm.DB, projectID string) (Round, err
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	if err := db.Create(&round).Error; err != nil {
+	if err := db.Session(&gorm.Session{NewDB: true}).Create(&round).Error; err != nil {
 		// 并发下可能已被另一个请求创建，重新读取。
 		var retry Round
-		if readErr := db.Where("project_id = ? AND round_number = 1", projectID).First(&retry).Error; readErr == nil {
+		if readErr := db.Table("test_rounds").Where("project_id = ? AND round_number = 1", projectID).First(&retry).Error; readErr == nil {
 			return retry, nil
 		}
 		return Round{}, fmt.Errorf("创建第 1 轮失败: %w", err)
@@ -253,7 +253,7 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 		if !typeFitsPlatform(itemType.PlatformScope, platform) {
 			return ErrTypePlatformMismatch
 		}
-		// 一个轮次（第一版即项目）只允许一个 DC/SA/CR/CW 静态测试项。
+		// 当前创建入口只操作第 1 轮；首轮每个 DC/SA/CR/CW 只允许一个静态测试项。
 		if itemType.IsStatic {
 			var existing int64
 			if err := tx.Model(&TestItem{}).
