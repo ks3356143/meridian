@@ -46,7 +46,7 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
     { icon: Play, name: "执行记录", value: project.casesExecuted, tone: "warning" },
     { icon: ShieldAlert, name: "问题单", value: 0, tone: "danger" },
     { icon: FileText, name: "文档产出", value: 0, tone: "chart" },
-    { icon: FileCheck2, name: "回归轮次", value: 0, tone: "success" },
+    { icon: FileCheck2, name: "第二轮及以后", value: 0, tone: "success" },
   ];
 
   return (
