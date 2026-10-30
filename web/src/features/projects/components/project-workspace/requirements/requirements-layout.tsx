@@ -5,6 +5,7 @@ import {
   Suspense,
   useCallback,
   useDeferredValue,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -67,11 +68,6 @@ const LazyRequirementsCandidateWorkbench = lazy(() =>
   })),
 );
 
-function preloadCandidateSurface() {
-  void import("./requirements-candidate-tree");
-  void import("./requirements-candidate-workbench");
-}
-
 type WorkbenchTab = "confirmed" | "candidate";
 
 type RequirementCreateSeed = {
@@ -113,7 +109,8 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const [selectedId, setSelectedId] = useState(() => searchParams.get("requirementId") ?? "");
   const [workbenchTab, setWorkbenchTab] = useState<WorkbenchTab>("confirmed");
   const [candidateActivated, setCandidateActivated] = useState(false);
-  const [panelsReady, setPanelsReady] = useState(false);
+  const [candidateTreeMounted, setCandidateTreeMounted] = useState(false);
+  const [candidateWorkbenchMounted, setCandidateWorkbenchMounted] = useState(false);
   const [isCandidatePending, startCandidateTransition] = useTransition();
   const candidateActivatedRef = useRef(false);
   const [candidateSelectedId, setCandidateSelectedId] = useState("");
@@ -220,12 +217,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const openBulkCreateTestItemsDialog = useCallback(() => setTestItemCreateScope("selected"), []);
   const workspaceTabs = useMemo(
     () => (
-      <TabsList
-        variant="default"
-        className={styles.workspaceTabsList}
-        aria-label="需求工作台视图"
-        data-active-tab={workbenchTab}
-      >
+      <TabsList variant="default" className={styles.workspaceTabsList} aria-label="需求工作台视图">
         <TabsTrigger value="confirmed" className={styles.workspaceTab}>
           已确认需求
         </TabsTrigger>
@@ -233,9 +225,6 @@ export function RequirementsLayout({ project }: { project: Project }) {
           value="candidate"
           className={styles.workspaceTab}
           aria-label={`待确认需求，自动解析有 ${candidateCount} 个需求未确认`}
-          onFocus={preloadCandidateSurface}
-          onPointerDown={preloadCandidateSurface}
-          onPointerEnter={preloadCandidateSurface}
         >
           <Tooltip>
             <TooltipTrigger asChild>
@@ -255,7 +244,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
         </TabsTrigger>
       </TabsList>
     ),
-    [candidateCount, workbenchTab],
+    [candidateCount],
   );
 
   const updateRequirement = updateMutation.mutateAsync;
@@ -292,13 +281,25 @@ export function RequirementsLayout({ project }: { project: Project }) {
   const openRecycleBin = useCallback(() => setDeletedOpen(true), []);
   const openCandidateTab = useCallback(() => {
     setWorkbenchTab("candidate");
-    setPanelsReady(true);
-    preloadCandidateSurface();
     if (!candidateActivatedRef.current) {
       candidateActivatedRef.current = true;
       startCandidateTransition(() => setCandidateActivated(true));
     }
   }, [startCandidateTransition]);
+
+  // 首次进入待确认需求时，树和表格分开提交。两个面板在同一帧挂载会把
+  // React 调度、样式计算和绘制堆成一个数百毫秒的长任务；骨架先出现，内容随后补齐。
+  useEffect(() => {
+    if (!candidateActivated || isCandidatePending || candidateTreeMounted) return;
+    const frame = window.requestAnimationFrame(() => setCandidateTreeMounted(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [candidateActivated, candidateTreeMounted, isCandidatePending]);
+
+  useEffect(() => {
+    if (!candidateTreeMounted || candidateWorkbenchMounted) return;
+    const timer = window.setTimeout(() => setCandidateWorkbenchMounted(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [candidateTreeMounted, candidateWorkbenchMounted]);
   const handleRestoreMany = useCallback(
     async (requirementsToRestore: RequirementRecord[]) => {
       try {
@@ -581,6 +582,9 @@ export function RequirementsLayout({ project }: { project: Project }) {
       onOpenDeleted={openRecycleBin}
       onOpenBulkPaste={openBulkPasteDialog}
       onCreateAllTestItems={openCreateAllTestItemsDialog}
+      onCreate={openCreateDialog}
+      candidateCount={candidateCount}
+      onOpenCandidate={openCandidateTab}
     />
   );
   const detail = detailRequirement ? (
@@ -859,39 +863,49 @@ export function RequirementsLayout({ project }: { project: Project }) {
           minSize="411px"
           maxSize="680px"
         >
-          <LazyRequirementsCandidateTree
-            sources={sources}
-            sections={sections}
-            requirements={requirements}
-            toolbarTabs={workspaceTabs}
-            selectedId={candidateSelectedId}
-            onSelect={handleSelectCandidate}
-            excludedCount={excludedCandidateCount}
-            onOpenRecycleBin={openRecycleBin}
-            naturalHeight={false}
-          />
+          {candidateTreeMounted ? (
+            <LazyRequirementsCandidateTree
+              sources={sources}
+              sections={sections}
+              requirements={requirements}
+              toolbarTabs={workspaceTabs}
+              selectedId={candidateSelectedId}
+              onSelect={handleSelectCandidate}
+              excludedCount={excludedCandidateCount}
+              onOpenRecycleBin={openRecycleBin}
+              naturalHeight={false}
+              initialHeight={180}
+              progressiveHeight
+            />
+          ) : (
+            <QueryLoading label="正在加载需求目录" rows={5} />
+          )}
         </ResizablePanel>
         <ResizableHandle
           id="requirements-candidate-tree-handle"
           aria-label="调整待确认需求目录宽度"
         />
         <ResizablePanel id="requirements-candidate-right-panel" className={styles.panelFrame}>
-          <LazyRequirementsCandidateWorkbench
-            projectId={project.id}
-            sources={sources}
-            requirements={requirements}
-            selectedId={candidateSelectedId}
-            onSelect={handleSelectCandidate}
-            parsePending={parseMutation.isPending}
-            statusPending={candidateStatusMutation.isPending}
-            updatePending={updateMutation.isPending}
-            onParse={handleParseSRS}
-            onConfirm={handleCandidateConfirm}
-            onExclude={handleCandidateExclude}
-            cleanNamesPending={bulkCleanNamesMutation.isPending}
-            onCleanNames={handleCandidateCleanNames}
-            onUpdate={handleCandidateUpdate}
-          />
+          {candidateWorkbenchMounted ? (
+            <LazyRequirementsCandidateWorkbench
+              projectId={project.id}
+              sources={sources}
+              requirements={requirements}
+              selectedId={candidateSelectedId}
+              onSelect={handleSelectCandidate}
+              parsePending={parseMutation.isPending}
+              statusPending={candidateStatusMutation.isPending}
+              updatePending={updateMutation.isPending}
+              onParse={handleParseSRS}
+              onConfirm={handleCandidateConfirm}
+              onExclude={handleCandidateExclude}
+              cleanNamesPending={bulkCleanNamesMutation.isPending}
+              onCleanNames={handleCandidateCleanNames}
+              onUpdate={handleCandidateUpdate}
+            />
+          ) : (
+            <QueryLoading label="正在加载待确认需求" rows={6} />
+          )}
         </ResizablePanel>
       </ResizablePanelGroup>
     </section>
@@ -931,7 +945,6 @@ export function RequirementsLayout({ project }: { project: Project }) {
     <>
       <Tabs
         className={styles.tabs}
-        data-panels-ready={panelsReady ? "true" : undefined}
         value={workbenchTab}
         onValueChange={(value) => {
           if (value === "candidate") openCandidateTab();

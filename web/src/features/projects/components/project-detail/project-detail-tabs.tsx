@@ -1,7 +1,9 @@
 import { useRef, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRevealActiveTab } from "@/hooks/use-reveal-active-tab";
+import { testItemsApi } from "@/features/test-items/api";
 import { totalOpenIssues, type Project } from "../../types";
 import { OverviewDetailTab } from "./overview-detail-tab";
 import { ProfileDetailTab } from "./profile-detail-tab";
@@ -20,6 +22,20 @@ export function ProjectDetailTabs({
 }) {
   const navigate = useNavigate();
   const listRef = useRef<HTMLDivElement>(null);
+  const roundsQuery = useQuery({
+    queryKey: ["projects", project.id, "test-rounds"],
+    queryFn: () => testItemsApi.rounds(project.id),
+    staleTime: 30_000,
+  });
+  const rounds = roundsQuery.data ?? [];
+  const roundNames = rounds.map((round) => round.name || `第 ${round.roundNumber} 轮`).join("、");
+  const roundSummary = roundsQuery.isPending
+    ? "正在读取轮次…"
+    : roundsQuery.isError
+      ? "轮次读取失败，请稍后重试"
+      : rounds.length
+        ? `已创建 ${rounds.length} 轮：${roundNames}`
+        : "尚未创建轮次";
   useRevealActiveTab(listRef, activeTab);
   const openWorkspace = (tab: DetailTabValue = "overview") =>
     navigate(workspacePath(project.id, tab));
@@ -105,9 +121,10 @@ export function ProjectDetailTabs({
         action="处理轮次"
         onOpenWorkspace={openWorkspace}
       >
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricTile label="当前阶段" value={project.status} />
           <MetricTile label="执行记录" value={project.casesExecuted} />
+          <MetricTile label="轮次数量" value={roundsQuery.isPending ? "…" : rounds.length} />
           <MetricTile
             label="执行率"
             value={`${Math.round((project.casesExecuted / Math.max(project.casesTotal, 1)) * 100)}%`}
@@ -115,7 +132,11 @@ export function ProjectDetailTabs({
         </div>
         <Checklist
           items={[
-            { label: "全局轮次", state: "pending", detail: "第 1 轮待创建" },
+            {
+              label: "全局轮次",
+              state: rounds.length > 0 ? "ready" : "pending",
+              detail: roundSummary,
+            },
             { label: "动态测试环境", state: "pending", detail: "按轮次维护版本与设备配置" },
             { label: "轮次范围", state: "pending", detail: "本轮测试项与用例范围待确认" },
           ]}

@@ -3,13 +3,12 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   FolderPlus,
-  GitBranch,
-  Highlighter,
   ListChecks,
   ListPlus,
   Plus,
   Rows3,
   Search,
+  SearchX,
   Sparkles,
   Trash2,
   X,
@@ -31,7 +30,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type {
@@ -42,7 +40,11 @@ import type {
   UpdateTestItemPayload,
 } from "@/features/test-items/api";
 import { testItemsApi } from "@/features/test-items/api";
-import type { AnnotationRow, TestCaseRecord, TestCaseSearchHit } from "@/features/test-items/types";
+import type {
+  StepAnnotationRow,
+  TestCaseRecord,
+  TestCaseSearchHit,
+} from "@/features/test-items/types";
 import type { Project } from "../../../types";
 import { ChangeItemTypeDialog } from "./test-item-change-type-dialog";
 import { CreateFolderDialog, CreateTestItemDialog } from "./test-item-create-dialog";
@@ -50,6 +52,8 @@ import { TestCasePanel } from "./test-case-panel";
 import { TestItemsFromRequirementsDialog } from "./test-items-from-requirements-dialog";
 import { TestItemDetailPanel } from "./test-item-detail";
 import { TestItemsTree, type TestItemsTreeAction, type TestItemsTreeMove } from "./test-items-tree";
+import { isTestItemsView, type TestItemsView } from "./test-items-view";
+import { TestItemsViewBar } from "./test-items-view-bar";
 import { AnnotationsView } from "./annotations-view";
 import { TraceabilityView } from "./traceability-view";
 import { TypeCoverageView } from "./type-coverage-view";
@@ -68,8 +72,6 @@ let treePanelLayout: Record<string, number> | undefined;
 
 // 稳定引用：detail 未就绪时 siblingCases 用同一空数组，避免切用例监听见步重挂（props 默认值 hoist）。
 const EMPTY_CASES: TestCaseRecord[] = [];
-type TestItemsView = "tree" | "coverage" | "trace" | "annotations";
-const TEST_ITEMS_VIEWS: TestItemsView[] = ["tree", "coverage", "trace", "annotations"];
 
 /** 树里的删除都是破坏性动作：统一走二次确认，确认文案按节点类型区分。 */
 type PendingDelete =
@@ -148,10 +150,13 @@ export function TestItemsWorkbench({
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedView = searchParams.get("view");
-  const view: TestItemsView = TEST_ITEMS_VIEWS.includes(requestedView as TestItemsView)
-    ? (requestedView as TestItemsView)
-    : "tree";
+  const view: TestItemsView = isTestItemsView(requestedView) ? requestedView : "tree";
+  const lastViewNavigationRef = useRef<TestItemsView>(view);
   const typeFilter = searchParams.get("type") ?? "";
+
+  useEffect(() => {
+    lastViewNavigationRef.current = view;
+  }, [view]);
 
   useEffect(() => {
     if (requestedView === view) return;
@@ -167,35 +172,48 @@ export function TestItemsWorkbench({
 
   const changeView = useCallback(
     (nextView: string) => {
-      if (!TEST_ITEMS_VIEWS.includes(nextView as TestItemsView)) return;
-      setSearchParams((current) => {
-        const next = new URLSearchParams(current);
-        next.set("view", nextView);
-        if (nextView !== "tree") next.delete("type");
-        return next;
+      if (
+        !isTestItemsView(nextView) ||
+        nextView === view ||
+        nextView === lastViewNavigationRef.current
+      ) {
+        return;
+      }
+      lastViewNavigationRef.current = nextView;
+      const next = new URLSearchParams(searchParams);
+      next.set("view", nextView);
+      if (nextView !== "tree") next.delete("type");
+      navigate(`/projects/${project.id}/workspace/test-items?${next.toString()}`, {
+        replace: false,
       });
     },
-    [setSearchParams],
+    [navigate, project.id, searchParams, view],
   );
 
   const openTypeInTree = useCallback(
     (typeCode: string) => {
-      setSearchParams((current) => {
-        const next = new URLSearchParams(current);
-        next.set("view", "tree");
-        next.set("type", typeCode);
-        return next;
-      });
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.set("view", "tree");
+          next.set("type", typeCode);
+          return next;
+        },
+        { replace: false },
+      );
     },
     [setSearchParams],
   );
 
   const clearTypeFilter = useCallback(() => {
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      next.delete("type");
-      return next;
-    });
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("type");
+        return next;
+      },
+      { replace: false },
+    );
   }, [setSearchParams]);
 
   // 150ms 防抖：逐键过滤会逐键重算整棵过滤树，防抖后再提交（老项目同口径）。
@@ -666,17 +684,20 @@ export function TestItemsWorkbench({
     );
   };
 
-  const openAnnotationStep = (row: AnnotationRow) => {
+  const openAnnotationStep = (row: StepAnnotationRow) => {
     if (row.roundId !== roundId || workspace?.allRounds) {
       onOpenStepRound?.(row.roundId, row.testItemId, row.caseId, row.stepId);
       return;
     }
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      next.set("view", "tree");
-      next.delete("type");
-      return next;
-    });
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("view", "tree");
+        next.delete("type");
+        return next;
+      },
+      { replace: false },
+    );
     setSelectedId(row.testItemId);
     setSelectedCaseId(row.caseId);
     setStepFocus({ stepId: row.stepId, nonce: Date.now() });
@@ -692,12 +713,15 @@ export function TestItemsWorkbench({
       else onOpenItemRound?.(targetRoundId, itemId);
       return;
     }
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      next.set("view", "tree");
-      next.delete("type");
-      return next;
-    });
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("view", "tree");
+        next.delete("type");
+        return next;
+      },
+      { replace: false },
+    );
     setSelectedId(itemId);
     setSelectedCaseId(caseId ?? "");
     setStepFocus(null);
@@ -710,38 +734,16 @@ export function TestItemsWorkbench({
   };
 
   const viewBar = (
-    <div className={styles.viewBar}>
-      <Tabs value={view} onValueChange={changeView}>
-        <TabsList variant="line" className={styles.viewTabs} aria-label="测试项视图">
-          <TabsTrigger value="tree">
-            <Rows3 aria-hidden />
-            树视图
-          </TabsTrigger>
-          <TabsTrigger value="coverage">
-            <ListChecks aria-hidden />
-            类型覆盖
-          </TabsTrigger>
-          <TabsTrigger value="trace">
-            <GitBranch aria-hidden />
-            追溯矩阵
-          </TabsTrigger>
-          <TabsTrigger value="annotations">
-            <Highlighter aria-hidden />
-            标注总览
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-      {view === "tree" && typeFilter !== "" ? (
-        <button type="button" className={styles.typeFilterChip} onClick={clearTypeFilter}>
-          类型 {typeFilter}
-          <X aria-hidden />
-        </button>
-      ) : null}
-      <span className={styles.viewMeta}>
-        {workspace.allRounds ? "跨轮只读" : workspace.round.name} ·{" "}
-        {scopedWorkspace?.items.length ?? 0} 项 · {scopedWorkspace?.cases.length ?? 0} 用例
-      </span>
-    </div>
+    <TestItemsViewBar
+      view={view}
+      typeFilter={typeFilter}
+      allRounds={workspace.allRounds}
+      roundName={workspace.round.name}
+      itemCount={scopedWorkspace?.items.length ?? 0}
+      caseCount={scopedWorkspace?.cases.length ?? 0}
+      onViewChange={changeView}
+      onClearTypeFilter={clearTypeFilter}
+    />
   );
 
   if (view === "coverage") {
@@ -989,7 +991,13 @@ export function TestItemsWorkbench({
           </div>
         ) : searchActive && filteredTree.nodes.length === 0 ? (
           <div className={styles.emptyResult}>
-            <p>没有匹配的测试项或用例</p>
+            <span className={styles.emptyResultIcon} aria-hidden>
+              <SearchX />
+            </span>
+            <div className={styles.emptyResultCopy}>
+              <p>没有匹配的测试项或用例</p>
+              <span>调整关键词或清除筛选后再试。</span>
+            </div>
             <Button
               size="xs"
               variant="outline"

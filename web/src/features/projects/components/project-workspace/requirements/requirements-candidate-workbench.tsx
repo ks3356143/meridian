@@ -8,7 +8,7 @@ import {
   Search,
   SearchX,
 } from "lucide-react";
-import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useDeferredValue, useMemo, useState } from "react";
 import { createColumnHelper, useTable, type SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/components/shared/data-table";
 import { TruncatedText } from "@/components/shared/truncated-text";
@@ -44,24 +44,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
   RequirementParseResult,
   RequirementRecord,
   RequirementSource,
   SaveRequirementPayload,
 } from "@/features/requirements/types";
-import { RequirementCandidateEditDialog } from "./requirement-candidate-edit-dialog";
 import { useRequirementSearch } from "./use-requirement-search";
 import { requirementSourceLabel } from "./requirement-form";
 import styles from "./requirements-candidate-workbench.module.css";
 
 const features = managementTableFeatures;
 const CANDIDATE_TABLE_LEFT_ALIGNED_COLUMNS = [1, 2, 3, 4];
-const CANDIDATE_TABLE_VIRTUALIZED = { rowHeight: 56 };
+const CANDIDATE_TABLE_VIRTUALIZED = { rowHeight: 56, progressive: true };
 
 const columnHelper = createColumnHelper<typeof features, RequirementRecord>();
 const nameIdentifierPrefixPattern = /^\s*\[RQGN[^\]]+\]\s*/i;
+const LazyRequirementCandidateEditDialog = lazy(() =>
+  import("./requirement-candidate-edit-dialog").then((module) => ({
+    default: module.RequirementCandidateEditDialog,
+  })),
+);
 
 type RequirementsCandidateWorkbenchProps = {
   projectId: string;
@@ -265,63 +268,51 @@ function RequirementsCandidateWorkbenchImpl({
             const requirement = info.row.original;
             return (
               <div className={styles.actionGroup}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-xs"
-                      aria-label={`编辑 ${requirement.name}`}
-                      disabled={statusPending || updatePending}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setEditingRequirement(requirement);
-                      }}
-                    >
-                      <PencilLine aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">编辑</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-xs"
-                      className={styles.confirmAction}
-                      aria-label={`确认 ${requirement.name}`}
-                      disabled={statusPending}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void onConfirm([requirement.id]);
-                      }}
-                    >
-                      <CheckCircle2 aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">确认</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-xs"
-                      className={styles.excludeAction}
-                      aria-label={`排除 ${requirement.name}`}
-                      disabled={statusPending}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setExcludeReason("");
-                        setExcludeTarget({ ids: [requirement.id], title: requirement.name });
-                      }}
-                    >
-                      <Ban aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">排除</TooltipContent>
-                </Tooltip>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-xs"
+                  aria-label={`编辑 ${requirement.name}`}
+                  title="编辑"
+                  disabled={statusPending || updatePending}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setEditingRequirement(requirement);
+                  }}
+                >
+                  <PencilLine aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-xs"
+                  className={styles.confirmAction}
+                  aria-label={`确认 ${requirement.name}`}
+                  title="确认"
+                  disabled={statusPending}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void onConfirm([requirement.id]);
+                  }}
+                >
+                  <CheckCircle2 aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-xs"
+                  className={styles.excludeAction}
+                  aria-label={`排除 ${requirement.name}`}
+                  title="排除"
+                  disabled={statusPending}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setExcludeReason("");
+                    setExcludeTarget({ ids: [requirement.id], title: requirement.name });
+                  }}
+                >
+                  <Ban aria-hidden />
+                </Button>
               </div>
             );
           },
@@ -447,6 +438,7 @@ function RequirementsCandidateWorkbenchImpl({
           table={table}
           selectedId={selectedId}
           virtualized={CANDIDATE_TABLE_VIRTUALIZED}
+          overscan={0}
           leftAlignedColumns={CANDIDATE_TABLE_LEFT_ALIGNED_COLUMNS}
           onRowActivate={handleRowActivate}
           emptyContent={emptyContent}
@@ -584,15 +576,19 @@ function RequirementsCandidateWorkbenchImpl({
         </DialogContent>
       </Dialog>
 
-      <RequirementCandidateEditDialog
-        key={editingRequirement?.id ?? "none"}
-        requirement={editingRequirement}
-        submitting={updatePending}
-        onOpenChange={(open) => {
-          if (!open) setEditingRequirement(null);
-        }}
-        onUpdate={onUpdate}
-      />
+      {editingRequirement ? (
+        <Suspense fallback={null}>
+          <LazyRequirementCandidateEditDialog
+            key={editingRequirement.id}
+            requirement={editingRequirement}
+            submitting={updatePending}
+            onOpenChange={(open) => {
+              if (!open) setEditingRequirement(null);
+            }}
+            onUpdate={onUpdate}
+          />
+        </Suspense>
+      ) : null}
     </section>
   );
 }

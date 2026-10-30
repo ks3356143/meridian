@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "cn";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import styles from "./truncated-text.module.css";
@@ -17,29 +17,10 @@ export function TruncatedText({
 }) {
   const textRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [truncated, setTruncated] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
   const text = value.length > 0 ? value : placeholder;
   const tooltipText = tooltipValue && tooltipValue.length > 0 ? tooltipValue : text;
-
-  // 只有真实溢出才挂 Tooltip：虚拟列表里每行一个 Radix 根节点是纯开销（32 行 ≈ 一帧 30ms）。
-  // 口径来源：frontend srs 07/01「只有真实溢出时用 Radix Tooltip 展示全文」。
-  useLayoutEffect(() => {
-    const element = textRef.current;
-    if (!element) return;
-    // 2px 滞回：判断值卡在边界时来回切换会反复重建 DOM 节点，加一点余量把状态钉住。
-    const measure = () =>
-      setTruncated((previous) =>
-        previous
-          ? element.scrollWidth > element.clientWidth
-          : element.scrollWidth > element.clientWidth + 2,
-      );
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [text, truncated, value]);
 
   useEffect(
     () => () => {
@@ -50,22 +31,31 @@ export function TruncatedText({
     [],
   );
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen);
+  const showIfTruncated = () => {
+    const element = textRef.current;
+    if (!element) return;
 
-    if (nextOpen) {
-      if (closeTimerRef.current !== null) {
-        window.clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-      setMounted(true);
+    // 首次挂载不扫描整页文本。只有用户真正指向或聚焦某个单元格时才读取一次，
+    // 避免树和表格同时出现几十上百个截断文本时形成强制布局长任务。
+    const nextTruncated = element.scrollWidth > element.clientWidth + 2;
+    if (!nextTruncated) {
+      setTruncated(false);
       return;
     }
 
-    if (!mounted) return;
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setTruncated(true);
+    setOpen(true);
+  };
+
+  const hideTooltip = () => {
+    setOpen(false);
     if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
     closeTimerRef.current = window.setTimeout(() => {
-      setMounted(false);
+      setTruncated(false);
       closeTimerRef.current = null;
     }, 140);
   };
@@ -75,6 +65,11 @@ export function TruncatedText({
       ref={textRef}
       className={cn("block max-w-full truncate", className)}
       aria-label={tooltipText}
+      title={truncated ? undefined : tooltipText}
+      onPointerEnter={showIfTruncated}
+      onPointerLeave={hideTooltip}
+      onFocus={showIfTruncated}
+      onBlur={hideTooltip}
     >
       {text}
     </span>
@@ -83,13 +78,11 @@ export function TruncatedText({
   if (!truncated) return label;
 
   return (
-    <Tooltip open={open} onOpenChange={handleOpenChange}>
+    <Tooltip open={open} onOpenChange={setOpen}>
       <TooltipTrigger asChild>{label}</TooltipTrigger>
-      {mounted ? (
-        <TooltipContent side="top" className={styles.compactTooltip}>
-          {tooltipText}
-        </TooltipContent>
-      ) : null}
+      <TooltipContent side="top" className={styles.compactTooltip}>
+        {tooltipText}
+      </TooltipContent>
     </Tooltip>
   );
 }

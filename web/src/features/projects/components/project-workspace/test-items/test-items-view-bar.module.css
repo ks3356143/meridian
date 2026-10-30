@@ -1,0 +1,135 @@
+.viewBar {
+  align-items: stretch;
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex: none;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0 0.45rem;
+}
+
+.viewTabsRoot {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.viewTabs {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  height: 2rem;
+  min-width: 0;
+  width: auto;
+}
+
+.viewTabs button {
+  font-size: 0.72rem;
+  gap: 0.35rem;
+  height: 100%;
+  min-height: 0;
+  padding-inline: 0.55rem;
+}
+
+.viewTabs button svg {
+  height: 0.82rem;
+  width: 0.82rem;
+}
+
+.viewTabs button:hover {
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+  color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+}
+
+.viewTabs button:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--primary) 36%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--ring) 42%, transparent);
+}
+
+.typeFilterChip {
+  align-items: center;
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  color: var(--primary);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  gap: 0.3rem;
+  min-height: 1.55rem;
+  padding: 0 0.38rem;
+  white-space: nowrap;
+}
+
+.typeFilterChip svg {
+  height: 0.7rem;
+  width: 0.7rem;
+}
+
+.viewMeta {
+  align-items: center;
+  color: var(--muted-foreground);
+  display: inline-flex;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  gap: 0.42rem;
+  margin-left: auto;
+  min-width: 0;
+  padding-left: 0.55rem;
+  white-space: nowrap;
+}
+
+.viewMetaScope {
+  background: color-mix(in srgb, var(--chart-5) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chart-5) 25%, var(--border));
+  color: color-mix(in srgb, var(--chart-5) 86%, var(--foreground));
+  font-weight: 650;
+  padding: 0.1rem 0.34rem;
+}
+
+.viewMetaCount {
+  color: color-mix(in srgb, var(--foreground) 64%, var(--muted-foreground));
+}
+
+.viewMetaCount strong {
+  color: var(--foreground);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .viewBar {
+    gap: 0.35rem;
+    overflow: visible;
+    padding-inline: 0.45rem;
+  }
+
+  .viewTabs {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .viewTabs button {
+    font-size: 0.72rem;
+    gap: 0;
+    padding-inline: 0.2rem;
+  }
+
+  .viewTabs button svg {
+    display: none;
+  }
+
+  .viewMeta {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewTabs button {
+    transition: none;
+  }
+}

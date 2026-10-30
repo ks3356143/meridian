@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { workObjectsApi } from "@/features/assets/api";
@@ -6,6 +6,7 @@ import type { Project } from "../../../types";
 import {
   createDefaults,
   getParseState,
+  workObjectKindOptions,
   type ReceivedAssetDefaults,
   type ReceivedWorkObject,
   type WorkObjectStatus,
@@ -22,6 +23,23 @@ type PendingLifecycle = {
 };
 
 type PendingCorrection = WorkObjectCorrectionValues & { asset: ReceivedWorkObject };
+
+function matchesWorkObjectSearch(asset: ReceivedWorkObject, query: string) {
+  const objectKindLabel =
+    workObjectKindOptions.find((option) => option.value === asset.objectKind)?.label ??
+    asset.objectKind;
+  return [asset.objectName, asset.originalName, asset.version, asset.source, objectKindLabel].some(
+    (value) => value.toLocaleLowerCase("zh-CN").includes(query),
+  );
+}
+
+function filterWorkObjects(assets: ReceivedWorkObject[], filter: QueueFilter, query: string) {
+  const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
+  return assets.filter((asset) => {
+    if (filter !== "all" && asset.status !== filter) return false;
+    return !normalizedQuery || matchesWorkObjectSearch(asset, normalizedQuery);
+  });
+}
 
 function removeIdenticalDraftPatch(
   previous: Record<string, Partial<ReceivedWorkObject>>,
@@ -48,6 +66,7 @@ export function useReceivedAssetsWorkbench(project: Project) {
   const [draftPatches, setDraftPatches] = useState<Record<string, Partial<ReceivedWorkObject>>>({});
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("draft");
+  const [searchQuery, setSearchQuery] = useState("");
   const [manualOpen, setManualOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<ReceivedWorkObject | null>(null);
   const [pendingLifecycle, setPendingLifecycle] = useState<PendingLifecycle | null>(null);
@@ -75,6 +94,10 @@ export function useReceivedAssetsWorkbench(project: Project) {
   useEffect(() => {
     assetsRef.current = assets;
   }, [assets]);
+
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const normalizedSearchQuery = deferredSearchQuery.trim().toLocaleLowerCase("zh-CN");
+  const isSearchActive = normalizedSearchQuery.length > 0;
 
   const invalidateWorkObjects = useCallback(() => {
     return queryClient.invalidateQueries({
@@ -190,11 +213,10 @@ export function useReceivedAssetsWorkbench(project: Project) {
     confirmMutationRef.current = confirmMutation;
   }, [confirmMutation]);
 
-  const visibleAssets = useMemo(() => {
-    const serverAssets = workObjectsQuery.data ?? [];
-    if (queueFilter === "all") return serverAssets;
-    return serverAssets.filter((asset) => asset.status === queueFilter);
-  }, [queueFilter, workObjectsQuery.data]);
+  const visibleAssets = useMemo(
+    () => filterWorkObjects(workObjectsQuery.data ?? [], queueFilter, normalizedSearchQuery),
+    [normalizedSearchQuery, queueFilter, workObjectsQuery.data],
+  );
 
   const summary = useMemo(() => {
     let draftCount = 0;
@@ -446,21 +468,31 @@ export function useReceivedAssetsWorkbench(project: Project) {
     (value: string) => {
       const nextFilter = value as QueueFilter;
       setQueueFilter(nextFilter);
-      setSelectedIds((previous) =>
-        previous.filter((assetId) =>
-          assets.some(
-            (asset) =>
-              asset.id === assetId &&
-              asset.status === "draft" &&
-              (nextFilter === "all" || asset.status === nextFilter),
-          ),
-        ),
+      const visibleDraftIds = new Set(
+        filterWorkObjects(assets, nextFilter, searchQuery)
+          .filter((asset) => asset.status === "draft")
+          .map((asset) => asset.id),
       );
+      setSelectedIds((previous) => previous.filter((assetId) => visibleDraftIds.has(assetId)));
     },
-    [assets],
+    [assets, searchQuery],
+  );
+
+  const changeSearchQuery = useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+      const visibleDraftIds = new Set(
+        filterWorkObjects(assets, queueFilter, value)
+          .filter((asset) => asset.status === "draft")
+          .map((asset) => asset.id),
+      );
+      setSelectedIds((previous) => previous.filter((assetId) => visibleDraftIds.has(assetId)));
+    },
+    [assets, queueFilter],
   );
 
   const closeUploadProgress = useCallback(() => setUploadLoading(null), []);
+  const clearSearch = useCallback(() => setSearchQuery(""), []);
 
   return {
     assets,
@@ -472,6 +504,11 @@ export function useReceivedAssetsWorkbench(project: Project) {
     selectedIds,
     queueFilter,
     changeQueueFilter,
+    searchQuery,
+    changeSearchQuery,
+    clearSearch,
+    isSearchActive,
+    visibleAssetCount: visibleAssets.length,
     workObjectsQuery,
     lifecycleQuery,
     manualOpen,

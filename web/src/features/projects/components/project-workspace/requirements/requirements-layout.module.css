@@ -124,12 +124,6 @@
   display: none;
 }
 
-.tabs[data-panels-ready] .tabContent[data-state="inactive"] {
-  display: block !important;
-  pointer-events: none;
-  visibility: hidden;
-}
-
 .tabContent[data-state="active"] {
   position: relative;
   z-index: 1;
@@ -185,6 +179,7 @@
     gap: 0.7rem;
     grid-template-rows: auto auto;
     height: auto;
+    padding-bottom: 5.25rem;
   }
 
   .rightPane {

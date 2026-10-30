@@ -1,11 +1,11 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Highlighter, Search, StickyNote } from "lucide-react";
+import { ArrowUpRight, Highlighter, Search, SearchX, StickyNote } from "lucide-react";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { testItemsApi } from "@/features/test-items/api";
-import type { AnnotationKind, AnnotationRow } from "@/features/test-items/types";
+import type { AnnotationKind, StepAnnotationRow } from "@/features/test-items/types";
 import styles from "./annotations-view.module.css";
 
 type AnnotationFilter = "all" | AnnotationKind;
@@ -32,7 +32,7 @@ export function AnnotationsView({
   projectCode: string;
   roundId: string;
   onOpenRequirement: (requirementId: string) => void;
-  onOpenStep: (row: AnnotationRow) => void;
+  onOpenStep: (row: StepAnnotationRow) => void;
 }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<AnnotationFilter>("all");
@@ -47,18 +47,19 @@ export function AnnotationsView({
     return (annotationsQuery.data?.rows ?? []).filter((row) => {
       if (filter !== "all" && row.kind !== filter) return false;
       if (deferredSearch === "") return true;
+      const requirementFields =
+        row.kind === "requirement_body"
+          ? [row.sourceName, row.chapterNumber, row.externalIdentifier, row.requirementName]
+          : [];
       return [
         row.text,
         row.contextBefore,
         row.contextAfter,
-        row.sourceName,
-        row.chapterNumber,
-        row.externalIdentifier,
-        row.requirementName,
         row.testItemIdentifier,
         row.testItemName,
         row.caseIdentifier,
         row.caseName,
+        ...requirementFields,
       ]
         .filter(Boolean)
         .join("\n")
@@ -102,7 +103,7 @@ export function AnnotationsView({
           <Highlighter aria-hidden />
           在需求正文或步骤中选中文字后点击高亮，快捷键 Ctrl+Shift+H。
         </span>
-        <span>需求正文是项目级内容，切换轮次时不会重复列出。</span>
+        <span>需求正文是项目级内容，切换轮次时不会重复列出；需求关键词仅匹配需求正文标注。</span>
       </section>
 
       <section className={styles.toolbar} aria-label="标注总览筛选">
@@ -134,19 +135,26 @@ export function AnnotationsView({
 
       {rows.length === 0 ? (
         <div className={styles.empty}>
-          <StickyNote aria-hidden />
-          <p>没有匹配的高亮标注</p>
-          <Button
-            type="button"
-            size="xs"
-            variant="outline"
-            onClick={() => {
-              setSearch("");
-              setFilter("all");
-            }}
-          >
-            清除筛选
-          </Button>
+          {annotations.rows.length > 0 ? <SearchX aria-hidden /> : <StickyNote aria-hidden />}
+          <p>{annotations.rows.length > 0 ? "筛选后没有匹配结果" : "项目还没有高亮标注"}</p>
+          <span className={styles.emptyHint}>
+            {annotations.rows.length > 0
+              ? "调整关键词或清除筛选后再试。"
+              : "在需求正文或用例步骤中选中文字后，使用高亮或 Ctrl+Shift+H。"}
+          </span>
+          {annotations.rows.length > 0 ? (
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={() => {
+                setSearch("");
+                setFilter("all");
+              }}
+            >
+              清除筛选
+            </Button>
+          ) : null}
         </div>
       ) : (
         <div className={styles.list}>
@@ -174,7 +182,7 @@ export function AnnotationsView({
               </blockquote>
 
               <div className={styles.meta}>
-                {row.requirementName ? (
+                {row.kind === "requirement_body" ? (
                   <span>
                     <b>需求</b>
                     {row.requirementName}

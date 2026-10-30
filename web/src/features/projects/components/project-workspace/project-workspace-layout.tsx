@@ -10,7 +10,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router";
+import { Navigate, useLocation, useNavigate, useNavigationType } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { AppQuickSwitcher } from "@/components/shared/app-quick-switcher";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -113,6 +113,7 @@ export function ProjectWorkspaceLayout({
   const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const [pendingSection, setPendingSection] = useState<{
     fromPath: string;
     section: WorkspaceSection;
@@ -131,8 +132,21 @@ export function ProjectWorkspaceLayout({
   );
   const allowAllRounds = workspaceSegment === "test-items";
   const roundSelection = useRoundSelection(project.id, showRoundSwitcher, allowAllRounds);
-  const switchingSection = pendingSection !== null && location.pathname === pendingSection.fromPath;
+  // 浏览器前进/后退是 POP 导航，不能复用点击导航的一次性加载遮罩；
+  // 否则快速后退会在目标路径命中旧 fromPath，页面永久停在加载态。
+  const switchingSection =
+    navigationType !== "POP" &&
+    pendingSection !== null &&
+    location.pathname === pendingSection.fromPath;
   const displayedSection = switchingSection ? pendingSection.section : activeSection;
+
+  useLayoutEffect(() => {
+    if (pendingSection && location.pathname !== pendingSection.fromPath) {
+      // 目标路由已经提交，清除一次性过渡标记；否则浏览器后退会误命中旧路径。
+      // oxlint-disable-next-line react/set-state-in-effect
+      setPendingSection(null);
+    }
+  }, [location.pathname, pendingSection]);
 
   useRevealActiveTab(listRef, displayedSection);
 

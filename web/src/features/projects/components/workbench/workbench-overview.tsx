@@ -8,11 +8,13 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { Project } from "@/features/projects/types";
+import { testItemsApi } from "@/features/test-items/api";
+import { totalOpenIssues, type Project } from "@/features/projects/types";
 
 type ModuleTone = "info" | "primary" | "warning" | "danger" | "chart" | "success";
 
@@ -35,18 +37,50 @@ const toneIcon: Record<ModuleTone, string> = {
 };
 
 export function WorkbenchOverview({ project, rate }: { project: Project; rate: number }) {
+  const roundsQuery = useQuery({
+    queryKey: ["projects", project.id, "test-rounds"],
+    queryFn: () => testItemsApi.rounds(project.id),
+    staleTime: 30_000,
+  });
+  const laterRoundCount = Math.max((roundsQuery.data?.length ?? 0) - 1, 0);
+  const roundsValue = roundsQuery.isPending
+    ? "…"
+    : roundsQuery.isError
+      ? "读取失败"
+      : String(laterRoundCount);
+
   const modules: Array<{
     icon: typeof ListChecks;
     name: string;
-    value: number;
+    value: string | number;
     tone: ModuleTone;
+    note?: string;
+    unavailable?: boolean;
   }> = [
     { icon: ListChecks, name: "测试项", value: project.testItemsTotal, tone: "info" },
     { icon: FlaskConical, name: "测试用例", value: project.casesTotal, tone: "primary" },
     { icon: Play, name: "执行记录", value: project.casesExecuted, tone: "warning" },
-    { icon: ShieldAlert, name: "问题单", value: 0, tone: "danger" },
-    { icon: FileText, name: "文档产出", value: 0, tone: "chart" },
-    { icon: FileCheck2, name: "第二轮及以后", value: 0, tone: "success" },
+    {
+      icon: ShieldAlert,
+      name: "未闭环问题",
+      value: totalOpenIssues(project.openIssues),
+      tone: "danger",
+    },
+    {
+      icon: FileText,
+      name: "文档产出",
+      value: "暂未接入",
+      tone: "chart",
+      note: "文档模块尚未实现",
+      unavailable: true,
+    },
+    {
+      icon: FileCheck2,
+      name: "第二轮及以后",
+      value: roundsValue,
+      tone: "success",
+      note: roundsQuery.isError ? "轮次数据读取失败" : "不含首轮",
+    },
   ];
 
   return (
@@ -80,19 +114,26 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
             key={module.name}
             size="sm"
             data-tone={module.tone}
+            data-unavailable={module.unavailable ? "true" : undefined}
             className="group overflow-hidden"
           >
-            <CardContent className="flex items-center justify-between gap-3">
+            <CardContent className="flex min-h-20 items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-muted-foreground text-xs font-medium">{module.name}</p>
                 <p
                   className={cn(
-                    "mt-1 font-mono text-2xl leading-none font-semibold tabular-nums",
+                    "mt-1 font-mono leading-none font-semibold tabular-nums",
+                    module.unavailable ? "text-sm tracking-wide" : "text-2xl",
                     toneText[module.tone],
                   )}
                 >
                   {module.value}
                 </p>
+                {module.note ? (
+                  <p className="text-muted-foreground mt-1.5 text-[10px] leading-none">
+                    {module.note}
+                  </p>
+                ) : null}
               </div>
               <span
                 className={cn(

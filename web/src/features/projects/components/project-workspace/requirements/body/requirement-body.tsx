@@ -1,5 +1,13 @@
 import { ImageOff, Loader2, ScanText } from "lucide-react";
-import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { requestBlob } from "@/api/client";
 import type { RequirementBlockNode } from "@/features/requirements/types";
@@ -161,8 +169,28 @@ function TableBlock({ block }: { block: RequirementBlockNode }) {
   // 无 DOCX 列宽时按内容估算初始列宽，避免 auto 布局把长文本列挤成一条。
   const autoWidths = colwidths ? undefined : estimateColumnWidths(rows);
   const columnWidths = colwidths ?? autoWidths;
+  const handleScrollKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    const target = event.currentTarget;
+    if (target.scrollWidth <= target.clientWidth) return;
+    event.preventDefault();
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    target.scrollBy({
+      left: direction * Math.max(96, target.clientWidth * 0.28),
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  };
+  const scrollRegionProps = {
+    tabIndex: 0,
+    onKeyDown: handleScrollKeyDown,
+  } as const;
   return (
-    <div className={styles.tableWrap}>
+    <div
+      className={styles.tableWrap}
+      role="region"
+      aria-label="需求正文表格，可横向滚动"
+      {...scrollRegionProps}
+    >
       <table
         className={styles.table}
         data-align={readStringAttr(block.attrs, "align") || "center"}

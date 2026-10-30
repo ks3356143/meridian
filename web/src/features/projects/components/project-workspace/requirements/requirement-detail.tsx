@@ -217,6 +217,7 @@ function RequirementDetailForm({
   const [bodyEditorSession, setBodyEditorSession] = useState(0);
   const [descriptionStuck, setDescriptionStuck] = useState(false);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
+  const relatedRef = useRef<HTMLElement>(null);
   const descriptionSentinelRef = useRef<HTMLDivElement>(null);
   const fabTriggerRef = useRef<HTMLButtonElement>(null);
   const bodyDialogRef = useRef<HTMLDialogElement>(null);
@@ -319,6 +320,12 @@ function RequirementDetailForm({
     !linkedTestItemsQuery.isError &&
     !createTestItemMutation.isPending;
   const linkedTestItems = linkedTestItemsQuery.data ?? [];
+  const scrollToRelated = () => {
+    relatedRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
+  };
   const handleCreateTestItem = () => {
     if (linkedTestItems.length > 0) {
       setConfirmCreateOpen(true);
@@ -560,6 +567,18 @@ function RequirementDetailForm({
           {secondaryKindLabels.length ? (
             <Badge variant="outline">副类型：{secondaryKindLabels.join(" / ")}</Badge>
           ) : null}
+          {linkedTestItems.length > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              className={styles.relatedJump}
+              onClick={scrollToRelated}
+            >
+              <Link2 data-icon="inline-start" aria-hidden />
+              关联测试项 {linkedTestItems.length}
+            </Button>
+          ) : null}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -721,7 +740,7 @@ function RequirementDetailForm({
             <FieldError id="detail-secondary-kind-error">{errors.secondaryKinds}</FieldError>
           </Field>
         </div>
-        <section className={styles.related}>
+        <section ref={relatedRef} className={styles.related}>
           <header>
             <div>
               <h4>

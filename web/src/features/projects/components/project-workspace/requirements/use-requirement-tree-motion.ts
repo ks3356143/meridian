@@ -20,7 +20,7 @@ type TreeStructureSnapshot = {
 };
 
 /** 两棵需求树共用的基准 overscan 行数。 */
-export const TREE_BASE_OVERSCAN = 12;
+export const TREE_BASE_OVERSCAN = 4;
 /**
  * 参与折叠/展开动画的最大子树行数。
  * 超过这个规模的子树直接切换：为动画把上百行虚拟行挂进 DOM 得不偿失。

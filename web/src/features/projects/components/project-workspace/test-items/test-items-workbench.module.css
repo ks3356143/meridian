@@ -5,57 +5,6 @@
   min-height: 0;
 }
 
-.viewBar {
-  align-items: center;
-  background: color-mix(in srgb, var(--card) 96%, transparent);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  flex: none;
-  gap: 0.55rem;
-  min-height: 2.8rem;
-  padding: 0 0.65rem;
-}
-
-.viewTabs {
-  flex: none;
-  min-width: 14rem;
-  width: 24rem;
-}
-
-.viewTabs button {
-  min-height: 2.8rem;
-}
-
-.typeFilterChip {
-  align-items: center;
-  background: color-mix(in srgb, var(--primary) 7%, transparent);
-  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
-  color: var(--primary);
-  cursor: pointer;
-  display: inline-flex;
-  font-family: var(--font-mono);
-  font-size: 0.64rem;
-  gap: 0.3rem;
-  min-height: 1.55rem;
-  padding: 0 0.38rem;
-  white-space: nowrap;
-}
-
-.typeFilterChip svg {
-  height: 0.7rem;
-  width: 0.7rem;
-}
-
-.viewMeta {
-  color: var(--muted-foreground);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  margin-left: auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .viewBody {
   display: flex;
   flex: 1;
@@ -121,7 +70,7 @@
   display: flex;
   flex-wrap: nowrap;
   gap: 0.35rem;
-  padding: 0.48rem 0.65rem 0.42rem;
+  padding: 0.3rem 0.65rem 0.26rem;
   position: relative;
 }
 
@@ -279,7 +228,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
-  padding: 0.35rem 0.7rem;
+  padding: 0.17rem 0.7rem;
   row-gap: 0.3rem;
 }
 
@@ -333,6 +282,22 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 1.4rem 1rem;
+}
+
+.emptyResultIcon {
+  align-items: center;
+  background: color-mix(in srgb, var(--info) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 26%, var(--border));
+  color: var(--info);
+  display: inline-flex;
+  height: 1.85rem;
+  justify-content: center;
+  width: 1.85rem;
+}
+
+.emptyResultIcon svg {
+  height: 0.9rem;
+  width: 0.9rem;
 }
 
 .emptyTitle {
@@ -440,7 +405,15 @@
   );
   border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
   display: flex;
-  padding: 0.42rem 0.65rem;
+  padding: 0.24rem 0.65rem;
+  transition:
+    background-color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong);
+}
+
+.searchRow:focus-within {
+  background: color-mix(in srgb, var(--info) 4%, var(--card));
+  border-bottom-color: color-mix(in srgb, var(--primary) 30%, var(--border));
 }
 
 .searchField {
@@ -460,6 +433,11 @@
   width: 0.78rem;
   z-index: 1;
   transition: color 0.16s var(--ease-out-strong);
+}
+
+.searchField:focus-within .searchInput {
+  border-color: color-mix(in srgb, var(--primary) 38%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .searchField:focus-within .searchGlyph {
@@ -502,7 +480,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
   display: flex;
   gap: 0.3rem;
-  padding: 0.34rem 0.65rem;
+  padding: 0.2rem 0.65rem;
 }
 
 .quickChip {
@@ -516,7 +494,16 @@
 }
 
 .quickChip:hover {
-  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 8%, transparent);
+  color: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+}
+
+.quickChip:focus-visible,
+.treeActionButton:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 42%, transparent);
+  outline: none;
 }
 
 .quickChip[data-active="true"] {
@@ -590,36 +577,27 @@
   display: flex;
   flex-direction: column;
   font-size: 0.74rem;
-  gap: 0.55rem;
-  padding: 1.2rem 1rem;
+  gap: 0.48rem;
+  padding: 1rem 0.9rem;
 }
 
-@media (max-width: 600px) {
-  .viewBar {
-    gap: 0.35rem;
-    overflow: visible;
-    padding-inline: 0.45rem;
-  }
+.emptyResultCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
 
-  .viewTabs {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-  }
+.emptyResultCopy p {
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
 
-  .viewTabs button {
-    gap: 0;
-    padding-inline: 0.2rem;
-    font-size: 0.72rem;
-  }
-
-  .viewTabs button svg {
-    display: none;
-  }
-
-  .viewMeta {
-    display: none;
-  }
+.emptyResultCopy span {
+  color: color-mix(in srgb, var(--muted-foreground) 90%, transparent);
+  font-size: 0.68rem;
+  line-height: 1.45;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -629,7 +607,8 @@
   .requirementButton,
   .utilityButton,
   .quickChip,
-  .searchGlyph {
+  .searchGlyph,
+  .searchRow {
     transition: none;
   }
 }

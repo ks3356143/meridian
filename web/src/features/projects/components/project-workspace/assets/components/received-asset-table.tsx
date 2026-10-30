@@ -1,5 +1,26 @@
-import { memo } from "react";
-import { Ban, Check, History, PencilLine, Trash2, Undo2, type LucideIcon } from "lucide-react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  AlertTriangle,
+  Ban,
+  Check,
+  History,
+  Inbox,
+  PencilLine,
+  RotateCcw,
+  SearchX,
+  Trash2,
+  Undo2,
+  type LucideIcon,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +42,8 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TruncatedText } from "@/components/shared/truncated-text";
+import { Skeleton } from "@/components/ui/skeleton";
+import styles from "./received-asset-table.module.css";
 import {
   formatFileSize,
   getParseState,
@@ -40,11 +63,17 @@ const parseVariants = {
 
 const staticFieldClass =
   "h-7 cursor-not-allowed rounded-sm border border-input bg-input/50 px-2 text-xs leading-7 opacity-70 dark:bg-input/80";
+const ASSET_ROW_ESTIMATE = 76;
+const ASSET_ROW_OVERSCAN = 1;
+const ASSET_INITIAL_RENDERED_ROWS = 1;
+const ASSET_RENDERED_ROW_CHUNK = 1;
 
 type ReceivedAssetRowProps = {
   asset: ReceivedWorkObject;
   draftPatch?: Partial<ReceivedWorkObject>;
   selected: boolean;
+  rowIndex: number;
+  rowRef: (node: HTMLTableRowElement | null) => void;
   onToggle: (id: string, checked: boolean) => void;
   onEdit: (id: string, patch: Partial<ReceivedWorkObject>) => void;
   onUpdate: (id: string, patch: Partial<ReceivedWorkObject>) => void;
@@ -60,6 +89,8 @@ const ReceivedAssetRow = memo(function ReceivedAssetRow({
   asset,
   draftPatch,
   selected,
+  rowIndex,
+  rowRef,
   onToggle,
   onEdit,
   onUpdate,
@@ -85,7 +116,12 @@ const ReceivedAssetRow = memo(function ReceivedAssetRow({
     workObjectKindOptions.find((option) => option.value === value.objectKind)?.label ??
     value.objectKind;
   return (
-    <TableRow data-state={selected ? "selected" : undefined}>
+    <TableRow
+      ref={rowRef}
+      data-index={rowIndex}
+      aria-rowindex={rowIndex + 2}
+      data-state={selected ? "selected" : undefined}
+    >
       <TableCell className="p-0 text-center">
         <Checkbox
           aria-label={`选择 ${value.objectName || "未命名对象"}`}
@@ -190,7 +226,13 @@ const ReceivedAssetRow = memo(function ReceivedAssetRow({
         <div className="flex justify-center gap-1">
           <ReceivedAssetActionButton
             icon={Check}
-            action="确认登记"
+            action={
+              confirmable
+                ? "确认登记"
+                : asset.status === "draft"
+                  ? "请补齐名称、版本和提供方后再确认"
+                  : "当前状态不可确认"
+            }
             label={`确认 ${value.objectName || "未命名对象"}`}
             disabled={!confirmable}
             onClick={() => onConfirm(asset.id)}
@@ -253,25 +295,31 @@ function ReceivedAssetActionButton({
   disabled?: boolean;
   onClick: () => void;
 }) {
+  const buttonClassName = [
+    destructive
+      ? "text-destructive hover:border-destructive/40 hover:bg-destructive/8 hover:text-destructive"
+      : undefined,
+    disabled ? styles.disabledButton : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const button = (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon-sm"
+      className={buttonClassName}
+      aria-label={label}
+      aria-disabled={disabled || undefined}
+      onClick={disabled ? undefined : onClick}
+    >
+      <Icon aria-hidden />
+    </Button>
+  );
+
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          className={
-            destructive
-              ? "text-destructive hover:border-destructive/40 hover:bg-destructive/8 hover:text-destructive"
-              : undefined
-          }
-          aria-label={label}
-          disabled={disabled}
-          onClick={onClick}
-        >
-          <Icon aria-hidden />
-        </Button>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent>{action}</TooltipContent>
     </Tooltip>
   );
@@ -292,6 +340,8 @@ function areReceivedAssetRowPropsEqual(
 
   return (
     previous.selected === next.selected &&
+    previous.rowIndex === next.rowIndex &&
+    previous.rowRef === next.rowRef &&
     previous.asset.status === next.asset.status &&
     previousValue.objectKind === nextValue.objectKind &&
     previousValue.objectName === nextValue.objectName &&
@@ -309,6 +359,12 @@ function ReceivedAssetTableImpl({
   draftPatches,
   selectedIds,
   loading = false,
+  error,
+  onRetry,
+  emptyTitle = "当前队列为空",
+  emptyDescription = "上传接收文件或手工登记资料",
+  searchActive = false,
+  onClearSearch,
   onToggle,
   onToggleAll,
   onEdit,
@@ -324,6 +380,12 @@ function ReceivedAssetTableImpl({
   draftPatches: Record<string, Partial<ReceivedWorkObject>>;
   selectedIds: string[];
   loading?: boolean;
+  error?: string;
+  onRetry?: () => void;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  searchActive?: boolean;
+  onClearSearch?: () => void;
   onToggle: (id: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
   onEdit: (id: string, patch: Partial<ReceivedWorkObject>) => void;
@@ -335,15 +397,125 @@ function ReceivedAssetTableImpl({
   onHistory: (id: string) => void;
   onRemove: (id: string) => void;
 }) {
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
+  const [renderBudget, setRenderBudget] = useState(ASSET_INITIAL_RENDERED_ROWS);
+  // TanStack Virtual 返回的对象不适合 React Compiler 记忆化，官方用法要求绕过该规则。
+  // oxlint-disable-next-line react/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: assets.length,
+    getScrollElement: () => tableRef.current?.closest<HTMLElement>("main.workspace-route") ?? null,
+    estimateSize: () => ASSET_ROW_ESTIMATE,
+    overscan: ASSET_ROW_OVERSCAN,
+    scrollMargin,
+    getItemKey: (index) => assets[index]?.id ?? index,
+    enabled: !loading && !error && assets.length > 0,
+  });
+
+  const measureScrollMargin = useCallback(() => {
+    const table = tableRef.current;
+    const scrollElement = table?.closest<HTMLElement>("main.workspace-route");
+    if (!table || !scrollElement) return;
+    const nextScrollMargin =
+      table.getBoundingClientRect().top -
+      scrollElement.getBoundingClientRect().top +
+      scrollElement.scrollTop;
+    setScrollMargin((current) =>
+      Math.abs(current - nextScrollMargin) < 1 ? current : nextScrollMargin,
+    );
+  }, []);
+
+  useEffect(() => {
+    setRenderBudget(ASSET_INITIAL_RENDERED_ROWS);
+  }, [assets.length]);
+
+  useLayoutEffect(() => {
+    measureScrollMargin();
+    const table = tableRef.current;
+    const scrollElement = table?.closest<HTMLElement>("main.workspace-route");
+    if (!table || !scrollElement) return;
+    const observer = new ResizeObserver(measureScrollMargin);
+    observer.observe(table);
+    observer.observe(scrollElement);
+    window.addEventListener("resize", measureScrollMargin);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measureScrollMargin);
+    };
+  }, [assets.length, measureScrollMargin]);
+
+  const virtualItems = virtualizer.getVirtualItems();
+
+  useEffect(() => {
+    if (renderBudget >= virtualItems.length) return;
+    const frame = window.requestAnimationFrame(() => {
+      setRenderBudget((current) =>
+        Math.min(virtualItems.length, current + ASSET_RENDERED_ROW_CHUNK),
+      );
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [renderBudget, virtualItems.length]);
+
+  if (loading) {
+    return <ReceivedAssetTableLoading />;
+  }
+
+  if (error) {
+    return (
+      <ReceivedAssetTableState
+        tone="error"
+        icon={AlertTriangle}
+        title="工作对象加载失败"
+        description={error}
+        action={
+          onRetry ? (
+            <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+              <RotateCcw data-icon="inline-start" aria-hidden />
+              重新加载
+            </Button>
+          ) : undefined
+        }
+      />
+    );
+  }
+
+  if (!assets.length) {
+    return (
+      <ReceivedAssetTableState
+        tone={searchActive ? "search" : "empty"}
+        icon={searchActive ? SearchX : Inbox}
+        title={emptyTitle}
+        description={emptyDescription}
+        action={
+          searchActive && onClearSearch ? (
+            <Button type="button" variant="outline" size="sm" onClick={onClearSearch}>
+              清除搜索
+            </Button>
+          ) : undefined
+        }
+      />
+    );
+  }
+
   const selectableAssets = assets.filter((asset) => asset.status === "draft");
   const allSelected =
     selectableAssets.length > 0 &&
     selectableAssets.every((asset) => selectedIds.includes(asset.id));
   const someSelected = selectableAssets.some((asset) => selectedIds.includes(asset.id));
+  const renderedVirtualItems = virtualItems.slice(0, renderBudget);
+  const firstVirtualItem = renderedVirtualItems[0];
+  const lastVirtualItem = renderedVirtualItems[renderedVirtualItems.length - 1];
+  const topSpacer = firstVirtualItem ? Math.max(0, firstVirtualItem.start - scrollMargin) : 0;
+  const bottomSpacer = lastVirtualItem
+    ? Math.max(
+        0,
+        virtualizer.getTotalSize() - (lastVirtualItem.start + lastVirtualItem.size - scrollMargin),
+      )
+    : 0;
 
   return (
-    <div className="min-w-0">
-      <Table className="received-asset-table">
+    <div ref={tableRef} className="min-w-0">
+      <Table className="received-asset-table" aria-rowcount={assets.length + 1}>
         <TableHeader>
           <TableRow>
             <TableHead className="w-10">
@@ -364,28 +536,22 @@ function ReceivedAssetTableImpl({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading ? (
-            <TableRow>
-              <TableCell colSpan={8} className="h-32 text-center">
-                <span className="text-sm font-semibold">正在加载工作对象</span>
-              </TableCell>
+          {topSpacer > 0 ? (
+            <TableRow aria-hidden className={styles.virtualSpacer}>
+              <TableCell colSpan={8} style={{ height: topSpacer }} />
             </TableRow>
-          ) : assets.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={8} className="h-32 text-center">
-                <div className="grid justify-center gap-1">
-                  <span className="text-sm font-semibold">当前队列为空</span>
-                  <span className="text-xs text-muted-foreground">上传接收文件或手工登记资料</span>
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : (
-            assets.map((asset) => (
+          ) : null}
+          {renderedVirtualItems.map((virtualItem) => {
+            const asset = assets[virtualItem.index];
+            if (!asset) return null;
+            return (
               <ReceivedAssetRow
                 key={asset.id}
                 asset={asset}
                 draftPatch={draftPatches[asset.id]}
                 selected={selectedIds.includes(asset.id)}
+                rowIndex={virtualItem.index}
+                rowRef={virtualizer.measureElement}
                 onToggle={onToggle}
                 onEdit={onEdit}
                 onUpdate={onUpdate}
@@ -396,10 +562,67 @@ function ReceivedAssetTableImpl({
                 onHistory={onHistory}
                 onRemove={onRemove}
               />
-            ))
-          )}
+            );
+          })}
+          {bottomSpacer > 0 ? (
+            <TableRow aria-hidden className={styles.virtualSpacer}>
+              <TableCell colSpan={8} style={{ height: bottomSpacer }} />
+            </TableRow>
+          ) : null}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+function ReceivedAssetTableLoading() {
+  return (
+    <div className={styles.stateShell} aria-busy="true" aria-live="polite">
+      <span className="sr-only">正在加载工作对象</span>
+      <div className={styles.skeletonRows} aria-hidden>
+        {[0, 1, 2].map((row) => (
+          <div key={row} className={styles.skeletonRow}>
+            <Skeleton className={styles.skeletonPrimary} />
+            <Skeleton className={styles.skeletonCell} />
+            <Skeleton className={styles.skeletonCell} />
+            <Skeleton className={styles.skeletonCell} />
+            <Skeleton className={styles.skeletonCell} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReceivedAssetTableState({
+  tone,
+  icon: Icon,
+  title,
+  description,
+  action,
+}: {
+  tone: "empty" | "search" | "error";
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div
+      className={styles.stateShell}
+      data-tone={tone}
+      role={tone === "error" ? "alert" : "status"}
+    >
+      <div className={styles.stateContent}>
+        <span className={styles.stateIcon} aria-hidden>
+          <Icon />
+        </span>
+        <div className={styles.stateCopy}>
+          <strong>{title}</strong>
+          <p>{description}</p>
+        </div>
+        {action ? <div className={styles.stateAction}>{action}</div> : null}
+      </div>
     </div>
   );
 }
@@ -421,7 +644,11 @@ function areReceivedAssetTablePropsEqual(
     previous.assets === next.assets &&
     previous.draftPatches === next.draftPatches &&
     previous.selectedIds === next.selectedIds &&
-    previous.loading === next.loading
+    previous.loading === next.loading &&
+    previous.error === next.error &&
+    previous.emptyTitle === next.emptyTitle &&
+    previous.emptyDescription === next.emptyDescription &&
+    previous.searchActive === next.searchActive
   );
 }
 

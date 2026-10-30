@@ -42,6 +42,8 @@ function RequirementsCandidateTreeImpl({
   selectedId,
   onSelect,
   naturalHeight,
+  initialHeight = 360,
+  progressiveHeight = false,
   toolbarTabs,
   excludedCount,
   onOpenRecycleBin,
@@ -52,13 +54,16 @@ function RequirementsCandidateTreeImpl({
   selectedId: string;
   onSelect: (requirement: RequirementRecord) => void;
   naturalHeight: boolean;
+  initialHeight?: number;
+  progressiveHeight?: boolean;
   toolbarTabs: ReactNode;
   excludedCount: number;
   onOpenRecycleBin: () => void;
 }) {
   const treeRef = useRef<TreeApi<CandidateTreeNode>>(null);
   const shellRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(360);
+  const [height, setHeight] = useState(initialHeight);
+  const [targetHeight, setTargetHeight] = useState<number | null>(null);
 
   const candidateRequirements = useMemo(
     () => requirements.filter((item) => item.origin === "parsed" && item.status === "candidate"),
@@ -107,13 +112,23 @@ function RequirementsCandidateTreeImpl({
     if (!element) return;
     const updateHeight = () => {
       const nextHeight = element.clientHeight;
-      if (nextHeight > 0) setHeight(nextHeight);
+      if (nextHeight <= 0) return;
+      if (progressiveHeight) setTargetHeight(nextHeight);
+      else setHeight(nextHeight);
     };
     updateHeight();
     const observer = new ResizeObserver(updateHeight);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [naturalHeight, nodes.length]);
+  }, [naturalHeight, nodes.length, progressiveHeight]);
+
+  useEffect(() => {
+    if (!progressiveHeight || targetHeight === null || height >= targetHeight) return;
+    const frame = window.requestAnimationFrame(() => {
+      setHeight((current: number) => Math.min(targetHeight, current + 60));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [height, progressiveHeight, targetHeight]);
 
   const renderNode = useCallback(
     (props: NodeRendererProps<CandidateTreeNode>) => <CandidateTreeRow {...props} />,

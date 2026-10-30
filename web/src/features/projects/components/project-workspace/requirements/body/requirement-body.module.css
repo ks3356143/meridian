@@ -131,6 +131,11 @@
   border: 1px solid var(--border);
 }
 
+.tableWrap:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--info) 46%, transparent);
+  outline-offset: 2px;
+}
+
 /* 表格与单元格的边框/字号/列宽口径由 .surface 统一提供；
    这里只保留预览特有：单元格文本对齐（后端存的 align）与表头下边框加粗。 */
 

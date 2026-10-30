@@ -292,9 +292,8 @@ export interface TraceabilityResult {
 }
 export type AnnotationKind = "requirement_body" | "step_op" | "step_act";
 
-export interface AnnotationRow {
+interface AnnotationRowBase {
   id: string;
-  kind: AnnotationKind;
   blockId: string;
   text: string;
   contextBefore: string;
@@ -303,12 +302,6 @@ export interface AnnotationRow {
   roundId: string;
   roundNumber: number;
   roundName: string;
-  requirementId: string;
-  sourceName: string;
-  sourceVersion: string;
-  chapterNumber: string;
-  externalIdentifier: string;
-  requirementName: string;
   testItemId: string;
   testItemIdentifier: string;
   testItemName: string;
@@ -319,6 +312,22 @@ export interface AnnotationRow {
   stepId: string;
   stepSeq: number;
 }
+
+export interface RequirementBodyAnnotationRow extends AnnotationRowBase {
+  kind: "requirement_body";
+  requirementId: string;
+  sourceName: string;
+  sourceVersion: string;
+  chapterNumber: string;
+  externalIdentifier: string;
+  requirementName: string;
+}
+
+export interface StepAnnotationRow extends AnnotationRowBase {
+  kind: "step_op" | "step_act";
+}
+
+export type AnnotationRow = RequirementBodyAnnotationRow | StepAnnotationRow;
 
 export interface AnnotationSummary {
   total: number;
