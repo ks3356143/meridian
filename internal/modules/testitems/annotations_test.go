@@ -15,6 +15,7 @@ func TestAnnotationsScansRequirementsAndStepHighlightsAcrossRounds(t *testing.T)
 		t.Fatalf("准备第 1 轮失败: %v", err)
 	}
 	seedRequirementForCreate(t, service, projectID, "req-annotation", "高亮需求", "functional", "official", "completed", "需求正文")
+	seedBatchRequirement(t, service, projectID, "req-annotation-2", "4.2", "第二关联需求", "functional", "official", "completed", "第二需求正文")
 	if _, err := service.blocks.SaveBlock(ctx, projectID, contentblocks.OwnerTypeRequirement, "req-annotation",
 		contentblocks.BlockKeyRequirementBody, annotationTestDoc(
 			annotationTestRun("开始说明 ", nil),
@@ -32,6 +33,9 @@ func TestAnnotationsScansRequirementsAndStepHighlightsAcrossRounds(t *testing.T)
 	}
 	if err := service.LinkRequirement(ctx, projectID, item.ID, "req-annotation"); err != nil {
 		t.Fatalf("关联需求失败: %v", err)
+	}
+	if err := service.LinkRequirement(ctx, projectID, item.ID, "req-annotation-2"); err != nil {
+		t.Fatalf("关联第二个需求失败: %v", err)
 	}
 	itemCase, err := service.CreateCase(ctx, item.ID, "高亮用例")
 	if err != nil {
@@ -67,8 +71,18 @@ func TestAnnotationsScansRequirementsAndStepHighlightsAcrossRounds(t *testing.T)
 	assertAnnotationText(t, first.Rows, "点击查询")
 	assertAnnotationText(t, first.Rows, "错误码 500")
 	for _, row := range first.Rows {
-		if row.Kind != AnnotationKindRequirementBody && row.RequirementID != "req-annotation" {
-			t.Fatalf("步骤标注应带上所属需求上下文: %+v", row)
+		if row.Kind == AnnotationKindRequirementBody {
+			if row.RequirementID != "req-annotation" || row.RequirementName != "高亮需求" {
+				t.Fatalf("需求正文标注应保留自身需求信息: %+v", row)
+			}
+			continue
+		}
+		if row.RequirementID != "" || row.RequirementName != "" || row.SourceName != "" ||
+			row.SourceVersion != "" || row.ChapterNumber != "" || row.ExternalIdentifier != "" {
+			t.Fatalf("步骤标注不应带需求维度: %+v", row)
+		}
+		if row.TestItemID == "" || row.CaseID == "" || row.StepID == "" || row.StepSeq == 0 {
+			t.Fatalf("步骤标注应保留测试项、用例和步骤定位: %+v", row)
 		}
 	}
 

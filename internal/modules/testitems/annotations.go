@@ -31,12 +31,12 @@ type AnnotationRow struct {
 	RoundID            string    `json:"roundId"`
 	RoundNumber        int       `json:"roundNumber"`
 	RoundName          string    `json:"roundName"`
-	RequirementID      string    `json:"requirementId"`
-	SourceName         string    `json:"sourceName"`
-	SourceVersion      string    `json:"sourceVersion"`
-	ChapterNumber      string    `json:"chapterNumber"`
-	ExternalIdentifier string    `json:"externalIdentifier"`
-	RequirementName    string    `json:"requirementName"`
+	RequirementID      string    `json:"requirementId,omitempty"`
+	SourceName         string    `json:"sourceName,omitempty"`
+	SourceVersion      string    `json:"sourceVersion,omitempty"`
+	ChapterNumber      string    `json:"chapterNumber,omitempty"`
+	ExternalIdentifier string    `json:"externalIdentifier,omitempty"`
+	RequirementName    string    `json:"requirementName,omitempty"`
 	TestItemID         string    `json:"testItemId"`
 	TestItemIdentifier string    `json:"testItemIdentifier"`
 	TestItemName       string    `json:"testItemName"`
@@ -74,16 +74,6 @@ type annotationBlock struct {
 }
 
 type annotationRequirementMeta struct {
-	RequirementID      string `gorm:"column:requirement_id"`
-	SourceName         string `gorm:"column:source_name"`
-	SourceVersion      string `gorm:"column:source_version"`
-	ChapterNumber      string `gorm:"column:chapter_number"`
-	ExternalIdentifier string `gorm:"column:external_identifier"`
-	RequirementName    string `gorm:"column:requirement_name"`
-}
-
-type annotationItemRequirement struct {
-	TestItemID         string `gorm:"column:test_item_id"`
 	RequirementID      string `gorm:"column:requirement_id"`
 	SourceName         string `gorm:"column:source_name"`
 	SourceVersion      string `gorm:"column:source_version"`
@@ -253,39 +243,6 @@ func (s *Service) Annotations(ctx context.Context, projectID, roundID string) (A
 			return AnnotationResult{}, fmt.Errorf("查询步骤标注位置失败: %w", err)
 		}
 	}
-	itemRequirements := make(map[string]annotationRequirementMeta)
-	if len(stepMeta) > 0 {
-		itemIDs := make([]string, 0, len(stepMeta))
-		for _, step := range stepMeta {
-			if step.TestItemID != "" {
-				itemIDs = append(itemIDs, step.TestItemID)
-			}
-		}
-		itemIDs = uniqueStrings(itemIDs)
-		var links []annotationItemRequirement
-		if err := s.db.WithContext(ctx).Table("requirement_test_items AS link").
-			Select(`link.test_item_id, req.id AS requirement_id, COALESCE(wo.name, '') AS source_name,
-				COALESCE(wov.version, '') AS source_version, req.chapter_number,
-				req.external_identifier, req.name AS requirement_name`).
-			Joins("JOIN software_requirements AS req ON req.id = link.requirement_id").
-			Joins("JOIN work_object_versions AS wov ON wov.id = req.source_version_id").
-			Joins("JOIN work_objects AS wo ON wo.id = wov.work_object_id").
-			Where("link.test_item_id IN ? AND req.status = ?", itemIDs, "official").
-			Order("link.test_item_id ASC, req.chapter_number ASC, req.id ASC").
-			Scan(&links).Error; err != nil {
-			return AnnotationResult{}, fmt.Errorf("查询步骤关联需求失败: %w", err)
-		}
-		for _, link := range links {
-			if _, exists := itemRequirements[link.TestItemID]; exists {
-				continue
-			}
-			itemRequirements[link.TestItemID] = annotationRequirementMeta{
-				RequirementID: link.RequirementID, SourceName: link.SourceName,
-				SourceVersion: link.SourceVersion, ChapterNumber: link.ChapterNumber,
-				ExternalIdentifier: link.ExternalIdentifier, RequirementName: link.RequirementName,
-			}
-		}
-	}
 
 	stepByID := make(map[string]annotationStepMeta, len(stepMeta))
 	for _, step := range stepMeta {
@@ -330,15 +287,7 @@ func (s *Service) Annotations(ctx context.Context, projectID, roundID string) (A
 				StepID:             step.StepID,
 				StepSeq:            step.StepSeq,
 			})
-			if requirement, ok := itemRequirements[step.TestItemID]; ok {
-				row := &result.Rows[len(result.Rows)-1]
-				row.RequirementID = requirement.RequirementID
-				row.SourceName = requirement.SourceName
-				row.SourceVersion = requirement.SourceVersion
-				row.ChapterNumber = requirement.ChapterNumber
-				row.ExternalIdentifier = requirement.ExternalIdentifier
-				row.RequirementName = requirement.RequirementName
-			}
+
 		}
 	}
 
@@ -381,9 +330,7 @@ func (s *Service) Annotations(ctx context.Context, projectID, roundID string) (A
 		case AnnotationKindStepAct:
 			result.Summary.StepAct++
 		}
-		if row.RequirementID != "" {
-			requirementSeen[row.RequirementID] = true
-		}
+
 	}
 	result.Summary.Requirements = len(requirementSeen)
 	result.Summary.Cases = len(caseSeen)
