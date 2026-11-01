@@ -271,9 +271,9 @@ main.workspace-route::-webkit-scrollbar-thumb {
 }
 
 .workspace-task-row:hover {
-  border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
-  background: color-mix(in srgb, var(--primary) 4%, var(--card));
-  box-shadow: 0 6px 14px -12px color-mix(in srgb, var(--primary) 52%, transparent);
+  border-color: var(--interactive-border);
+  background: var(--interactive-surface);
+  box-shadow: var(--interactive-glow);
 }
 
 .workspace-task-rail {
@@ -324,8 +324,9 @@ main.workspace-route::-webkit-scrollbar-thumb {
 }
 
 .workspace-tree-row:hover {
-  border-color: var(--border);
-  background: color-mix(in srgb, var(--primary) 4%, var(--card));
+  border-color: var(--interactive-border-soft);
+  background: var(--interactive-surface);
+  box-shadow: inset 2px 0 0 var(--interactive-border);
 }
 
 .workspace-tree-kind {
@@ -602,6 +603,22 @@ main.workspace-route::-webkit-scrollbar-thumb {
   height: 0.75rem;
 }
 
+.workspace-topbar-primary {
+  color: var(--topbar-strong);
+}
+
+.workspace-topbar-info {
+  color: color-mix(in srgb, var(--info) 82%, var(--topbar-foreground));
+}
+
+.workspace-topbar-warning {
+  color: color-mix(in srgb, var(--warning) 88%, var(--topbar-foreground));
+}
+
+.workspace-topbar-success {
+  color: color-mix(in srgb, var(--success) 86%, var(--topbar-foreground));
+}
+
 .workspace-topbar-danger {
   color: var(--topbar-danger);
 }
@@ -667,8 +684,11 @@ main.workspace-route::-webkit-scrollbar-thumb {
 .workspace-topbar button:hover,
 .workspace-topbar [data-slot="select-trigger"]:hover {
   color: var(--topbar-strong);
-  border-color: color-mix(in srgb, var(--primary) 36%, var(--border));
+  border-color: color-mix(in srgb, var(--primary) 52%, var(--topbar-border));
   background: var(--topbar-chip-hover);
+  box-shadow:
+    inset 0 1px 0 #ffffff75,
+    0 0 16px -9px color-mix(in srgb, var(--primary) 72%, transparent);
 }
 
 .workspace-topbar button:focus-visible,
@@ -810,7 +830,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
   box-shadow:
     0 1px 2px #142a1e0a,
     0 4px 12px -10px color-mix(in srgb, var(--module-tone) 38%, transparent);
-  outline: 1px solid color-mix(in srgb, var(--module-tone) 20%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--module-tone) 32%, transparent);
   outline-offset: -1px;
   transition:
     box-shadow 0.24s cubic-bezier(0.32, 0.72, 0, 1),
@@ -876,8 +896,8 @@ main.workspace-route::-webkit-scrollbar-thumb {
 [data-workspace-module]:hover {
   box-shadow:
     0 1px 2px #142a1e0b,
-    0 8px 18px -12px color-mix(in srgb, var(--module-tone) 46%, transparent);
-  outline-color: color-mix(in srgb, var(--module-tone) 38%, transparent);
+    0 9px 20px -12px color-mix(in srgb, var(--module-tone) 58%, transparent);
+  outline-color: color-mix(in srgb, var(--module-tone) 56%, transparent);
 }
 
 .dark [data-workspace-module] {
@@ -917,7 +937,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
 [data-module-card] {
   --section-tone: var(--module-tone);
   animation: workspaceModuleCardIn 200ms var(--ease-out-strong) both;
-  border-color: color-mix(in srgb, var(--module-tone) 20%, transparent);
+  border-color: color-mix(in srgb, var(--module-tone) 32%, transparent);
   background: color-mix(in srgb, var(--module-tone) 5%, var(--card));
   transition:
     border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
@@ -954,7 +974,7 @@ main.workspace-route::-webkit-scrollbar-thumb {
 }
 
 [data-module-card]:hover {
-  border-color: color-mix(in srgb, var(--module-tone) 36%, transparent);
+  border-color: color-mix(in srgb, var(--module-tone) 58%, transparent);
   background: color-mix(in srgb, var(--module-tone) 9%, var(--card));
   box-shadow: 0 5px 12px -10px color-mix(in srgb, var(--module-tone) 52%, transparent);
 }

@@ -515,6 +515,82 @@
 
 /* ---------- 分区导航 ---------- */
 
+.detailTabs {
+  gap: 0;
+  min-width: 0;
+}
+
+.heroDetailTabs {
+  align-items: stretch;
+  background-image: none;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+  bottom: 0.85rem;
+  box-shadow: 0 5px 14px -13px color-mix(in srgb, var(--primary) 70%, transparent);
+  display: flex;
+  flex: 0 0 auto;
+  height: 2rem;
+  justify-content: flex-start;
+  padding: 0;
+  position: absolute;
+  right: 1.1rem;
+  width: auto;
+  z-index: 2;
+}
+
+.heroDetailTabTrigger {
+  border-radius: 0;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  gap: 0.35rem;
+  height: 100%;
+  min-width: 6.8rem;
+  padding-inline: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .heroDetailTabs {
+    right: 1.1rem;
+  }
+
+  .heroDetailTabTrigger {
+    font-size: 0.72rem;
+    min-width: 4.9rem;
+    padding-inline: 0.55rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .heroDetailTabs {
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    bottom: auto;
+    height: 2.25rem;
+    margin-top: -0.1rem;
+    position: static;
+    width: 100%;
+  }
+
+  .heroDetailTabTrigger {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.tabPanel {
+  min-width: 0;
+  width: 100%;
+}
+
+.tabPanel[data-state="inactive"] {
+  display: none;
+}
+
+.staticPanel {
+  padding: 0 1.1rem 1rem;
+}
+
 .sectionNav {
   align-items: center;
   backdrop-filter: blur(8px);
@@ -602,7 +678,7 @@
 }
 
 .sectionLink[data-active="true"]::before {
-  animation: sectionLinkSweep 720ms var(--ease-out-strong) 160ms 1 both;
+  animation: sectionLinkSweep 320ms var(--ease-out-strong) 1 both;
 }
 
 @keyframes sectionLinkSweep {
@@ -731,8 +807,13 @@
 
 /* ---------- Word 表格 ---------- */
 
+.sectionAnchor {
+  scroll-margin-top: 3.25rem;
+}
+
 .tableWrap {
   overflow-x: auto;
+  scroll-margin-top: 3.25rem;
   padding: 0.75rem 1.1rem 0;
   scrollbar-width: thin;
 }
@@ -757,9 +838,9 @@
   );
   border: 1px solid var(--border);
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 640;
-  padding: 0.35rem 0.5rem;
+  padding: 0.35rem 0.4rem;
   box-shadow: inset 2px 0 0 color-mix(in srgb, var(--primary) 24%, transparent);
   text-align: center;
   transition:
@@ -767,7 +848,7 @@
     box-shadow 0.2s var(--ease-out-strong);
   vertical-align: middle;
   white-space: nowrap;
-  width: 158px;
+  width: 122px;
 }
 
 /* 未完善行：琥珀色左侧色条 + 弱底色，和树里的未完善提醒同源 */
@@ -1140,6 +1221,7 @@
     0 14px 30px -32px color-mix(in srgb, var(--primary) 72%, transparent);
   margin: 0.9rem 1.1rem 0;
   overflow: hidden;
+  scroll-margin-top: 3.25rem;
   position: relative;
 }
 

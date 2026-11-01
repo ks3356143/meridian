@@ -2,16 +2,21 @@
 /* ---------- 需求描述手风琴 ---------- */
 
 .accordion {
-  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border: 1px solid var(--border);
   overflow: hidden;
   transition:
     box-shadow 0.2s var(--ease-out-strong),
     border-color 0.2s var(--ease-out-strong);
 }
 
+.accordion:hover {
+  border-color: var(--interactive-border-soft);
+  box-shadow: var(--interactive-glow);
+}
+
 .accordion[data-open="true"] {
-  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
-  box-shadow: 0 0 18px -12px color-mix(in srgb, var(--primary) 80%, transparent);
+  border-color: var(--interactive-border);
+  box-shadow: var(--interactive-glow);
 }
 
 /* 展开反馈：左侧信息蓝色条 + 标题提色（2026-10-12 美化轮）。 */
@@ -28,17 +33,26 @@
   align-items: center;
   background: color-mix(in srgb, var(--muted-foreground) 5%, transparent);
   cursor: pointer;
-  text-align: left;
   display: flex;
   gap: 0.4rem;
   min-width: 0;
   padding: 0.32rem 0.4rem;
-  transition: background-color 0.18s var(--ease-out-strong);
+  text-align: left;
+  transition:
+    background-color 0.18s var(--ease-out-strong),
+    box-shadow 0.18s var(--ease-out-strong);
   width: 100%;
 }
 
 .accordionHead:hover {
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  background: var(--interactive-surface);
+  box-shadow: inset 2px 0 0 var(--interactive-border);
+}
+
+.accordionHead:focus-visible {
+  box-shadow: inset 2px 0 0 var(--primary);
+  outline: 2px solid color-mix(in srgb, var(--ring) 72%, transparent);
+  outline-offset: -2px;
 }
 
 .accordionChevron {

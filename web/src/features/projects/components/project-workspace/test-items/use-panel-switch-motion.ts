@@ -2,8 +2,8 @@ import type { RefObject } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
 
 /**
- * 详情面板切换的入场动效（测试项详情与用例详情共用同一实现）：内容淡入上移，
- * 只动画传入节点的内部内容，滚动容器留在外面，否则滚动条跟着位移看起来在跳。
+ * 详情面板切换只做轻微淡入，不截整表、不交叉淡化、不做纵向位移。
+ * 旧面板由 React key 立即卸载，因此任何时刻都只有当前面板可见。
  */
 export function usePanelSwitchMotion(ref: RefObject<HTMLElement | null>, switchKey: string) {
   useGSAP(
@@ -13,13 +13,12 @@ export function usePanelSwitchMotion(ref: RefObject<HTMLElement | null>, switchK
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       gsap.fromTo(
         element,
-        { autoAlpha: 0, y: 8 },
+        { opacity: 0.84 },
         {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.28,
+          opacity: 1,
+          duration: 0.2,
           ease: "power2.out",
-          clearProps: "transform,opacity,visibility",
+          clearProps: "opacity",
         },
       );
     },

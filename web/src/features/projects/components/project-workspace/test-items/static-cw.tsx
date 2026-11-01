@@ -124,7 +124,7 @@ export function CwWorkbench({ state, update }: { state: StaticState; update: Sta
       <Accordion type="single" collapsible className={styles.bulkAccordion}>
         <AccordionItem value="bulk">
           <AccordionTrigger>批量粘贴文件清单</AccordionTrigger>
-          <AccordionContent>
+          <AccordionContent className={styles.accordionBodyInset}>
             <p className={styles.hint}>
               每行一个文件，支持“文件路径,行数”或“文件路径 + Tab + 行数”。
             </p>

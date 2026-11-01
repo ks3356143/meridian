@@ -65,11 +65,15 @@ export function WorkspaceTopbar({
         </div>
 
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <TopMetric label="执行" value={`${executionRate}%`} />
+          <TopMetric
+            label="执行"
+            value={`${executionRate}%`}
+            tone={executionRate >= 100 ? "success" : executionRate > 0 ? "info" : "warning"}
+          />
           <TopMetric
             label="未闭环"
             value={String(openIssues)}
-            tone={openIssues > 0 ? "danger" : "default"}
+            tone={openIssues > 0 ? "danger" : "success"}
           />
           {quickSwitcher}
           <span className="workspace-topbar-divider hidden h-6 xl:block" aria-hidden />
@@ -101,12 +105,13 @@ function TopMetric({
 }: {
   label: string;
   value: string;
-  tone?: "default" | "danger";
+  tone?: "default" | "primary" | "info" | "warning" | "success" | "danger";
 }) {
+  const valueClassName = tone === "default" ? undefined : `workspace-topbar-${tone}`;
   return (
     <span className="workspace-topbar-metric font-mono">
       <span className="workspace-topbar-muted font-sans text-[10px]">{label}</span>
-      <span className={tone === "danger" ? "workspace-topbar-danger" : ""}>{value}</span>
+      <span className={valueClassName}>{value}</span>
     </span>
   );
 }

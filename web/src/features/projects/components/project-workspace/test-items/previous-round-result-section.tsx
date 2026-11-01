@@ -17,6 +17,7 @@ export function PreviousRoundResultSection({
   projectCode: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const resultQuery = useQuery({
     queryKey: ["test-cases", caseId, "previous-round-result"],
     queryFn: () => testItemsApi.previousRoundResult(caseId),
@@ -35,7 +36,10 @@ export function PreviousRoundResultSection({
         type="button"
         className={styles.trigger}
         aria-expanded={expanded}
-        onClick={() => setExpanded((current) => !current)}
+        onClick={() => {
+          setMounted(true);
+          setExpanded((current) => !current);
+        }}
       >
         <span className={styles.glyph} aria-hidden>
           <History />
@@ -56,48 +60,55 @@ export function PreviousRoundResultSection({
         <ChevronDown className={styles.chevron} aria-hidden />
       </button>
 
-      {expanded ? (
-        <div className={styles.body} aria-busy={resultQuery.isPending || undefined}>
-          {resultQuery.isPending ? (
-            <div className={styles.state}>正在读取上轮实测…</div>
-          ) : resultQuery.isError ? (
-            <div className={styles.error}>
-              <span>上轮实测读取失败。</span>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                onClick={() => resultQuery.refetch()}
-              >
-                重试
-              </Button>
-            </div>
-          ) : result ? (
-            <>
-              <div className={styles.meta}>
-                <span className={styles.statusChip} data-status={result.previousCase.status}>
-                  {caseStatusLabel(result.previousCase.status)}
-                </span>
-                <span>执行日期：{formatDate(result.previousCase.execDate)}</span>
-                <span>测试人员：{result.testerName || "未记录"}</span>
+      <div className={styles.bodyWrap}>
+        <div
+          className={styles.body}
+          aria-busy={(expanded && resultQuery.isPending) || undefined}
+          aria-hidden={!expanded}
+          inert={!expanded}
+        >
+          {mounted ? (
+            resultQuery.isPending ? (
+              <div className={styles.state}>正在读取上轮实测…</div>
+            ) : resultQuery.isError ? (
+              <div className={styles.error}>
+                <span>上轮实测读取失败。</span>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  onClick={() => resultQuery.refetch()}
+                >
+                  重试
+                </Button>
               </div>
-              {result.steps.length === 0 ? (
-                <div className={styles.state}>上轮用例没有步骤记录。</div>
-              ) : (
-                <div className={styles.steps}>
-                  {result.steps.map((step, index) => (
-                    <PreviousStepCard
-                      key={`${step.currentStepId ?? "previous"}-${step.previousStep.id || index}`}
-                      step={step}
-                      projectCode={projectCode}
-                    />
-                  ))}
+            ) : result ? (
+              <>
+                <div className={styles.meta}>
+                  <span className={styles.statusChip} data-status={result.previousCase.status}>
+                    {caseStatusLabel(result.previousCase.status)}
+                  </span>
+                  <span>执行日期：{formatDate(result.previousCase.execDate)}</span>
+                  <span>测试人员：{result.testerName || "未记录"}</span>
                 </div>
-              )}
-            </>
+                {result.steps.length === 0 ? (
+                  <div className={styles.state}>上轮用例没有步骤记录。</div>
+                ) : (
+                  <div className={styles.steps}>
+                    {result.steps.map((step, index) => (
+                      <PreviousStepCard
+                        key={`${step.currentStepId ?? "previous"}-${step.previousStep.id || index}`}
+                        step={step}
+                        projectCode={projectCode}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : null
           ) : null}
         </div>
-      ) : null}
+      </div>
     </section>
   );
 }

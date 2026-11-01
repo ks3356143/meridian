@@ -34,6 +34,7 @@ type WorkspaceSection = "tasks" | "assets" | "requirements" | "execution" | "del
 const NAV_SECTIONS: Array<{
   value: WorkspaceSection;
   label: string;
+  shortLabel: string;
   description: string;
   icon: LucideIcon;
   path: string;
@@ -41,6 +42,7 @@ const NAV_SECTIONS: Array<{
   {
     value: "tasks",
     label: "作业台",
+    shortLabel: "作业",
     description: "当前任务、数据链路与模块状态",
     icon: CircleCheck,
     path: "",
@@ -48,6 +50,7 @@ const NAV_SECTIONS: Array<{
   {
     value: "assets",
     label: "资料与对象",
+    shortLabel: "资料",
     description: "接收文件、工作对象与版本",
     icon: Boxes,
     path: "profile",
@@ -55,6 +58,7 @@ const NAV_SECTIONS: Array<{
   {
     value: "requirements",
     label: "需求与追踪",
+    shortLabel: "需求",
     description: "需求树、候选确认与追踪",
     icon: GitBranch,
     path: "requirements",
@@ -62,6 +66,7 @@ const NAV_SECTIONS: Array<{
   {
     value: "execution",
     label: "测试与执行",
+    shortLabel: "测试",
     description: "测试项树、用例与静态测试",
     icon: ListChecks,
     path: "test-items",
@@ -69,6 +74,7 @@ const NAV_SECTIONS: Array<{
   {
     value: "delivery",
     label: "交付与文档",
+    shortLabel: "交付",
     description: "文档清单、预检与交付导出",
     icon: FileText,
     path: "documents",
@@ -151,6 +157,7 @@ export function ProjectWorkspaceLayout({
   useRevealActiveTab(listRef, displayedSection);
 
   const indicatorRef = useRef<HTMLSpanElement>(null);
+  const indicatorStateRef = useRef({ x: 0, width: 0, ready: false });
   useLayoutEffect(() => {
     const list = listRef.current;
     const indicator = indicatorRef.current;
@@ -163,8 +170,31 @@ export function ProjectWorkspaceLayout({
       const activeIndex = NAV_SECTIONS.findIndex((section) => section.value === displayedSection);
       const active = list.querySelectorAll<HTMLElement>('[data-slot="tabs-trigger"]')[activeIndex];
       if (!active) return;
-      indicator.style.width = `${active.offsetWidth}px`;
-      indicator.style.transform = `translateX(${active.offsetLeft}px)`;
+      const nextWidth = active.offsetWidth;
+      if (nextWidth <= 0) return;
+      const nextX = active.offsetLeft;
+      const previous = indicatorStateRef.current;
+      if (previous.ready && previous.x === nextX && previous.width === nextWidth) {
+        list.dataset.indicatorReady = "true";
+        return;
+      }
+      const currentX = previous.ready ? Number(gsap.getProperty(indicator, "x")) : nextX;
+      const currentScale = previous.ready ? Number(gsap.getProperty(indicator, "scaleX")) : 1;
+      const currentWidth = previous.ready ? previous.width * currentScale : nextWidth;
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      gsap.killTweensOf(indicator);
+      indicator.style.width = `${nextWidth}px`;
+      if (!previous.ready || reducedMotion) {
+        gsap.set(indicator, { x: nextX, scaleX: 1 });
+      } else {
+        // 宽度只提交一次，过渡期间只动 transform，避免导航每帧触发盒模型布局。
+        gsap.fromTo(
+          indicator,
+          { x: currentX, scaleX: currentWidth / nextWidth },
+          { x: nextX, scaleX: 1, duration: 0.24, ease: "power3.out", overwrite: true },
+        );
+      }
+      indicatorStateRef.current = { x: nextX, width: nextWidth, ready: true };
       list.dataset.indicatorReady = "true";
     };
     measure();
@@ -174,6 +204,7 @@ export function ProjectWorkspaceLayout({
     return () => {
       cancelled = true;
       observer.disconnect();
+      gsap.killTweensOf(indicator);
     };
   }, [displayedSection]);
 
@@ -285,11 +316,13 @@ export function ProjectWorkspaceLayout({
                   key={section.value}
                   value={section.value}
                   className={styles.tabTrigger}
+                  aria-label={section.label}
                   onFocus={() => preloadSection(section.value)}
                   onPointerEnter={() => preloadSection(section.value)}
                 >
                   <section.icon className={styles.tabIcon} aria-hidden />
-                  {section.label}
+                  <span className={styles.tabLabelFull}>{section.label}</span>
+                  <span className={styles.tabLabelCompact}>{section.shortLabel}</span>
                 </TabsTrigger>
               ))}
               <span ref={indicatorRef} className={styles.tabIndicator} aria-hidden />

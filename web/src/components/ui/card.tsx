@@ -16,7 +16,7 @@ function Card({
       data-spotlight=""
       className={cn(
         spotlightStyles.card,
-        "panel-surface group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-sm py-(--card-spacing) text-sm text-card-foreground ring-1 ring-border [--card-spacing:1.125rem] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:0.875rem] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-sm *:[img:last-of-type]:rounded-b-sm",
+        "panel-surface group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-sm py-(--card-spacing) text-sm text-card-foreground ring-1 ring-border hover:ring-primary/40 [--card-spacing:1.125rem] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:0.875rem] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-sm *:[img:last-of-type]:rounded-b-sm",
         className,
       )}
     >

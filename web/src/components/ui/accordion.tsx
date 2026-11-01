@@ -2,6 +2,7 @@ import * as React from "react";
 import { ChevronDownIcon } from "lucide-react";
 import * as AccordionPrimitive from "radix-ui/accordion";
 import { cn } from "cn";
+import styles from "./accordion.module.css";
 
 function Accordion({ ...props }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
   return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
@@ -30,13 +31,16 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "flex flex-1 items-center justify-between gap-3 py-3 text-left text-sm font-medium transition-colors outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/50 [&[data-state=open]>svg]:rotate-180",
+          styles.trigger,
+          "flex flex-1 items-center justify-between gap-3 py-3 text-left text-sm font-medium",
           className,
         )}
         {...props}
       >
         {children}
-        <ChevronDownIcon className="pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200" />
+        <span className={styles.indicator} aria-hidden>
+          <ChevronDownIcon />
+        </span>
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   );
@@ -50,10 +54,10 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className="overflow-hidden text-sm"
+      className={cn(styles.content, "text-sm")}
       {...props}
     >
-      <div className={cn("pt-0 pb-3", className)}>{children}</div>
+      <div className={cn(styles.contentInner, "pb-3", className)}>{children}</div>
     </AccordionPrimitive.Content>
   );
 }

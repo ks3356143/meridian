@@ -91,13 +91,29 @@
 }
 
 .viewMetaCount {
-  color: color-mix(in srgb, var(--foreground) 64%, var(--muted-foreground));
+  --meta-tone: var(--foreground);
+  align-items: center;
+  background: color-mix(in srgb, var(--meta-tone) 4%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--meta-tone) 48%, transparent);
+  color: color-mix(in srgb, var(--foreground) 70%, var(--muted-foreground));
+  display: inline-flex;
+  gap: 0.18rem;
+  padding: 0.08rem 0.32rem;
+}
+
+.viewMetaCount[data-tone="info"] {
+  --meta-tone: var(--info);
+}
+
+.viewMetaCount[data-tone="warning"] {
+  --meta-tone: var(--warning);
 }
 
 .viewMetaCount strong {
-  color: var(--foreground);
-  font-size: 0.68rem;
-  font-weight: 700;
+  color: var(--meta-tone);
+  font-size: 0.72rem;
+  font-weight: 760;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--meta-tone) 16%, transparent);
 }
 
 @media (max-width: 600px) {

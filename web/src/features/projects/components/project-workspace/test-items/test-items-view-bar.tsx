@@ -56,10 +56,10 @@ export function TestItemsViewBar({
       ) : null}
       <div className={styles.viewMeta} aria-label="当前视图统计">
         <span className={styles.viewMetaScope}>{allRounds ? "跨轮只读" : roundName}</span>
-        <span className={styles.viewMetaCount}>
+        <span className={styles.viewMetaCount} data-tone="info">
           <strong>{itemCount}</strong> 项
         </span>
-        <span className={styles.viewMetaCount}>
+        <span className={styles.viewMetaCount} data-tone="warning">
           <strong>{caseCount}</strong> 用例
         </span>
       </div>

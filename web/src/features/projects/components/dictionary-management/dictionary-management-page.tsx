@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { BookMarked, Building2, FileCog, SlidersHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/shared/page-header";
+import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
 import { DictionaryManagementTab } from "./dictionary-management-tab";
 import { StandardManagementTab } from "./standard-management-tab";
 import { RelatedPartyManagementTab } from "./related-party-management-tab";
@@ -13,6 +14,7 @@ export function DictionaryManagementPage() {
     "dictionaries",
   );
 
+  useResetScrollOnTabChange(activeTab);
   useSubtleReveal(containerRef, ".dictionary-reveal");
 
   return (

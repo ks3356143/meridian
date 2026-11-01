@@ -1,5 +1,6 @@
 import { FilePlus2 } from "lucide-react";
 import { useState } from "react";
+import { DatePicker } from "@/components/shared/date-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -124,13 +125,10 @@ export function ManualWorkObjectDialog({
             </Field>
             <Field>
               <FieldLabel htmlFor="manual-object-received-at">接收日期</FieldLabel>
-              <Input
+              <DatePicker
                 id="manual-object-received-at"
-                type="date"
                 value={values.receivedAt}
-                onChange={(event) =>
-                  setValues((previous) => ({ ...previous, receivedAt: event.target.value }))
-                }
+                onChange={(receivedAt) => setValues((previous) => ({ ...previous, receivedAt }))}
               />
             </Field>
           </div>

@@ -7,6 +7,7 @@ import {
   CloudUpload,
   CopyPlus,
   Crosshair,
+  FileCheck2,
   Loader2,
   Pencil,
   Trash2,
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -54,6 +56,8 @@ import styles from "./test-item-detail.module.css";
 const SECTION_BASIC = "ti-section-basic";
 const SECTION_METHOD = "ti-section-method";
 const SECTION_CASES = "ti-section-cases";
+const DETAIL_INFO = "ti-detail-info";
+const DETAIL_STATIC = "ti-detail-static";
 
 const SECTION_LINKS = [
   { id: SECTION_BASIC, label: "基本信息" },
@@ -127,6 +131,7 @@ function TestItemDetailPanelInner({
   const item = detail.item;
   const scrollRef = useRef<HTMLDivElement>(null);
   const jumpSpyLockRef = useRef(false);
+  const [activeDetailTab, setActiveDetailTab] = useState<string>(DETAIL_INFO);
   const [activeSection, setActiveSection] = useState<string>(SECTION_BASIC);
   const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
   const [batchPending, setBatchPending] = useState(false);
@@ -177,50 +182,61 @@ function TestItemDetailPanelInner({
     [syncSaveState],
   );
 
-  // 切换测试项时在绘制前回到顶部，避免"先画新项再滚回去"造成的滚动条跳动。
+  // 切到“静态测试”或返回测试项信息时，同时校正内层详情和外围路由滚动位置。
   useLayoutEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
-  }, [item.id]);
+    const detail = scrollRef.current;
+    detail?.scrollTo({ top: 0 });
+    detail?.closest<HTMLElement>("main.workspace-route")?.scrollTo({ top: 0 });
+  }, [item.id, activeDetailTab]);
 
   // 只动画滚动容器里的内容，不动滚动容器本身——否则滚动条跟着位移，看起来在跳。
   const contentRef = useRef<HTMLDivElement>(null);
   usePanelSwitchMotion(contentRef, item.id);
 
   useEffect(() => {
+    if (activeDetailTab !== DETAIL_INFO) return;
     const container = scrollRef.current;
     if (!container) return;
+    const route = container.closest<HTMLElement>("main.workspace-route");
+    const scrollTargets = route && route !== container ? [container, route] : [container];
     const handleScroll = () => {
-      // 点击分区后亮住不动，直到用户自己滚动/按键才交还位置推断。
       if (jumpSpyLockRef.current) return;
-      const offset = container.scrollTop + 96;
+      const nav = container.querySelector<HTMLElement>('[aria-label="测试项分区导航"]');
+      const activationLine =
+        (nav?.getBoundingClientRect().bottom ?? container.getBoundingClientRect().top) + 10;
       let current: string = SECTION_BASIC;
       for (const section of SECTION_LINKS) {
-        const element = document.getElementById(section.id);
-        if (element && element.offsetTop <= offset) current = section.id;
+        const element = container.querySelector<HTMLElement>(`#${section.id}`);
+        if (element && element.getBoundingClientRect().top <= activationLine) current = section.id;
       }
       setActiveSection(current);
     };
     const releaseJumpLock = () => {
       jumpSpyLockRef.current = false;
     };
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    // 只认用户自己的滚轮/触摸/按键：程序化 smooth 滚动期间保持"点谁亮谁"。
-    container.addEventListener("wheel", releaseJumpLock, { passive: true });
-    container.addEventListener("touchstart", releaseJumpLock, { passive: true });
-    container.addEventListener("keydown", releaseJumpLock);
+    for (const target of scrollTargets) {
+      target.addEventListener("scroll", handleScroll, { passive: true });
+      target.addEventListener("wheel", releaseJumpLock, { passive: true });
+      target.addEventListener("touchstart", releaseJumpLock, { passive: true });
+      target.addEventListener("keydown", releaseJumpLock);
+      target.addEventListener("scrollend", releaseJumpLock);
+    }
     handleScroll();
-
     return () => {
-      container.removeEventListener("scroll", handleScroll);
-      container.removeEventListener("wheel", releaseJumpLock);
-      container.removeEventListener("touchstart", releaseJumpLock);
-      container.removeEventListener("keydown", releaseJumpLock);
+      for (const target of scrollTargets) {
+        target.removeEventListener("scroll", handleScroll);
+        target.removeEventListener("wheel", releaseJumpLock);
+        target.removeEventListener("touchstart", releaseJumpLock);
+        target.removeEventListener("keydown", releaseJumpLock);
+        target.removeEventListener("scrollend", releaseJumpLock);
+      }
       jumpSpyLockRef.current = false;
     };
-  }, [item.id]);
+  }, [item.id, activeDetailTab]);
 
   const jumpTo = (id: string) => {
-    const element = document.getElementById(id);
+    const container = scrollRef.current;
+    const element = container?.querySelector<HTMLElement>(`#${id}`);
     if (!element) return;
     setActiveSection(id);
     jumpSpyLockRef.current = true;
@@ -323,7 +339,9 @@ function TestItemDetailPanelInner({
         ? item.name.trim() !== ""
         : section.id === SECTION_METHOD
           ? methodOk
-          : detail.cases.length > 0;
+          : section.id === SECTION_CASES
+            ? detail.cases.length > 0
+            : false;
     const unit =
       section.id === SECTION_METHOD ? "个子项" : section.id === SECTION_CASES ? "条用例" : "";
     return { ...section, step: index + 1, count, done, unit };
@@ -331,601 +349,645 @@ function TestItemDetailPanelInner({
   return (
     <div className={styles.detail} ref={scrollRef}>
       <div ref={contentRef} className={styles.content}>
-        <SpotlightSurface as="header" className={styles.hero}>
-          <div className={styles.heroMain}>
-            <div className={styles.heroMetaLine}>
-              <span className={styles.heroKind}>TEST ITEM</span>
-              <span className={styles.heroIdent}>{item.identifier}</span>
-            </div>
-            <div className={styles.heroTitleRow}>
-              <span className={styles.titleBar} data-tone={tone} aria-hidden />
-              <h2 className={styles.heroTitle}>{item.name}</h2>
-            </div>
-            <div className={styles.heroTags}>
-              <Badge variant="primary" className={styles.typeBadge} data-tone={tone}>
-                {type ? `${type.code} ${type.name}` : item.typeCode}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={styles.priorityBadge}
-                data-priority={item.priority}
-              >
-                {item.priority}
-              </Badge>
-              {folderName ? <span className={styles.heroTag}>文件夹：{folderName}</span> : null}
-              <span className={styles.heroTag}>{round.name}</span>
-            </div>
-          </div>
-          <div className={styles.heroSide}>
-            <CaseSearch testItemId={item.id} onOpenHit={(hit) => onOpenSearchHit?.(hit)} />
-            <Button
-              type="button"
-              variant="outline"
-              size="xs"
-              className={styles.deleteButton}
-              onClick={onRequestDelete}
-            >
-              <Trash2 aria-hidden />
-              删除
-            </Button>
-            <div
-              className={styles.heroCompleteness}
-              data-state={completeness === null ? "static" : complete ? "done" : "incomplete"}
-            >
-              {completeness ? (
-                <>
-                  <div className={styles.completenessTop}>
-                    <span>{complete ? "已完善" : "未完善"}</span>
-                    <strong>
-                      {completeness.done}/{completeness.total}
-                    </strong>
-                  </div>
-                  <Progress
-                    value={Math.round((completeness.done / Math.max(completeness.total, 1)) * 100)}
-                    className={styles.completenessBar}
-                    data-tone={complete ? "full" : "warn"}
-                  />
-                  {item.implicitRequirement ? (
-                    <span className={styles.implicitNote}>
-                      <span className={styles.btnDot} data-tone="amber" aria-hidden />
-                      按隐含需求处理（无关联需求）
-                    </span>
-                  ) : completeness.missing.length > 0 ? (
-                    <div className={styles.missingChips}>
-                      {completeness.missing.map((label) => (
-                        <span key={label} className={styles.missingChip}>
-                          <AlertTriangle aria-hidden />缺 {label}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className={styles.completenessDone}>
-                      <CheckCircle2 aria-hidden />
-                      全部齐全，可进入执行
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className={styles.staticNote}>
-                  <Info aria-hidden />
-                  静态测试项进度见静态流程
-                </span>
-              )}
-            </div>
-          </div>
-        </SpotlightSurface>
-
-        <nav className={styles.sectionNav} aria-label="测试项分区导航">
-          <span
-            key={saveChipKey}
-            className={styles.statusChip}
-            data-save-state={saveState}
-            aria-live="polite"
-          >
-            {saveState === "saving" ? (
-              <>
-                <Loader2 aria-hidden />
-                保存中
-              </>
-            ) : saveState === "error" ? (
-              "保存失败"
-            ) : saveState === "editing" ? (
-              <>
-                <CloudUpload aria-hidden />
-                待自动保存
-              </>
-            ) : (
-              <>
-                <CheckCircle2 aria-hidden />
-                已自动保存
-              </>
-            )}
-          </span>
-          {sectionSteps.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              className={styles.sectionLink}
-              data-active={activeSection === section.id ? "true" : undefined}
-              data-state={
-                activeSection === section.id ? "active" : section.done ? "done" : "pending"
-              }
-              aria-current={activeSection === section.id ? "location" : undefined}
-              aria-label={`第 ${section.step} 步 ${section.label}，${section.done ? "已完成" : "未完成"}${section.count !== null && section.count > 0 ? `，${section.count} ${section.unit}` : ""}`}
-              onClick={() => jumpTo(section.id)}
-            >
-              <span
-                className={styles.sectionStep}
-                data-done={section.done ? "true" : undefined}
-                aria-hidden
-              >
-                {section.done ? <Check aria-hidden /> : section.step}
-              </span>
-              {section.label}
-              {section.count !== null && section.count > 0 ? (
-                <span
-                  className={styles.sectionCount}
-                  title={`${section.count} ${section.unit}`}
-                  aria-hidden
+        <Tabs
+          value={activeDetailTab}
+          onValueChange={setActiveDetailTab}
+          className={styles.detailTabs}
+        >
+          <SpotlightSurface as="header" className={styles.hero}>
+            <div className={styles.heroMain}>
+              <div className={styles.heroMetaLine}>
+                <span className={styles.heroKind}>TEST ITEM</span>
+                <span className={styles.heroIdent}>{item.identifier}</span>
+              </div>
+              <div className={styles.heroTitleRow}>
+                <span className={styles.titleBar} data-tone={tone} aria-hidden />
+                <h2 className={styles.heroTitle}>{item.name}</h2>
+              </div>
+              <div className={styles.heroTags}>
+                <Badge variant="primary" className={styles.typeBadge} data-tone={tone}>
+                  {type ? `${type.code} ${type.name}` : item.typeCode}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={styles.priorityBadge}
+                  data-priority={item.priority}
                 >
-                  {section.count}
-                  <span className={styles.sectionCountUnit}>{section.unit}</span>
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </nav>
-
-        <div className={styles.tableWrap}>
-          <table className={styles.itemTable}>
-            <tbody>
-              <tr id={SECTION_BASIC}>
-                <th scope="row">测试项名称</th>
-                <td>
-                  <EditableCell
-                    value={item.name}
-                    label="测试项名称"
-                    missing={item.name.trim() === ""}
-                    onSave={(next) => patch({ name: next })}
-                    onPhase={reportPhase}
-                  />
-                </td>
-                <th scope="row">测试项标识</th>
-                <td>
-                  <div className={styles.identCell}>
-                    <span className={styles.identPrefix}>{`XQ_${item.typeCode}_`}</span>
-                    <EditableCell
-                      value={item.suffix}
-                      label="测试项标识后缀"
-                      className={styles.identEditor}
-                      onSave={(next) => patch({ suffix: next })}
-                      onPhase={reportPhase}
+                  {item.priority}
+                </Badge>
+                {folderName ? <span className={styles.heroTag}>文件夹：{folderName}</span> : null}
+                <span className={styles.heroTag}>{round.name}</span>
+              </div>
+            </div>
+            <div className={styles.heroSide}>
+              <CaseSearch testItemId={item.id} onOpenHit={(hit) => onOpenSearchHit?.(hit)} />
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                className={styles.deleteButton}
+                onClick={onRequestDelete}
+              >
+                <Trash2 aria-hidden />
+                删除
+              </Button>
+              <div
+                className={styles.heroCompleteness}
+                data-state={completeness === null ? "static" : complete ? "done" : "incomplete"}
+              >
+                {completeness ? (
+                  <>
+                    <div className={styles.completenessTop}>
+                      <span>{complete ? "已完善" : "未完善"}</span>
+                      <strong>
+                        {completeness.done}/{completeness.total}
+                      </strong>
+                    </div>
+                    <Progress
+                      value={Math.round(
+                        (completeness.done / Math.max(completeness.total, 1)) * 100,
+                      )}
+                      className={styles.completenessBar}
+                      data-tone={complete ? "full" : "warn"}
                     />
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">优先级</th>
-                <td>
-                  <Select
-                    value={item.priority}
-                    onValueChange={(value) => void patch({ priority: value })}
-                  >
-                    <SelectTrigger
-                      size="sm"
-                      className={styles.prioritySelect}
-                      data-priority={item.priority}
-                      aria-label="优先级"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRIORITIES.map((priority) => (
-                        <SelectItem key={priority} value={priority}>
-                          {priority}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </td>
-                <th scope="row">类型</th>
-                <td>
-                  {/* 静态四类（DC/SA/CR/CW）每轮各一个固定槽位，类型锁定：不渲染成可点按钮。 */}
-                  {isStatic ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className={styles.typeLocked}>
-                          <span className={styles.typeText} data-tone={tone}>
-                            {item.typeCode}
-                            {type ? ` · ${type.name}` : ""}
+                    {item.implicitRequirement ? (
+                      <span className={styles.implicitNote}>
+                        <span className={styles.btnDot} data-tone="amber" aria-hidden />
+                        按隐含需求处理（无关联需求）
+                      </span>
+                    ) : completeness.missing.length > 0 ? (
+                      <div className={styles.missingChips}>
+                        {completeness.missing.map((label) => (
+                          <span key={label} className={styles.missingChip}>
+                            <AlertTriangle aria-hidden />缺 {label}
                           </span>
-                          <span className={styles.staticChip}>静态</span>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">静态测试项类型锁定，不可修改</TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className={styles.typeButton}
-                          onClick={onChangeType}
-                          aria-label="修改测试项类型"
-                        >
-                          <span className={styles.typeText} data-tone={tone}>
-                            {item.typeCode}
-                            {type ? ` · ${type.name}` : ""}
-                          </span>
-                          <Pencil className={styles.typeEditIcon} aria-hidden />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">修改测试项类型</TooltipContent>
-                    </Tooltip>
-                  )}
-                </td>
-              </tr>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className={styles.completenessDone}>
+                        <CheckCircle2 aria-hidden />
+                        全部齐全，可进入执行
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className={styles.staticNote}>
+                    <Info aria-hidden />
+                    静态测试项进度见静态流程
+                  </span>
+                )}
+              </div>
+            </div>
+            {isStatic ? (
+              <TabsList
+                variant="line"
+                className={styles.heroDetailTabs}
+                aria-label="测试项详情视图"
+              >
+                <TabsTrigger value={DETAIL_INFO} className={styles.heroDetailTabTrigger}>
+                  测试项信息
+                </TabsTrigger>
+                <TabsTrigger value={DETAIL_STATIC} className={styles.heroDetailTabTrigger}>
+                  <FileCheck2 aria-hidden />
+                  静态测试
+                </TabsTrigger>
+              </TabsList>
+            ) : null}
+          </SpotlightSurface>
 
-              {isStatic ? null : (
-                <>
-                  <tr data-pending={!tracked ? "true" : undefined}>
-                    <th scope="row">追踪关系</th>
-                    <td colSpan={3}>
-                      <div className={styles.linkArea}>
-                        {/* 操作按钮在上、需求 chip 在下：先动作、后结果。 */}
-                        <div className={styles.linkActions}>
-                          <RequirementLinkPicker
-                            projectId={projectId}
-                            linkedIds={detail.requirements.map((reference) => reference.id)}
-                            disabled={item.implicitRequirement}
-                            onPick={onLink}
-                          />
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              {/* 隐含需求 = 没有可关联的需求、用户自己补的项：已关联需求时不允许标记。 */}
-                              <Button
-                                type="button"
-                                variant={item.implicitRequirement ? "secondary" : "outline"}
-                                size="xs"
-                                className={styles.implicitButton}
-                                data-active={item.implicitRequirement ? "true" : undefined}
-                                aria-pressed={item.implicitRequirement}
-                                disabled={
-                                  detail.requirements.length > 0 && !item.implicitRequirement
-                                }
-                                onClick={() =>
-                                  void patch({ implicitRequirement: !item.implicitRequirement })
-                                }
-                              >
-                                <span className={styles.btnDot} data-tone="amber" aria-hidden />
-                                隐含需求
-                              </Button>
-                            </TooltipTrigger>
-                            {detail.requirements.length > 0 && !item.implicitRequirement ? (
-                              <TooltipContent side="top">
-                                已关联需求，不能标记为隐含需求；先解除关联再标记
-                              </TooltipContent>
-                            ) : null}
-                          </Tooltip>
-                          {item.implicitRequirement ? (
-                            <span className={styles.implicitTag}>
-                              <span className={styles.btnDot} data-tone="amber" aria-hidden />
-                              按隐含需求处理
-                            </span>
-                          ) : null}
-                          {!tracked ? (
-                            <span className={styles.pendingHint}>未关联需求，按未完善处理</span>
-                          ) : null}
-                        </div>
-                        {detail.requirements.length > 0 ? (
-                          <div className={styles.linkRow}>
-                            {detail.requirements.map((reference) => (
-                              <span key={reference.id} className={styles.linkChip}>
-                                {reference.sourceName ? (
-                                  <span className={styles.linkSource}>{reference.sourceName}</span>
-                                ) : null}
-                                <span className={styles.linkChapter}>
-                                  §{reference.chapterNumber}
-                                </span>
-                                <TruncatedText
-                                  value={reference.name}
-                                  className={styles.linkName}
-                                  tooltipValue={reference.name}
-                                />
-                                <button
-                                  type="button"
-                                  className={styles.unlinkButton}
-                                  aria-label={`解除关联 §${reference.chapterNumber} ${reference.name}`}
-                                  onClick={() => void onUnlink(reference.id)}
-                                >
-                                  <X aria-hidden />
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
+          <TabsContent
+            value={DETAIL_INFO}
+            className={styles.tabPanel}
+            forceMount
+            inert={activeDetailTab !== DETAIL_INFO ? true : undefined}
+          >
+            <nav className={styles.sectionNav} aria-label="测试项分区导航">
+              <span
+                key={saveChipKey}
+                className={styles.statusChip}
+                data-save-state={saveState}
+                aria-live="polite"
+              >
+                {saveState === "saving" ? (
+                  <>
+                    <Loader2 aria-hidden />
+                    保存中
+                  </>
+                ) : saveState === "error" ? (
+                  "保存失败"
+                ) : saveState === "editing" ? (
+                  <>
+                    <CloudUpload aria-hidden />
+                    待自动保存
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 aria-hidden />
+                    已自动保存
+                  </>
+                )}
+              </span>
+              {sectionSteps.map((section) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  className={styles.sectionLink}
+                  data-active={activeSection === section.id ? "true" : undefined}
+                  data-state={
+                    activeSection === section.id ? "active" : section.done ? "done" : "pending"
+                  }
+                  aria-current={activeSection === section.id ? "location" : undefined}
+                  aria-label={`第 ${section.step} 步 ${section.label}，${section.done ? "已完成" : "未完成"}${section.count !== null && section.count > 0 ? `，${section.count} ${section.unit}` : ""}`}
+                  onClick={() => jumpTo(section.id)}
+                >
+                  <span
+                    className={styles.sectionStep}
+                    data-done={section.done ? "true" : undefined}
+                    aria-hidden
+                  >
+                    {section.done ? <Check aria-hidden /> : section.step}
+                  </span>
+                  {section.label}
+                  {section.count !== null && section.count > 0 ? (
+                    <span
+                      className={styles.sectionCount}
+                      title={`${section.count} ${section.unit}`}
+                      aria-hidden
+                    >
+                      {section.count}
+                      <span className={styles.sectionCountUnit}>{section.unit}</span>
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </nav>
+
+            <div id={SECTION_BASIC} className={styles.tableWrap}>
+              <table className={styles.itemTable}>
+                <tbody>
+                  <tr>
+                    <th scope="row">测试项名称</th>
+                    <td>
+                      <EditableCell
+                        value={item.name}
+                        label="测试项名称"
+                        missing={item.name.trim() === ""}
+                        onSave={(next) => patch({ name: next })}
+                        onPhase={reportPhase}
+                      />
+                    </td>
+                    <th scope="row">测试项标识</th>
+                    <td>
+                      <div className={styles.identCell}>
+                        <span className={styles.identPrefix}>{`XQ_${item.typeCode}_`}</span>
+                        <EditableCell
+                          value={item.suffix}
+                          label="测试项标识后缀"
+                          className={styles.identEditor}
+                          onSave={(next) => patch({ suffix: next })}
+                          onPhase={reportPhase}
+                        />
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">需求描述</th>
-                    <td colSpan={3}>
-                      {detail.requirements.length === 0 ? (
-                        <EmptyHint tone="muted">
-                          {item.implicitRequirement
-                            ? "本项按隐含需求处理，无需关联需求"
-                            : "未关联需求；可在上方「追踪关系」关联需求，或标记为隐含需求"}
-                        </EmptyHint>
-                      ) : (
-                        <div className={styles.requirementList}>
-                          {detail.requirements.map((reference) => (
-                            <RequirementAccordion
-                              key={reference.id}
-                              reference={reference}
-                              projectCode={projectId}
-                            />
+                    <th scope="row">优先级</th>
+                    <td>
+                      <Select
+                        value={item.priority}
+                        onValueChange={(value) => void patch({ priority: value })}
+                      >
+                        <SelectTrigger
+                          size="sm"
+                          className={styles.prioritySelect}
+                          data-priority={item.priority}
+                          aria-label="优先级"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PRIORITIES.map((priority) => (
+                            <SelectItem key={priority} value={priority}>
+                              {priority}
+                            </SelectItem>
                           ))}
-                        </div>
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <th scope="row">类型</th>
+                    <td>
+                      {/* 静态四类（DC/SA/CR/CW）每轮各一个固定槽位，类型锁定：不渲染成可点按钮。 */}
+                      {isStatic ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className={styles.typeLocked}>
+                              <span className={styles.typeText} data-tone={tone}>
+                                {item.typeCode}
+                                {type ? ` · ${type.name}` : ""}
+                              </span>
+                              <span className={styles.staticChip}>静态</span>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">静态测试项类型锁定，不可修改</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className={styles.typeButton}
+                              onClick={onChangeType}
+                              aria-label="修改测试项类型"
+                            >
+                              <span className={styles.typeText} data-tone={tone}>
+                                {item.typeCode}
+                                {type ? ` · ${type.name}` : ""}
+                              </span>
+                              <Pencil className={styles.typeEditIcon} aria-hidden />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">修改测试项类型</TooltipContent>
+                        </Tooltip>
                       )}
                     </td>
                   </tr>
-                </>
-              )}
 
-              <tr>
-                <th scope="row">测试项描述</th>
-                <td colSpan={3}>
-                  <EditableCell
-                    value={item.description}
-                    label="测试项描述"
-                    multiline
-                    placeholder={
-                      platform === "FPGA" ? "点击填写测试项描述" : "描述见各子项卡片（可留空）"
-                    }
-                    onSave={(next) => patch({ description: next })}
-                    onPhase={reportPhase}
-                  />
-                </td>
-              </tr>
-              <tr
-                id={SECTION_METHOD}
-                data-pending={!isStatic && detail.subItems.length === 0 ? "true" : undefined}
-              >
-                <th scope="row">测试方法</th>
-                <td colSpan={3}>
-                  <SubItemCards
-                    itemIdentifier={item.identifier}
-                    subItems={detail.subItems}
-                    onCreate={onCreateSubItem}
-                    onUpdate={patchSubItem}
-                    onDelete={onDeleteSubItem}
-                    onDuplicate={onDuplicateSubItem}
-                    onMove={onMoveSubItem}
-                    onGenerateCase={onCreateCase}
-                    onPhase={reportPhase}
-                  />
-                </td>
-              </tr>
-              {isStatic ? (
-                <tr>
-                  <th scope="row">静态测试</th>
-                  <td colSpan={3}>
-                    <StaticWorkbenchSection
-                      testItemId={item.id}
-                      kind={item.typeCode}
-                      platform={platform}
-                    />
-                  </td>
-                </tr>
-              ) : null}
-              <tr data-pending={!isStatic && item.adequacy.trim() === "" ? "true" : undefined}>
-                <th scope="row">充分性要求</th>
-                <td colSpan={3}>
-                  <EditableCell
-                    value={item.adequacy}
-                    label="充分性要求"
-                    multiline
-                    missing={item.adequacy.trim() === ""}
-                    onSave={(next) => patch({ adequacy: next })}
-                    onPhase={reportPhase}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">通过准则</th>
-                <td colSpan={3}>
-                  <EditableCell
-                    value={item.passCriteria}
-                    label="通过准则"
-                    multiline
-                    missing={item.passCriteria.trim() === ""}
-                    onSave={(next) => patch({ passCriteria: next })}
-                    onPhase={reportPhase}
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  {isStatic ? null : (
+                    <>
+                      <tr data-pending={!tracked ? "true" : undefined}>
+                        <th scope="row">追踪关系</th>
+                        <td colSpan={3}>
+                          <div className={styles.linkArea}>
+                            {/* 操作按钮在上、需求 chip 在下：先动作、后结果。 */}
+                            <div className={styles.linkActions}>
+                              <RequirementLinkPicker
+                                projectId={projectId}
+                                linkedIds={detail.requirements.map((reference) => reference.id)}
+                                disabled={item.implicitRequirement}
+                                onPick={onLink}
+                              />
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  {/* 隐含需求 = 没有可关联的需求、用户自己补的项：已关联需求时不允许标记。 */}
+                                  <Button
+                                    type="button"
+                                    variant={item.implicitRequirement ? "secondary" : "outline"}
+                                    size="xs"
+                                    className={styles.implicitButton}
+                                    data-active={item.implicitRequirement ? "true" : undefined}
+                                    aria-pressed={item.implicitRequirement}
+                                    disabled={
+                                      detail.requirements.length > 0 && !item.implicitRequirement
+                                    }
+                                    onClick={() =>
+                                      void patch({ implicitRequirement: !item.implicitRequirement })
+                                    }
+                                  >
+                                    <span className={styles.btnDot} data-tone="amber" aria-hidden />
+                                    隐含需求
+                                  </Button>
+                                </TooltipTrigger>
+                                {detail.requirements.length > 0 && !item.implicitRequirement ? (
+                                  <TooltipContent side="top">
+                                    已关联需求，不能标记为隐含需求；先解除关联再标记
+                                  </TooltipContent>
+                                ) : null}
+                              </Tooltip>
+                              {item.implicitRequirement ? (
+                                <span className={styles.implicitTag}>
+                                  <span className={styles.btnDot} data-tone="amber" aria-hidden />
+                                  按隐含需求处理
+                                </span>
+                              ) : null}
+                              {!tracked ? (
+                                <span className={styles.pendingHint}>未关联需求，按未完善处理</span>
+                              ) : null}
+                            </div>
+                            {detail.requirements.length > 0 ? (
+                              <div className={styles.linkRow}>
+                                {detail.requirements.map((reference) => (
+                                  <span key={reference.id} className={styles.linkChip}>
+                                    {reference.sourceName ? (
+                                      <span className={styles.linkSource}>
+                                        {reference.sourceName}
+                                      </span>
+                                    ) : null}
+                                    <span className={styles.linkChapter}>
+                                      §{reference.chapterNumber}
+                                    </span>
+                                    <TruncatedText
+                                      value={reference.name}
+                                      className={styles.linkName}
+                                      tooltipValue={reference.name}
+                                    />
+                                    <button
+                                      type="button"
+                                      className={styles.unlinkButton}
+                                      aria-label={`解除关联 §${reference.chapterNumber} ${reference.name}`}
+                                      onClick={() => void onUnlink(reference.id)}
+                                    >
+                                      <X aria-hidden />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">需求描述</th>
+                        <td colSpan={3}>
+                          {detail.requirements.length === 0 ? (
+                            <EmptyHint tone="muted">
+                              {item.implicitRequirement
+                                ? "本项按隐含需求处理，无需关联需求"
+                                : "未关联需求；可在上方「追踪关系」关联需求，或标记为隐含需求"}
+                            </EmptyHint>
+                          ) : (
+                            <div className={styles.requirementList}>
+                              {detail.requirements.map((reference) => (
+                                <RequirementAccordion
+                                  key={reference.id}
+                                  reference={reference}
+                                  projectCode={projectId}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    </>
+                  )}
 
-        <section className={styles.caseCard} id={SECTION_CASES}>
-          <header className={styles.caseHeader}>
-            <h3 className={styles.caseTitle}>
-              <span className={styles.titleBar} data-tone={tone} aria-hidden />
-              用例概况（{detail.cases.length}）
-            </h3>
-            <div className={styles.caseRate}>
-              <span
-                className={styles.caseRateValue}
-                data-tone={passRate >= 100 ? "green" : undefined}
-              >
-                通过率 {passRate}%
-              </span>
-              <Progress
-                value={passRate}
-                className={styles.caseProgress}
-                data-tone={passRate === 0 ? "empty" : passRate >= 100 ? "full" : "part"}
-              />
-              <span className={styles.caseRateDetail}>
-                <span className={styles.rateItem} data-tone="passed">
-                  通过 {passedCount}
-                </span>
-                <span className={styles.rateItem} data-tone="failed">
-                  未通过 {failedCount}
-                </span>
-                <span className={styles.rateItem} data-tone="pending">
-                  未执行 {pendingCount}
-                </span>
-              </span>
+                  <tr>
+                    <th scope="row">测试项描述</th>
+                    <td colSpan={3}>
+                      <EditableCell
+                        value={item.description}
+                        label="测试项描述"
+                        multiline
+                        placeholder={
+                          platform === "FPGA" ? "点击填写测试项描述" : "描述见各子项卡片（可留空）"
+                        }
+                        onSave={(next) => patch({ description: next })}
+                        onPhase={reportPhase}
+                      />
+                    </td>
+                  </tr>
+                  <tr
+                    id={SECTION_METHOD}
+                    className={styles.sectionAnchor}
+                    data-pending={!isStatic && detail.subItems.length === 0 ? "true" : undefined}
+                  >
+                    <th scope="row">测试方法</th>
+                    <td colSpan={3}>
+                      <SubItemCards
+                        itemIdentifier={item.identifier}
+                        subItems={detail.subItems}
+                        onCreate={onCreateSubItem}
+                        onUpdate={patchSubItem}
+                        onDelete={onDeleteSubItem}
+                        onDuplicate={onDuplicateSubItem}
+                        onMove={onMoveSubItem}
+                        onGenerateCase={onCreateCase}
+                        onPhase={reportPhase}
+                      />
+                    </td>
+                  </tr>
+
+                  <tr data-pending={!isStatic && item.adequacy.trim() === "" ? "true" : undefined}>
+                    <th scope="row">充分性要求</th>
+                    <td colSpan={3}>
+                      <EditableCell
+                        value={item.adequacy}
+                        label="充分性要求"
+                        multiline
+                        missing={item.adequacy.trim() === ""}
+                        onSave={(next) => patch({ adequacy: next })}
+                        onPhase={reportPhase}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">通过准则</th>
+                    <td colSpan={3}>
+                      <EditableCell
+                        value={item.passCriteria}
+                        label="通过准则"
+                        multiline
+                        missing={item.passCriteria.trim() === ""}
+                        onSave={(next) => patch({ passCriteria: next })}
+                        onPhase={reportPhase}
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </header>
-          {detail.cases.length === 0 ? (
-            <EmptyHint
-              tone="info"
-              action={
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="outline"
-                  onClick={() => jumpTo(SECTION_METHOD)}
-                >
-                  去填写测试方法
-                </Button>
-              }
-            >
-              尚无用例；到上方「测试方法」子项卡片点「生成用例」即可 1:1 生成。
-            </EmptyHint>
-          ) : (
-            <>
-              <div className={styles.caseFilters} role="group" aria-label="按用例状态筛选">
-                {CASE_FILTERS.map((filter) => {
-                  const count =
-                    filter.value === "all"
-                      ? detail.cases.length
-                      : filter.value === "passed"
-                        ? passedCount
-                        : filter.value === "failed"
-                          ? failedCount
-                          : pendingCount;
-                  return (
-                    <button
-                      key={filter.value}
+
+            <section id={SECTION_CASES} className={styles.caseCard}>
+              <header className={styles.caseHeader}>
+                <h3 className={styles.caseTitle}>
+                  <span className={styles.titleBar} data-tone={tone} aria-hidden />
+                  用例概况（{detail.cases.length}）
+                </h3>
+                <div className={styles.caseRate}>
+                  <span
+                    className={styles.caseRateValue}
+                    data-tone={passRate >= 100 ? "green" : undefined}
+                  >
+                    通过率 {passRate}%
+                  </span>
+                  <Progress
+                    value={passRate}
+                    className={styles.caseProgress}
+                    data-tone={passRate === 0 ? "empty" : passRate >= 100 ? "full" : "part"}
+                  />
+                  <span className={styles.caseRateDetail}>
+                    <span className={styles.rateItem} data-tone="passed">
+                      通过 {passedCount}
+                    </span>
+                    <span className={styles.rateItem} data-tone="failed">
+                      未通过 {failedCount}
+                    </span>
+                    <span className={styles.rateItem} data-tone="pending">
+                      未执行 {pendingCount}
+                    </span>
+                  </span>
+                </div>
+              </header>
+              {detail.cases.length === 0 ? (
+                <EmptyHint
+                  tone="info"
+                  action={
+                    <Button
                       type="button"
-                      className={styles.caseFilterChip}
-                      data-active={caseFilter === filter.value ? "true" : undefined}
-                      aria-pressed={caseFilter === filter.value}
-                      onClick={() => setCaseFilter(filter.value)}
+                      size="xs"
+                      variant="outline"
+                      onClick={() => jumpTo(SECTION_METHOD)}
                     >
-                      {filter.label}
-                      <span className={styles.caseFilterCount}>{count}</span>
-                    </button>
-                  );
-                })}
-              </div>{" "}
-              <CaseBatchBar
-                selectedCount={selectedCaseIds.length}
-                members={members}
-                pending={batchPending}
-                onApply={applyBatchAssign}
-                onClearSelection={() => setSelectedCaseIds([])}
-              />
-              <div className={styles.caseTableScroll}>
-                <table className={styles.caseTable}>
-                  <thead>
-                    <tr>
-                      <th scope="col" className={styles.caseSelectHead}>
-                        <Checkbox
-                          checked={
-                            allCasesSelected ? true : someCasesSelected ? "indeterminate" : false
-                          }
-                          aria-label="全选用例"
-                          onCheckedChange={toggleAllCases}
-                        />
-                      </th>
-                      <th scope="col">用例标识</th>
-                      <th scope="col">用例名称</th>
-                      <th scope="col">负责人</th>
-                      <th scope="col">状态</th>
-                      <th scope="col">
-                        <span className={styles.visuallyHidden}>操作</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleCases.map((record) => (
-                      <tr
-                        key={record.id}
-                        data-status={record.status}
-                        data-active={record.id === activeCaseId ? "true" : undefined}
-                      >
-                        <td className={styles.caseSelectCell}>
-                          <Checkbox
-                            checked={selectedCaseSet.has(record.id)}
-                            aria-label={`选择 ${record.identifier}`}
-                            onCheckedChange={(checked) => toggleCase(record.id, checked)}
-                          />
-                        </td>
-                        <td className={styles.caseIdent}>{record.identifier}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className={styles.caseRowName}
-                            onClick={() => onSelectCase?.(record.id)}
+                      去填写测试方法
+                    </Button>
+                  }
+                >
+                  尚无用例；到上方「测试方法」子项卡片点「生成用例」即可 1:1 生成。
+                </EmptyHint>
+              ) : (
+                <>
+                  <div className={styles.caseFilters} role="group" aria-label="按用例状态筛选">
+                    {CASE_FILTERS.map((filter) => {
+                      const count =
+                        filter.value === "all"
+                          ? detail.cases.length
+                          : filter.value === "passed"
+                            ? passedCount
+                            : filter.value === "failed"
+                              ? failedCount
+                              : pendingCount;
+                      return (
+                        <button
+                          key={filter.value}
+                          type="button"
+                          className={styles.caseFilterChip}
+                          data-active={caseFilter === filter.value ? "true" : undefined}
+                          aria-pressed={caseFilter === filter.value}
+                          onClick={() => setCaseFilter(filter.value)}
+                        >
+                          {filter.label}
+                          <span className={styles.caseFilterCount}>{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>{" "}
+                  <CaseBatchBar
+                    selectedCount={selectedCaseIds.length}
+                    members={members}
+                    pending={batchPending}
+                    onApply={applyBatchAssign}
+                    onClearSelection={() => setSelectedCaseIds([])}
+                  />
+                  <div className={styles.caseTableScroll}>
+                    <table className={styles.caseTable}>
+                      <thead>
+                        <tr>
+                          <th scope="col" className={styles.caseSelectHead}>
+                            <Checkbox
+                              checked={
+                                allCasesSelected
+                                  ? true
+                                  : someCasesSelected
+                                    ? "indeterminate"
+                                    : false
+                              }
+                              aria-label="全选用例"
+                              onCheckedChange={toggleAllCases}
+                            />
+                          </th>
+                          <th scope="col">用例标识</th>
+                          <th scope="col">用例名称</th>
+                          <th scope="col">负责人</th>
+                          <th scope="col">状态</th>
+                          <th scope="col">
+                            <span className={styles.visuallyHidden}>操作</span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleCases.map((record) => (
+                          <tr
+                            key={record.id}
+                            data-status={record.status}
+                            data-active={record.id === activeCaseId ? "true" : undefined}
                           >
-                            {record.name}
-                          </button>
-                        </td>
-                        <td className={styles.caseOwner}>
-                          {memberNames.get(record.testerId ?? record.designerId ?? "") ?? "未指派"}
-                        </td>
-                        <td>
-                          <span className={styles.caseStatus} data-status={record.status}>
-                            {caseStatusLabel(record.status)}
-                          </span>
-                        </td>
-                        <td className={styles.caseRowActions} aria-label="用例操作">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
+                            <td className={styles.caseSelectCell}>
+                              <Checkbox
+                                checked={selectedCaseSet.has(record.id)}
+                                aria-label={`选择 ${record.identifier}`}
+                                onCheckedChange={(checked) => toggleCase(record.id, checked)}
+                              />
+                            </td>
+                            <td className={styles.caseIdent}>{record.identifier}</td>
+                            <td>
                               <button
                                 type="button"
-                                className={styles.caseRowAction}
-                                aria-label={`在目录中定位 ${record.identifier}`}
+                                className={styles.caseRowName}
                                 onClick={() => onSelectCase?.(record.id)}
                               >
-                                <Crosshair aria-hidden />
+                                {record.name}
                               </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">在左侧目录中定位</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                className={styles.caseRowAction}
-                                aria-label={`复制 ${record.identifier}`}
-                                onClick={() => onDuplicateCase?.(record.id)}
-                              >
-                                <CopyPlus aria-hidden />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">复制用例（含步骤）</TooltipContent>
-                          </Tooltip>
-                        </td>
-                      </tr>
-                    ))}
-                    {visibleCases.length === 0 ? (
-                      <tr>
-                        <td className={styles.caseEmptyRow} colSpan={6}>
-                          该状态下没有用例，切换筛选或到「测试方法」生成用例。
-                        </td>
-                      </tr>
-                    ) : null}
-                  </tbody>
-                </table>
+                            </td>
+                            <td className={styles.caseOwner}>
+                              {memberNames.get(record.testerId ?? record.designerId ?? "") ??
+                                "未指派"}
+                            </td>
+                            <td>
+                              <span className={styles.caseStatus} data-status={record.status}>
+                                {caseStatusLabel(record.status)}
+                              </span>
+                            </td>
+                            <td className={styles.caseRowActions} aria-label="用例操作">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={styles.caseRowAction}
+                                    aria-label={`在目录中定位 ${record.identifier}`}
+                                    onClick={() => onSelectCase?.(record.id)}
+                                  >
+                                    <Crosshair aria-hidden />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">在左侧目录中定位</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={styles.caseRowAction}
+                                    aria-label={`复制 ${record.identifier}`}
+                                    onClick={() => onDuplicateCase?.(record.id)}
+                                  >
+                                    <CopyPlus aria-hidden />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">复制用例（含步骤）</TooltipContent>
+                              </Tooltip>
+                            </td>
+                          </tr>
+                        ))}
+                        {visibleCases.length === 0 ? (
+                          <tr>
+                            <td className={styles.caseEmptyRow} colSpan={6}>
+                              该状态下没有用例，切换筛选或到「测试方法」生成用例。
+                            </td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </section>
+          </TabsContent>
+
+          {isStatic ? (
+            <TabsContent
+              value={DETAIL_STATIC}
+              className={styles.tabPanel}
+              forceMount
+              inert={activeDetailTab !== DETAIL_STATIC ? true : undefined}
+            >
+              <div className={styles.staticPanel}>
+                <StaticWorkbenchSection
+                  testItemId={item.id}
+                  kind={item.typeCode}
+                  platform={platform}
+                />
               </div>
-            </>
-          )}
-        </section>
+            </TabsContent>
+          ) : null}
+        </Tabs>
       </div>
     </div>
   );

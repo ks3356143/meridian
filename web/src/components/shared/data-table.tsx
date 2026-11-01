@@ -94,7 +94,9 @@ export function DataTable<TData extends DataTableRowData>({
   }, [renderBudget, virtualized?.progressive, virtualRowCount]);
 
   const tableElement = (
-    <Table className="w-full table-fixed border-collapse text-left text-[13px]">
+    <Table
+      className={`w-full border-collapse text-left text-[13px] ${rows.length === 0 ? "table-auto" : "table-fixed"}`}
+    >
       <DataTableHeader table={table} />
       <TableBody>
         {topSpacer > 0 ? (

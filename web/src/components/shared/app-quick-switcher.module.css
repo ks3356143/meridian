@@ -83,7 +83,7 @@
 }
 
 .dialog[data-state="open"]::before {
-  animation: quickSwitchBeam 620ms var(--ease-out-strong) 60ms 1 both;
+  animation: quickSwitchBeam 320ms var(--ease-out-strong) 0ms 1 both;
 }
 
 @keyframes quickSwitchBeam {
@@ -195,8 +195,7 @@
   transition:
     background-color 0.16s var(--ease-out-strong),
     border-color 0.16s var(--ease-out-strong),
-    color 0.16s var(--ease-out-strong),
-    transform 0.16s var(--ease-out-strong);
+    color 0.16s var(--ease-out-strong);
   width: 1.85rem;
 }
 
@@ -209,7 +208,6 @@
   background: color-mix(in srgb, var(--primary) 11%, var(--card));
   border-color: color-mix(in srgb, var(--primary) 38%, var(--border));
   color: var(--primary);
-  transform: scale(1.03);
 }
 
 .itemCopy {
@@ -252,17 +250,13 @@
   color: var(--muted-foreground);
   height: 0.85rem;
   opacity: 0;
-  transform: translateX(-3px);
-  transition:
-    opacity 0.16s var(--ease-out-strong),
-    transform 0.16s var(--ease-out-strong);
+  transition: opacity 0.16s var(--ease-out-strong);
   width: 0.85rem;
 }
 
 .item[data-selected="true"] .enter {
   color: var(--primary);
   opacity: 1;
-  transform: translateX(0);
 }
 
 .empty {

@@ -72,6 +72,31 @@
   transition: none;
 }
 
+/* hover 只增强现有边框与背景，不再叠加第二圈内描边。 */
+[data-slot="input"]:not([data-slot="composite-input"] [data-slot="input"]):hover:not(:disabled):not(
+    :focus-visible
+  ):not([aria-invalid="true"]),
+[data-slot="select-trigger"]:hover:not(:disabled):not(:focus-visible):not([data-state="open"]):not(
+    [aria-invalid="true"]
+  ),
+[data-slot="composite-input"]:hover:not(:focus-within):not([data-invalid="true"]) {
+  border-color: var(--interactive-border-soft);
+  background-color: var(--interactive-surface);
+  box-shadow:
+    inset 0 0 0 1px transparent,
+    0 0 0 0 transparent,
+    0 5px 14px -10px color-mix(in srgb, var(--primary) 62%, transparent);
+}
+
+[data-slot="checkbox"]:hover:not(:disabled),
+[data-slot="radio-group-item"]:hover:not(:disabled),
+[data-slot="switch"]:hover:not(:disabled) {
+  border-color: var(--interactive-border);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent),
+    0 0 14px -8px color-mix(in srgb, var(--primary) 70%, transparent);
+}
+
 [data-slot="input"]:focus-visible,
 [data-slot="select-trigger"]:focus-visible,
 [data-slot="composite-input"]:focus-within {

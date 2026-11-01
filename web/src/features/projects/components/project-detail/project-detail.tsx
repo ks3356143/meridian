@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
+import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { levelVariant, statusVariant } from "../../status-style";
 import { totalOpenIssues, type Project } from "../../types";
@@ -30,6 +31,7 @@ export function ProjectDetail({ project }: { project: Project }) {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<DetailTabValue>("overview");
+  useResetScrollOnTabChange(activeTab);
   const executionRate = Math.round((project.casesExecuted / Math.max(project.casesTotal, 1)) * 100);
   const openIssues = totalOpenIssues(project.openIssues);
   const modules = getProjectReadiness(project);

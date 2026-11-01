@@ -114,7 +114,7 @@ export function SaWorkbench({
             {metricsDone}/6
           </Badge>
         </AccordionTrigger>
-        <AccordionContent>
+        <AccordionContent className={styles.accordionBodyInset}>
           <div className={styles.metricsGrid}>
             <div className={styles.metricField}>
               <span>软件名称</span>
@@ -226,7 +226,7 @@ export function SaWorkbench({
             {state.ruleViolations.length} 违规
           </Badge>
         </AccordionTrigger>
-        <AccordionContent>
+        <AccordionContent className={styles.accordionBodyInset}>
           <div className={styles.ruleGroups}>
             {catalog.ruleGroups.map((item) => (
               <button
@@ -310,7 +310,7 @@ export function SaWorkbench({
               问题
             </Badge>
           </AccordionTrigger>
-          <AccordionContent>
+          <AccordionContent className={styles.accordionBodyInset}>
             <table className={styles.analysisTable}>
               <thead>
                 <tr>

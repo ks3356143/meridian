@@ -1,0 +1,180 @@
+/* 全站折叠面板：整行是唯一交互表面，父容器负责结构边框。 */
+.trigger {
+  background: transparent;
+  box-shadow: inset 2px 0 0 transparent;
+  cursor: pointer;
+  min-height: 2.75rem;
+  padding-inline: 0.65rem 1.35rem;
+  transition:
+    background-color 0.2s var(--ease-out-strong),
+    color 0.2s var(--ease-out-strong),
+    box-shadow 0.2s var(--ease-out-strong);
+}
+
+.trigger:hover {
+  background: var(--interactive-surface);
+  box-shadow: inset 2px 0 0 var(--interactive-border);
+  color: var(--primary);
+}
+
+.trigger:focus-visible {
+  box-shadow: inset 2px 0 0 var(--primary);
+  outline: 2px solid color-mix(in srgb, var(--ring) 72%, transparent);
+  outline-offset: -2px;
+}
+
+.trigger[data-state="open"] {
+  background: var(--interactive-surface-strong);
+  box-shadow: inset 3px 0 0 var(--primary);
+  color: var(--primary-ink);
+}
+
+.indicator {
+  align-items: center;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid var(--interactive-border-soft);
+  color: var(--primary-ink);
+  display: inline-flex;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  gap: 0.25rem;
+  height: 1.65rem;
+  padding-inline: 0.4rem 0.28rem;
+  transition:
+    background-color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong),
+    box-shadow 0.18s var(--ease-out-strong),
+    color 0.18s var(--ease-out-strong);
+}
+
+.indicator::before {
+  content: "展开";
+}
+
+.trigger[data-state="open"] .indicator::before {
+  content: "收起";
+}
+
+.indicator > svg {
+  height: 0.95rem;
+  pointer-events: none;
+  transition: transform 0.2s var(--ease-out-strong);
+  width: 0.95rem;
+}
+
+.trigger:hover .indicator,
+.trigger:focus-visible .indicator,
+.trigger[data-state="open"] .indicator {
+  background: var(--interactive-surface-strong);
+  border-color: var(--interactive-border);
+  box-shadow: 0 0 12px -7px color-mix(in srgb, var(--primary) 70%, transparent);
+}
+
+.trigger[data-state="open"] .indicator > svg {
+  transform: rotate(180deg);
+}
+
+.content {
+  overflow: hidden;
+}
+
+.content[data-state="open"] {
+  animation: accordionDown 200ms var(--ease-out-strong) both;
+}
+
+.content[data-state="closed"] {
+  animation: accordionUp 170ms var(--ease-in-out-strong) both;
+}
+
+.contentInner {
+  padding-top: 0.55rem;
+  transform-origin: top center;
+}
+
+.content[data-state="open"] .contentInner {
+  animation: accordionInnerIn 200ms var(--ease-out-strong) both;
+}
+
+.content[data-state="closed"] .contentInner {
+  animation: accordionInnerOut 170ms var(--ease-in-out-strong) both;
+}
+
+@keyframes accordionDown {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordionUp {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes accordionInnerIn {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes accordionInnerOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 480px) {
+  .indicator::before {
+    content: "";
+  }
+
+  .indicator {
+    justify-content: center;
+    padding-inline: 0;
+    width: 1.65rem;
+  }
+
+  .trigger[data-state="open"] .indicator::before {
+    content: "";
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .indicator,
+  .indicator > svg {
+    transition: none;
+  }
+
+  .content[data-state="open"],
+  .content[data-state="closed"],
+  .content[data-state="open"] .contentInner,
+  .content[data-state="closed"] .contentInner {
+    animation: none;
+  }
+}

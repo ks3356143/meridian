@@ -98,6 +98,7 @@ export function AppQuickSwitcher({
           </DialogDescription>
           <Command
             loop
+            vimBindings={false}
             defaultValue={activeItem ? `${activeItem.label} ${activeItem.description}` : undefined}
             className={styles.command}
           >

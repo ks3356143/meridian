@@ -10,8 +10,8 @@
   --spotlight-y: 0px;
   background: radial-gradient(
     circle closest-side,
-    color-mix(in srgb, var(--primary) 15%, transparent),
-    color-mix(in srgb, var(--primary) 5%, transparent) 46%,
+    color-mix(in srgb, var(--primary) 21%, transparent),
+    color-mix(in srgb, var(--primary) 7%, transparent) 48%,
     transparent 74%
   );
   border-radius: inherit;

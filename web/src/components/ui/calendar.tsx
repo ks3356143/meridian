@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { DayPicker, getDefaultClassNames } from "react-day-picker";
+import { zhCN } from "react-day-picker/locale";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   captionLayout = "label",
+  lang = "zh-CN",
   buttonVariant = "ghost",
   formatters,
   components,
@@ -29,6 +31,8 @@ function Calendar({
 
   return (
     <DayPicker
+      lang={lang}
+      locale={zhCN}
       showOutsideDays={showOutsideDays}
       className={cn("bg-card group/calendar p-2", className)}
       captionLayout={captionLayout}
@@ -50,9 +54,9 @@ function Calendar({
         month_grid: "w-full table-fixed border-collapse",
         weekdays: "flex",
         weekday:
-          "text-muted-foreground rounded-sm text-center text-[0.8rem] font-normal select-none",
+          "text-muted-foreground flex-1 rounded-sm text-center text-[0.8rem] font-normal select-none",
         week: "mt-1.5 flex w-full",
-        day: "relative h-7 text-center text-sm select-none",
+        day: "relative h-7 flex-1 text-center text-sm select-none",
         day_button: cn(
           buttonVariants({ variant: buttonVariant }),
           "size-7 rounded-sm p-0 font-normal aria-selected:opacity-100",
@@ -60,7 +64,7 @@ function Calendar({
         range_end: "rounded-r-sm",
         range_start: "rounded-l-sm",
         selected: cn(
-          "bg-primary text-primary-foreground [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary/90 [&>button]:hover:text-primary-foreground",
+          "[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary/90 [&>button]:hover:text-primary-foreground",
         ),
         today: "[&>button]:text-primary [&>button]:font-medium",
         outside: "day-outside text-muted-foreground aria-selected:text-muted-foreground opacity-60",

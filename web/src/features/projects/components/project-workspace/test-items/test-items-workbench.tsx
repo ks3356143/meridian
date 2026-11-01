@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
 import type {
   BatchAssignCasesPayload,
   CreateTestItemPayload,
@@ -151,6 +152,7 @@ export function TestItemsWorkbench({
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedView = searchParams.get("view");
   const view: TestItemsView = isTestItemsView(requestedView) ? requestedView : "tree";
+  useResetScrollOnTabChange(view, "workspace-route");
   const lastViewNavigationRef = useRef<TestItemsView>(view);
   const typeFilter = searchParams.get("type") ?? "";
 

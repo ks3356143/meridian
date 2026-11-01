@@ -21,6 +21,14 @@
   color: var(--placeholder);
 }
 
+.textarea:hover:not(:disabled):not(:focus-visible) {
+  background: var(--interactive-surface);
+  border-color: var(--interactive-border-soft);
+  box-shadow:
+    0 0 0 0 transparent,
+    0 5px 14px -10px color-mix(in srgb, var(--primary) 62%, transparent);
+}
+
 .textarea:focus-visible {
   border-color: var(--ring);
   box-shadow:

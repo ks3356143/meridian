@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FileCheck2, Plus, Trash2, X } from "lucide-react";
 import {
   Accordion,
@@ -24,6 +24,7 @@ import type {
   StaticWorkbench,
 } from "@/features/test-items/types";
 import { ConfirmAction } from "./static-shared";
+import { usePanelSwitchMotion } from "./use-panel-switch-motion";
 import { reviewStats, uid, type StaticUpdater } from "./static-model";
 import styles from "./static-workbench.module.css";
 
@@ -115,8 +116,10 @@ export function DcWorkbench({
   const [activeSheetID, setActiveSheetID] = useState(state.reviewSheets[0]?.id ?? "");
   const [onlyUnreviewed, setOnlyUnreviewed] = useState(false);
   const [newSheetCode, setNewSheetCode] = useState("");
+  const detailRef = useRef<HTMLElement>(null);
   const activeSheet =
     state.reviewSheets.find((sheet) => sheet.id === activeSheetID) ?? state.reviewSheets[0];
+  usePanelSwitchMotion(detailRef, activeSheet?.id ?? "");
   const availableTemplates = catalog.reviewSheets.filter(
     (template) => !state.reviewSheets.some((sheet) => sheet.templateCode === template.code),
   );
@@ -214,32 +217,35 @@ export function DcWorkbench({
     ? activeSheet.checks.filter((check) => check.result === "unreviewed")
     : activeSheet.checks;
   const sheetStats = reviewStats(activeSheet.checks);
+  const reviewTone = reviewed === 0 ? "warning" : reviewed < totalChecks ? "info" : "success";
+  const passTone =
+    reviewed === 0 ? "warning" : rate >= 80 ? "success" : rate > 0 ? "warning" : "danger";
   return (
     <div className={styles.dcWrap}>
       <div className={styles.summaryStrip}>
-        <div className={styles.summaryItem}>
+        <div className={styles.summaryItem} data-tone="primary">
           <span>审查单</span>
           <strong>{state.reviewSheets.length}</strong>
         </div>
-        <div className={styles.summaryItem}>
+        <div className={styles.summaryItem} data-tone="info">
           <span>受审文档</span>
           <strong>{state.documents.length}</strong>
         </div>
-        <div className={styles.summaryItem}>
+        <div className={styles.summaryItem} data-tone={reviewTone}>
           <span>已审查</span>
           <strong>
             {reviewed}/{totalChecks}
           </strong>
         </div>
-        <div className={styles.summaryRate}>
+        <div className={styles.summaryRate} data-tone={passTone}>
           <span>通过率 {rate}%</span>
-          <Progress value={rate} className={styles.progress} />
+          <Progress value={rate} className={styles.progress} data-tone={passTone} />
         </div>
       </div>
       <Accordion type="single" collapsible className={styles.documentAccordion}>
         <AccordionItem value="documents">
           <AccordionTrigger>受审文档清单（{state.documents.length}）</AccordionTrigger>
-          <AccordionContent>
+          <AccordionContent className={styles.accordionBodyInset}>
             <div className={styles.documentRows}>
               {state.documents.map((doc) => (
                 <div className={styles.documentRow} key={doc.id}>
@@ -302,24 +308,43 @@ export function DcWorkbench({
         <aside className={styles.sheetList}>
           {state.reviewSheets.map((sheet) => {
             const stats = reviewStats(sheet.checks);
+            const tone =
+              stats.reviewed === 0
+                ? "warning"
+                : stats.reviewed < stats.total
+                  ? stats.rate === 0
+                    ? "warning"
+                    : "info"
+                  : stats.rate >= 80
+                    ? "success"
+                    : "danger";
             return (
               <div
                 className={styles.sheetItem}
                 key={sheet.id}
                 data-active={sheet.id === activeSheet.id ? "true" : undefined}
+                data-tone={tone}
               >
                 <button
                   type="button"
                   className={styles.sheetButton}
+                  aria-current={sheet.id === activeSheet.id ? "true" : undefined}
                   onClick={() => setActiveSheetID(sheet.id)}
                 >
                   <span className={styles.sheetName}>{sheet.name}</span>
                   <span className={styles.sheetMeta}>
-                    {stats.reviewed}/{stats.total} · {stats.rate}%
+                    <span className={styles.sheetReviewed}>
+                      {stats.reviewed}/{stats.total}
+                    </span>
+                    <span className={styles.sheetDot} aria-hidden>
+                      ·
+                    </span>
+                    <span className={styles.sheetRate}>{stats.rate}%</span>
                   </span>
                   <Progress
                     value={(stats.reviewed / Math.max(stats.total, 1)) * 100}
                     className={styles.sheetProgress}
+                    data-tone={tone}
                   />
                 </button>
                 <ConfirmAction
@@ -369,7 +394,7 @@ export function DcWorkbench({
             </Button>
           </div>
         </aside>
-        <section className={styles.sheetDetail}>
+        <section ref={detailRef} className={styles.sheetDetail} key={activeSheet.id}>
           <div className={styles.sheetHeader}>
             <div>
               <h4>{activeSheet.name}</h4>

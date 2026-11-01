@@ -22,9 +22,7 @@
   left: 0;
   pointer-events: none;
   position: absolute;
-  transition:
-    transform 320ms var(--ease-out-strong),
-    width 320ms var(--ease-out-strong);
+  transform-origin: left center;
   width: 0;
   z-index: 3;
 }
@@ -126,7 +124,7 @@
 
 /* 切到该 Tab 时表面斜向扫过一次；结束移出可见区，不常驻、不循环。 */
 .tabTrigger[data-state="active"]::before {
-  animation: workspaceTabScan 620ms var(--ease-out-strong) 1 both;
+  animation: workspaceTabScan 320ms var(--ease-out-strong) 1 both;
 }
 
 @keyframes workspaceTabScan {
@@ -145,26 +143,6 @@
   }
 }
 
-.tabTrigger[data-state="active"] .tabIcon {
-  animation: workspaceTabIconPop 240ms var(--ease-out-strong) 1 both;
-}
-
-@keyframes workspaceTabIconPop {
-  0% {
-    opacity: 0.5;
-    transform: scale(0.82);
-  }
-
-  62% {
-    transform: scale(1.08);
-  }
-
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 .tabTrigger[data-state="active"]::after {
   background-color: transparent;
   background-image: linear-gradient(
@@ -176,7 +154,7 @@
   background-repeat: no-repeat;
   background-size: 190% 100%;
   box-shadow: 0 0 6px -2px color-mix(in srgb, var(--primary) 36%, transparent);
-  animation: workspaceTabLineSheen 560ms var(--ease-out-strong) 1 both;
+  animation: workspaceTabLineSheen 280ms var(--ease-out-strong) 1 both;
 }
 
 /* 测量完成前先由活动 Tab 自己兜底，避免宽度从 0 开始时短暂没有边界。 */
@@ -205,6 +183,10 @@
 .tabIcon {
   height: 0.9rem;
   width: 0.9rem;
+}
+
+.tabLabelCompact {
+  display: none;
 }
 
 :global(.dark) .tabList,
@@ -258,10 +240,25 @@
   }
 }
 
+@media (max-width: 360px) {
+  /* 360px 以下用两字标签保持五项全部可见且可读。 */
+  .tabTrigger {
+    padding-inline: 0;
+    font-size: 0.74rem;
+  }
+
+  .tabLabelFull {
+    display: none;
+  }
+
+  .tabLabelCompact {
+    display: inline;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tabTrigger::before,
-  .tabTrigger::after,
-  .tabIcon {
+  .tabTrigger::after {
     animation: none !important;
     transition: none !important;
   }

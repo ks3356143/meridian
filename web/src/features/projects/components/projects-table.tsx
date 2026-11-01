@@ -34,7 +34,6 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
         }),
         columnHelper.accessor("name", {
           header: "项目名称",
-          meta: { hiddenUntil: "lg" },
           cell: (info) => <TruncatedText value={info.getValue()} className="font-medium" />,
         }),
         columnHelper.accessor("nature", {

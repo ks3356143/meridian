@@ -36,7 +36,7 @@ export function DataTableHeader<TData extends DataTableRowData>({
                     variant="ghost"
                     size="xs"
                     data-sorted={sorted || undefined}
-                    className="h-7 w-full min-w-0 justify-center border border-transparent bg-transparent px-2 text-xs font-semibold shadow-none hover:border-primary/20 hover:bg-primary/5 hover:text-primary focus-visible:border-primary/30 data-[sorted]:bg-primary/5 data-[sorted]:text-primary"
+                    className="h-7 w-full min-w-0 justify-center border border-transparent bg-transparent px-2 text-xs font-semibold shadow-none hover:border-transparent hover:bg-[var(--interactive-surface)] hover:text-primary hover:shadow-[inset_0_-2px_0_var(--primary)] focus-visible:border-primary/30 data-[sorted]:bg-primary/5 data-[sorted]:text-primary"
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     <TruncatedText

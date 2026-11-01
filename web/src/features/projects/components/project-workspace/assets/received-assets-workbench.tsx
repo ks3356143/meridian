@@ -11,6 +11,7 @@ import {
 import { type ComponentProps, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/shared/date-picker";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import {
   AlertDialog,
@@ -217,15 +218,11 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
                 <FieldGroup className="gap-3">
                   <Field>
                     <FieldLabel htmlFor="received-at">接收日期</FieldLabel>
-                    <Input
+                    <DatePicker
                       id="received-at"
-                      type="date"
                       value={workbench.defaults.receivedAt}
-                      onChange={(event) =>
-                        workbench.setDefaults((previous) => ({
-                          ...previous,
-                          receivedAt: event.target.value,
-                        }))
+                      onChange={(receivedAt) =>
+                        workbench.setDefaults((previous) => ({ ...previous, receivedAt }))
                       }
                     />
                   </Field>

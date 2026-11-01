@@ -4,7 +4,7 @@
     0 1px 2px rgb(20 42 30 / 0.035),
     0 3px 8px -6px color-mix(in srgb, var(--kpi-tone, var(--primary)) 22%, transparent);
   box-shadow: var(--kpi-shadow);
-  outline: 1px solid color-mix(in srgb, var(--kpi-tone, var(--primary)) 18%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--kpi-tone, var(--primary)) 30%, transparent);
   outline-offset: -1px;
   transition:
     box-shadow 0.26s cubic-bezier(0.32, 0.72, 0, 1),
@@ -31,7 +31,7 @@
     0 1px 2px rgb(20 42 30 / 0.04), 0 3px 8px rgb(20 42 30 / 0.045),
     0 7px 14px -10px color-mix(in srgb, var(--kpi-tone, var(--primary)) 34%, transparent);
   box-shadow: var(--kpi-shadow);
-  outline-color: color-mix(in srgb, var(--kpi-tone, var(--primary)) 42%, transparent);
+  outline-color: color-mix(in srgb, var(--kpi-tone, var(--primary)) 58%, transparent);
 }
 
 .dark [data-slot="card"][data-tone] {

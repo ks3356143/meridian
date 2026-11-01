@@ -12,6 +12,12 @@
   width: 100%;
 }
 
+.trigger:hover:not(:disabled):not([data-state="open"]) {
+  background: var(--interactive-surface);
+  border-color: var(--interactive-border-soft);
+  box-shadow: var(--interactive-glow);
+}
+
 .trigger[data-empty="true"] {
   color: var(--placeholder);
   font-weight: 400;

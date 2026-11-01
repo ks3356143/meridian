@@ -27,12 +27,12 @@ function DataTableRowImpl<TData extends DataTableRowData>(props: DataTableRowPro
       data-selected={active ? "true" : undefined}
       style={animateEntry ? ({ "--row-index": row.index } as CSSProperties) : undefined}
       className={cn(
-        "group/row border-border transition-[background-color,box-shadow] hover:bg-primary/5",
-        active && "bg-primary/8",
+        "group/row border-border transition-[background-color,box-shadow] hover:bg-primary/8",
+        active && "bg-primary/12",
         active && styles.selectedRow,
         animateEntry && styles.enterRow,
         onRowActivate &&
-          "relative cursor-pointer focus-visible:bg-primary/8 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
+          "relative cursor-pointer focus-visible:bg-primary/10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
       )}
     >
       {row.getAllCells().map((cell, index) => {

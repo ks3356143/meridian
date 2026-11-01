@@ -3,6 +3,16 @@
   --elevation-2: 0 2px 5px rgb(20 42 30 / 0.07), 0 12px 28px -18px rgb(20 42 30 / 0.28);
   --elevation-input: 0 1px 2px rgb(20 42 30 / 0.045);
   --elevation-primary: 0 3px 12px -5px color-mix(in oklch, var(--primary) 38%, transparent);
+  --interactive-border: color-mix(in srgb, var(--primary) 52%, var(--border));
+  --interactive-border-soft: color-mix(in srgb, var(--primary) 30%, var(--border));
+  --interactive-surface: color-mix(in srgb, var(--primary) 8%, var(--card));
+  --interactive-surface-strong: color-mix(in srgb, var(--primary) 13%, var(--card));
+  --interactive-glow:
+    inset 0 0 0 1px transparent, 0 0 0 0 transparent,
+    0 8px 20px -16px color-mix(in srgb, var(--primary) 70%, transparent);
+  --interactive-glow-strong:
+    inset 0 0 0 1px transparent, 0 0 0 0 transparent,
+    0 10px 24px -14px color-mix(in srgb, var(--primary) 82%, transparent);
 }
 
 .dark {
@@ -11,6 +21,16 @@
     0 3px 10px rgb(0 0 0 / 0.5), 0 0 18px -10px color-mix(in oklch, var(--primary) 35%, transparent);
   --elevation-input: 0 1px 2px rgb(0 0 0 / 0.28);
   --elevation-primary: 0 2px 12px -3px color-mix(in oklch, var(--primary) 34%, transparent);
+  --interactive-border: color-mix(in srgb, var(--primary) 66%, var(--border));
+  --interactive-border-soft: color-mix(in srgb, var(--primary) 42%, var(--border));
+  --interactive-surface: color-mix(in srgb, var(--primary) 13%, var(--card));
+  --interactive-surface-strong: color-mix(in srgb, var(--primary) 20%, var(--card));
+  --interactive-glow:
+    inset 0 0 0 1px transparent, 0 0 0 0 transparent,
+    0 0 22px -7px color-mix(in srgb, var(--primary) 52%, transparent);
+  --interactive-glow-strong:
+    inset 0 0 0 1px transparent, 0 0 0 0 transparent,
+    0 0 28px -6px color-mix(in srgb, var(--primary) 66%, transparent);
 }
 
 .elevation-1 {

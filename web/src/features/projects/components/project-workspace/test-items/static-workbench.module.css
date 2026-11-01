@@ -144,8 +144,41 @@
   padding: 0.5rem 0.6rem;
 }
 
+.summaryItem,
+.summaryRate {
+  --stat-tone: var(--muted-foreground);
+  background: color-mix(in srgb, var(--stat-tone) 5%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--stat-tone) 62%, transparent);
+  padding: 0.18rem 0.45rem;
+}
+
 .summaryItem {
   gap: 0.32rem;
+}
+
+.summaryItem[data-tone="primary"],
+.summaryRate[data-tone="primary"] {
+  --stat-tone: var(--primary);
+}
+
+.summaryItem[data-tone="info"],
+.summaryRate[data-tone="info"] {
+  --stat-tone: var(--info);
+}
+
+.summaryItem[data-tone="warning"],
+.summaryRate[data-tone="warning"] {
+  --stat-tone: var(--warning);
+}
+
+.summaryItem[data-tone="success"],
+.summaryRate[data-tone="success"] {
+  --stat-tone: var(--success);
+}
+
+.summaryItem[data-tone="danger"],
+.summaryRate[data-tone="danger"] {
+  --stat-tone: var(--destructive);
 }
 
 .summaryItem span,
@@ -155,8 +188,10 @@
 }
 
 .summaryItem strong {
+  color: var(--stat-tone);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.84rem;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--stat-tone) 18%, transparent);
 }
 
 .summaryRate {
@@ -164,6 +199,8 @@
 }
 
 .summaryRate > span {
+  color: color-mix(in srgb, var(--stat-tone) 82%, var(--foreground));
+  font-weight: 720;
   white-space: nowrap;
 }
 
@@ -175,15 +212,43 @@
 .progress > span {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--primary) 72%, var(--info)),
-    var(--primary)
+    color-mix(in srgb, var(--stat-tone) 62%, var(--info)),
+    var(--stat-tone)
+  );
+}
+
+.progress[data-tone="warning"] > span {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--warning) 62%, var(--primary)),
+    var(--warning)
+  );
+}
+
+.progress[data-tone="success"] > span {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--success) 62%, var(--info)),
+    var(--success)
+  );
+}
+
+.progress[data-tone="danger"] > span {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--destructive) 55%, var(--warning)),
+    var(--destructive)
   );
 }
 
 .documentAccordion {
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: var(--elevation-1);
   margin-bottom: 0.65rem;
-  padding-inline: 0.6rem;
+}
+
+.accordionBodyInset {
+  padding-inline: 0.65rem;
 }
 
 .documentRows {
@@ -219,7 +284,24 @@
 }
 
 .sheetItem {
+  --sheet-tone: var(--muted-foreground);
   position: relative;
+}
+
+.sheetItem[data-tone="warning"] {
+  --sheet-tone: var(--warning);
+}
+
+.sheetItem[data-tone="info"] {
+  --sheet-tone: var(--info);
+}
+
+.sheetItem[data-tone="success"] {
+  --sheet-tone: var(--success);
+}
+
+.sheetItem[data-tone="danger"] {
+  --sheet-tone: var(--destructive);
 }
 
 .sheetButton {
@@ -241,16 +323,17 @@
 }
 
 .sheetButton:hover {
-  background: color-mix(in srgb, var(--primary) 5%, transparent);
-  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+  background: var(--interactive-surface);
+  border-color: var(--interactive-border);
+  box-shadow: var(--interactive-glow);
 }
 
 .sheetItem[data-active="true"] .sheetButton {
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
-  border-color: color-mix(in srgb, var(--primary) 38%, var(--border));
+  background: var(--interactive-surface-strong);
+  border-color: var(--interactive-border);
   box-shadow:
     inset 3px 0 0 var(--primary),
-    0 4px 14px -12px color-mix(in srgb, var(--primary) 55%, transparent);
+    0 8px 20px -14px color-mix(in srgb, var(--primary) 76%, transparent);
 }
 
 .sheetName {
@@ -263,14 +346,50 @@
 }
 
 .sheetMeta {
-  color: var(--muted-foreground);
+  align-items: center;
+  display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  gap: 0.28rem;
+}
+
+.sheetReviewed,
+.sheetRate {
+  color: var(--sheet-tone);
+}
+
+.sheetDot {
+  color: color-mix(in srgb, var(--muted-foreground) 66%, transparent);
+}
+
+.sheetItem:not([data-active="true"]) .sheetButton {
+  border-left-color: color-mix(in srgb, var(--sheet-tone) 42%, var(--border));
+}
+
+.sheetItem:not([data-active="true"])[data-tone="warning"] .sheetButton {
+  background: color-mix(in srgb, var(--warning) 3.5%, var(--card));
+}
+
+.sheetItem:not([data-active="true"])[data-tone="info"] .sheetButton {
+  background: color-mix(in srgb, var(--info) 3.5%, var(--card));
+}
+
+.sheetItem:not([data-active="true"])[data-tone="success"] .sheetButton {
+  background: color-mix(in srgb, var(--success) 3.5%, var(--card));
+}
+
+.sheetItem:not([data-active="true"])[data-tone="danger"] .sheetButton {
+  background: color-mix(in srgb, var(--destructive) 4%, var(--card));
 }
 
 .sheetProgress {
   height: 0.24rem;
   width: 100%;
+}
+
+.sheetProgress > span {
+  background: var(--sheet-tone);
 }
 
 .sheetDelete {
@@ -475,7 +594,7 @@
 .resultButton:focus-visible,
 .sheetButton:focus-visible,
 .ruleGroupButton:focus-visible {
-  outline: 1px solid var(--primary);
+  outline: 2px solid color-mix(in srgb, var(--ring) 72%, transparent);
   outline-offset: 1px;
 }
 
@@ -498,8 +617,8 @@
 }
 
 .saAccordion {
-  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  padding-inline: 0.65rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--elevation-1);
 }
 
 .accordionBadge {
@@ -730,8 +849,8 @@
 }
 
 .bulkAccordion {
-  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  padding-inline: 0.6rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--elevation-1);
 }
 
 .hint {
