@@ -1,0 +1,10 @@
+@media (max-width: 720px) {
+  .tableShell :global([data-slot="table"]) {
+    min-width: 19.75rem;
+  }
+
+  .tableShell :global(th),
+  .tableShell :global(td) {
+    padding-inline: 0.35rem;
+  }
+}

@@ -150,8 +150,13 @@ export function RelatedPartyManagementTab() {
                   编辑
                 </Button>
                 <Button
-                  variant={party.isEnabled ? "destructive" : "outline"}
+                  variant="outline"
                   size="xs"
+                  className={
+                    party.isEnabled
+                      ? "text-destructive hover:border-destructive/35 hover:bg-destructive/8 hover:text-destructive"
+                      : undefined
+                  }
                   disabled={toggleMutation.isPending}
                   onClick={() => toggleMutation.mutate(party)}
                 >

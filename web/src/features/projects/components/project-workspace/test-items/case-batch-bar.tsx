@@ -11,15 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { BatchAssignCasesPayload } from "@/features/test-items/api";
+import { formatDateOnly } from "@/lib/date";
 import type { ProjectMember } from "../../../types";
 import styles from "./case-batch-bar.module.css";
 
 const KEEP = "__keep__";
 const CLEAR = "__clear__";
-
-function formatDate(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 
 /** 用例概况批量指派条：只提交用户实际选择的字段。 */
 export function CaseBatchBar({
@@ -50,7 +47,7 @@ export function CaseBatchBar({
   };
 
   const hasChange = testerChoice !== KEEP || statusChoice !== KEEP || dateChoice !== KEEP;
-  const dateLabel = dateChoice === "set" && execDate ? formatDate(execDate) : "选择日期";
+  const dateLabel = dateChoice === "set" && execDate ? formatDateOnly(execDate) : "选择日期";
 
   const apply = async () => {
     const payload: Omit<BatchAssignCasesPayload, "caseIds"> = {};
@@ -59,7 +56,7 @@ export function CaseBatchBar({
       payload.status = statusChoice as "pending" | "passed" | "failed";
     }
     if (dateChoice !== KEEP) {
-      payload.execDate = dateChoice === CLEAR ? "" : execDate ? formatDate(execDate) : "";
+      payload.execDate = dateChoice === CLEAR ? "" : execDate ? formatDateOnly(execDate) : "";
     }
     await onApply(payload);
     resetDraft();

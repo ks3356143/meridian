@@ -538,14 +538,14 @@
   color: color-mix(in srgb, var(--muted-foreground) 90%, transparent);
   cursor: pointer;
   display: inline-flex;
-  height: 1.5rem;
+  height: 1.75rem;
   justify-content: center;
   transition:
     transform 0.16s cubic-bezier(0.23, 1, 0.32, 1),
     background-color 0.18s var(--ease-out-strong),
     border-color 0.18s var(--ease-out-strong),
     color 0.18s var(--ease-out-strong);
-  width: 1.5rem;
+  width: 1.75rem;
 }
 
 .treeActionButton:hover {
@@ -559,15 +559,15 @@
 }
 
 .treeActionButton svg {
-  height: 0.78rem;
-  width: 0.78rem;
+  height: 0.875rem;
+  width: 0.875rem;
 }
 
 .treeFooter {
   border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
   color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
   flex: none;
-  font-size: 0.66rem;
+  font-size: 0.6875rem;
   padding: 0.3rem 0.7rem;
 }
 

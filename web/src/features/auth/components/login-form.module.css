@@ -1,19 +1,11 @@
 .touchInput {
   min-height: 0;
+  height: 2.75rem;
 }
 
 .touchButton {
   min-height: 0;
-}
-
-@media (max-width: 1023px) {
-  .touchInput {
-    height: 2.75rem;
-  }
-
-  .touchButton {
-    height: 2.75rem;
-  }
+  height: 2.75rem;
 }
 
 .passwordField {

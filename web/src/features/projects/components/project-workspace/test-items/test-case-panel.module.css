@@ -313,7 +313,7 @@
   color: color-mix(in srgb, var(--muted-foreground) 96%, transparent);
   flex: none;
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
 }
 
 .trackItem,
@@ -388,7 +388,7 @@
   border: 1px solid var(--border);
   box-shadow: inset 0 2px 0 color-mix(in srgb, var(--primary) 12%, transparent);
   color: color-mix(in srgb, var(--foreground) 72%, var(--muted-foreground));
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 650;
   letter-spacing: 0.015em;
   line-height: 1.35;
@@ -398,8 +398,9 @@
   white-space: normal;
 }
 
-/* 极窄的序号 / 操作列不换行，避免 1366 宽下标题被拆成竖排。 */
+/* 极窄的序号 / 通过 / 操作列不换行，避免 1366 宽下标题被拆成竖排。 */
 .stepsTable th:nth-child(1),
+.stepsTable th:nth-child(5),
 .stepsTable th:nth-child(6) {
   white-space: nowrap;
 }
@@ -420,24 +421,24 @@
 }
 
 .stepsTable th:nth-child(4) {
-  width: 39.23%;
+  width: 36.23%;
 }
 
 .stepsTable th:nth-child(5),
 .stepsTable td:nth-child(5) {
   padding-inline: 0.1rem;
-  width: 5%;
+  width: 7%;
 }
 
 .stepsTable th:nth-child(6),
 .stepsTable td:nth-child(6) {
-  /* 2×3 紧凑操作网格：5 个 24px 按钮不占横向空间。 */
-  width: 6%;
+  /* 2×3 操作网格：把行操作提升到 28px 热区，同时保持表格紧凑。 */
+  width: 7%;
 }
 
 .stepsTable td {
   border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   padding: 0.25rem 0.35rem;
   vertical-align: middle;
 }
@@ -495,9 +496,9 @@
   border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   justify-content: center;
-  min-height: 1.5rem;
+  min-height: 1.75rem;
   padding: 1px 0.15rem 0;
   transition:
     background-color 0.16s var(--ease-out-strong),
@@ -543,22 +544,22 @@
 .stepActionWrap {
   align-items: center;
   display: inline-flex;
-  height: 1.5rem;
+  height: 1.75rem;
   justify-content: center;
-  width: 1.5rem;
+  width: 1.75rem;
 }
 
 .stepActions {
   display: grid;
-  gap: 0.02rem;
-  grid-template-columns: repeat(2, 1.5rem);
+  gap: 0.08rem;
+  grid-template-columns: repeat(2, 1.75rem);
   justify-content: center;
   margin-inline: auto;
   width: max-content;
 }
 
 .stepsTable td.stepActionsCell {
-  padding-inline: 0.05rem;
+  padding-inline: 0.18rem;
   text-align: center;
 }
 
@@ -566,21 +567,21 @@
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
-  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 68%, var(--foreground));
   cursor: pointer;
   display: inline-flex;
-  height: 1.5rem;
+  height: 1.75rem;
   justify-content: center;
   transition:
     color 0.16s var(--ease-out-strong),
     background-color 0.16s var(--ease-out-strong),
     border-color 0.16s var(--ease-out-strong);
-  width: 1.5rem;
+  width: 1.75rem;
 }
 
 .stepAction svg {
-  height: 0.8rem;
-  width: 0.8rem;
+  height: 0.875rem;
+  width: 0.875rem;
 }
 
 .stepAction:hover:not(:disabled) {
@@ -596,8 +597,8 @@
 }
 
 .stepAction:disabled {
-  cursor: default;
-  opacity: 0.35;
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .stepAction:focus-visible,

@@ -1,0 +1,25 @@
+.skipLink {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.8125rem;
+  font-weight: 560;
+  left: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  position: fixed;
+  top: 0.75rem;
+  transform: translateY(-200%);
+  transition: transform 0.16s var(--ease-out-strong);
+  z-index: 60;
+}
+
+.skipLink:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipLink {
+    transition: none;
+  }
+}

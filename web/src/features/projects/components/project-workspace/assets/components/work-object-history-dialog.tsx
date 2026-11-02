@@ -57,18 +57,18 @@ export function WorkObjectHistoryDialog({
               <li key={event.id} className="border-border grid gap-2 border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-semibold">{actionLabels[event.action]}</span>
-                  <span className="text-muted-foreground font-mono text-[11px]">
+                  <span className="text-muted-foreground font-mono text-[12px]">
                     {new Date(event.operatedAt).toLocaleString("zh-CN")}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                  <Badge variant="outline" className="h-5 px-1.5 text-[12px]">
                     {getWorkObjectStatusMeta(event.fromStatus).label}
                   </Badge>
-                  <span className="text-muted-foreground text-[11px]">{"->"}</span>
+                  <span className="text-muted-foreground text-[12px]">{"->"}</span>
                   <Badge
                     variant={getWorkObjectStatusMeta(event.toStatus).badgeVariant}
-                    className="h-5 px-1.5 text-[10px]"
+                    className="h-5 px-1.5 text-[12px]"
                   >
                     {getWorkObjectStatusMeta(event.toStatus).label}
                   </Badge>

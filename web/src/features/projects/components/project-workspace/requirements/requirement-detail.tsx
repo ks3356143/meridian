@@ -763,7 +763,7 @@ function RequirementDetailForm({
                 ) : (
                   <Plus aria-hidden />
                 )}
-                {createTestItemMutation.isPending ? "创建中..." : "创建并关联测试项"}
+                {createTestItemMutation.isPending ? "创建中…" : "创建并关联测试项"}
               </Button>
             </div>
           </header>
@@ -942,7 +942,7 @@ function RequirementDetailForm({
               {bodyBusy ? (
                 <Loader2 data-icon="inline-start" className={styles.buttonSpinner} aria-hidden />
               ) : null}
-              {bodySaving ? "保存中..." : bodyRefreshing ? "正在刷新..." : "保存正文"}
+              {bodySaving ? "保存中…" : bodyRefreshing ? "正在刷新…" : "保存正文"}
             </Button>
           </footer>
           {bodyDiscardOpen ? (
@@ -982,7 +982,7 @@ function RequirementDetailForm({
                 disabled={createTestItemMutation.isPending}
                 onClick={() => createTestItemMutation.mutate(true)}
               >
-                {createTestItemMutation.isPending ? "创建中..." : "创建"}
+                {createTestItemMutation.isPending ? "创建中…" : "创建"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

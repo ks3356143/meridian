@@ -20,8 +20,8 @@ export const statusVariant: Record<ProjectStatus, ProjectBadgeVariant> = {
 };
 
 export const levelVariant: Record<Project["level"], ProjectBadgeVariant> = {
-  A: "danger",
-  B: "warning",
-  C: "info",
+  A: "outline",
+  B: "outline",
+  C: "outline",
   D: "outline",
 };

@@ -1,11 +1,11 @@
 import { ClipboardList } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { SegmentedProgress } from "@/components/shared/segmented-progress";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import type { Project } from "../../types";
 import { getProjectReadiness, getProjectStages, getStageIndex } from "./status-model";
-import { DETAIL_TABS, MODULE_TONES } from "./tab-meta";
+import { DETAIL_TABS } from "./tab-meta";
 import { StateChip } from "./status-panel";
 
 export function OverviewDetailTab({
@@ -82,7 +82,7 @@ function ModuleStatusTile({
   return (
     <SpotlightSurface
       as="div"
-      data-tonal-panel={MODULE_TONES[module.key]}
+      data-tonal-panel={module.state === "ready" ? "primary" : "warning"}
       data-module-state={module.state}
       data-module-focus={isFocus ? "true" : undefined}
       className="detail-module-card flex min-w-0 flex-col gap-3 p-3.5 pl-4"
@@ -90,20 +90,21 @@ function ModuleStatusTile({
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <Icon className="size-4 shrink-0" aria-hidden />
-          <p className="truncate text-xs font-semibold">{module.label}</p>
+          <p className="truncate text-[13px] font-semibold">{module.label}</p>
         </div>
         <StateChip state={module.state}>
           {module.state === "ready" ? "已具备" : module.state === "partial" ? "部分具备" : "待补齐"}
         </StateChip>
       </div>
-      <Progress
+      <SegmentedProgress
         value={module.progress}
-        className="detail-status-progress h-1"
-        aria-label={`${module.label}完成度`}
+        tone={module.state === "ready" ? "primary" : "warning"}
+        segments={12}
+        label={`${module.label}完成度`}
       />
       <div className="min-w-0">
-        <p className="truncate text-xs font-medium">{module.primary}</p>
-        <p className="text-muted-foreground mt-1 truncate text-[11px]">{module.secondary}</p>
+        <p className="truncate text-[13px] font-medium">{module.primary}</p>
+        <p className="text-muted-foreground mt-1 truncate text-[12px]">{module.secondary}</p>
       </div>
     </SpotlightSurface>
   );

@@ -47,7 +47,7 @@
 
 /* 分类做绿色 TAG：和可点击按钮明确区分。颜色由 Badge variant=primary 提供，这里只收紧尺寸。 */
 .toolbarGroupLabel {
-  font-size: 0.6rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   height: 1.05rem;
   letter-spacing: 0.02em;

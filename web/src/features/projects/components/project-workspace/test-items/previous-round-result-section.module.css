@@ -69,13 +69,13 @@
 
 .title small {
   color: var(--muted-foreground);
-  font-size: 0.64rem;
+  font-size: 0.6875rem;
 }
 
 .summary {
   color: var(--muted-foreground);
   flex: none;
-  font-size: 0.66rem;
+  font-size: 0.6875rem;
 }
 
 .chevron {
@@ -132,7 +132,7 @@
   align-items: center;
   border: 1px solid var(--border);
   display: inline-flex;
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   font-weight: 650;
   min-height: 1.2rem;
   padding: 0 0.34rem;
@@ -218,7 +218,7 @@
 .expect > span,
 .act > span {
   color: var(--muted-foreground);
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }

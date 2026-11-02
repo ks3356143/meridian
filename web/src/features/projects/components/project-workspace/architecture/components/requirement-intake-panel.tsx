@@ -25,7 +25,7 @@ export function RequirementIntakePanel() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <span className="truncate text-sm font-semibold">{step.title}</span>
-              <Badge variant="outline" className="h-5 shrink-0 px-2 text-[11px]">
+              <Badge variant="outline" className="h-5 shrink-0 px-2 text-[12px]">
                 {statusLabel[step.status]}
               </Badge>
             </div>

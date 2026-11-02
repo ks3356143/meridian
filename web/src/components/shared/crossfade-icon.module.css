@@ -1,0 +1,28 @@
+.root {
+  /* 图标在按钮内叠放时保持几何居中，不继承按钮的图标上移补偿。 */
+  --btn-icon-shift: 0px;
+
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 1rem;
+  position: relative;
+  width: 1rem;
+}
+
+.icon {
+  height: 1rem;
+  inset: 0;
+  position: absolute;
+  transition: opacity 0.15s var(--ease-out-strong);
+  width: 1rem;
+}
+
+.icon[data-visible="false"] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon {
+    transition: none;
+  }
+}

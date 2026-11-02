@@ -30,7 +30,7 @@
 .summaryKicker {
   color: var(--primary);
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
@@ -41,7 +41,7 @@
 
 .summaryLead small {
   color: var(--muted-foreground);
-  font-size: 0.64rem;
+  font-size: 0.7rem;
 }
 
 .metric {
@@ -62,7 +62,7 @@
 
 .metric span {
   color: var(--muted-foreground);
-  font-size: 0.61rem;
+  font-size: 0.72rem;
   white-space: nowrap;
 }
 
@@ -103,7 +103,7 @@
 .groupHeader small {
   color: var(--muted-foreground);
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.68rem;
 }
 
 .cards {
@@ -170,7 +170,7 @@
   border: 1px solid color-mix(in srgb, var(--coverage-color) 34%, var(--border));
   color: color-mix(in srgb, var(--coverage-color) 90%, var(--foreground));
   font-family: var(--font-mono);
-  font-size: 0.61rem;
+  font-size: 0.72rem;
   font-weight: 700;
   padding: 0.07rem 0.3rem;
 }
@@ -179,7 +179,7 @@
   border: 1px solid color-mix(in srgb, var(--coverage-color) 30%, var(--border));
   color: color-mix(in srgb, var(--coverage-color) 92%, var(--foreground));
   flex: none;
-  font-size: 0.6rem;
+  font-size: 0.6875rem;
   gap: 0.2rem;
   padding: 0.08rem 0.3rem;
   white-space: nowrap;
@@ -194,7 +194,7 @@
   color: var(--muted-foreground);
   display: flex;
   flex-wrap: wrap;
-  font-size: 0.63rem;
+  font-size: 0.72rem;
   gap: 0.35rem 0.65rem;
 }
 
@@ -213,11 +213,11 @@
 .note span,
 .roundLine small {
   color: var(--muted-foreground);
-  font-size: 0.59rem;
+  font-size: 0.6875rem;
 }
 
 .note p {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   line-height: 1.5;
   margin: 0.15rem 0;
   overflow-wrap: anywhere;
@@ -225,7 +225,7 @@
 
 .note small {
   color: var(--muted-foreground);
-  font-size: 0.58rem;
+  font-size: 0.6875rem;
 }
 
 .roundList {
@@ -254,13 +254,13 @@
 
 .roundLine > span {
   color: var(--round-color);
-  font-size: 0.63rem;
+  font-size: 0.69rem;
   font-weight: 650;
 }
 
 .roundLine b {
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.68rem;
 }
 
 .roundLine small {
@@ -285,7 +285,7 @@
 
 .staticHint {
   color: var(--muted-foreground);
-  font-size: 0.6rem;
+  font-size: 0.6875rem;
 }
 
 .noteDialog {

@@ -58,7 +58,7 @@ export function OutlineWorkbench({ project }: { project: Project }) {
             className="mt-3 h-1.5"
             aria-label="测评大纲完善度"
           />
-          <p className="text-muted-foreground mt-2 text-[11px]">
+          <p className="text-muted-foreground mt-2 text-[12px]">
             按模板章节引导录入，不做空白文档。
           </p>
         </div>
@@ -80,7 +80,7 @@ export function OutlineWorkbench({ project }: { project: Project }) {
               >
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="flex items-center gap-2">
-                    <span className="text-muted-foreground font-mono text-[11px]">
+                    <span className="text-muted-foreground font-mono text-[12px]">
                       {section.code}
                     </span>
                     <span className="truncate text-xs font-medium">{section.title}</span>

@@ -152,7 +152,7 @@
 .caseIdent {
   color: color-mix(in srgb, var(--info) 90%, var(--foreground));
   font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: 0.6875rem;
   white-space: nowrap;
 }
 
@@ -168,7 +168,7 @@
 .fieldChip {
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
   color: var(--muted-foreground);
-  font-size: 0.63rem;
+  font-size: 0.6875rem;
   padding: 0 0.26rem;
   white-space: nowrap;
 }

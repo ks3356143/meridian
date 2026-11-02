@@ -376,7 +376,7 @@ export function RequirementBulkUpdateDialog({
               ) : (
                 <Replace data-icon="inline-start" aria-hidden />
               )}
-              {submitting ? "应用中..." : `应用到 ${changedRows.length} 条需求`}
+              {submitting ? "应用中…" : `应用到 ${changedRows.length} 条需求`}
             </Button>
           </DialogFooter>
         </form>

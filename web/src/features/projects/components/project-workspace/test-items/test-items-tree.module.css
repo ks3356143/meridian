@@ -264,7 +264,7 @@
   align-items: center;
   display: inline-flex;
   flex: none;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   height: 1.06rem;
   line-height: 1;
   padding: 1px 0.32rem 0;
@@ -398,7 +398,7 @@
 
 .caseStatus {
   flex: none;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   white-space: nowrap;
 }
 
@@ -466,7 +466,7 @@
   color: color-mix(in srgb, var(--info) 88%, var(--foreground));
   flex: none;
   font-family: var(--font-mono);
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   padding: 0 0.26rem;
   white-space: nowrap;
 }

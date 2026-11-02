@@ -68,7 +68,7 @@ export function StandardField({
         <Button
           type="button"
           variant="outline"
-          className="h-10 w-full justify-center sm:w-auto"
+          className="h-9 w-full justify-center sm:w-auto"
           onClick={openQuickEntry}
         >
           <Plus data-icon="inline-start" />
@@ -112,7 +112,7 @@ export function StandardField({
 
 export function StandardCountBadge({ count }: { count: number }) {
   return (
-    <Badge variant={count > 0 ? "success" : "warning"} className="h-5 text-[11px]">
+    <Badge variant={count > 0 ? "success" : "warning"} className="h-5 text-xs">
       {count > 0 ? `已选 ${count}` : "待选择"}
     </Badge>
   );

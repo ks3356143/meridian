@@ -29,7 +29,7 @@ function ScopeNodeItem({ node, level }: { node: WorkspaceTestTreeNode; level: nu
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{node.name}</span>
         <span className="flex shrink-0 gap-1">
           {node.platforms.map((platform) => (
-            <Badge key={platform} variant="secondary" className="h-5 px-1.5 text-[10px] uppercase">
+            <Badge key={platform} variant="secondary" className="h-5 px-1.5 text-[12px] uppercase">
               {platform === "common" ? "公共" : platform}
             </Badge>
           ))}

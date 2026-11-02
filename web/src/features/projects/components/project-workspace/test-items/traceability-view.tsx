@@ -270,13 +270,12 @@ function renderGroup(
             >
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    type="button"
+                  <span
                     className={styles.tooltipTrigger}
-                    aria-label="大纲章节号尚未建模"
+                    aria-label="大纲章节号尚未建模，暂不可填写"
                   >
-                    —
-                  </button>
+                    未建模
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>大纲章节号尚未建模</TooltipContent>
               </Tooltip>
@@ -328,13 +327,9 @@ function renderGroup(
         <td className={styles.issueCell} aria-label="问题单">
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
-                type="button"
-                className={styles.tooltipTrigger}
-                aria-label="问题单模块尚未实现"
-              >
+              <span className={styles.tooltipTrigger} aria-label="问题单模块尚未实现，暂不可用">
                 未接入
-              </button>
+              </span>
             </TooltipTrigger>
             <TooltipContent>问题单模块尚未实现</TooltipContent>
           </Tooltip>

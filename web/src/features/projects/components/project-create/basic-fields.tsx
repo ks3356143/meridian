@@ -50,7 +50,7 @@ export function BasicFields({
         <div
           data-slot="composite-input"
           data-invalid={errors.identifier ? true : undefined}
-          className="input-elevated flex h-8 items-center overflow-hidden rounded-sm border border-input bg-card/80 transition-[border-color,background-color,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-within:border-ring focus-within:bg-card"
+          className="input-elevated flex h-9 items-center overflow-hidden rounded-sm border border-input bg-card/80 transition-[border-color,background-color,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-within:border-ring focus-within:bg-card"
         >
           <span className="bg-muted text-muted-foreground flex h-full min-w-9 items-center justify-center border-r border-input px-2 font-mono text-sm">
             R
@@ -207,7 +207,7 @@ function RadioField({
         {options.map((option) => (
           <label
             key={option}
-            className="border-border bg-card/60 has-data-[state=checked]:border-primary/35 has-data-[state=checked]:bg-primary/6 flex min-h-8 cursor-pointer items-center gap-2 rounded-sm border px-3 text-sm transition-[background-color,border-color,box-shadow] duration-200 hover:shadow-[0_4px_12px_-10px_rgb(20_42_30_/_0.6)]"
+            className="border-border bg-card/60 has-data-[state=checked]:border-primary/35 has-data-[state=checked]:bg-primary/6 flex min-h-9 cursor-pointer items-center gap-2 rounded-sm border px-3 text-sm transition-[background-color,border-color,box-shadow] duration-200 hover:shadow-[0_4px_12px_-10px_rgb(20_42_30_/_0.6)]"
           >
             <RadioGroupItem value={option} />
             {labels?.[option] ?? option}

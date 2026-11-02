@@ -33,7 +33,7 @@
 
 .heading small {
   color: var(--muted-foreground);
-  font-size: 0.64rem;
+  font-size: 0.6875rem;
 }
 
 .headingIcon {
@@ -74,7 +74,7 @@
   color: var(--muted-foreground);
   display: flex;
   flex-wrap: wrap;
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   gap: 0.4rem;
 }
 
@@ -82,7 +82,7 @@
 .ownChip,
 .readOnlyChip {
   border: 1px solid var(--border);
-  font-size: 0.6rem;
+  font-size: 0.6875rem;
   font-weight: 650;
   padding: 0.08rem 0.3rem;
 }
@@ -198,7 +198,7 @@
 
 .field small {
   color: var(--muted-foreground);
-  font-size: 0.64rem;
+  font-size: 0.6875rem;
   font-weight: 500;
 }
 

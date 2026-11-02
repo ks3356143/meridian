@@ -103,7 +103,7 @@ export function RequirementBulkDeleteDialog({
               }}
             >
               <Trash2 data-icon="inline-start" aria-hidden />
-              {submitting ? "删除中..." : `删除 ${count} 条需求`}
+              {submitting ? "删除中…" : `删除 ${count} 条需求`}
             </Button>
           </AlertDialogAction>
         </AlertDialogFooter>

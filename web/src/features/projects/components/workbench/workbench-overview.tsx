@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { SegmentedProgress } from "@/components/shared/segmented-progress";
 import { testItemsApi } from "@/features/test-items/api";
 import { totalOpenIssues, type Project } from "@/features/projects/types";
 
@@ -130,7 +130,7 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
                   {module.value}
                 </p>
                 {module.note ? (
-                  <p className="text-muted-foreground mt-1.5 text-[10px] leading-none">
+                  <p className="text-muted-foreground mt-1.5 text-[11px] leading-none">
                     {module.note}
                   </p>
                 ) : null}
@@ -157,7 +157,13 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <Progress value={rate} className="h-2 flex-1" />
+            <SegmentedProgress
+              value={rate}
+              segments={24}
+              tone="primary"
+              label="用例执行进度"
+              className="flex-1"
+            />
             <span className="font-mono text-sm font-semibold">{rate}%</span>
           </div>
         </CardContent>

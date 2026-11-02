@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import styles from "./data-table.module.css";
 import { DataTableHeader } from "./data-table-header";
 import { DataTableRow } from "./data-table-row";
-import type { DataTableRowData } from "./data-table-types";
+import { dataTableColumnResponsiveClass, type DataTableRowData } from "./data-table-types";
 import type { ManagementTableFeatures } from "./table-features";
 
 const DEFAULT_ROW_HEIGHT = 56;
@@ -97,6 +97,20 @@ export function DataTable<TData extends DataTableRowData>({
     <Table
       className={`w-full border-collapse text-left text-[13px] ${rows.length === 0 ? "table-auto" : "table-fixed"}`}
     >
+      <colgroup>
+        {table.getAllLeafColumns().map((column) => {
+          const meta = column.columnDef.meta;
+          return (
+            <col
+              key={column.id}
+              className={
+                meta?.hiddenUntil ? dataTableColumnResponsiveClass(meta.hiddenUntil) : undefined
+              }
+              style={meta?.width ? { width: meta.width } : undefined}
+            />
+          );
+        })}
+      </colgroup>
       <DataTableHeader table={table} />
       <TableBody>
         {topSpacer > 0 ? (

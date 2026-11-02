@@ -1,10 +1,9 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { TruncatedText } from "@/components/shared/truncated-text";
 import type { UpdateCasePayload } from "@/features/test-items/api";
 import type {
   TestCaseRecord,
@@ -20,6 +19,8 @@ import { PreviousRoundResultSection } from "./previous-round-result-section";
 import { QuickIssuesPanel, type QuickIssueComposerRequest } from "./quick-issues-panel";
 import { SummaryBackfillPicker } from "./summary-backfill-picker";
 import { TestCaseShortcutsDialog } from "./test-case-shortcuts-dialog";
+import { TestCaseTraceRow } from "./test-case-trace-row";
+import { formatDateOnly } from "@/lib/date";
 import { caseStatusLabel } from "./test-items-design";
 import { useCellUndo } from "./use-cell-undo";
 import styles from "./test-case-panel.module.css";
@@ -33,12 +34,7 @@ type CaseTextField =
   | "terminationText"
   | "passCriteria";
 
-function formatExecDate(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
+type CasePersonField = "testerId" | "monitorId" | "designerId";
 
 function TestCasePanelInner({
   item,
@@ -91,18 +87,20 @@ function TestCasePanelInner({
   const scrollRef = useRef<HTMLDivElement>(null);
   // 切用例时在绘制前回到顶部，避免"先画新用例再滚回去"的跳动（测试项详情同口径）。
   useLayoutEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
+    const detail = scrollRef.current;
+    detail?.scrollTo({ top: 0 });
+    detail?.closest<HTMLElement>("main.workspace-route")?.scrollTo({ top: 0, left: 0 });
   }, [caseRecord.id]);
   usePanelSwitchMotion(bodyRef, caseRecord.id);
 
   /** 字段保存 + 记入撤销栈：撤销 = 用旧值再走一次同一条保存链路。 */
-  const saveField = (label: string, field: CaseTextField, next: string) => {
+  const saveField = (label: string, field: CaseTextField | CasePersonField, next: string) => {
     // 名称是必填（树上缺失徽章同源）：清空不落库，就地提示并保持红色脉冲。
     if (field === "name" && next.trim() === "") {
       toast.error("用例名称不能为空");
       return Promise.reject(new Error("用例名称为空"));
     }
-    const previous = caseRecord[field];
+    const previous = caseRecord[field] ?? "";
     return onPatchCase({ [field]: next }).then(() => {
       if (previous !== next) recordChange(label, () => onPatchCase({ [field]: previous }));
     });
@@ -126,20 +124,6 @@ function TestCasePanelInner({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [caseRecord.id, currentCaseIndex, siblingCases, onSelectSibling]);
-
-  /** 人员指派：走用例 PATCH 同一保存链路，并记入 Ctrl+Z 撤销栈（与文本字段同口径）。 */
-  const savePerson = (
-    label: string,
-    field: "testerId" | "monitorId" | "designerId",
-    next: string,
-  ) => {
-    const previous = caseRecord[field] ?? "";
-    return onPatchCase({ [field]: next }).then(() => {
-      if (previous !== next) {
-        recordChange(label, () => onPatchCase({ [field]: previous }));
-      }
-    });
-  };
 
   return (
     <div className={styles.panel}>
@@ -242,70 +226,7 @@ function TestCasePanelInner({
                 </td>
               </tr>
               {requirements ? (
-                <tr>
-                  <th scope="row">追踪关系</th>
-                  <td colSpan={3}>
-                    {requirements.length === 0 ? (
-                      <span className={styles.reqEmpty}>
-                        未关联需求（继承所属测试项，关联入口在测试项详情的「追踪关系」）
-                      </span>
-                    ) : (
-                      <ul className={styles.trackTree}>
-                        <li>
-                          <span className={styles.trackDoc}>
-                            <FileText className={styles.trackIcon} aria-hidden />
-                            {requirements[0].sourceName || "未标注来源文档"}
-                            {requirements[0].sourceVersion
-                              ? ` ${requirements[0].sourceVersion}`
-                              : ""}
-                          </span>
-                          <ul>
-                            {requirements.map((reference, index) => (
-                              <li key={reference.id}>
-                                <span className={styles.trackReq}>
-                                  <span className={styles.trackChapter}>
-                                    §{reference.chapterNumber}
-                                  </span>
-                                  <TruncatedText
-                                    value={reference.name}
-                                    className={styles.trackName}
-                                    tooltipValue={`${reference.name} · ${reference.externalIdentifier}`}
-                                  />
-                                  {reference.externalIdentifier ? (
-                                    <span className={styles.trackIdent}>
-                                      {reference.externalIdentifier}
-                                    </span>
-                                  ) : null}
-                                </span>
-                                {/* 追溯链只画一条：本用例挂在所属测试项下，测试项挂在第一条需求下，其余需求是旁支。 */}
-                                {index === 0 ? (
-                                  <ul>
-                                    <li>
-                                      <span className={styles.trackItem}>
-                                        {item.identifier}
-                                        <span className={styles.trackMuted}>{item.name}</span>
-                                      </span>
-                                      <ul>
-                                        <li>
-                                          <span className={styles.trackCase} data-current="true">
-                                            {caseRecord.identifier}
-                                            <span className={styles.trackMuted}>
-                                              {caseRecord.name}
-                                            </span>
-                                          </span>
-                                        </li>
-                                      </ul>
-                                    </li>
-                                  </ul>
-                                ) : null}
-                              </li>
-                            ))}
-                          </ul>
-                        </li>
-                      </ul>
-                    )}
-                  </td>
-                </tr>
+                <TestCaseTraceRow requirements={requirements} item={item} caseRecord={caseRecord} />
               ) : null}
               <tr>
                 <th scope="row">
@@ -389,7 +310,7 @@ function TestCasePanelInner({
                 </td>
                 <th scope="row">测试时间</th>
                 <td>
-                  <span className={styles.execDate}>{formatExecDate(caseRecord.execDate)}</span>
+                  <span className={styles.execDate}>{formatDateOnly(caseRecord.execDate)}</span>
                 </td>
               </tr>
               <tr>
@@ -399,7 +320,7 @@ function TestCasePanelInner({
                     id={caseRecord.testerId}
                     label="测试人员"
                     members={members}
-                    onAssign={(memberId) => savePerson("测试人员", "testerId", memberId)}
+                    onAssign={(memberId) => saveField("测试人员", "testerId", memberId)}
                   />
                 </td>
                 <th scope="row">监测人员</th>
@@ -408,7 +329,7 @@ function TestCasePanelInner({
                     id={caseRecord.monitorId}
                     label="监测人员"
                     members={members}
-                    onAssign={(memberId) => savePerson("监测人员", "monitorId", memberId)}
+                    onAssign={(memberId) => saveField("监测人员", "monitorId", memberId)}
                   />
                 </td>
               </tr>
@@ -423,7 +344,7 @@ function TestCasePanelInner({
                     id={caseRecord.designerId}
                     label="设计人员"
                     members={members}
-                    onAssign={(memberId) => savePerson("设计人员", "designerId", memberId)}
+                    onAssign={(memberId) => saveField("设计人员", "designerId", memberId)}
                   />
                 </td>
               </tr>

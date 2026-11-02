@@ -26,8 +26,9 @@
   --secondary: oklch(0.945 0.012 135);
   --secondary-foreground: oklch(0.26 0.025 150);
   --muted: oklch(0.957 0.007 145);
-  --muted-foreground: oklch(0.475 0.022 150);
-  --placeholder: oklch(0.645 0.016 148);
+  --muted-foreground: oklch(0.44 0.022 150);
+  --text-secondary: oklch(0.36 0.02 150);
+  --placeholder: oklch(0.55 0.016 148);
   --accent: oklch(0.925 0.055 155);
   --accent-foreground: oklch(0.31 0.06 153);
   --destructive: oklch(0.575 0.215 27);
@@ -52,11 +53,9 @@
   --chart-5: oklch(0.61 0.15 305);
   --wordmark-gradient: linear-gradient(
     92deg,
-    #0284c7,
-    #059669 30%,
-    #ca8a04 55%,
-    #dc2626 78%,
-    #9333ea
+    color-mix(in oklch, var(--primary) 72%, var(--foreground)),
+    var(--primary) 58%,
+    color-mix(in oklch, var(--primary) 82%, var(--card))
   );
 }
 
@@ -73,6 +72,7 @@
   --secondary-foreground: oklch(0.95 0.03 150);
   --muted: oklch(0.255 0.015 145);
   --muted-foreground: oklch(0.72 0.015 145);
+  --text-secondary: oklch(0.84 0.015 145);
   --placeholder: oklch(0.625 0.012 145);
   --accent: oklch(0.315 0.05 155);
   --accent-foreground: oklch(0.93 0.03 155);
@@ -94,11 +94,9 @@
   --chart-5: oklch(0.7 0.16 305);
   --wordmark-gradient: linear-gradient(
     92deg,
-    #38bdf8,
-    #34d399 30%,
-    #fbbf24 55%,
-    #fb7185 78%,
-    #c084fc
+    color-mix(in oklch, var(--primary) 72%, var(--foreground)),
+    var(--primary) 58%,
+    color-mix(in oklch, var(--primary) 82%, var(--card))
   );
   --primary-ink: color-mix(in oklch, var(--primary) 82%, var(--foreground));
   --success-ink: color-mix(in oklch, var(--success) 82%, var(--foreground));
@@ -127,6 +125,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-text-secondary: var(--text-secondary);
   --color-placeholder: var(--placeholder);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -176,8 +175,10 @@
   [role="button"]:not(:disabled),
   [role="combobox"]:not([data-disabled]),
   a[href],
-  summary {
+  summary,
+  label[for] {
     cursor: pointer;
+    touch-action: manipulation;
   }
 
   body {
@@ -186,6 +187,29 @@
       "kern" 1,
       "liga" 1,
       "calt" 1;
+  }
+
+  /* 断行优化：标题避免末行孤字，段落避免尾行单字悬挂；不支持的浏览器自动忽略。 */
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* 表格里的数字默认等宽，列与列之间的数值对齐不跳动。 */
+  [data-slot="table"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 弹层内滚到底不再带动页面滚动。 */
+  [role="dialog"],
+  [role="alertdialog"] {
+    overscroll-behavior: contain;
   }
 
   ::selection {

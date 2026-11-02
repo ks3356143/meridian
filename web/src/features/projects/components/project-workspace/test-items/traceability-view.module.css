@@ -30,7 +30,7 @@
 .summaryKicker {
   color: var(--info);
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
@@ -40,7 +40,7 @@
 }
 .summaryLead small {
   color: var(--muted-foreground);
-  font-size: 0.64rem;
+  font-size: 0.75rem;
 }
 
 .metric {
@@ -61,7 +61,7 @@
 
 .metric span {
   color: var(--muted-foreground);
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   white-space: nowrap;
 }
 
@@ -83,7 +83,7 @@
   display: flex;
   flex: none;
   flex-wrap: wrap;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   gap: 0.35rem 1rem;
   padding: 0.42rem 0.6rem;
 }
@@ -134,7 +134,7 @@
 }
 .resultCount {
   color: var(--muted-foreground);
-  font-size: 0.64rem;
+  font-size: 0.75rem;
   margin-left: auto;
 }
 
@@ -149,7 +149,7 @@
 .table {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   min-width: 1180px;
   table-layout: fixed;
   width: 100%;
@@ -160,7 +160,7 @@
   border-bottom: 1px solid var(--border);
   border-right: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   color: var(--muted-foreground);
-  font-size: 0.64rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 0.5rem 0.45rem;
   position: sticky;
@@ -174,7 +174,12 @@
   border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
   border-right: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
   padding: 0.45rem;
+  transition: background-color 140ms var(--ease-out-strong);
   vertical-align: middle;
+}
+
+.table tbody tr:not([data-gap="true"]):hover td {
+  background: color-mix(in srgb, var(--primary) 4%, transparent);
 }
 
 .table tbody tr[data-gap="true"] td {
@@ -251,14 +256,14 @@
 .itemCell small {
   color: var(--muted-foreground);
   display: block;
-  font-size: 0.61rem;
+  font-size: 0.68rem;
   margin-top: 0.15rem;
 }
 .requirementCell code {
   color: var(--info);
   display: block;
   font-family: var(--font-mono);
-  font-size: 0.61rem;
+  font-size: 0.68rem;
   margin-bottom: 0.18rem;
 }
 .chapterCell {
@@ -277,6 +282,13 @@
   font: inherit;
   padding: 0;
   text-align: inherit;
+}
+
+.tooltipTrigger {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18rem;
 }
 
 .tooltipTrigger:focus-visible {
@@ -299,7 +311,7 @@
   color: var(--primary);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 0.59rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   margin-bottom: 0.2rem;
   padding: 0.06rem 0.25rem;
@@ -314,12 +326,12 @@
 .roundBadge small {
   color: var(--muted-foreground);
   font-family: inherit;
-  font-size: 0.56rem;
+  font-size: 0.6875rem;
   font-weight: 500;
 }
 .gapText {
   color: var(--destructive);
-  font-size: 0.67rem;
+  font-size: 0.7rem;
 }
 .caseCell {
   min-width: 0;
@@ -339,19 +351,19 @@
   color: var(--primary);
 }
 .caseLink strong {
-  font-size: 0.69rem;
+  font-size: 0.74rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
 .caseLink small {
   color: var(--muted-foreground);
   font-family: var(--font-mono);
-  font-size: 0.59rem;
+  font-size: 0.6875rem;
 }
 .caseStatus {
   align-items: center;
   display: inline-flex;
-  font-size: 0.64rem;
+  font-size: 0.75rem;
   gap: 0.22rem;
   white-space: nowrap;
 }

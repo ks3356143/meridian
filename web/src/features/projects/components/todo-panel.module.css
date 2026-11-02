@@ -34,6 +34,20 @@
   --tone: var(--info);
 }
 
+.section[data-empty="true"] {
+  --tone: var(--muted-foreground);
+}
+
+.section[data-empty="true"] .bar {
+  opacity: 0.42;
+}
+
+.section[data-empty="true"] .iconChip {
+  border-color: color-mix(in srgb, var(--muted-foreground) 24%, transparent);
+  background: color-mix(in srgb, var(--muted-foreground) 6%, transparent);
+  color: var(--muted-foreground);
+}
+
 @media (min-width: 768px) {
   .section {
     border-bottom: 0;

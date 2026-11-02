@@ -483,7 +483,7 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
                     if (workbench.pendingDelete) workbench.submitDelete(workbench.pendingDelete.id);
                   }}
                 >
-                  {workbench.isDeleting ? "删除中..." : "确认删除"}
+                  {workbench.isDeleting ? "删除中…" : "确认删除"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

@@ -32,7 +32,7 @@ export function CurrentTaskPanel({ project }: { project: Project }) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="truncate text-sm font-semibold">{task.title}</h3>
-              <Badge variant="outline" className="h-5 px-2 text-[11px]">
+              <Badge variant="outline" className="h-5 px-2 text-[12px]">
                 {task.badge}
               </Badge>
             </div>

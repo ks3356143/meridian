@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/page-header";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
+import { TruncatedText } from "@/components/shared/truncated-text";
 import { projectsApi } from "@/features/projects/api";
 import { BasicFields } from "@/features/projects/components/project-create/basic-fields";
 import {
@@ -66,12 +67,11 @@ export function Component() {
       if (!containerRef.current) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       gsap.from(".project-create-reveal", {
-        opacity: 0,
-        y: 16,
-        duration: 0.45,
-        stagger: 0.06,
-        ease: "power3.out",
-        clearProps: "transform,opacity",
+        opacity: 0.84,
+        duration: 0.22,
+        stagger: 0.03,
+        ease: "power2.out",
+        clearProps: "opacity",
       });
     },
     { scope: containerRef, dependencies: [optionsQuery.isPending] },
@@ -207,7 +207,7 @@ export function Component() {
         title="新建测评项目"
         description="项目是测评大纲、测试项、执行记录和报告的流程基点。"
         badge={
-          <Badge variant="secondary" className="h-5 text-[11px]">
+          <Badge variant="secondary" className="h-5 text-xs">
             全部业务字段必填
           </Badge>
         }
@@ -289,22 +289,19 @@ export function Component() {
         <div
           className={`border-border bg-card/90 elevation-2 project-create-reveal sticky bottom-0 flex flex-wrap items-center justify-between gap-3 rounded-sm border p-3 backdrop-blur ${styles.actionBar}`}
         >
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5" aria-live="polite">
+          <div className="flex min-w-0 flex-1 items-center gap-2" aria-live="polite">
             {missingGroups.length > 0 ? (
-              missingGroups.map((group) => (
-                <Badge
-                  key={group}
-                  variant="warning"
-                  className="animate-in fade-in-0 h-5 text-[11px] duration-150 slide-in-from-left-1 motion-reduce:animate-none"
-                >
-                  待填 {group}
+              <>
+                <Badge variant="warning" className="h-5 shrink-0 text-xs">
+                  待填 {missingGroups.length} 项
                 </Badge>
-              ))
+                <TruncatedText
+                  value={missingGroups.join("、")}
+                  className="text-muted-foreground min-w-0 text-xs"
+                />
+              </>
             ) : (
-              <Badge
-                variant="success"
-                className="animate-in fade-in-0 h-5 text-[11px] duration-150 slide-in-from-left-1 motion-reduce:animate-none"
-              >
+              <Badge variant="success" className="h-5 text-xs">
                 必填项已齐
               </Badge>
             )}

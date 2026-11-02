@@ -59,10 +59,7 @@ export function MemberFields({
       <Field className="gap-2.5">
         <FieldTitle>
           项目成员
-          <Badge
-            variant={memberIds.length > 0 ? "primary" : "secondary"}
-            className="h-5 text-[11px]"
-          >
+          <Badge variant={memberIds.length > 0 ? "primary" : "secondary"} className="h-5 text-xs">
             {memberIds.length > 0 ? `已选 ${memberIds.length}` : "可选"}
           </Badge>
         </FieldTitle>

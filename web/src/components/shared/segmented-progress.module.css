@@ -1,0 +1,36 @@
+.track {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 0.25rem;
+}
+
+.segment {
+  flex: 1;
+  min-width: 0;
+  background: color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+
+.segment[data-active="true"] {
+  background: var(--primary);
+}
+
+.track[data-tone="info"] .segment[data-active="true"] {
+  background: var(--info);
+}
+
+.track[data-tone="warning"] .segment[data-active="true"] {
+  background: var(--warning);
+}
+
+.track[data-tone="success"] .segment[data-active="true"] {
+  background: var(--success);
+}
+
+.track[data-tone="danger"] .segment[data-active="true"] {
+  background: var(--destructive);
+}
+
+.track[data-tone="chart"] .segment[data-active="true"] {
+  background: var(--chart-2);
+}

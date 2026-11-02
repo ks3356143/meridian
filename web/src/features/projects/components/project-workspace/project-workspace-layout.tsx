@@ -13,6 +13,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate, useNavigationType } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { AppQuickSwitcher } from "@/components/shared/app-quick-switcher";
+import { MAIN_CONTENT_ID, SkipLink } from "@/components/shared/skip-link";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useAuthStore } from "@/stores/auth-store";
@@ -261,6 +262,7 @@ export function ProjectWorkspaceLayout({
 
   return (
     <div ref={containerRef} className="workspace-shell flex h-svh min-h-0 flex-col">
+      <SkipLink />
       <WorkspaceTopbar
         project={project}
         executionRate={executionRate}
@@ -331,6 +333,8 @@ export function ProjectWorkspaceLayout({
         </nav>
 
         <main
+          id={MAIN_CONTENT_ID}
+          tabIndex={-1}
           key={location.pathname}
           className="workspace-route min-w-0 flex-1"
           data-workspace-section={activeSection}

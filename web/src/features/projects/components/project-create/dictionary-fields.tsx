@@ -113,7 +113,7 @@ function DictionaryField({
       <FieldTitle>
         {label}
         <RequiredMark />
-        <Badge variant={selected.length > 0 ? "success" : "warning"} className="h-5 text-[11px]">
+        <Badge variant={selected.length > 0 ? "success" : "warning"} className="h-5 text-xs">
           {selected.length > 0 ? `已选 ${selected.length}` : "待选择"}
         </Badge>
       </FieldTitle>

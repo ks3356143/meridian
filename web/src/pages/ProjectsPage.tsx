@@ -56,23 +56,11 @@ export function Component() {
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
       gsap.from(".dash-reveal", {
-        opacity: 0,
-        y: 18,
-        duration: 0.5,
-        stagger: 0.07,
-        ease: "power3.out",
-        clearProps: "transform,opacity",
-      });
-
-      const root = containerRef.current;
-      const counters = Array.from(root?.querySelectorAll<HTMLElement>(".metric-count") ?? []);
-      counters.forEach((el) => {
-        const target = Number(el.dataset.value ?? "0");
-        gsap.fromTo(
-          el,
-          { innerText: 0 },
-          { innerText: target, duration: 0.8, ease: "power2.out", snap: { innerText: 1 } },
-        );
+        opacity: 0.84,
+        duration: 0.22,
+        stagger: 0.03,
+        ease: "power2.out",
+        clearProps: "opacity",
       });
     },
     { scope: containerRef, dependencies: [projectsQuery.isPending] },

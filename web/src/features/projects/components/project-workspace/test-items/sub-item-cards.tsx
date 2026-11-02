@@ -331,7 +331,7 @@ const SortableCard = memo(function SortableCardImpl({
               ref={opsCellRef}
               value={sub.ops}
               label="操作步骤"
-              placeholder="1、请在此录入..."
+              placeholder="1、请在此录入…"
               bordered
               multiline
               missing={sub.ops.trim() === ""}
@@ -367,7 +367,7 @@ const SortableCard = memo(function SortableCardImpl({
               ref={expectedCellRef}
               value={sub.expected}
               label="通过准则"
-              placeholder="1、预期结果..."
+              placeholder="1、预期结果…"
               bordered
               multiline
               missing={sub.expected.trim() === ""}

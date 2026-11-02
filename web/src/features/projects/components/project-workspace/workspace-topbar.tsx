@@ -110,7 +110,7 @@ function TopMetric({
   const valueClassName = tone === "default" ? undefined : `workspace-topbar-${tone}`;
   return (
     <span className="workspace-topbar-metric font-mono">
-      <span className="workspace-topbar-muted font-sans text-[10px]">{label}</span>
+      <span className="workspace-topbar-muted font-sans text-[12px]">{label}</span>
       <span className={valueClassName}>{value}</span>
     </span>
   );

@@ -26,7 +26,7 @@ export function ReadinessPanel() {
             <div className="flex min-w-0 items-center gap-2">
               <Icon className="size-3.5 shrink-0 text-primary" aria-hidden />
               <span className="min-w-0 flex-1 truncate text-sm">{item.label}</span>
-              <Badge variant="outline" className="h-5 shrink-0 px-2 text-[11px]">
+              <Badge variant="outline" className="h-5 shrink-0 px-2 text-[12px]">
                 {config.label}
               </Badge>
             </div>

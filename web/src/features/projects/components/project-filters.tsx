@@ -23,6 +23,9 @@ import {
 import type { ProjectPlatform, ProjectStatus, SecurityLevel } from "../types";
 
 const allValue = "__all__";
+const toSelectValue = (value: string) => value || allValue;
+const fromSelectValue = <T extends string>(value: string) =>
+  value === allValue ? "" : (value as T);
 
 interface ProjectFiltersProps {
   filters: ProjectFilterValues;
@@ -63,18 +66,18 @@ export function ProjectFilters({
             onChange={(event) => onChange({ ...filters, keyword: event.target.value })}
             placeholder="搜索标识、名称、单位、负责人"
             aria-label="搜索项目"
-            className="h-8 pl-8 text-xs"
+            className="h-9 pl-8 text-[13px]"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:flex xl:w-auto">
         <Select
-          value={filters.status || undefined}
+          value={toSelectValue(filters.status)}
           onValueChange={(value) =>
             onChange({
               ...filters,
-              status: value === allValue ? "" : (value as ProjectStatus),
+              status: fromSelectValue<ProjectStatus>(value),
             })
           }
         >
@@ -95,11 +98,11 @@ export function ProjectFilters({
         </Select>
 
         <Select
-          value={filters.level || undefined}
+          value={toSelectValue(filters.level)}
           onValueChange={(value) =>
             onChange({
               ...filters,
-              level: value === allValue ? "" : (value as SecurityLevel),
+              level: fromSelectValue<SecurityLevel>(value),
             })
           }
         >
@@ -120,11 +123,11 @@ export function ProjectFilters({
         </Select>
 
         <Select
-          value={filters.platform || undefined}
+          value={toSelectValue(filters.platform)}
           onValueChange={(value) =>
             onChange({
               ...filters,
-              platform: value === allValue ? "" : (value as ProjectPlatform),
+              platform: fromSelectValue<ProjectPlatform>(value),
             })
           }
         >

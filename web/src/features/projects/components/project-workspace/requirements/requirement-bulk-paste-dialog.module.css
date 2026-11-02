@@ -190,7 +190,7 @@
   align-items: center;
   justify-content: center;
   height: 1.1rem;
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   padding-inline: 0.25rem;
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--warning) 34%, transparent),

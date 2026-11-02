@@ -15,8 +15,17 @@
 }
 
 .readonlyInput {
-  background: color-mix(in srgb, var(--muted) 55%, transparent);
-  color: var(--muted-foreground);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--muted-foreground) 4%, transparent) 0 6px,
+      transparent 6px 12px
+    ),
+    color-mix(in srgb, var(--muted) 68%, var(--card));
+  border-color: color-mix(in srgb, var(--muted-foreground) 34%, var(--border));
+  color: color-mix(in srgb, var(--foreground) 74%, var(--muted-foreground));
+  cursor: not-allowed;
+  font-weight: 560;
 }
 
 .dialog :global([data-slot="select-trigger"]) {

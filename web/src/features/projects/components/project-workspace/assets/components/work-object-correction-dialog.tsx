@@ -148,7 +148,7 @@ export function WorkObjectCorrectionDialog({
             onClick={() => onSubmit(reason.trim())}
           >
             <PencilLine data-icon="inline-start" aria-hidden />
-            {submitting ? "保存中..." : "保存纠错"}
+            {submitting ? "保存中…" : "保存纠错"}
           </Button>
         </DialogFooter>
       </DialogContent>

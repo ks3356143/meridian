@@ -150,10 +150,26 @@ export function ProjectDetailTabs({
         onOpenWorkspace={openWorkspace}
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricTile label="重大" value={project.openIssues.critical} tone="danger" />
-          <MetricTile label="严重" value={project.openIssues.serious} tone="danger" />
-          <MetricTile label="一般" value={project.openIssues.normal} tone="warning" />
-          <MetricTile label="建议改进" value={project.openIssues.suggestion} tone="info" />
+          <MetricTile
+            label="重大"
+            value={project.openIssues.critical}
+            tone={project.openIssues.critical > 0 ? "danger" : "default"}
+          />
+          <MetricTile
+            label="严重"
+            value={project.openIssues.serious}
+            tone={project.openIssues.serious > 0 ? "danger" : "default"}
+          />
+          <MetricTile
+            label="一般"
+            value={project.openIssues.normal}
+            tone={project.openIssues.normal > 0 ? "warning" : "default"}
+          />
+          <MetricTile
+            label="建议改进"
+            value={project.openIssues.suggestion}
+            tone={project.openIssues.suggestion > 0 ? "info" : "default"}
+          />
         </div>
         <Checklist
           items={[
@@ -180,7 +196,7 @@ export function ProjectDetailTabs({
               key={documentName}
               className="bg-muted/25 border-border flex items-center justify-between gap-3 rounded-sm border px-3 py-2.5"
             >
-              <span className="min-w-0 truncate text-xs font-medium">{documentName}</span>
+              <span className="min-w-0 truncate text-[13px] font-medium">{documentName}</span>
               <StateChip state="pending">待生成</StateChip>
             </div>
           ))}

@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { SegmentedProgress } from "@/components/shared/segmented-progress";
+import { TruncatedText } from "@/components/shared/truncated-text";
 import { totalOpenIssues, type Project } from "../types";
 
 type KpiTone = "info" | "primary" | "warning" | "success" | "chart" | "danger";
@@ -22,45 +23,38 @@ interface KpiItem {
   progress?: number;
 }
 
-const toneStyles: Record<KpiTone, { card: string; icon: string; value: string; progress: string }> =
-  {
-    info: {
-      card: "hover:bg-info/[0.045]",
-      icon: "border-info/35 bg-info/12 text-info",
-      value: "text-info",
-      progress: "[&_[data-slot=progress-indicator]]:bg-info",
-    },
-    primary: {
-      card: "hover:bg-primary/[0.045]",
-      icon: "border-primary/35 bg-primary/12 text-primary",
-      value: "text-primary",
-      progress: "[&_[data-slot=progress-indicator]]:bg-primary",
-    },
-    warning: {
-      card: "hover:bg-warning/[0.055]",
-      icon: "border-warning/40 bg-warning/14 text-warning",
-      value: "text-warning",
-      progress: "[&_[data-slot=progress-indicator]]:bg-warning",
-    },
-    success: {
-      card: "hover:bg-success/[0.045]",
-      icon: "border-success/35 bg-success/12 text-success",
-      value: "text-success",
-      progress: "[&_[data-slot=progress-indicator]]:bg-success",
-    },
-    chart: {
-      card: "hover:bg-chart-2/[0.045]",
-      icon: "border-chart-2/35 bg-chart-2/12 text-chart-2",
-      value: "text-chart-2",
-      progress: "[&_[data-slot=progress-indicator]]:bg-chart-2",
-    },
-    danger: {
-      card: "hover:bg-destructive/[0.045]",
-      icon: "border-destructive/35 bg-destructive/12 text-destructive",
-      value: "text-destructive",
-      progress: "[&_[data-slot=progress-indicator]]:bg-destructive",
-    },
-  };
+const toneStyles: Record<KpiTone, { card: string; icon: string; value: string }> = {
+  info: {
+    card: "hover:bg-info/[0.045]",
+    icon: "border-info/35 bg-info/12 text-info",
+    value: "text-info",
+  },
+  primary: {
+    card: "hover:bg-primary/[0.045]",
+    icon: "border-primary/35 bg-primary/12 text-primary",
+    value: "text-primary",
+  },
+  warning: {
+    card: "hover:bg-warning/[0.055]",
+    icon: "border-warning/40 bg-warning/14 text-warning",
+    value: "text-warning",
+  },
+  success: {
+    card: "hover:bg-success/[0.045]",
+    icon: "border-success/35 bg-success/12 text-success",
+    value: "text-success",
+  },
+  chart: {
+    card: "hover:bg-chart-2/[0.045]",
+    icon: "border-chart-2/35 bg-chart-2/12 text-chart-2",
+    value: "text-chart-2",
+  },
+  danger: {
+    card: "hover:bg-destructive/[0.045]",
+    icon: "border-destructive/35 bg-destructive/12 text-destructive",
+    value: "text-destructive",
+  },
+};
 
 export function KpiBar({ projects }: { projects: Project[] }) {
   const totalCases = projects.reduce((sum, p) => sum + p.casesTotal, 0);
@@ -116,7 +110,7 @@ export function KpiBar({ projects }: { projects: Project[] }) {
       icon: Activity,
       label: "用例执行率",
       value: `${executionRate}%`,
-      tone: "chart",
+      tone: "primary",
       detail: `${executedCases}/${totalCases}`,
       progress: executionRate,
     },
@@ -124,13 +118,16 @@ export function KpiBar({ projects }: { projects: Project[] }) {
       icon: CircleAlert,
       label: "未闭环问题",
       value: String(openTotal),
-      tone: "danger",
+      tone: openTotal > 0 ? "danger" : "success",
       detail: `重 ${openCritical} · 一般 ${normal} · 建议 ${suggestion}`,
     },
   ];
 
   return (
-    <div aria-label="项目统计" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+    <div
+      aria-label="项目统计"
+      className="grid grid-cols-2 gap-2 max-[359px]:grid-cols-1 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6"
+    >
       {items.map((item) => {
         const tone = toneStyles[item.tone];
         return (
@@ -138,14 +135,17 @@ export function KpiBar({ projects }: { projects: Project[] }) {
             key={item.label}
             size="sm"
             data-tone={item.tone}
-            className={cn("dash-reveal group overflow-hidden", tone.card)}
+            className={cn(
+              "dash-reveal group overflow-hidden border border-border/70 hover:border-primary/25",
+              tone.card,
+            )}
           >
-            <CardContent className="flex min-h-30 flex-col justify-between gap-3">
+            <CardContent className="flex min-h-22 flex-col justify-between gap-2 sm:min-h-24">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-muted-foreground text-xs font-semibold">{item.label}</span>
                 <span
                   className={cn(
-                    "flex size-8 items-center justify-center rounded-sm border",
+                    "flex size-7 items-center justify-center rounded-sm border sm:size-8",
                     tone.icon,
                   )}
                 >
@@ -156,25 +156,23 @@ export function KpiBar({ projects }: { projects: Project[] }) {
               <div className="flex items-end justify-between gap-2">
                 <span
                   className={cn(
-                    "font-mono text-4xl leading-none font-bold tabular-nums",
+                    "font-mono text-3xl leading-none font-bold tabular-nums sm:text-4xl",
                     tone.value,
                   )}
                 >
-                  {/^[\d.]+%?$/.test(item.value) ? (
-                    <span className="metric-count" data-value={item.value.replace(/[%.]/g, "")}>
-                      {item.value.replace(/[%.]/g, "")}
-                    </span>
-                  ) : (
-                    item.value
-                  )}
-                  {item.value.endsWith("%") ? "%" : null}
+                  {item.value}
                 </span>
-                <span className="text-muted-foreground max-w-24 text-right text-[10px] leading-tight">
-                  {item.detail}
-                </span>
+                <TruncatedText
+                  value={item.detail}
+                  className="text-muted-foreground max-w-[6rem] text-right text-xs leading-tight sm:max-w-[6.5rem]"
+                />
               </div>
 
-              <Progress value={item.progress ?? 0} className={cn("h-1", tone.progress)} />
+              <SegmentedProgress
+                value={item.progress ?? 0}
+                tone={item.tone}
+                label={`${item.label}进度`}
+              />
             </CardContent>
           </Card>
         );

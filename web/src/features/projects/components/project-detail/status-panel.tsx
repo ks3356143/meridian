@@ -39,7 +39,7 @@ export function MetricTile({
 }) {
   return (
     <div data-tonal-panel={tone === "default" ? "primary" : tone} className="min-w-0 p-3.5 pl-4">
-      <p className="text-muted-foreground text-[11px]">{label}</p>
+      <p className="text-muted-foreground text-[12px]">{label}</p>
       <p
         className={cn(
           "mt-2 truncate text-lg leading-none font-semibold",
@@ -67,8 +67,8 @@ export function Checklist({
           className="flex min-w-0 items-center justify-between gap-4 px-3.5 py-3"
         >
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold">{item.label}</p>
-            <p className="text-muted-foreground mt-1 truncate text-[11px]">{item.detail}</p>
+            <p className="truncate text-[13px] font-semibold">{item.label}</p>
+            <p className="text-muted-foreground mt-1 truncate text-[12px]">{item.detail}</p>
           </div>
           <StateChip state={item.state}>
             {item.state === "ready" ? "已具备" : item.state === "partial" ? "部分具备" : "待补齐"}
@@ -81,15 +81,12 @@ export function Checklist({
 
 export function StateChip({ state, children }: { state: ReadinessState; children: string }) {
   return (
-    <Badge
-      variant={state === "ready" ? "success" : state === "partial" ? "warning" : "secondary"}
-      className="h-6 shrink-0"
-    >
+    <Badge variant={state === "ready" ? "success" : "warning"} className="h-6 shrink-0">
       <span
         className={cn(
           "status-dot",
           state === "ready" && "bg-success",
-          state === "partial" && "bg-warning",
+          state !== "ready" && "bg-warning",
         )}
         aria-hidden
       />

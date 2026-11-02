@@ -28,26 +28,29 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
       columnHelper.columns([
         columnHelper.accessor("id", {
           header: "标识",
+          meta: { width: "6rem" },
           cell: (info) => (
             <TruncatedText value={info.getValue()} className="font-mono text-xs font-semibold" />
           ),
         }),
         columnHelper.accessor("name", {
           header: "项目名称",
+          meta: { width: "14rem" },
           cell: (info) => <TruncatedText value={info.getValue()} className="font-medium" />,
         }),
         columnHelper.accessor("nature", {
           header: "测评性质",
-          meta: { hiddenUntil: "wide" },
+          meta: { hiddenUntil: "wide", width: "6rem" },
           cell: (info) => <TruncatedText value={info.getValue()} />,
         }),
         columnHelper.accessor("softwareType", {
           header: "软件类型",
-          meta: { hiddenUntil: "wide" },
+          meta: { hiddenUntil: "wide", width: "6rem" },
           cell: (info) => <TruncatedText value={info.getValue()} />,
         }),
         columnHelper.accessor("level", {
           header: "等级",
+          meta: { width: "5rem" },
           cell: (info) => (
             <Badge
               variant={levelVariant[info.getValue()]}
@@ -59,21 +62,23 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
         }),
         columnHelper.accessor("platform", {
           header: "平台",
-          meta: { hiddenUntil: "wide" },
+          meta: { hiddenUntil: "wide", width: "6rem" },
           cell: (info) => <TruncatedText value={info.getValue()} />,
         }),
         columnHelper.accessor("organization", {
           header: "研制单位",
-          meta: { hiddenUntil: "wide" },
+          meta: { hiddenUntil: "wide", width: "7rem" },
           cell: (info) => <TruncatedText value={info.getValue() || "未设置"} />,
         }),
         columnHelper.accessor("owner", {
           header: "负责人",
+          meta: { width: "6rem" },
           cell: (info) => <TruncatedText value={info.getValue()} />,
         }),
         columnHelper.accessor((row) => row.casesExecuted / Math.max(row.casesTotal, 1), {
           id: "cases",
           header: "用例执行",
+          meta: { width: "7rem" },
           cell: (info) => {
             const row = info.row.original;
             const rate = Math.round((row.casesExecuted / Math.max(row.casesTotal, 1)) * 100);
@@ -91,6 +96,7 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
         columnHelper.accessor((row) => totalOpenIssues(row.openIssues), {
           id: "issues",
           header: "未闭环问题",
+          meta: { width: "7rem" },
           cell: (info) => {
             const row = info.row.original;
             const urgent = row.openIssues.critical + row.openIssues.serious;
@@ -111,6 +117,7 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
         }),
         columnHelper.accessor("status", {
           header: "状态",
+          meta: { width: "7rem" },
           cell: (info) => (
             <Badge variant={statusVariant[info.getValue()]} className="max-w-full">
               <span className="status-dot" aria-hidden />
@@ -120,12 +127,13 @@ export function ProjectsTable({ projects, onClearFilters }: ProjectsTableProps) 
         }),
         columnHelper.accessor("updatedAt", {
           header: "更新时间",
-          meta: { hiddenUntil: "wide" },
+          meta: { hiddenUntil: "wide", width: "6rem" },
           cell: (info) => <TruncatedText value={info.getValue()} className="font-mono text-xs" />,
         }),
         columnHelper.display({
           id: "action",
           header: "操作",
+          meta: { width: "5.5rem" },
           cell: (info) => (
             <Button
               type="button"

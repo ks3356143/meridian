@@ -94,7 +94,7 @@ export function RequirementCreateTestItemsDialog({
               }}
             >
               <Sparkles data-icon="inline-start" aria-hidden />
-              {submitting ? "创建中..." : "开始创建"}
+              {submitting ? "创建中…" : "开始创建"}
             </Button>
           </AlertDialogAction>
         </AlertDialogFooter>

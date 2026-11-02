@@ -7,6 +7,7 @@ import { authApi } from "@/features/auth/api";
 import { useAuthStore } from "@/stores/auth-store";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { CrossfadeIcon } from "@/components/shared/crossfade-icon";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import styles from "./login-form.module.css";
@@ -25,7 +26,8 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const PasswordVisibilityIcon = showPassword ? EyeOff : Eye;
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   useGSAP(
     () => {
@@ -65,6 +67,11 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
       password: values.password ? "" : "请输入密码",
     };
     setErrors(nextErrors);
+    if (nextErrors.username) {
+      usernameRef.current?.focus();
+    } else if (nextErrors.password) {
+      passwordRef.current?.focus();
+    }
     return !nextErrors.username && !nextErrors.password;
   };
 
@@ -94,13 +101,14 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
       onSubmit={handleSubmit}
       noValidate
       aria-busy={submitting}
-      className="flex flex-1 flex-col justify-center gap-7 p-2 sm:p-4"
+      className="flex flex-1 flex-col justify-center gap-7 p-6 sm:p-8"
     >
       <div className="login-reveal">
-        <p className="text-muted-foreground font-mono text-xs tracking-widest uppercase">
+        <p className="text-foreground/60 font-mono text-xs tracking-[0.18em] uppercase">
           ChenMeridian Access
         </p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">登录工作台</h1>
+        <p className="text-text-secondary mt-2 text-sm">使用本地管理员账号进入测评工作台</p>
         <div className="bg-primary mt-4 h-0.5 w-10" aria-hidden />
       </div>
 
@@ -115,6 +123,7 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
         <Field className="login-field" data-invalid={errors.username ? true : undefined}>
           <FieldLabel htmlFor="username">用户名</FieldLabel>
           <Input
+            ref={usernameRef}
             id="username"
             name="username"
             autoComplete="username"
@@ -131,6 +140,7 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
           <FieldLabel htmlFor="password">密码</FieldLabel>
           <div className={styles.passwordField}>
             <Input
+              ref={passwordRef}
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
@@ -151,11 +161,7 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => setShowPassword((visible) => !visible)}
               >
-                <PasswordVisibilityIcon
-                  key={showPassword ? "hide-password" : "show-password"}
-                  className="animate-in fade-in-0 zoom-in-75 duration-150 motion-reduce:animate-none"
-                  aria-hidden
-                />
+                <CrossfadeIcon primary={Eye} secondary={EyeOff} showSecondary={showPassword} />
               </Button>
             </span>
           </div>
@@ -177,9 +183,11 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
         {submitting ? "正在登录" : "进入工作台"}
       </Button>
 
-      <div className="border-border/60 text-muted-foreground flex items-center justify-between border-t pt-4 text-xs">
-        <span className="font-mono tracking-widest">INITIAL LOGIN</span>
-        <span className="font-mono">admin / admin123</span>
+      <div className="border-border/60 flex items-center justify-between border-t pt-4 text-xs">
+        <span className="text-foreground/55 font-mono tracking-widest">INITIAL LOGIN</span>
+        <span className="border-border/70 bg-muted/50 text-foreground/75 rounded-sm border px-2 py-0.5 font-mono text-xs">
+          admin / admin123
+        </span>
       </div>
     </form>
   );

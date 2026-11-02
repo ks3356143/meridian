@@ -12,6 +12,7 @@ import { managementTableFeatures } from "@/components/shared/table-features";
 import { Button } from "@/components/ui/button";
 import type { ManagedUser } from "@/features/users/types";
 import { protectedAdminUsername } from "@/features/users/constants";
+import styles from "./user-management-table.module.css";
 
 const features = managementTableFeatures;
 const columnHelper = createColumnHelper<typeof features, ManagedUser>();
@@ -89,7 +90,9 @@ export function UserManagementTable({
   });
 
   return (
-    <div className="panel-surface border-border overflow-hidden rounded-sm border">
+    <div
+      className={`${styles.tableShell} panel-surface border-border overflow-hidden rounded-sm border`}
+    >
       <DataTable table={table} emptyContent={emptyContent ?? "暂无用户，点击上方按钮添加。"} />
     </div>
   );

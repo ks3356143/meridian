@@ -122,12 +122,12 @@
   color: var(--muted-foreground);
   cursor: pointer;
   display: inline-flex;
-  height: 1.35rem;
+  height: 1.75rem;
   justify-content: center;
   transition:
     background-color 0.16s var(--ease-out-strong),
     color 0.16s var(--ease-out-strong);
-  width: 1.35rem;
+  width: 1.75rem;
 }
 
 .clearSearch:hover {
@@ -136,13 +136,13 @@
 }
 
 .clearSearch svg {
-  height: 0.72rem;
-  width: 0.72rem;
+  height: 0.8rem;
+  width: 0.8rem;
 }
 
 .searchCount {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
   min-width: 2rem;
   text-align: right;
@@ -150,13 +150,13 @@
 }
 
 .searchNav {
-  height: 1.35rem;
-  width: 1.35rem;
+  height: 1.75rem;
+  width: 1.75rem;
 }
 
 .searchNav svg {
-  height: 0.72rem;
-  width: 0.72rem;
+  height: 0.8rem;
+  width: 0.8rem;
 }
 
 .searchPreview {
@@ -165,7 +165,7 @@
   border: 1px solid color-mix(in srgb, var(--info) 18%, var(--border));
   color: var(--muted-foreground);
   display: flex;
-  font-size: 10.5px;
+  font-size: 11px;
   gap: 0.3rem;
   min-width: 0;
   padding: 0.18rem 0.3rem;
@@ -193,7 +193,7 @@
   background: transparent;
   border: 1px solid transparent;
   color: var(--muted-foreground);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   height: 1.6rem;
   padding-inline: 0.38rem;
@@ -216,7 +216,7 @@
 
 .completenessCount {
   color: currentcolor;
-  font-size: 9.5px;
+  font-size: 11px;
   opacity: 0.72;
 }
 
@@ -281,7 +281,7 @@
 
 .helpSection {
   color: var(--info);
-  font-size: 0.64rem;
+  font-size: 0.6875rem;
   font-weight: 650;
   line-height: 1.2;
   margin-top: 0.1rem;
@@ -310,7 +310,7 @@
   color: var(--foreground);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   height: 1.05rem;
   justify-content: center;
   line-height: 1;
@@ -328,7 +328,7 @@
 
 .helpNote {
   color: var(--muted-foreground);
-  font-size: 0.64rem;
+  font-size: 0.6875rem;
   line-height: 1.4;
   margin: 0;
 }
@@ -658,7 +658,7 @@
 
 .row :global([data-slot="badge"]) {
   height: 1.05rem;
-  font-size: 9.5px;
+  font-size: 11px;
   padding-inline: 0.24rem;
 }
 
@@ -667,7 +667,7 @@
   border-color: color-mix(in srgb, var(--primary) 44%, var(--border));
   color: var(--primary-ink);
   height: 1.15rem;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   min-width: 1.5rem;
   padding-inline: 0.32rem;

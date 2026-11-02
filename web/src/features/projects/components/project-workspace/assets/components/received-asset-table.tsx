@@ -144,7 +144,7 @@ const ReceivedAssetRow = memo(function ReceivedAssetRow({
           ) : (
             <TruncatedText value={value.objectName} className={staticFieldClass} />
           )}
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-[12px] text-muted-foreground">
             <TruncatedText
               value={asset.originalName || "未绑定电子文件"}
               className="max-w-[12rem] font-mono"
@@ -213,12 +213,12 @@ const ReceivedAssetRow = memo(function ReceivedAssetRow({
         )}
       </TableCell>
       <TableCell className="text-center">
-        <Badge variant={parseVariants[parseState.tone]} className="h-5 px-1.5 text-[10px]">
+        <Badge variant={parseVariants[parseState.tone]} className="h-5 px-1.5 text-[12px]">
           {parseState.label}
         </Badge>
       </TableCell>
       <TableCell className="text-center">
-        <Badge variant={statusMeta.badgeVariant} className="h-5 px-1.5 text-[10px]">
+        <Badge variant={statusMeta.badgeVariant} className="h-5 px-1.5 text-[12px]">
           {statusMeta.label}
         </Badge>
       </TableCell>

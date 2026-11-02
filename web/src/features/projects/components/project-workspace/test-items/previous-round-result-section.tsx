@@ -7,6 +7,7 @@ import { testItemsApi } from "@/features/test-items/api";
 import type { PreviousRoundStep } from "@/features/test-items/types";
 import { RequirementBlocks } from "../requirements/body/requirement-body";
 import { caseStatusLabel } from "./test-items-design";
+import { formatDateOnly } from "@/lib/date";
 import styles from "./previous-round-result-section.module.css";
 
 export function PreviousRoundResultSection({
@@ -88,7 +89,7 @@ export function PreviousRoundResultSection({
                   <span className={styles.statusChip} data-status={result.previousCase.status}>
                     {caseStatusLabel(result.previousCase.status)}
                   </span>
-                  <span>执行日期：{formatDate(result.previousCase.execDate)}</span>
+                  <span>执行日期：{formatDateOnly(result.previousCase.execDate, "未记录")}</span>
                   <span>测试人员：{result.testerName || "未记录"}</span>
                 </div>
                 {result.steps.length === 0 ? (
@@ -142,13 +143,6 @@ function PreviousStepCard({ step, projectCode }: { step: PreviousRoundStep; proj
       </div>
     </article>
   );
-}
-
-function formatDate(value: string | null) {
-  if (!value) return "未记录";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function stepPassStatus(value: string) {

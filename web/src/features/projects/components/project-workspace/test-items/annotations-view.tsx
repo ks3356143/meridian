@@ -5,6 +5,7 @@ import { QueryError, QueryLoading } from "@/components/shared/query-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { testItemsApi } from "@/features/test-items/api";
+import { formatDateOnly } from "@/lib/date";
 import type { AnnotationKind, StepAnnotationRow } from "@/features/test-items/types";
 import styles from "./annotations-view.module.css";
 
@@ -172,7 +173,7 @@ export function AnnotationsView({
                 ) : (
                   <span className={styles.projectBadge}>项目级</span>
                 )}
-                <time dateTime={row.updatedAt}>{formatDate(row.updatedAt)}</time>
+                <time dateTime={row.updatedAt}>{formatDateOnly(row.updatedAt)}</time>
               </div>
 
               <blockquote className={styles.excerpt}>
@@ -235,10 +236,4 @@ function Metric({ label, value }: { label: string; value: number }) {
       <span>{label}</span>
     </div>
   );
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }

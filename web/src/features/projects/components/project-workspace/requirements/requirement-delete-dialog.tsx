@@ -95,7 +95,7 @@ export function RequirementDeleteDialog({
             }}
           >
             <Trash2 data-icon="inline-start" aria-hidden />
-            {submitting ? "删除中..." : "确认删除"}
+            {submitting ? "删除中…" : "确认删除"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

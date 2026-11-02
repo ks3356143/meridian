@@ -2,9 +2,8 @@
   isolation: isolate;
   background: linear-gradient(
     118deg,
-    color-mix(in srgb, var(--primary) 14%, var(--card)),
-    color-mix(in srgb, var(--info) 8%, var(--card)) 42%,
-    color-mix(in srgb, var(--warning) 6%, var(--card)) 72%,
+    color-mix(in srgb, var(--primary) 12%, var(--card)),
+    color-mix(in srgb, var(--primary) 5%, var(--card)) 56%,
     var(--card)
   );
   position: relative;
@@ -53,9 +52,8 @@
 .dark .project-detail-hero {
   background: linear-gradient(
     118deg,
-    color-mix(in srgb, var(--primary) 20%, var(--card)),
-    color-mix(in srgb, var(--info) 10%, var(--card)) 44%,
-    color-mix(in srgb, var(--warning) 7%, var(--card)) 74%,
+    color-mix(in srgb, var(--primary) 17%, var(--card)),
+    color-mix(in srgb, var(--primary) 7%, var(--card)) 58%,
     var(--card)
   );
 }
@@ -66,7 +64,7 @@
     linear-gradient(
       120deg,
       color-mix(in srgb, var(--primary) 5%, var(--card)),
-      color-mix(in srgb, var(--info) 4%, var(--card))
+      color-mix(in srgb, var(--primary) 2%, var(--card))
     ),
     var(--card);
   min-width: 0;
@@ -94,7 +92,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.55rem 0.7rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   display: flex;
   position: relative;
   overflow: clip;
@@ -103,7 +101,7 @@
 .detail-stage-index {
   font-family: var(--font-mono);
   opacity: 0.72;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -124,8 +122,8 @@
   background: linear-gradient(
     110deg,
     color-mix(in srgb, var(--primary) 16%, var(--card)),
-    color-mix(in srgb, var(--info) 12%, var(--card)),
-    color-mix(in srgb, var(--primary) 20%, var(--card))
+    color-mix(in srgb, var(--primary) 8%, var(--card)),
+    color-mix(in srgb, var(--primary) 18%, var(--card))
   );
   background-size: 220% 100%;
   font-weight: 650;
@@ -161,7 +159,7 @@
   background: linear-gradient(
     112deg,
     color-mix(in srgb, var(--panel-tone) 13%, var(--card)),
-    color-mix(in srgb, var(--primary) 8%, var(--card)),
+    color-mix(in srgb, var(--panel-tone) 7%, var(--card)),
     color-mix(in srgb, var(--panel-tone) 17%, var(--card))
   );
   background-size: 220% 100%;
@@ -186,7 +184,7 @@
     linear-gradient(
       120deg,
       color-mix(in srgb, var(--primary) 4%, var(--card)),
-      color-mix(in srgb, var(--info) 3%, var(--card))
+      color-mix(in srgb, var(--primary) 1.5%, var(--card))
     ),
     var(--card);
   box-shadow:

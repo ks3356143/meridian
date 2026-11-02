@@ -1,10 +1,8 @@
 import { BookMarked, Building2, Code2, UserRound, Users } from "lucide-react";
 import type { ReactNode } from "react";
-import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Project } from "../../types";
-import type { DetailPanelTone } from "./tab-meta";
 
 export function ProfileDetailTab({
   project,
@@ -28,7 +26,6 @@ export function ProfileDetailTab({
       <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
         <ProfileSection
           icon={Building2}
-          tone="primary"
           title="基准档案"
           meta={`${project.organization ? "已登记" : "待补齐"} · ${project.owner}`}
         >
@@ -42,7 +39,6 @@ export function ProfileDetailTab({
 
         <ProfileSection
           icon={Code2}
-          tone="info"
           title="环境配置"
           meta={`${project.languages.length + project.runtimeEnvironments.length + project.developmentEnvironments.length} 项配置`}
         >
@@ -51,19 +47,14 @@ export function ProfileDetailTab({
           <ProfileChipGroup label="开发环境" values={project.developmentEnvironments} />
         </ProfileSection>
 
-        <ProfileSection
-          icon={Users}
-          tone="chart"
-          title="项目人员"
-          meta={`${project.members.length + 1} 人参与`}
-        >
+        <ProfileSection icon={Users} title="项目人员" meta={`${project.members.length + 1} 人参与`}>
           <div className="bg-primary/10 border-primary/25 flex items-center gap-3 rounded-sm border p-3">
             <span className="text-primary bg-primary/12 flex size-8 items-center justify-center rounded-sm">
               <UserRound className="size-4" aria-hidden />
             </span>
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold">{project.owner}</p>
-              <p className="text-muted-foreground mt-1 text-[11px]">项目负责人</p>
+              <p className="text-muted-foreground mt-1 text-[12px]">项目负责人</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -81,7 +72,6 @@ export function ProfileDetailTab({
 
         <ProfileSection
           icon={BookMarked}
-          tone="warning"
           title="依据标准"
           meta={`${project.referenceStandards.length} 项已选择`}
         >
@@ -93,7 +83,7 @@ export function ProfileDetailTab({
                   className="bg-card/65 border-border/70 rounded-sm border p-3 shadow-[inset_2px_0_0_var(--warning)]"
                 >
                   <p className="truncate text-xs font-semibold">{standard.name}</p>
-                  <p className="text-muted-foreground mt-1.5 truncate font-mono text-[11px]">
+                  <p className="text-muted-foreground mt-1.5 truncate font-mono text-[12px]">
                     {[standard.code, standard.publishedDate].filter(Boolean).join(" · ")}
                   </p>
                 </li>
@@ -112,36 +102,23 @@ function ProfileSection({
   icon: Icon,
   title,
   meta,
-  tone,
   children,
 }: {
   icon: typeof Building2;
   title: string;
   meta: string;
-  tone: DetailPanelTone;
   children: ReactNode;
 }) {
   return (
-    <section data-tonal-panel={tone} className="flex min-w-0 flex-col gap-4 p-4 pl-4.5">
+    <section data-tonal-panel="primary" className="flex min-w-0 flex-col gap-4 p-4 pl-4.5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="border-border/60 bg-card/70 flex size-9 shrink-0 items-center justify-center rounded-sm border">
-            <Icon
-              className={cn(
-                "size-4",
-                tone === "primary" && "text-primary",
-                tone === "info" && "text-info",
-                tone === "success" && "text-success",
-                tone === "warning" && "text-warning",
-                tone === "danger" && "text-destructive",
-                tone === "chart" && "text-chart-2",
-              )}
-              aria-hidden
-            />
+            <Icon className="text-primary size-4" aria-hidden />
           </span>
           <div className="min-w-0">
             <h3 className="truncate text-sm leading-none font-semibold">{title}</h3>
-            <p className="text-muted-foreground mt-1.5 truncate text-[11px] leading-none">{meta}</p>
+            <p className="text-muted-foreground mt-1.5 truncate text-[12px] leading-none">{meta}</p>
           </div>
         </div>
       </div>
@@ -153,7 +130,7 @@ function ProfileSection({
 function ProfileField({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="border-border/70 flex items-center justify-between gap-3 border-b py-2 last:border-b-0">
-      <span className="text-muted-foreground shrink-0 text-[11px]">{label}</span>
+      <span className="text-muted-foreground shrink-0 text-[12px]">{label}</span>
       <span className={`min-w-0 truncate text-xs font-semibold ${mono ? "font-mono" : ""}`}>
         {value}
       </span>
@@ -164,7 +141,7 @@ function ProfileField({ label, value, mono }: { label: string; value: string; mo
 function ProfileChipGroup({ label, values }: { label: string; values: string[] }) {
   return (
     <div className="min-w-0">
-      <p className="text-muted-foreground text-[11px] font-semibold">{label}</p>
+      <p className="text-muted-foreground text-[12px] font-semibold">{label}</p>
       {values.length ? (
         <div className="mt-2 flex flex-wrap gap-2">
           {values.map((value) => (

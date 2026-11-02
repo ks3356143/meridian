@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { dataTableResponsiveClasses, type DataTableRowData } from "./data-table-types";
+import { dataTableCellResponsiveClass, type DataTableRowData } from "./data-table-types";
 import type { ManagementTableFeatures } from "./table-features";
 
 export function DataTableHeader<TData extends DataTableRowData>({
@@ -27,7 +27,7 @@ export function DataTableHeader<TData extends DataTableRowData>({
                 }
                 className={cn(
                   "text-foreground border-border h-auto max-w-0 border-r px-3 py-2.5 text-center text-xs font-semibold last:border-r-0",
-                  meta?.hiddenUntil && dataTableResponsiveClasses[meta.hiddenUntil],
+                  meta?.hiddenUntil && dataTableCellResponsiveClass(meta.hiddenUntil),
                 )}
               >
                 {header.column.getCanSort() ? (

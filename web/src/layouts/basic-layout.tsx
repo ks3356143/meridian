@@ -21,6 +21,7 @@ import { authApi } from "@/features/auth/api";
 import { useLogout } from "@/features/auth/use-logout";
 import { useAuthStore } from "@/stores/auth-store";
 import { AppQuickSwitcher, type AppQuickSwitchItem } from "@/components/shared/app-quick-switcher";
+import { MAIN_CONTENT_ID, SkipLink } from "@/components/shared/skip-link";
 
 export default function BasicLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -150,6 +151,7 @@ export default function BasicLayout() {
 
   return (
     <div className="bg-background flex min-h-svh flex-col min-[900px]:grid min-[900px]:grid-cols-[236px_minmax(0,1fr)]">
+      <SkipLink />
       <aside
         className={`${styles.sidebar} sticky top-0 z-20 hidden h-svh flex-col overflow-hidden min-[900px]:flex`}
       >
@@ -161,7 +163,7 @@ export default function BasicLayout() {
           <BrandLogo className="text-primary size-8 shrink-0" />
           <div className="min-w-0">
             <p className="brand-wordmark truncate text-sm font-semibold">ChenMeridian</p>
-            <p className="text-muted-foreground font-mono text-[10px]">V0.0.2</p>
+            <p className="text-muted-foreground font-mono text-[11px]">V0.0.2</p>
           </div>
         </div>
         <div className={`${styles.navBody} relative flex flex-1 flex-col`}>{navigation}</div>
@@ -218,6 +220,8 @@ export default function BasicLayout() {
           </div>
         </header>
         <main
+          id={MAIN_CONTENT_ID}
+          tabIndex={-1}
           key={location.pathname}
           className={`${styles.mainContent} ${styles.routeContent} flex-1`}
         >

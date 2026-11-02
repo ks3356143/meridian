@@ -87,7 +87,7 @@
   box-shadow: 0 4px 12px -9px color-mix(in srgb, var(--info) 62%, transparent);
   color: color-mix(in srgb, var(--info) 86%, var(--foreground));
   display: inline-flex;
-  font-size: 0.66rem;
+  font-size: 0.6875rem;
   gap: 0.24rem;
   line-height: 1.25;
   margin-top: 0.28rem;
@@ -567,7 +567,7 @@
   color: color-mix(in srgb, var(--info) 88%, var(--foreground));
   flex: 0 0 auto;
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
-  font-size: 0.66rem;
+  font-size: 0.6875rem;
   font-weight: 650;
 }
 
@@ -584,7 +584,7 @@
   color: var(--muted-foreground);
   flex: 0 0 auto;
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   padding: 0.1rem 0.25rem;
 }
 

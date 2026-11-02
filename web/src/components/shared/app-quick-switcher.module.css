@@ -52,7 +52,7 @@
   color: color-mix(in srgb, var(--muted-foreground) 90%, transparent);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.66rem;
   font-weight: 650;
   height: 1.2rem;
   justify-content: center;

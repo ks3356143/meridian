@@ -105,7 +105,7 @@
 .availability span {
   margin-top: 0.15rem;
   color: var(--muted-foreground);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.55;
 }
 
@@ -118,7 +118,7 @@
 .navLabel {
   margin: 0 0 0.15rem;
   color: var(--muted-foreground);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -148,7 +148,7 @@
 .navMeta {
   flex: 0 0 auto;
   color: var(--muted-foreground);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
 }
 
 .statusIcon {
@@ -194,7 +194,7 @@
 .eyebrow {
   margin: 0 0 0.45rem;
   color: var(--module-tone);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
@@ -239,7 +239,7 @@
 .notice p {
   margin: 0.2rem 0 0;
   color: var(--muted-foreground);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.6;
 }
 
@@ -262,7 +262,7 @@
 
 .contextTile dt {
   color: var(--muted-foreground);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
 }
 
 .contextTile dd {
@@ -296,7 +296,7 @@
 .scopeHeader p {
   margin: 0.3rem 0 0;
   color: var(--muted-foreground);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.55;
 }
 
@@ -304,7 +304,7 @@
   flex: 0 0 auto;
   color: var(--muted-foreground);
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
 }
 
 .planGrid {
@@ -344,7 +344,7 @@
 .planCard p {
   margin: 0.55rem 0 0;
   color: var(--muted-foreground);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.6;
 }
 

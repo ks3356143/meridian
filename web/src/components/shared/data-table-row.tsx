@@ -4,7 +4,7 @@ import type { Row } from "@tanstack/table-core";
 import { cn } from "cn";
 import { TableCell, TableRow } from "@/components/ui/table";
 import styles from "./data-table-row.module.css";
-import { dataTableResponsiveClasses, type DataTableRowData } from "./data-table-types";
+import { dataTableCellResponsiveClass, type DataTableRowData } from "./data-table-types";
 import type { ManagementTableFeatures } from "./table-features";
 
 type DataTableRowProps<TData extends DataTableRowData> = {
@@ -43,7 +43,7 @@ function DataTableRowImpl<TData extends DataTableRowData>(props: DataTableRowPro
             className={cn(
               "border-border/75 relative max-w-0 border-r px-3 py-3 last:border-r-0",
               alignedColumns.has(index) ? "text-left" : "text-center",
-              meta?.hiddenUntil && dataTableResponsiveClasses[meta.hiddenUntil],
+              meta?.hiddenUntil && dataTableCellResponsiveClass(meta.hiddenUntil),
             )}
           >
             {onRowActivate && index === 0 ? (

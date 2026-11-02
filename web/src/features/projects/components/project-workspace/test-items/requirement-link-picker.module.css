@@ -61,7 +61,7 @@
 
 .linkGroupTitle {
   color: color-mix(in srgb, var(--info) 86%, var(--foreground));
-  font-size: 0.66rem;
+  font-size: 0.6875rem;
   padding: 0.15rem 0.35rem;
   position: sticky;
   top: 0;

@@ -11,8 +11,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { DetailTabValue } from "./status-model";
 
-export type DetailPanelTone = "info" | "primary" | "warning" | "danger" | "chart" | "success";
-
 export const DETAIL_TABS: Array<{
   value: DetailTabValue;
   label: string;
@@ -27,14 +25,3 @@ export const DETAIL_TABS: Array<{
   { value: "issues", label: "问题单", icon: ShieldAlert },
   { value: "documents", label: "文档产出", icon: FileText },
 ];
-
-export const MODULE_TONES: Record<DetailTabValue, DetailPanelTone> = {
-  overview: "primary",
-  profile: "primary",
-  dut: "info",
-  requirements: "chart",
-  "test-items": "warning",
-  rounds: "success",
-  issues: "danger",
-  documents: "chart",
-};

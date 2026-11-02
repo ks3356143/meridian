@@ -179,7 +179,7 @@ export function DeletedRequirementsDialog({
           cell: (info) => (
             <TruncatedText
               value={new Date(info.getValue()).toLocaleString("zh-CN")}
-              className="font-mono text-[11px]"
+              className="font-mono text-[12px]"
             />
           ),
         }),

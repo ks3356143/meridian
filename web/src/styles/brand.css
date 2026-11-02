@@ -4,7 +4,6 @@
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  animation: brand-gradient-flow 12s linear infinite;
 }
 
 .shiny-text {
@@ -23,16 +22,6 @@
   -webkit-background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-}
-
-@keyframes brand-gradient-flow {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  100% {
-    background-position: 300% 50%;
-  }
 }
 
 @keyframes shiny-text-sweep {
@@ -168,7 +157,7 @@
 }
 
 .globe-wireframe {
-  animation: globe-spin 70s linear infinite;
+  opacity: 0.85;
 }
 
 .orbit-spin {
@@ -182,10 +171,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .brand-wordmark,
   .shiny-text,
   .visual-wordmark,
-  .globe-wireframe,
   .orbit-spin,
   .page-header-beam::after {
     animation: none;
@@ -193,10 +180,6 @@
 
   .page-header-beam::after {
     opacity: 0;
-  }
-
-  .brand-wordmark {
-    background-position: 0% 50%;
   }
 
   .shiny-text {

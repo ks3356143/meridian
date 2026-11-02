@@ -161,9 +161,9 @@
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
   cursor: pointer;
   display: inline-flex;
-  height: 1.5rem;
+  height: 1.75rem;
   justify-content: center;
-  width: 1.5rem;
+  width: 1.75rem;
 }
 
 .toolButton:hover:not(:disabled) {
@@ -183,8 +183,8 @@
 }
 
 .toolButton svg {
-  height: 0.8rem;
-  width: 0.8rem;
+  height: 0.875rem;
+  width: 0.875rem;
 }
 
 .toolDivider {

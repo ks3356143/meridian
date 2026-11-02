@@ -469,7 +469,7 @@ function RequirementsCandidateWorkbenchImpl({
               }}
             >
               <RefreshCw data-icon="inline-start" aria-hidden />
-              {parsePending ? "解析中..." : "开始解析"}
+              {parsePending ? "解析中…" : "开始解析"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -516,7 +516,7 @@ function RequirementsCandidateWorkbenchImpl({
               }}
             >
               <Ban data-icon="inline-start" aria-hidden />
-              {statusPending ? "排除中..." : "确认排除"}
+              {statusPending ? "排除中…" : "确认排除"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -570,7 +570,7 @@ function RequirementsCandidateWorkbenchImpl({
               }}
             >
               <Eraser data-icon="inline-start" aria-hidden />
-              {cleanNamesPending ? "清理中..." : "确认清理"}
+              {cleanNamesPending ? "清理中…" : "确认清理"}
             </Button>
           </DialogFooter>
         </DialogContent>

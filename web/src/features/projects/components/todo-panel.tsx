@@ -111,7 +111,11 @@ function TodoSection({
   const hasContent = Children.count(children) > 0;
 
   return (
-    <section className={styles.section} data-tone={tone}>
+    <section
+      className={styles.section}
+      data-tone={tone}
+      data-empty={!hasContent ? "true" : undefined}
+    >
       <span className={styles.bar} aria-hidden />
       <div className={styles.header}>
         <span className={styles.iconChip}>

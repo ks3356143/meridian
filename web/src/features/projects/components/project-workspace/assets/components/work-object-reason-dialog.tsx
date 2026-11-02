@@ -83,7 +83,7 @@ export function WorkObjectReasonDialog({
             ) : (
               <AlertTriangle data-icon="inline-start" aria-hidden />
             )}
-            {submitting ? "提交中..." : isWithdraw ? "确认撤回" : "确认作废"}
+            {submitting ? "提交中…" : isWithdraw ? "确认撤回" : "确认作废"}
           </Button>
         </DialogFooter>
       </DialogContent>

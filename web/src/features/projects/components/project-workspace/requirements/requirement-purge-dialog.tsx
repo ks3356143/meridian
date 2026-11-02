@@ -103,7 +103,7 @@ export function RequirementPurgeDialog({
             }}
           >
             <Trash2 data-icon="inline-start" aria-hidden />
-            {submitting ? "彻底删除中..." : "确认彻底删除"}
+            {submitting ? "彻底删除中…" : "确认彻底删除"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -64,10 +64,7 @@ export function ProjectDetail({ project }: { project: Project }) {
         as="header"
         className="project-detail-hero project-detail-enter panel-surface relative overflow-hidden rounded-sm border"
       >
-        <span
-          className="from-primary via-info to-warning absolute inset-y-0 left-0 w-1 bg-gradient-to-b"
-          aria-hidden
-        />
+        <span className="bg-primary absolute inset-y-0 left-0 w-1" aria-hidden />
         <div className="relative z-10 grid gap-5 p-5 pl-7 lg:grid-cols-[minmax(0,1fr)_310px] lg:items-start">
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex items-start gap-3">
@@ -91,7 +88,7 @@ export function ProjectDetail({ project }: { project: Project }) {
                   </Badge>
                   <Badge variant={levelVariant[project.level]}>安全 {project.level}</Badge>
                 </div>
-                <h1 className="mt-2.5 text-xl leading-snug font-bold tracking-tight break-words sm:text-2xl">
+                <h1 className="mt-2.5 text-lg leading-snug font-bold tracking-tight break-words sm:text-2xl">
                   {project.name}
                 </h1>
               </div>
@@ -121,7 +118,7 @@ export function ProjectDetail({ project }: { project: Project }) {
           <aside className="bg-card/58 border-primary/28 flex min-w-0 flex-col gap-4 rounded-sm border p-4 shadow-[0_1px_2px_rgb(20_42_30_/0.05),0_10px_22px_-16px_var(--primary)] backdrop-blur-[2px]">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-muted-foreground text-[11px] font-semibold">当前阶段</p>
+                <p className="text-muted-foreground text-[12px] font-semibold">当前阶段</p>
                 <p className="mt-1.5 truncate text-sm font-bold">{project.status}</p>
               </div>
               <span className="text-primary border-primary/30 bg-primary/12 flex size-11 shrink-0 items-center justify-center rounded-sm border">
@@ -130,7 +127,7 @@ export function ProjectDetail({ project }: { project: Project }) {
             </div>
             <div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground text-[11px]">阶段推进</span>
+                <span className="text-muted-foreground text-[12px]">阶段推进</span>
                 <span className="text-primary font-mono text-xs font-bold">
                   {stageIndex + 1}/{stages.length}
                 </span>
@@ -149,7 +146,7 @@ export function ProjectDetail({ project }: { project: Project }) {
               <ExternalLink data-icon="inline-start" aria-hidden />
               进入工作区
             </Button>
-            <p className="text-muted-foreground text-[11px] leading-relaxed">
+            <p className="text-muted-foreground text-[12px] leading-relaxed">
               {project.status === "编制大纲中" ? "默认定位：大纲编制" : "默认定位：执行总览"}
             </p>
           </aside>
@@ -165,7 +162,7 @@ export function ProjectDetail({ project }: { project: Project }) {
           />
           <HeroMetric
             icon={ListChecks}
-            tone="info"
+            tone="primary"
             label="用例执行"
             value={`${project.casesExecuted}/${project.casesTotal}`}
             detail={`执行率 ${executionRate}%`}
@@ -179,7 +176,7 @@ export function ProjectDetail({ project }: { project: Project }) {
           />
           <HeroMetric
             icon={Activity}
-            tone="chart"
+            tone="info"
             label="最近更新"
             value={project.updatedAt}
             detail="项目状态快照"
@@ -207,10 +204,10 @@ function MetadataItem({
 }) {
   return (
     <div className="border-border/70 min-w-0 flex flex-col gap-1.5 border-l pl-2.5">
-      <dt className="text-muted-foreground text-[11px] leading-none">{label}</dt>
+      <dt className="text-muted-foreground text-[12px] leading-none">{label}</dt>
       <dd
         className={cn(
-          "truncate text-xs leading-none font-semibold",
+          "truncate text-[13px] leading-none font-semibold",
           mono && "font-mono tabular-nums",
           tone === "danger" ? "text-destructive" : "text-foreground",
         )}
@@ -232,7 +229,7 @@ function HeroMetric({
   label: string;
   value: string;
   detail: string;
-  tone: "primary" | "info" | "success" | "danger" | "chart";
+  tone: "primary" | "info" | "success" | "danger";
 }) {
   return (
     <div
@@ -247,13 +244,12 @@ function HeroMetric({
             tone === "info" && "text-info",
             tone === "success" && "text-success",
             tone === "danger" && "text-destructive",
-            tone === "chart" && "text-chart-2",
           )}
           aria-hidden
         />
       </span>
       <div className="min-w-0">
-        <p className="text-muted-foreground text-[11px] leading-none">{label}</p>
+        <p className="text-muted-foreground text-[12px] leading-none">{label}</p>
         <p
           className={cn(
             "mt-1.5 truncate text-base leading-none font-bold",
@@ -263,7 +259,7 @@ function HeroMetric({
         >
           {value}
         </p>
-        <p className="text-muted-foreground mt-1.5 truncate text-[11px] leading-none">{detail}</p>
+        <p className="text-muted-foreground mt-1.5 truncate text-[12px] leading-none">{detail}</p>
       </div>
     </div>
   );

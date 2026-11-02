@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -179,8 +179,10 @@ function CandidateEditForm({
             id="candidate-chapter"
             value={draft.chapterNumber}
             readOnly
+            aria-describedby="candidate-chapter-hint"
             className={styles.readonlyInput}
           />
+          <FieldDescription id="candidate-chapter-hint">原文定位字段，不可修改。</FieldDescription>
         </Field>
         <Field data-invalid={errors.externalIdentifier ? true : undefined}>
           <FieldLabel htmlFor="candidate-identifier">外部标识</FieldLabel>
@@ -294,7 +296,7 @@ function CandidateEditForm({
           取消
         </Button>
         <Button type="submit" disabled={submitting || !dirty}>
-          {submitting ? "保存中..." : "保存修改"}
+          {submitting ? "保存中…" : "保存修改"}
         </Button>
       </DialogFooter>
     </form>
