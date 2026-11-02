@@ -23,12 +23,12 @@ reports/*
 !reports/.gitkeep
 
 # 环境与编辑器
-.codex/tmp/
 .playwright-mcp/
 .env
 .env.*
 .idea/
 .vscode/
+.claude/settings.local.json
 __pycache__/
 *.py[cod]
 ~$*

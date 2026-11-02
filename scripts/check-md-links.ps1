@@ -10,8 +10,8 @@ $ErrorActionPreference = "Stop"
 if (-not $Root) { $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path }
 
 $skipDirs = @(
-  ".git", "node_modules", "dist", "bin", "data", "tmp", "logs", ".codex",
-  ".agents", "attachments", "reports", "knowledge-base"
+  ".git", "node_modules", "dist", "bin", "data", "tmp", "logs",
+  "attachments", "reports", "knowledge-base"
 )
 
 $files = Get-ChildItem -LiteralPath $Root -Recurse -File -Filter "*.md" | Where-Object {

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "shadcn": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "shadcn@latest", "mcp"]
+    },
+    "radix": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@gianpieropuleo/radix-mcp-server"]
+    }
+  }
+}
