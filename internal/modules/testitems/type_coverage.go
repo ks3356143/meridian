@@ -181,7 +181,7 @@ func (s *Service) TypeCoverage(ctx context.Context, projectID, roundID string) (
 		hasCovered := false
 		hasExplained := false
 		for _, round := range rounds {
-			applicable := !itemType.IsStatic || round.RoundNumber == 1
+			applicable := !itemType.IsStatic || itemType.Code == "DC" || round.RoundNumber == 1
 			row := counts[coverageKey(round.ID, itemType.Code)]
 			note, hasNote := notes[coverageKey(round.ID, itemType.Code)]
 			entry := TypeCoverageRoundSlice{
@@ -265,7 +265,7 @@ func (s *Service) SaveTypeCoverageNote(
 	if err != nil {
 		return TypeCoverageNote{}, err
 	}
-	if itemType.IsStatic && round.RoundNumber > 1 {
+	if itemType.IsStatic && itemType.Code != "DC" && round.RoundNumber > 1 {
 		return TypeCoverageNote{}, ErrCoverageNotApplicable
 	}
 	var itemCount int64

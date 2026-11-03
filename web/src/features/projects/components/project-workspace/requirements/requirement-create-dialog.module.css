@@ -166,4 +166,10 @@
   .grid {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  /* 单列时 span 2 会生成隐式第二列，必须复位 */
+  .name,
+  .secondary {
+    grid-column: auto;
+  }
 }

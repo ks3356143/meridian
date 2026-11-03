@@ -18,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useAuthStore } from "@/stores/auth-store";
 import { useRevealActiveTab } from "@/hooks/use-reveal-active-tab";
+import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
 import type { Project } from "@/features/projects/types";
 import { WorkspaceTopbar } from "./workspace-topbar";
 import { RoundSwitcher } from "./round-switcher";
@@ -133,6 +134,7 @@ export function ProjectWorkspaceLayout({
     project.openIssues.normal +
     project.openIssues.suggestion;
   const activeSection = getActiveSection(location.pathname, project.id);
+  useResetScrollOnTabChange(activeSection, "workspace-route");
   const workspaceSegment = getWorkspaceSegment(location.pathname, project.id);
   const showRoundSwitcher = ["test-items", "rounds", "issues", "documents"].includes(
     workspaceSegment,
@@ -335,7 +337,6 @@ export function ProjectWorkspaceLayout({
         <main
           id={MAIN_CONTENT_ID}
           tabIndex={-1}
-          key={location.pathname}
           className="workspace-route min-w-0 flex-1"
           data-workspace-section={activeSection}
         >

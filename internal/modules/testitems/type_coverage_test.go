@@ -87,14 +87,18 @@ func TestTypeCoveragePassRateStaticApplicabilityAndNotes(t *testing.T) {
 		t.Fatalf("读取第二轮覆盖失败: %v", err)
 	}
 	dc := findCoverageType(t, second.Types, "DC")
-	if dc.Applicable || dc.Status != coverageStatusNotApplicable || dc.Rounds[0].Status != coverageStatusNotApplicable {
-		t.Fatalf("第二轮静态类型应标记不适用: %+v", dc)
+	if !dc.Applicable {
+		t.Fatalf("第二轮 DC 随轮存在，应标记适用: %+v", dc)
 	}
-	if second.Summary.NotApplicable != 4 {
-		t.Fatalf("第二轮应有 4 个静态类型不适用，实际 %d", second.Summary.NotApplicable)
+	sa := findCoverageType(t, second.Types, "SA")
+	if sa.Applicable || sa.Status != coverageStatusNotApplicable || sa.Rounds[0].Status != coverageStatusNotApplicable {
+		t.Fatalf("第二轮 SA 应标记不适用: %+v", sa)
 	}
-	if _, err := service.SaveTypeCoverageNote(ctx, projectID, secondCopy.Round.ID, "DC", "静态已首轮完成", "user-1"); !errors.Is(err, ErrCoverageNotApplicable) {
-		t.Fatalf("第二轮静态类型应拒绝说明，实际 %v", err)
+	if second.Summary.NotApplicable != 3 {
+		t.Fatalf("第二轮应有 3 个静态类型不适用，实际 %d", second.Summary.NotApplicable)
+	}
+	if _, err := service.SaveTypeCoverageNote(ctx, projectID, secondCopy.Round.ID, "SA", "静态已首轮完成", "user-1"); !errors.Is(err, ErrCoverageNotApplicable) {
+		t.Fatalf("第二轮 SA 应拒绝说明，实际 %v", err)
 	}
 	if _, err := service.SaveTypeCoverageNote(ctx, projectID, "all", "IO", "不应保存", "user-1"); !errors.Is(err, ErrCoverageRoundRequired) {
 		t.Fatalf("全部模式应拒绝写入，实际 %v", err)
@@ -104,7 +108,7 @@ func TestTypeCoveragePassRateStaticApplicabilityAndNotes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("读取全部轮次覆盖失败: %v", err)
 	}
-	if !all.AllRounds || len(all.Rounds) != 2 || all.Summary.TestItemCount != 2 || all.Summary.CaseCount != 3 {
+	if !all.AllRounds || len(all.Rounds) != 2 || all.Summary.TestItemCount != 3 || all.Summary.CaseCount != 4 {
 		t.Fatalf("全部轮次汇总不正确: %+v", all.Summary)
 	}
 }

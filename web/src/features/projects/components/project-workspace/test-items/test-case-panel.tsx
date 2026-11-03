@@ -287,6 +287,7 @@ function TestCasePanelInner({
                     recordChange={recordChange}
                     onOpenShortcuts={openShortcuts}
                     focusStep={focusStep}
+                    staticTestItemId={item.typeCode === "DC" ? item.id : undefined}
                     onQuickIssue={(step) =>
                       setQuickIssueRequest({
                         nonce: Date.now(),

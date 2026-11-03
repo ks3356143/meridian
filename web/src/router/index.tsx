@@ -38,6 +38,10 @@ export const router = createBrowserRouter([
             path: "settings/users",
             lazy: () => import("@/pages/UserManagementPage"),
           },
+          {
+            path: "settings/review-checklists",
+            lazy: () => import("@/pages/ReviewChecklistConfigPage"),
+          },
         ],
       },
       {

@@ -36,6 +36,13 @@ npm run dev
 - `CHENMERIDIAN_DB_PATH`：SQLite 数据库路径，默认 `data/meridian.db`。
 - `CHENMERIDIAN_ASSET_ROOT`：接收文件存储根目录，默认与数据库同目录下的 `file-assets`。
 
+## 文档
+
+- 需求与设计：[srs/README.md](srs/README.md)（项目规则入口：[CLAUDE.md](CLAUDE.md)）。
+- 项目全景：[docs/项目记忆/项目全景.md](docs/项目记忆/项目全景.md)（定位、模块边界、数据模型、完成度与待确认口径）。
+- 需求全景：[docs/项目记忆/需求全景.md](docs/项目记忆/需求全景.md)（按模块的需求结论、边界与已确认口径）。
+- 可复用坑位：[docs/项目记忆.md](docs/项目记忆.md)（后端、前端、视觉交互、工具与跨会话）。
+
 ## 验证
 
 后端：
@@ -66,4 +73,3 @@ pwsh scripts/check-md-links.ps1
 - 可复用坑位：[docs/项目记忆.md](docs/项目记忆.md)
 - 前端说明：[web/README.md](web/README.md)
 - 迁移说明：[migrations/README.md](migrations/README.md)
-- 版本变化：[版本记录.md](版本记录.md)

@@ -83,7 +83,13 @@ export function buildTestItemsTree(
       missing.push("测试方法");
     if (item.adequacy.trim() === "") missing.push("充分性要求");
     if (platform === "FPGA" && item.description.trim() === "") missing.push("测试项描述");
-    const incomplete = type !== undefined && !type.isStatic && missing.length > 0;
+    // DC 进入即视为完成（默认全通过）；只有存在不通过项时才算未完善（2026-11-03 口径）。
+    const staticFailed = typeCounts?.staticFailed ?? 0;
+    const incomplete =
+      type !== undefined &&
+      (type.isStatic
+        ? (item.typeCode === "DC" || item.typeCode === "CR") && staticFailed > 0
+        : missing.length > 0);
     const staticBadge =
       type?.isStatic && item.typeCode === "CW"
         ? `${typeCounts?.staticFileCount ?? 0} 文件`

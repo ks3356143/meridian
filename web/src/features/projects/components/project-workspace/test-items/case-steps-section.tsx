@@ -87,6 +87,7 @@ type CaseStepRowProps = {
   onCopy: (step: CaseStepRecord) => void;
   onRequestDelete: (step: CaseStepRecord) => void;
   onQuickIssue: (step: CaseStepRecord) => void;
+  staticTestItemId?: string;
 };
 
 /**
@@ -110,6 +111,7 @@ const CaseStepRow = memo(function CaseStepRowImpl({
   onCopy,
   onRequestDelete,
   onQuickIssue,
+  staticTestItemId,
 }: CaseStepRowProps) {
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
     if (structurePending) return;
@@ -181,6 +183,7 @@ const CaseStepRow = memo(function CaseStepRowImpl({
           label={`第 ${step.seq} 步实测结果`}
           placeholder="记录实测结果"
           projectCode={projectCode}
+          syncStaticItemId={staticTestItemId}
           onSave={(doc) => onSaveBlock(step.id, "act", doc)}
         />
       </td>
@@ -257,6 +260,7 @@ function CaseStepsSectionInner({
   onOpenShortcuts,
   focusStep,
   onQuickIssue,
+  staticTestItemId,
 }: {
   caseId: string;
   projectCode: string;
@@ -265,6 +269,7 @@ function CaseStepsSectionInner({
   onOpenShortcuts: () => void;
   focusStep?: { stepId: string; nonce: number } | null;
   onQuickIssue: (step: CaseStepRecord) => void;
+  staticTestItemId?: string;
 }) {
   const {
     stepsQuery,
@@ -407,6 +412,7 @@ function CaseStepsSectionInner({
             onCopy={copyStep}
             onRequestDelete={requestDelete}
             onQuickIssue={onQuickIssue}
+            staticTestItemId={staticTestItemId}
           />
         ))}
       </tbody>

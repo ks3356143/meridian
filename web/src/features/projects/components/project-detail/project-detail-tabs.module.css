@@ -1,0 +1,20 @@
+.tabRail [data-slot="tabs-trigger"] {
+  gap: 0.32rem;
+  min-width: 5.5rem;
+  padding-inline: 0.55rem;
+}
+
+/* 项目详情 Tab 是页面主入口，边框比业务内页再明确一档。 */
+.tabRail {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 46%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabRail [data-slot="tabs-trigger"] {
+    transition: none;
+  }
+}

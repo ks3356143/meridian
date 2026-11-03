@@ -15,15 +15,202 @@
   outline-offset: -2px;
 }
 .content[data-state="active"] {
-  animation: tabsContentIn 180ms var(--ease-out-strong) both;
+  animation: tabsContentIn 200ms var(--ease-out-strong) both;
 }
 
 @keyframes tabsContentIn {
   from {
-    opacity: 0.9;
+    opacity: 0;
+    transform: translateY(4px);
   }
 
   to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* HUD 变体：角括号、扫描光、等宽分段，文字强制左右上下居中。 */
+.hudList {
+  --hud-line: color-mix(in srgb, var(--primary) 30%, var(--border));
+  background:
+    linear-gradient(
+        105deg,
+        transparent 38%,
+        color-mix(in srgb, var(--primary) 10%, transparent) 50%,
+        transparent 62%
+      )
+      -180% 0 / 240% 100% no-repeat,
+    linear-gradient(
+        to right,
+        color-mix(in srgb, var(--foreground) 4%, transparent) 1px,
+        transparent 1px
+      )
+      0 0 / 2.5rem 100%,
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 5%, transparent), transparent 72%),
+    color-mix(in srgb, var(--card) 78%, var(--background));
+  border: 1px solid var(--hud-line);
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 9%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--primary) 16%, transparent);
+  isolation: isolate;
+  min-height: 2.85rem;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  scrollbar-color: color-mix(in srgb, var(--primary) 34%, transparent) transparent;
+  scrollbar-width: thin;
+  animation: hudRailScan 1.6s var(--ease-out-strong) 160ms 1 both;
+}
+
+.hudList::-webkit-scrollbar {
+  height: 4px;
+}
+
+.hudList::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 34%, transparent);
+  border-radius: 999px;
+}
+
+.hudList [data-slot="tabs-trigger"] {
+  align-items: center;
+  border: 0;
+  border-right: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 0;
+  color: color-mix(in srgb, var(--muted-foreground) 82%, var(--foreground));
+  font-size: 0.74rem;
+  font-weight: 620;
+  gap: 0.4rem;
+  height: 100%;
+  justify-content: center;
+  letter-spacing: 0.01em;
+  min-height: 0;
+  padding: 0 0.9rem;
+  text-align: center;
+  transition:
+    background-color 180ms var(--ease-out-strong),
+    color 180ms var(--ease-out-strong),
+    box-shadow 180ms var(--ease-out-strong);
+}
+
+.hudList [data-slot="tabs-trigger"]:last-child {
+  border-right: 0;
+}
+
+.hudList [data-slot="tabs-trigger"]:hover {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  color: var(--primary);
+}
+
+.hudList [data-slot="tabs-trigger"][data-state="active"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 13%, transparent),
+    color-mix(in srgb, var(--primary) 4%, transparent)
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent),
+    inset 0 -2px 0 color-mix(in srgb, var(--primary) 64%, transparent);
+  color: var(--primary);
+}
+
+.hudList [data-slot="tabs-trigger"]:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ring) 72%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--ring) 34%, transparent);
+  outline: none;
+}
+
+.hudList [data-slot="tabs-trigger"]::before {
+  background:
+    linear-gradient(var(--primary), var(--primary)) left top / 8px 1px no-repeat,
+    linear-gradient(var(--primary), var(--primary)) left top / 1px 8px no-repeat,
+    linear-gradient(var(--primary), var(--primary)) right bottom / 8px 1px no-repeat,
+    linear-gradient(var(--primary), var(--primary)) right bottom / 1px 8px no-repeat;
+  content: "";
+  inset: 6px 8px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 180ms var(--ease-out-strong);
+}
+
+.hudList [data-slot="tabs-trigger"]:hover::before,
+.hudList [data-slot="tabs-trigger"][data-state="active"]::before {
+  opacity: 0.9;
+}
+
+.hudList [data-slot="tabs-trigger"]::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--primary) 78%, var(--info)),
+    transparent
+  );
+  bottom: 0;
+  display: block;
+  height: 2px;
+  inset-inline: 12%;
+  opacity: 0;
+  transform: scaleX(0.2);
+  transition:
+    opacity 200ms var(--ease-out-strong),
+    transform 220ms var(--ease-out-strong);
+}
+
+.hudList [data-slot="tabs-trigger"][data-state="active"]::after {
+  animation: hudTabPulse 2.6s ease-in-out infinite;
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.hudList [data-slot="tabs-trigger"] em {
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--border));
+  border-radius: 2px;
+  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 650;
+  line-height: 1;
+  padding: 0.14rem 0.3rem;
+}
+
+.hudList [data-slot="tabs-trigger"][data-state="active"] em {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  color: var(--primary);
+}
+
+@keyframes hudRailScan {
+  from {
+    background-position:
+      -180% 0,
+      0 0,
+      0 0,
+      0 0;
+  }
+
+  to {
+    background-position:
+      280% 0,
+      0 0,
+      0 0,
+      0 0;
+  }
+}
+
+@keyframes hudTabPulse {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+
+  50% {
     opacity: 1;
   }
 }
@@ -31,5 +218,14 @@
 @media (prefers-reduced-motion: reduce) {
   .content[data-state="active"] {
     animation: none;
+  }
+
+  .hudList,
+  .hudList [data-slot="tabs-trigger"][data-state="active"]::after {
+    animation: none;
+  }
+
+  .hudList [data-slot="tabs-trigger"] {
+    transition: none;
   }
 }

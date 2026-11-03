@@ -22,7 +22,8 @@ type SaveStaticWorkbenchInput struct {
 }
 
 type StaticEnsureInput struct {
-	Code string `path:"code"`
+	Code    string `path:"code"`
+	RoundID string `query:"roundId" doc:"轮次 id；省略时写入第 1 轮"`
 }
 
 type StaticEnsureOutput struct {
@@ -80,13 +81,28 @@ func registerStaticWorkbenches(api huma.API, handler *Handler) {
 		if err != nil {
 			return nil, toAPIError(err, "项目不存在")
 		}
-		created, err := handler.service.EnsureRecommendedStaticItems(ctx, projectID, true)
+		created, err := handler.service.EnsureRecommendedStaticItems(ctx, projectID, true, input.RoundID)
 		if err != nil {
 			return nil, toAPIError(err, "生成静态测试项失败")
 		}
 		output := &StaticEnsureOutput{}
 		output.Body.Created = nonNil(created)
 		return output, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "import-previous-failed-checks",
+		Method:      http.MethodPost,
+		Path:        "/api/v1/test-items/{id}/static-workbench/import-previous",
+		Summary:     "导入上一轮不通过项",
+		Description: "把上一轮 DC 审查单中的不通过项补入当前轮，标记为待复查；已带入的项不重复添加。",
+		Tags:        []string{"测试项与执行"},
+	}, func(ctx context.Context, input *ItemIDInput) (*StaticWorkbenchOutput, error) {
+		body, err := handler.service.ImportPreviousRoundFailedChecks(ctx, input.ID)
+		if err != nil {
+			return nil, toAPIError(err, "导入上一轮不通过项失败")
+		}
+		return &StaticWorkbenchOutput{Body: body}, nil
 	})
 
 	huma.Register(api, huma.Operation{

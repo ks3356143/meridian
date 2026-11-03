@@ -5,15 +5,21 @@ import spotlightStyles from "@/components/shared/spotlight-surface.module.css";
 function Card({
   className,
   size = "default",
+  sheen = false,
+  spotlight = false,
   children,
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: React.ComponentProps<"div"> & {
+  size?: "default" | "sm";
+  sheen?: boolean;
+  spotlight?: boolean;
+}) {
   return (
     <div
       {...props}
       data-slot="card"
       data-size={size}
-      data-spotlight=""
+      data-spotlight={spotlight ? "" : undefined}
       className={cn(
         spotlightStyles.card,
         "panel-surface group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-sm py-(--card-spacing) text-sm text-card-foreground ring-1 ring-border hover:ring-primary/40 [--card-spacing:1.125rem] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:0.875rem] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-sm *:[img:last-of-type]:rounded-b-sm",
@@ -21,7 +27,7 @@ function Card({
       )}
     >
       {children}
-      <span className={spotlightStyles.sheen} aria-hidden />
+      {sheen ? <span className={spotlightStyles.sheen} aria-hidden /> : null}
     </div>
   );
 }

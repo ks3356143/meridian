@@ -158,8 +158,11 @@ export function CrWorkbench({
                 <div>
                   <Badge variant="outline">{target.language}</Badge>
                   <strong>{target.name}</strong>
-                  <span>
-                    {stats.reviewed}/{stats.total} · 通过率 {stats.rate}%
+                  <span className={styles.targetStat}>
+                    <strong>
+                      {stats.reviewed}/{stats.total}
+                    </strong>
+                    <small>通过率 {stats.rate}%</small>
                   </span>
                 </div>
                 <ConfirmAction

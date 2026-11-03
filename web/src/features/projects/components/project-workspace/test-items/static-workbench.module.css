@@ -27,8 +27,7 @@
 .targetCreator,
 .targetHeader,
 .cwToolbar,
-.inlineActions,
-.addSheetRow {
+.inlineActions {
   align-items: center;
   display: flex;
 }
@@ -41,8 +40,7 @@
 .targetCreator,
 .targetHeader,
 .cwToolbar,
-.inlineActions,
-.addSheetRow {
+.inlineActions {
   gap: 0.5rem;
 }
 
@@ -241,201 +239,14 @@
   );
 }
 
-.documentAccordion {
-  border: 1px solid var(--border);
-  box-shadow: var(--elevation-1);
-  margin-bottom: 0.65rem;
-}
-
 .accordionBodyInset {
   padding-inline: 0.65rem;
-}
-
-.documentRows {
-  display: grid;
-  gap: 0.35rem;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  margin-bottom: 0.5rem;
-}
-
-.documentRow {
-  align-items: center;
-  display: grid;
-  gap: 0.3rem;
-  grid-template-columns: minmax(0, 1fr) 5.5rem auto;
 }
 
 .inlineActions {
   flex-wrap: wrap;
   justify-content: flex-end;
   margin-top: 0.45rem;
-}
-
-.dcLayout {
-  display: grid;
-  gap: 0.65rem;
-  grid-template-columns: 10.8rem minmax(0, 1fr);
-}
-
-.sheetList {
-  align-content: start;
-  display: grid;
-  gap: 0.35rem;
-}
-
-.sheetItem {
-  --sheet-tone: var(--muted-foreground);
-  position: relative;
-}
-
-.sheetItem[data-tone="warning"] {
-  --sheet-tone: var(--warning);
-}
-
-.sheetItem[data-tone="info"] {
-  --sheet-tone: var(--info);
-}
-
-.sheetItem[data-tone="success"] {
-  --sheet-tone: var(--success);
-}
-
-.sheetItem[data-tone="danger"] {
-  --sheet-tone: var(--destructive);
-}
-
-.sheetButton {
-  background: color-mix(in srgb, var(--card) 95%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  color: inherit;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-height: 4.1rem;
-  padding: 0.45rem 0.48rem;
-  text-align: left;
-  transition:
-    background-color 0.18s var(--ease-out-strong),
-    border-color 0.18s var(--ease-out-strong),
-    box-shadow 0.18s var(--ease-out-strong);
-  width: 100%;
-}
-
-.sheetButton:hover {
-  background: var(--interactive-surface);
-  border-color: var(--interactive-border);
-  box-shadow: var(--interactive-glow);
-}
-
-.sheetItem[data-active="true"] .sheetButton {
-  background: var(--interactive-surface-strong);
-  border-color: var(--interactive-border);
-  box-shadow:
-    inset 3px 0 0 var(--primary),
-    0 8px 20px -14px color-mix(in srgb, var(--primary) 76%, transparent);
-}
-
-.sheetName {
-  font-size: 0.72rem;
-  font-weight: 650;
-  overflow: hidden;
-  padding-right: 1.1rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sheetMeta {
-  align-items: center;
-  display: inline-flex;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  gap: 0.28rem;
-}
-
-.sheetReviewed,
-.sheetRate {
-  color: var(--sheet-tone);
-}
-
-.sheetDot {
-  color: color-mix(in srgb, var(--muted-foreground) 66%, transparent);
-}
-
-.sheetItem:not([data-active="true"]) .sheetButton {
-  border-left-color: color-mix(in srgb, var(--sheet-tone) 42%, var(--border));
-}
-
-.sheetItem:not([data-active="true"])[data-tone="warning"] .sheetButton {
-  background: color-mix(in srgb, var(--warning) 3.5%, var(--card));
-}
-
-.sheetItem:not([data-active="true"])[data-tone="info"] .sheetButton {
-  background: color-mix(in srgb, var(--info) 3.5%, var(--card));
-}
-
-.sheetItem:not([data-active="true"])[data-tone="success"] .sheetButton {
-  background: color-mix(in srgb, var(--success) 3.5%, var(--card));
-}
-
-.sheetItem:not([data-active="true"])[data-tone="danger"] .sheetButton {
-  background: color-mix(in srgb, var(--destructive) 4%, var(--card));
-}
-
-.sheetProgress {
-  height: 0.24rem;
-  width: 100%;
-}
-
-.sheetProgress > span {
-  background: var(--sheet-tone);
-}
-
-.sheetDelete {
-  opacity: 0;
-  position: absolute;
-  right: 0.18rem;
-  top: 0.18rem;
-  transition: opacity 0.16s var(--ease-out-strong);
-}
-
-.sheetItem:hover .sheetDelete,
-.sheetDelete:focus-visible {
-  opacity: 1;
-}
-
-.addSheetRow {
-  align-items: stretch;
-}
-
-.addSheetRow > :first-child {
-  flex: 1;
-  min-width: 0;
-}
-
-.sheetDetail {
-  min-width: 0;
-}
-
-.sheetHeader {
-  align-items: flex-start;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: space-between;
-  margin-bottom: 0.45rem;
-}
-
-.sheetHeader h4 {
-  font-size: 0.82rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.sheetHeader span {
-  color: var(--muted-foreground);
-  font-size: 0.6875rem;
 }
 
 .sheetTools {
@@ -446,13 +257,6 @@
 
 .sheetTools > span {
   margin-right: 0.2rem;
-}
-
-.targetDocumentRow {
-  display: grid;
-  gap: 0.4rem;
-  grid-template-columns: minmax(0, 1fr) 8rem;
-  margin-bottom: 0.45rem;
 }
 
 .tableWrap {
@@ -490,7 +294,16 @@
   border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   font-size: 0.69rem;
   padding: 0.3rem 0.38rem;
-  vertical-align: top;
+  vertical-align: middle;
+}
+
+.reviewTable th:nth-child(1),
+.reviewTable td:nth-child(1),
+.reviewTable th:nth-child(2),
+.reviewTable td:nth-child(2),
+.reviewTable th:nth-child(5),
+.reviewTable td:nth-child(5) {
+  text-align: center;
 }
 
 .reviewTable th:nth-child(1) {
@@ -575,6 +388,10 @@
   font-size: 0.6875rem;
   min-height: 1.55rem;
   padding: 0.08rem 0.3rem;
+  transition:
+    background-color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong),
+    color 0.18s var(--ease-out-strong);
   white-space: nowrap;
   width: 100%;
 }
@@ -696,6 +513,10 @@
   min-height: 1.75rem;
   padding: 0.2rem 0.35rem;
   text-align: left;
+  transition:
+    background-color 0.18s var(--ease-out-strong),
+    border-color 0.18s var(--ease-out-strong),
+    color 0.18s var(--ease-out-strong);
 }
 
 .ruleGroupButton span {
@@ -710,7 +531,43 @@
 }
 
 .ruleList {
+  animation: static-panel-in 0.22s var(--ease-out-strong) both;
   border: 1px solid var(--border);
+}
+
+.targetCard,
+.violationFields {
+  animation: static-panel-in 0.22s var(--ease-out-strong) both;
+}
+
+.targetStat {
+  align-items: baseline;
+  color: var(--muted-foreground);
+  display: inline-flex;
+  gap: 0.24rem;
+}
+
+.targetStat strong {
+  color: var(--success);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.targetStat small {
+  font-size: 0.64rem;
+}
+
+.fileTable tbody tr {
+  animation: static-panel-in 0.18s var(--ease-out-strong) both;
+}
+
+@keyframes static-panel-in {
+  from {
+    transform: translateY(4px);
+  }
+  to {
+    transform: none;
+  }
 }
 
 .ruleGroupHeader {
@@ -859,31 +716,17 @@
   margin: 0 0 0.35rem;
 }
 
-@media (max-width: 1100px) {
-  .dcLayout {
-    grid-template-columns: 1fr;
-  }
-
-  .sheetList {
-    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  }
-
-  .sheetButton {
-    min-height: 3.7rem;
-  }
-
-  .addSheetRow {
-    grid-column: 1 / -1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .spin {
+  .spin,
+  .ruleList,
+  .targetCard,
+  .violationFields,
+  .fileTable tbody tr {
     animation: none;
   }
 
-  .sheetButton,
-  .sheetDelete {
+  .resultButton,
+  .ruleGroupButton {
     transition: none;
   }
 }
@@ -892,11 +735,6 @@
   to {
     rotate: 360deg;
   }
-}
-
-.dangerButton {
-  background: var(--destructive);
-  color: var(--primary-foreground);
 }
 
 .creatorField {

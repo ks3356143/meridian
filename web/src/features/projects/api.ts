@@ -14,6 +14,8 @@ import type {
 export const projectsApi = {
   list: () => request<Project[]>("GET", "/api/v1/projects"),
   detail: (projectId: string) => request<Project>("GET", `/api/v1/projects/${projectId}`),
+  updateStatus: (projectId: string, status: string) =>
+    request<Project>("PATCH", `/api/v1/projects/${projectId}/status`, {}, { status }),
   options: () => request<ProjectOptions>("GET", "/api/v1/project-options"),
   create: (payload: CreateProjectPayload) =>
     request<Project>("POST", "/api/v1/projects", {}, payload),

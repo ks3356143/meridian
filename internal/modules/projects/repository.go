@@ -3,6 +3,7 @@ package projects
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -63,6 +64,13 @@ func (r *Repository) FindProjectByCode(ctx context.Context, code string) (Projec
 		return Project{}, err
 	}
 	return project, nil
+}
+
+// UpdateProjectStatus 手动更新项目阶段，不设门槛。
+func (r *Repository) UpdateProjectStatus(ctx context.Context, code, status string) error {
+	return r.db.WithContext(ctx).Model(&Project{}).
+		Where("code = ?", code).
+		Updates(map[string]any{"status": status, "updated_at": time.Now()}).Error
 }
 
 func (r *Repository) ProjectCodeExists(ctx context.Context, code string) (bool, error) {

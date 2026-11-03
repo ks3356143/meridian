@@ -28,6 +28,8 @@ func Register(api huma.API, service *testitemsservice.Service) {
 	registerCases(api, handler)
 	registerCaseEfficiency(api, handler)
 	registerStaticWorkbenches(api, handler)
+	registerReviewChecklists(api, handler)
+	registerIssues(api, handler)
 	registerSteps(api, handler)
 	registerPreviousRoundResult(api, handler)
 	registerAnalysisViews(api, handler)
@@ -104,7 +106,7 @@ func (h *Handler) workspace(ctx context.Context, projectCode, roundID string) (W
 		return WorkspaceBody{}, err
 	}
 	// 首次进入按安全等级补齐推荐静态测试项；用户主动删除后不自动回填。
-	if _, err := h.service.EnsureRecommendedStaticItems(ctx, projectID, false); err != nil {
+	if _, err := h.service.EnsureRecommendedStaticItems(ctx, projectID, false, round.ID); err != nil {
 		return WorkspaceBody{}, err
 	}
 	// 历史静态测试项懒补齐默认测试方法子项（幂等，不覆盖用户改动）。
@@ -528,6 +530,22 @@ func toAPIError(err error, fallback string) error {
 		return huma.Error422UnprocessableEntity("用例状态不合法")
 	case errors.Is(err, testitemsservice.ErrInvalidExecDate):
 		return huma.Error422UnprocessableEntity("执行日期格式应为 YYYY-MM-DD")
+	case errors.Is(err, testitemsservice.ErrPreviousStaticItemMissing):
+		return huma.Error404NotFound(err.Error())
+	case errors.Is(err, testitemsservice.ErrReviewTemplateNotFound):
+		return huma.Error404NotFound("审查单模板不存在")
+	case errors.Is(err, testitemsservice.ErrReviewDocumentTypeExists):
+		return huma.Error409Conflict(err.Error())
+	case errors.Is(err, testitemsservice.ErrReviewTemplateInvalid):
+		return huma.Error422UnprocessableEntity("审查单模板内容不合法：名称与检查项不能为空")
+	case errors.Is(err, testitemsservice.ErrIssueNotFound):
+		return huma.Error404NotFound("问题单不存在")
+	case errors.Is(err, testitemsservice.ErrIssueAlreadyOpen):
+		return huma.Error409Conflict(err.Error())
+	case errors.Is(err, testitemsservice.ErrIssueInvalid):
+		return huma.Error422UnprocessableEntity(err.Error())
+	case errors.Is(err, testitemsservice.ErrIssueNotDC):
+		return huma.Error400BadRequest(err.Error())
 	case errors.Is(err, testitemsservice.ErrNotStaticTestItem):
 		return huma.Error400BadRequest("当前测试项不是静态测试项")
 	case errors.Is(err, testitemsservice.ErrStaticVersionConflict):

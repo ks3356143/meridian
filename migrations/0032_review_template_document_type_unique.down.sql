@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS idx_review_checklist_templates_document_type;

@@ -196,6 +196,7 @@ function NewRoundWizard({
   const [name, setName] = useState(`第 ${latestRound.roundNumber + 1} 轮`);
   const [dutVersion, setDutVersion] = useState("");
   const [changeReason, setChangeReason] = useState("");
+  const [importDcHistory, setImportDcHistory] = useState(false);
   const previewQuery = useQuery({
     queryKey: ["projects", projectCode, "test-rounds", latestRound.id, "copy-preview"],
     queryFn: () => testItemsApi.roundCopyPreview(projectCode, latestRound.id),
@@ -220,6 +221,7 @@ function NewRoundWizard({
         name: name.trim(),
         dutVersion: dutVersion.trim(),
         changeReason: changeReason.trim(),
+        importDcHistory,
       }),
     onSuccess: (result) => {
       toast.success(`已创建 ${result.round.name}，带入 ${result.testItemCount} 个测试项`);
@@ -248,6 +250,7 @@ function NewRoundWizard({
       setSelected(new Set());
       setDutVersion("");
       setChangeReason("");
+      setImportDcHistory(false);
       setName(`第 ${latestRound.roundNumber + 1} 轮`);
       createMutation.reset();
     }
@@ -272,7 +275,8 @@ function NewRoundWizard({
         <DialogHeader>
           <DialogTitle>新建第 {latestRound.roundNumber + 1} 轮</DialogTitle>
           <DialogDescription>
-            从{latestRound.name}复制整项树；实测结果与执行状态清空，静态项不会出现在复制范围。
+            从{latestRound.name}
+            复制整项树；实测结果与执行状态清空。文档审查会自动建立空工作台，勾选后才带入上轮不通过记录。
           </DialogDescription>
         </DialogHeader>
 
@@ -294,6 +298,14 @@ function NewRoundWizard({
               onChange={(event) => setDutVersion(event.target.value)}
             />
           </Label>
+          <label className={styles.importDc}>
+            <input
+              type="checkbox"
+              checked={importDcHistory}
+              onChange={(event) => setImportDcHistory(event.target.checked)}
+            />
+            <span>导入上轮文档审查不通过记录（只作历史参考，本轮默认通过）</span>
+          </label>
           <Label htmlFor="new-round-reason" className={styles.fullField}>
             <span>变更原因</span>
             <Textarea

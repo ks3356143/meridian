@@ -19,6 +19,13 @@
 - Word：原始 DOCX 模板 + 结构化数据 + Go 渲染 OOXML。
 - 外部文档引擎：OfficeCLI（可选、非核心依赖、不常驻进程），只承担模板合并、OpenXML schema 校验和 DOCX 页面预览；边界、集成约定与前置验证见 [srs/03-技术路线.md](../../srs/03-技术路线.md)。
 
+## 工具偏好（2026-11-03）
+
+- 内容检索用 `rg`（ripgrep），找文件用 `fd`，不用系统自带 `grep` / `find` / `dir`。
+- 终端统一 `pwsh`，不混 bash 语法。
+- 本机已装 bun、python、node、go、rust，mise shims 在 `C:\Users\31429\AppData\Roaming\CherryStudio\Toolchain\mise\shims`；按任务选更快更合适的运行时。
+- 工具只提升效率，不改技术栈：前端依赖安装与构建仍用 `npm` + `package-lock.json`，不擅自换成 bun / pnpm。
+
 ## 常用命令
 
 ```powershell

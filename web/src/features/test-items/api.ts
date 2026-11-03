@@ -23,6 +23,11 @@ import type {
   TypeCoverageNote,
   TraceabilityResult,
   AnnotationResult,
+  ReviewChecklistTemplate,
+  ReviewChecklistTemplateInput,
+  Issue,
+  CreateIssuePayload,
+  UpdateIssuePayload,
 } from "./types";
 
 export interface CreateTestItemPayload {
@@ -293,4 +298,37 @@ export const testItemsApi = {
       "DELETE",
       `/api/v1/test-items/${testItemId}/requirements/${requirementId}`,
     ),
+  /** DC 第 2 轮起：把上一轮不通过项补入当前轮。 */
+  importPreviousFailedChecks: (testItemId: string) =>
+    request<StaticWorkbench>(
+      "POST",
+      `/api/v1/test-items/${testItemId}/static-workbench/import-previous`,
+    ),
+};
+
+export const reviewChecklistsApi = {
+  list: () =>
+    request<{ items: ReviewChecklistTemplate[] }>("GET", "/api/v1/review-checklists").then(
+      (result) => result.items,
+    ),
+  create: (payload: ReviewChecklistTemplateInput) =>
+    request<ReviewChecklistTemplate>("POST", "/api/v1/review-checklists", {}, payload),
+  update: (id: string, payload: ReviewChecklistTemplateInput) =>
+    request<ReviewChecklistTemplate>("PUT", `/api/v1/review-checklists/${id}`, {}, payload),
+  remove: (id: string) => request<void>("DELETE", `/api/v1/review-checklists/${id}`),
+};
+
+export const issuesApi = {
+  list: (projectCode: string, roundId?: string) => {
+    const query = roundId ? `?roundId=${encodeURIComponent(roundId)}` : "";
+    return request<{ items: Issue[] }>(
+      "GET",
+      `/api/v1/projects/${projectCode}/issues${query}`,
+    ).then((result) => result.items);
+  },
+  create: (projectCode: string, payload: CreateIssuePayload) =>
+    request<Issue>("POST", `/api/v1/projects/${projectCode}/issues`, {}, payload),
+  get: (id: string) => request<Issue>("GET", `/api/v1/issues/${id}`),
+  update: (id: string, payload: UpdateIssuePayload) =>
+    request<Issue>("PATCH", `/api/v1/issues/${id}`, {}, payload),
 };

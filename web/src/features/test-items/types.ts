@@ -387,6 +387,7 @@ export interface CreateRoundCopyPayload {
   endedOn?: string;
   changeReason?: string;
   reasonSummary?: string;
+  importDcHistory?: boolean;
 }
 
 export interface RoundCopyResult {
@@ -418,6 +419,7 @@ export interface TestItemCounts {
   /** 静态工作台进度（DC/CR 已审 / 总数；CW 文件数）。 */
   staticReviewed?: number;
   staticTotal?: number;
+  staticFailed?: number;
   staticFileCount?: number;
   /** 子项名称（树搜索按子项名匹配；无子项时为 null）。 */
   subItemNames?: string[] | null;
@@ -470,16 +472,26 @@ export interface StaticCheckTemplate {
   title: string;
   requirement: string;
   basis: string;
-  practice: string;
+  practice?: string;
+  goodPractice?: string;
+  badPractice?: string;
 }
 
 export interface StaticSheetTemplate {
   code: string;
   kind: string;
   name: string;
+  appendix?: string;
+  condition?: string;
+  documentType?: string;
+  documentVersion?: string;
+  sortOrder?: number;
   language?: string;
   checks: StaticCheckTemplate[];
 }
+
+/** DC 使用 passed / failed / na；CR 仍沿用 unreviewed 三态。 */
+export type StaticReviewResult = "unreviewed" | "passed" | "failed" | "na";
 
 export interface StaticReviewCheck {
   id: string;
@@ -488,15 +500,23 @@ export interface StaticReviewCheck {
   title: string;
   requirement: string;
   basis: string;
-  practice: string;
-  result: "unreviewed" | "passed" | "failed";
+  practice?: string;
+  goodPractice?: string;
+  badPractice?: string;
+  result: StaticReviewResult;
   notes: string;
+  images?: string[];
+  issueId?: string;
+  carriedFromPrevious?: boolean;
+  previousNote?: string;
+  previousImages?: string[];
 }
 
 export interface StaticReviewSheet {
   id: string;
   templateCode: string;
   name: string;
+  documentType?: string;
   targetDocumentName: string;
   targetDocumentVersion: string;
   checks: StaticReviewCheck[];
@@ -552,6 +572,7 @@ export interface StaticCodeFile {
 export interface StaticState {
   documents: StaticDocument[];
   reviewSheets: StaticReviewSheet[];
+  documentVersions?: Record<string, string>;
   metrics: StaticMetrics;
   metricConclusion: string;
   ruleViolations: StaticRuleViolation[];
@@ -592,4 +613,89 @@ export interface StaticWorkbench {
   state: StaticState;
   catalog: StaticCatalog;
   updatedAt: string;
+}
+
+export interface ReviewChecklistItem {
+  seq: number;
+  category: string;
+  title: string;
+  requirement: string;
+  basis: string;
+  goodPractice: string;
+  badPractice: string;
+}
+
+export interface ReviewChecklistTemplate {
+  id: string;
+  code: string;
+  name: string;
+  appendix: string;
+  condition: string;
+  documentType: string;
+  documentVersion: string;
+  sortOrder: number;
+  items: ReviewChecklistItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewChecklistTemplateInput {
+  name: string;
+  appendix: string;
+  condition: string;
+  documentType: string;
+  documentVersion: string;
+  items: ReviewChecklistItem[];
+}
+
+export type IssueStatus = "open" | "closed";
+
+export interface Issue {
+  id: string;
+  projectId: string;
+  roundId: string;
+  roundNumber: number;
+  testItemId: string;
+  testItemIdentifier: string;
+  sourceSheetId: string;
+  sourceSheetName?: string;
+  sourceCheckId: string;
+  sourceCheckTitle: string;
+  targetDocument: string;
+  title: string;
+  description: string;
+  defectType: string;
+  level: string;
+  closureMethod: string;
+  status: IssueStatus;
+  closureNote: string;
+  createdBy: string;
+  closedBy: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateIssuePayload {
+  roundId?: string;
+  testItemId: string;
+  sheetId?: string;
+  sheetName?: string;
+  checkId?: string;
+  checkTitle?: string;
+  targetDocument?: string;
+  title: string;
+  description?: string;
+  defectType?: string;
+  level?: string;
+  closureMethod?: string;
+}
+
+export interface UpdateIssuePayload {
+  title?: string;
+  description?: string;
+  level?: string;
+  closureMethod?: string;
+  status?: IssueStatus;
+  closureNote?: string;
 }

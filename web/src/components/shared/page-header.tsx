@@ -24,10 +24,13 @@ export function PageHeader({
       as="header"
       className={cn(
         "page-header relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between",
+        styles.surface,
         className,
       )}
     >
       <span className={cn(styles.corner, styles.cornerTopLeft)} aria-hidden />
+      <span className={cn(styles.corner, styles.cornerTopRight)} aria-hidden />
+      <span className={cn(styles.corner, styles.cornerBottomLeft)} aria-hidden />
       <span className={cn(styles.corner, styles.cornerBottomRight)} aria-hidden />
       <div className="relative flex min-w-0 items-start gap-4">
         <span className="border-primary/25 bg-primary/10 text-primary relative flex size-11 shrink-0 items-center justify-center rounded-sm border">

@@ -32,6 +32,7 @@ const tabsListVariants = cva(
       variant: {
         default: "border-border/85 bg-card/75 elevation-1 gap-1 rounded-sm border p-1",
         line: "bg-card/55 w-full gap-0 rounded-none p-0",
+        hud: "w-full gap-0 rounded-none p-0",
       },
     },
     defaultVariants: {
@@ -52,6 +53,7 @@ function TabsList({
       className={cn(
         tabsListVariants({ variant }),
         variant === "line" && styles.lineList,
+        variant === "hud" && styles.hudList,
         className,
       )}
       {...props}

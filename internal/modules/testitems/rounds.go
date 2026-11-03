@@ -51,15 +51,16 @@ type RoundCopyPreview struct {
 
 // CreateRoundCopyInput 新建后续轮并复制选定测试项树的入参。
 type CreateRoundCopyInput struct {
-	ProjectID     string
-	SourceRoundID string
-	TestItemIDs   []string
-	Name          string
-	DutVersion    string
-	StartedOn     *string
-	EndedOn       *string
-	ChangeReason  string
-	ReasonSummary string
+	ProjectID       string
+	SourceRoundID   string
+	TestItemIDs     []string
+	Name            string
+	DutVersion      string
+	StartedOn       *string
+	EndedOn         *string
+	ChangeReason    string
+	ReasonSummary   string
+	ImportDcHistory bool
 }
 
 // RoundCopyResult 是轮次复制结果摘要。
@@ -67,6 +68,7 @@ type RoundCopyResult struct {
 	Round                Round `json:"round"`
 	FolderCount          int   `json:"folderCount"`
 	TestItemCount        int   `json:"testItemCount"`
+	StaticItemCount      int   `json:"staticItemCount"`
 	SubItemCount         int   `json:"subItemCount"`
 	CaseCount            int   `json:"caseCount"`
 	StepCount            int   `json:"stepCount"`
@@ -197,6 +199,15 @@ func (s *Service) PreviewRoundCopy(ctx context.Context, projectID, sourceRoundID
 // CreateRoundCopy 在单事务内新建后续轮并复制选中的动态测试项树。
 func (s *Service) CreateRoundCopy(ctx context.Context, input CreateRoundCopyInput) (RoundCopyResult, error) {
 	itemIDs, err := normalizeRoundItemIDs(input.TestItemIDs)
+	if err != nil {
+		return RoundCopyResult{}, err
+	}
+	// 事务内不再访问第二个连接：平台与模板先读好，避免 SQLite 写锁互相等待。
+	platform, err := s.projectPlatform(ctx, input.ProjectID)
+	if err != nil {
+		return RoundCopyResult{}, err
+	}
+	sheets, err := s.sheetTemplates(ctx, "DC")
 	if err != nil {
 		return RoundCopyResult{}, err
 	}
@@ -480,6 +491,10 @@ func (s *Service) CreateRoundCopy(ctx context.Context, input CreateRoundCopyInpu
 			}
 		}
 
+		if err := s.copyStaticItemsTx(ctx, tx, sourceRound, createdRound, now, platform, sheets, input.ImportDcHistory, &result); err != nil {
+			return err
+		}
+
 		if len(newItemIDs) > 0 {
 			caseIDs := make([]string, 0)
 			for _, newItemID := range newItemIDs {
@@ -525,4 +540,145 @@ func normalizeRoundItemIDs(raw []string) ([]string, error) {
 		ids = append(ids, itemID)
 	}
 	return ids, nil
+}
+
+// copyStaticItemsTx 复制来源轮的静态测试项与工作台；静态项不参与范围勾选。
+func (s *Service) copyStaticItemsTx(
+	ctx context.Context,
+	tx *gorm.DB,
+	sourceRound Round,
+	createdRound Round,
+	now time.Time,
+	platform string,
+	sheets []StaticSheetTemplate,
+	importHistory bool,
+	result *RoundCopyResult,
+) error {
+	var staticItems []TestItem
+	if err := tx.Table("test_items AS item").
+		Select("item.*").
+		Joins("JOIN test_item_types AS typ ON typ.code = item.type_code").
+		Where("item.project_id = ? AND item.round_id = ? AND typ.is_static = 1 AND item.type_code = 'DC'", sourceRound.ProjectID, sourceRound.ID).
+		Order("item.created_at asc").
+		Find(&staticItems).Error; err != nil {
+		return fmt.Errorf("查询来源静态测试项失败: %w", err)
+	}
+	if len(staticItems) == 0 {
+		return nil
+	}
+	for _, item := range staticItems {
+		newItemID, err := id.New()
+		if err != nil {
+			return err
+		}
+		copied := item
+		copied.ID = newItemID
+		copied.RoundID = createdRound.ID
+		copied.FolderID = nil
+		copied.CreatedAt = now
+		copied.UpdatedAt = now
+		if err := tx.Create(&copied).Error; err != nil {
+			return fmt.Errorf("复制静态测试项失败: %w", err)
+		}
+		result.TestItemCount++
+		result.StaticItemCount++
+
+		var subItems []SubItem
+		if err := tx.Where("test_item_id = ?", item.ID).Order("sort_order asc, created_at asc").Find(&subItems).Error; err != nil {
+			return fmt.Errorf("查询来源静态子项失败: %w", err)
+		}
+		for _, subItem := range subItems {
+			newSubItemID, err := id.New()
+			if err != nil {
+				return err
+			}
+			copiedSubItem := subItem
+			copiedSubItem.ID = newSubItemID
+			copiedSubItem.TestItemID = newItemID
+			copiedSubItem.CreatedAt = now
+			copiedSubItem.UpdatedAt = now
+			if err := tx.Create(&copiedSubItem).Error; err != nil {
+				return fmt.Errorf("复制静态子项失败: %w", err)
+			}
+			if err := contentblocks.CopyPrefixedOwnerBlocksTx(
+				tx, contentblocks.OwnerTypeTestItem, item.ID,
+				contentblocks.SubItemBlockPrefix(subItem.ID),
+				contentblocks.OwnerTypeTestItem, newItemID,
+				contentblocks.SubItemBlockPrefix(newSubItemID),
+			); err != nil {
+				return err
+			}
+			result.SubItemCount++
+		}
+
+		failedPrevious := previousFailedCheckCount(tx, item.ID)
+		var cases []Case
+		if err := tx.Where("test_item_id = ?", item.ID).Order("sort_order asc, created_at asc").Find(&cases).Error; err != nil {
+			return fmt.Errorf("查询来源静态用例失败: %w", err)
+		}
+		for _, sourceCase := range cases {
+			newCaseID, err := id.New()
+			if err != nil {
+				return err
+			}
+			copiedCase := sourceCase
+			copiedCase.ID = newCaseID
+			copiedCase.TestItemID = newItemID
+			copiedCase.TesterID = nil
+			copiedCase.MonitorID = nil
+			copiedCase.ExecDate = nil
+			copiedCase.Status = "pending"
+			copiedCase.Notes = ""
+			copiedCase.NotExecutedReason = ""
+			copiedCase.CreatedAt = now
+			copiedCase.UpdatedAt = now
+			if item.TypeCode == "DC" {
+				copiedCase.Name = "文档审查执行（复审）"
+				if importHistory {
+					copiedCase.Summary = reviewCaseSummary(sourceCase.Summary, failedPrevious, item.Description)
+				} else {
+					copiedCase.Summary = ""
+				}
+			}
+			if err := tx.Create(&copiedCase).Error; err != nil {
+				return fmt.Errorf("复制静态用例失败: %w", err)
+			}
+			result.CaseCount++
+
+			var steps []CaseStep
+			if err := tx.Where("test_case_id = ?", sourceCase.ID).Order("sort_order asc, created_at asc").Find(&steps).Error; err != nil {
+				return fmt.Errorf("查询来源静态步骤失败: %w", err)
+			}
+			if item.TypeCode == "DC" && len(steps) == 0 {
+				if err := createDCShellSteps(tx, newCaseID); err != nil {
+					return err
+				}
+				result.StepCount += 3
+			}
+			for _, sourceStep := range steps {
+				newStepID, err := id.New()
+				if err != nil {
+					return err
+				}
+				copiedStep := sourceStep
+				copiedStep.ID = newStepID
+				copiedStep.TestCaseID = newCaseID
+				copiedStep.Passed = "none"
+				copiedStep.CreatedAt = now
+				copiedStep.UpdatedAt = now
+				if err := tx.Create(&copiedStep).Error; err != nil {
+					return fmt.Errorf("复制静态步骤失败: %w", err)
+				}
+				if err := contentblocks.CopyStepBlockTx(tx, sourceStep.ID, newCaseID, newStepID, contentblocks.StepKindOp); err != nil {
+					return err
+				}
+				result.StepCount++
+			}
+		}
+
+		if err := s.copyStaticWorkbenchTx(tx, item, newItemID, platform, sheets, importHistory); err != nil {
+			return err
+		}
+	}
+	return nil
 }

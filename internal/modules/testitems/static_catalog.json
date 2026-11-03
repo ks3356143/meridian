@@ -1,524 +1,454 @@
 {
   "documentOptions": [
-    "软件任务书",
-    "软件开发计划",
-    "软件配置管理计划",
-    "软件质量保证计划",
-    "软件需求规格说明",
-    "软件设计说明",
-    "软件单元测试计划",
-    "软件单元测试说明",
-    "软件单元测试报告",
-    "软件配置项测试计划",
-    "软件配置项测试说明",
-    "软件配置项测试报告",
-    "软件用户手册",
     "软件研制总结报告",
-    "软件固件保障手册",
-    "软件版本说明"
+    "软件开发计划",
+    "软件运行方案说明",
+    "软件接口需求规格说明",
+    "软件系统设计说明",
+    "软件接口设计说明",
+    "软件需求规格说明",
+    "软件配置项设计说明",
+    "软件测试说明",
+    "软件测试报告",
+    "产品规格说明",
+    "软件版本说明",
+    "软件用户手册",
+    "固件保障手册"
   ],
+  "documentPlatforms": {
+    "软件研制总结报告": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件开发计划": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件运行方案说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件接口需求规格说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件系统设计说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件接口设计说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件需求规格说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件配置项设计说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件测试说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件测试报告": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "产品规格说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件版本说明": {
+      "cpu": true,
+      "fpga": true,
+      "desktop": true
+    },
+    "软件用户手册": {
+      "cpu": false,
+      "fpga": false,
+      "desktop": true
+    },
+    "固件保障手册": {
+      "cpu": false,
+      "fpga": true,
+      "desktop": false
+    }
+  },
   "reviewSheets": [
     {
-      "code": "DC-KIT",
+      "code": "rc-1",
       "kind": "DC",
-      "name": "文档齐套性",
+      "name": "文档齐套性审查单",
+      "appendix": "附录A.1",
+      "condition": "",
+      "sortOrder": 1,
       "checks": [
         {
-          "category": "齐套性",
-          "title": "是否有软件任务书",
-          "requirement": "是否有软件任务书",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件开发计划",
-          "requirement": "是否有软件开发计划",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件配置管理计划",
-          "requirement": "是否有软件配置管理计划",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件质量保证计划",
-          "requirement": "是否有软件质量保证计划",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件需求规格说明",
-          "requirement": "是否有软件需求规格说明",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件设计说明",
-          "requirement": "是否有软件设计说明",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件单元测试计划",
-          "requirement": "是否有软件单元测试计划",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件单元测试说明",
-          "requirement": "是否有软件单元测试说明",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件单元测试报告",
-          "requirement": "是否有软件单元测试报告",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件配置项测试计划",
-          "requirement": "是否有软件配置项测试计划",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件配置项测试说明",
-          "requirement": "是否有软件配置项测试说明",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件配置项测试报告",
-          "requirement": "是否有软件配置项测试报告",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件用户手册",
-          "requirement": "是否有软件用户手册",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件研制总结报告",
-          "requirement": "是否有软件研制总结报告",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件固件保障手册",
-          "requirement": "是否有软件固件保障手册",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "齐套性",
-          "title": "是否有软件版本说明",
-          "requirement": "是否有软件版本说明",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "封面内容是否完整、正确，是否包括了文档名称、版本、密级、编号、单位、编写时间",
-          "requirement": "封面内容是否完整、正确，是否包括了文档名称、版本、密级、编号、单位、编写时间",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "文档签署是否完整，包括拟制、审核、批准等信息",
-          "requirement": "文档签署是否完整，包括拟制、审核、批准等信息",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
-        },
-        {
+          "seq": 1,
           "category": "规范性",
-          "title": "是否有直观明了的索引（目录）和排版格式，并且正确",
-          "requirement": "是否有直观明了的索引（目录）和排版格式，并且正确",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
+          "title": "文档标识正确",
+          "requirement": "文档标识正确",
+          "basis": "GJB 438C §4.1",
+          "goodPractice": "<p>标识格式：<b>GJB 438C-2021</b> + 密级 + 版本号 + 序号。</p><ol><li>密级标识放在文档封面左上角</li><li>版本号格式：VX.Y（如 V1.0、V2.3）</li><li>文档编号符合 XX-XX-XXX 格式</li></ol>",
+          "badPractice": "<p>✗ 仅写版本号无密级</p><p>✗ 版本号用\"v1.0\"（小写 v 不规范）</p><p>✗ 文档编号含特殊字符或空格</p>"
         },
         {
+          "seq": 2,
           "category": "规范性",
-          "title": "页眉、页脚、页码是否符合要求",
-          "requirement": "页眉、页脚、页码是否符合要求",
-          "basis": "GJB 438C-2021 附录A.1",
-          "practice": ""
+          "title": "文档版本与配置管理记录一致",
+          "requirement": "文档版本与配置管理记录一致",
+          "basis": "GJB 438C §5.1",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 3,
+          "category": "完整性",
+          "title": "文档签署完整（拟制/校对/审核/批准）",
+          "requirement": "文档签署完整（拟制/校对/审核/批准）",
+          "basis": "GJB 438C §4.3",
+          "goodPractice": "<p>四人签署栏完整，签名 + 日期齐全，不能用电子签名代替手写（除非配置项允许）。</p>",
+          "badPractice": ""
+        },
+        {
+          "seq": 4,
+          "category": "规范性",
+          "title": "文档格式符合模板要求",
+          "requirement": "文档格式符合模板要求",
+          "basis": "GJB 438C §3",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 5,
+          "category": "准确性",
+          "title": "术语定义明确无歧义",
+          "requirement": "术语定义明确无歧义",
+          "basis": "GJB 438C §2",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 6,
+          "category": "完整性",
+          "title": "参考文献完整有效",
+          "requirement": "参考文献完整有效",
+          "basis": "GJB 438C §1.3",
+          "goodPractice": "",
+          "badPractice": "<p>✗ 仅写\"详见相关文档\"，无具体条目</p><p>✗ 引用已废止的 GJB 438B</p><p>✗ 参考文献无编号、无日期</p>"
+        },
+        {
+          "seq": 7,
+          "category": "完整性",
+          "title": "文件状态表信息完整",
+          "requirement": "文件状态表信息完整",
+          "basis": "GJB 438C §4.2",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 8,
+          "category": "规范性",
+          "title": "文档无缺页、乱码等物理缺陷",
+          "requirement": "文档无缺页、乱码等物理缺陷",
+          "basis": "GJB 438C §3.1",
+          "goodPractice": "",
+          "badPractice": ""
         }
       ]
     },
     {
-      "code": "DC-SRS",
+      "code": "rc-2",
       "kind": "DC",
-      "name": "软件需求规格说明",
+      "name": "软件需求规格说明审查单",
+      "appendix": "附录A.2",
+      "condition": "",
+      "sortOrder": 2,
       "checks": [
         {
+          "seq": 1,
           "category": "完整性",
-          "title": "完整性",
-          "requirement": "完整性",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
+          "title": "需求条目标识唯一、可追溯",
+          "requirement": "需求条目标识唯一、可追溯",
+          "basis": "GJB 438C §4.1",
+          "goodPractice": "<p>每条需求有唯一标识（如 <b>REQ-001</b>），可追溯到上层研制任务书章节。</p><ol><li>标识格式统一：来源码-序号</li><li>在需求矩阵中可双向追溯</li></ol>",
+          "badPractice": "<p>✗ 需求无标识，仅靠自然语言描述定位</p><p>✗ 多条需求共用一个标识</p>"
         },
         {
+          "seq": 2,
           "category": "完整性",
-          "title": "系统概述本文档适用的系统和软件的用途，描述系统与软件的一…",
-          "requirement": "系统概述本文档适用的系统和软件的用途，描述系统与软件的一般特性",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
+          "title": "功能需求描述完整无遗漏",
+          "requirement": "功能需求描述完整无遗漏",
+          "basis": "GJB 438C §4.2",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 3,
           "category": "完整性",
-          "title": "文档概述了本文档的用途和内容，并描述与它的使用有关的保密…",
-          "requirement": "文档概述了本文档的用途和内容，并描述与它的使用有关的保密性方面的要求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
+          "title": "性能需求有明确量化指标",
+          "requirement": "性能需求有明确量化指标",
+          "basis": "GJB 438C §4.3",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 4,
           "category": "完整性",
-          "title": "引用文档应列出文档的编号、标题、编写单位、修订版及日期",
-          "requirement": "引用文档应列出文档的编号、标题、编写单位、修订版及日期",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
+          "title": "接口需求定义清晰（协议/格式/速率）",
+          "requirement": "接口需求定义清晰（协议/格式/速率）",
+          "basis": "GJB 438C §4.4",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 5,
           "category": "完整性",
-          "title": "CSCI能力需求标识出所要求的每一个CICI能力，并列出…",
-          "requirement": "CSCI能力需求标识出所要求的每一个CICI能力，并列出与该能力有关的需求，包括所需的CSCI行为",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
+          "title": "安全性需求符合系统安全等级要求",
+          "requirement": "安全性需求符合系统安全等级要求",
+          "basis": "GJB 438C §4.5",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 6,
           "category": "完整性",
-          "title": "CSIC的外部接口需求应使用唯一的标识符标识CSCI每一…",
-          "requirement": "CSIC的外部接口需求应使用唯一的标识符标识CSCI每一个外部接口，并描述为实现该接口提出的该CSCI的需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
+          "title": "可靠性需求有MTBF/MTTR等指标",
+          "requirement": "可靠性需求有MTBF/MTTR等指标",
+          "basis": "GJB 438C §4.6",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "完整性",
-          "title": "CSCI内部接口需求应指明施加于CSCI内部接口的需求",
-          "requirement": "CSCI内部接口需求应指明施加于CSCI内部接口的需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "保密性需求应指明与维护保密性有关的CSCI需求",
-          "requirement": "保密性需求应指明与维护保密性有关的CSCI需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "安全性需求应指明关于防止或尽可能降低对人员、财产和物理环…",
-          "requirement": "安全性需求应指明关于防止或尽可能降低对人员、财产和物理环境产生以外危险的CSCI安全性需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "环境适应性需求应指明CSCI的运行环境需求",
-          "requirement": "环境适应性需求应指明CSCI的运行环境需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "计算机资源需求应指明CSCI必须使用的计算机硬件的需求、…",
-          "requirement": "计算机资源需求应指明CSCI必须使用的计算机硬件的需求、计算机硬件资源的使用需求、必须使用或必须被纳入本CSCI的计算机软件需求、必须使用的计算机通信方面的需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "设计和实现约束应指明约束CSCI的设计和实现的需求",
-          "requirement": "设计和实现约束应指明约束CSCI的设计和实现的需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "人员相关需求描述与使用或保障本CSCI的人员有关的CSC…",
-          "requirement": "人员相关需求描述与使用或保障本CSCI的人员有关的CSCI需求，包括人员的数量、职能等级、工作周期、必须的培训以及其他信息",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "训练相关需求应指明与训练相关的CSCI需求",
-          "requirement": "训练相关需求应指明与训练相关的CSCI需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "软件保障需求应指明与软件保障考虑有关的CSCI需求",
-          "requirement": "软件保障需求应指明与软件保障考虑有关的CSCI需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "包装需求应指明为了交付而对CSCI进行包装、标记和处理的…",
-          "requirement": "包装需求应指明为了交付而对CSCI进行包装、标记和处理的需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "需求的优先顺序和关键性应指明本规格说明中各需求的优先次序…",
-          "requirement": "需求的优先顺序和关键性应指明本规格说明中各需求的优先次序、关键性或表示其相对重要性的权重",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "合格性规定应定义一组合格性检验方法，针对每个需求制定确定…",
-          "requirement": "合格性规定应定义一组合格性检验方法，针对每个需求制定确定需求得到满足所使用的方法",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "需求可追踪性应描述从本规格说明中的每一个CSCI需求所涉…",
-          "requirement": "需求可追踪性应描述从本规格说明中的每一个CSCI需求所涉及的系统/子系统需求的可追踪性，以及从分配给本CSCI的每一个系统/子系统需求，到所涉及的CSCI需求的可追踪性",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "准确性",
-          "requirement": "准确性",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "准确性",
-          "title": "列举的各项需求均具备可测试性",
-          "requirement": "列举的各项需求均具备可测试性",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "准确性",
-          "title": "在已知的条件限制下，所有的需求都应为可实现的需求",
-          "requirement": "在已知的条件限制下，所有的需求都应为可实现的需求",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
-          "category": "准确性",
-          "title": "一致性",
-          "requirement": "一致性",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
-        },
-        {
+          "seq": 7,
           "category": "一致性",
-          "title": "需求规格说明与其他软件文档之间无相互矛盾或冲突",
-          "requirement": "需求规格说明与其他软件文档之间无相互矛盾或冲突",
-          "basis": "GJB 438C-2021 附录A.2",
-          "practice": ""
+          "title": "需求之间无矛盾冲突",
+          "requirement": "需求之间无矛盾冲突",
+          "basis": "GJB 438C §4.7",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 8,
+          "category": "准确性",
+          "title": "需求可验证（每条需求有对应测试方法）",
+          "requirement": "需求可验证（每条需求有对应测试方法）",
+          "basis": "GJB 438C §4.8",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 9,
+          "category": "准确性",
+          "title": "需求分类正确",
+          "requirement": "需求分类正确",
+          "basis": "GJB 438C §4.9",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 10,
+          "category": "一致性",
+          "title": "外部接口需求与协议文档一致",
+          "requirement": "外部接口需求与协议文档一致",
+          "basis": "GJB 438C §4.10",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 11,
+          "category": "完整性",
+          "title": "设计约束（编程语言/运行环境等）明确",
+          "requirement": "设计约束（编程语言/运行环境等）明确",
+          "basis": "GJB 438C §4.11",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 12,
+          "category": "完整性",
+          "title": "采纳的需求变更已同步更新",
+          "requirement": "采纳的需求变更已同步更新",
+          "basis": "GJB 438C §4.12",
+          "goodPractice": "",
+          "badPractice": ""
         }
       ]
     },
     {
-      "code": "DC-DESIGN",
+      "code": "rc-3",
       "kind": "DC",
-      "name": "软件设计文档",
+      "name": "软件设计文档审查单",
+      "appendix": "附录A.3",
+      "condition": "",
+      "sortOrder": 3,
       "checks": [
         {
+          "seq": 1,
           "category": "完整性",
-          "title": "完整性",
-          "requirement": "完整性",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "title": "设计文档标识正确、版本一致",
+          "requirement": "设计文档标识正确、版本一致",
+          "basis": "GJB 438C §5.1",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 2,
           "category": "完整性",
-          "title": "系统概述本文档适用的系统和软件的用途，描述系统与软件的一…",
-          "requirement": "系统概述本文档适用的系统和软件的用途，描述系统与软件的一般特性",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "title": "软件体系结构设计满足功能需求",
+          "requirement": "软件体系结构设计满足功能需求",
+          "basis": "GJB 438C §5.2",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 3,
           "category": "完整性",
-          "title": "文档概述了本文档的用途和内容，并描述与它的使用有关的保密…",
-          "requirement": "文档概述了本文档的用途和内容，并描述与它的使用有关的保密性方面的要求",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "title": "模块划分合理，接口定义清晰",
+          "requirement": "模块划分合理，接口定义清晰",
+          "basis": "GJB 438C §5.3",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 4,
           "category": "完整性",
-          "title": "引用文档应列出文档的编号、标题、编写单位、修订版及日期",
-          "requirement": "引用文档应列出文档的编号、标题、编写单位、修订版及日期",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "title": "数据结构设计满足性能指标",
+          "requirement": "数据结构设计满足性能指标",
+          "basis": "GJB 438C §5.4",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "完整性",
-          "title": "CSCI级设计决策应根据需要分条给出CSCI行为设计的决…",
-          "requirement": "CSCI级设计决策应根据需要分条给出CSCI行为设计的决策和其他影响组成该CSCI的软件单元的选择与设计的决策",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "CSCI部件描述构成该CSCI的所有软件单元、软件单元的…",
-          "requirement": "CSCI部件描述构成该CSCI的所有软件单元、软件单元的静态关系、每个软件单元的用途、每个软件单元的开发状态/类型、CSCI计划使用的计算机硬件资源、标识实现每个软件单元的软件放置在哪个程序库中",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "执行方案应说明软件单元间的执行方案，说明软件单元间的动态…",
-          "requirement": "执行方案应说明软件单元间的执行方案，说明软件单元间的动态关系",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "接口标识和接口图应标识每一个接口，包含项目唯一的标识符，…",
-          "requirement": "接口标识和接口图应标识每一个接口，包含项目唯一的标识符，并声明哪些实体具有固定的接口特性，说明哪些实体正在开发或修改之中",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "通过唯一的标识符来标识接口，并标识接口实体，分条描述单方…",
-          "requirement": "通过唯一的标识符来标识接口，并标识接口实体，分条描述单方或双方接口实体的特性",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "CSCI详细设计应通过项目唯一的标识符来标识软件单元，并…",
-          "requirement": "CSCI详细设计应通过项目唯一的标识符来标识软件单元，并对该单元进行说明",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "需求可追踪性包含从本文档所标识的每个软件单元，到分配给它…",
-          "requirement": "需求可追踪性包含从本文档所标识的每个软件单元，到分配给它的CSCI需求的可追踪性，以及从每个CSCI需求，到被分配这些需求的软件单元的可追踪性。",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
-          "category": "完整性",
-          "title": "准确性",
-          "requirement": "准确性",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
+          "seq": 5,
           "category": "准确性",
-          "title": "所有的变量说明和模块说明均清晰无歧义",
-          "requirement": "所有的变量说明和模块说明均清晰无歧义",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "title": "关键算法设计与需求一致",
+          "requirement": "关键算法设计与需求一致",
+          "basis": "GJB 438C §5.5",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "准确性",
-          "title": "所有的文字和图形应描述清晰准确",
-          "requirement": "所有的文字和图形应描述清晰准确",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "seq": 6,
+          "category": "完整性",
+          "title": "异常处理机制完善",
+          "requirement": "异常处理机制完善",
+          "basis": "GJB 438C §5.6",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "准确性",
-          "title": "无二义性的定义、术语或内容",
-          "requirement": "无二义性的定义、术语或内容",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "seq": 7,
+          "category": "完整性",
+          "title": "设计约束（内存/存储/通信）满足要求",
+          "requirement": "设计约束（内存/存储/通信）满足要求",
+          "basis": "GJB 438C §5.7",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "准确性",
-          "title": "一致性",
-          "requirement": "一致性",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
-        },
-        {
+          "seq": 8,
           "category": "一致性",
-          "title": "设计文档中图文一致无冲突",
-          "requirement": "设计文档中图文一致无冲突",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "title": "接口控制文档（ICD）与设计一致",
+          "requirement": "接口控制文档（ICD）与设计一致",
+          "basis": "GJB 438C §5.8",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 9,
+          "category": "完整性",
+          "title": "设计评审问题全部闭环",
+          "requirement": "设计评审问题全部闭环",
+          "basis": "GJB 438C §5.9",
+          "goodPractice": "",
+          "badPractice": ""
+        },
+        {
+          "seq": 10,
           "category": "一致性",
-          "title": "设计文档与需求文档一致，无冲突",
-          "requirement": "设计文档与需求文档一致，无冲突",
-          "basis": "GJB 438C-2021 附录A.3",
-          "practice": ""
+          "title": "设计文档与代码实现可追溯",
+          "requirement": "设计文档与代码实现可追溯",
+          "basis": "GJB 438C §5.10",
+          "goodPractice": "",
+          "badPractice": ""
         }
       ]
     },
     {
-      "code": "DC-USER",
+      "code": "rc-4",
       "kind": "DC",
-      "name": "用户手册",
+      "name": "用户手册审查单",
+      "appendix": "",
+      "condition": "has_ui",
+      "sortOrder": 4,
       "checks": [
         {
-          "category": "完整性",
-          "title": "用户手册是否覆盖软件安装、启动和退出步骤",
-          "requirement": "用户手册是否覆盖软件安装、启动和退出步骤",
-          "basis": "GJB 438C-2021 用户手册审查建议",
-          "practice": ""
+          "seq": 1,
+          "category": "准确性",
+          "title": "操作流程描述与实际界面一致",
+          "requirement": "操作流程描述与实际界面一致",
+          "basis": "GJB 438C §6.1",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "完整性",
-          "title": "用户手册是否说明主要功能入口与操作流程",
-          "requirement": "用户手册是否说明主要功能入口与操作流程",
-          "basis": "GJB 438C-2021 用户手册审查建议",
-          "practice": ""
+          "seq": 2,
+          "category": "准确性",
+          "title": "界面截图与当前版本一致",
+          "requirement": "界面截图与当前版本一致",
+          "basis": "GJB 438C §6.2",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
+          "seq": 3,
           "category": "完整性",
-          "title": "用户手册是否说明异常提示、常见问题和恢复方法",
-          "requirement": "用户手册是否说明异常提示、常见问题和恢复方法",
-          "basis": "GJB 438C-2021 用户手册审查建议",
-          "practice": ""
+          "title": "异常操作处理说明完整",
+          "requirement": "异常操作处理说明完整",
+          "basis": "GJB 438C §6.3",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "完整性",
-          "title": "用户手册是否列出运行环境、权限与前置条件",
-          "requirement": "用户手册是否列出运行环境、权限与前置条件",
-          "basis": "GJB 438C-2021 用户手册审查建议",
-          "practice": ""
+          "seq": 4,
+          "category": "一致性",
+          "title": "术语与界面按钮标签一致",
+          "requirement": "术语与界面按钮标签一致",
+          "basis": "GJB 438C §6.4",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "完整性",
-          "title": "用户手册中的界面、术语和版本是否与软件一致",
-          "requirement": "用户手册中的界面、术语和版本是否与软件一致",
-          "basis": "GJB 438C-2021 用户手册审查建议",
-          "practice": ""
+          "seq": 5,
+          "category": "准确性",
+          "title": "安装/卸载步骤可复现",
+          "requirement": "安装/卸载步骤可复现",
+          "basis": "GJB 438C §6.5",
+          "goodPractice": "",
+          "badPractice": ""
         },
         {
-          "category": "完整性",
-          "title": "用户手册是否包含必要的安全与保密注意事项",
-          "requirement": "用户手册是否包含必要的安全与保密注意事项",
-          "basis": "GJB 438C-2021 用户手册审查建议",
-          "practice": ""
+          "seq": 6,
+          "category": "一致性",
+          "title": "权限说明与实际权限配置一致",
+          "requirement": "权限说明与实际权限配置一致",
+          "basis": "GJB 438C §6.6",
+          "goodPractice": "",
+          "badPractice": ""
         }
       ]
     }

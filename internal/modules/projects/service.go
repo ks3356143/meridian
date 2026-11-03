@@ -21,6 +21,7 @@ var (
 	ErrUserNotFound             = errors.New("项目人员不存在")
 	ErrStandardNotFound         = errors.New("依据标准不存在")
 	ErrProjectSelectionRequired = errors.New("技术字典和依据标准均至少选择一项")
+	ErrProjectStatusInvalid     = errors.New("项目状态不合法")
 )
 
 var identifierPattern = regexp.MustCompile(`^[0-9]{4,5}$`)
@@ -140,6 +141,24 @@ func (s *Service) FindByCode(ctx context.Context, code string) (ProjectResponse,
 		return ProjectResponse{}, err
 	}
 	return responses[0], nil
+}
+
+var projectStatuses = map[string]struct{}{
+	"编制大纲中": {}, "大纲已评审": {}, "测试执行中": {},
+	"回归验证中": {}, "报告编制中": {}, "已完成": {},
+}
+
+// UpdateStatus 由测试人员手动推进项目阶段；当前不设阶段门槛。
+func (s *Service) UpdateStatus(ctx context.Context, code, status string) (ProjectResponse, error) {
+	code = strings.ToUpper(strings.TrimSpace(code))
+	status = strings.TrimSpace(status)
+	if _, ok := projectStatuses[status]; !ok {
+		return ProjectResponse{}, ErrProjectStatusInvalid
+	}
+	if err := s.repository.UpdateProjectStatus(ctx, code, status); err != nil {
+		return ProjectResponse{}, fmt.Errorf("更新项目状态失败: %w", err)
+	}
+	return s.FindByCode(ctx, code)
 }
 
 func (s *Service) Options(ctx context.Context) (ProjectOptionsResponse, error) {

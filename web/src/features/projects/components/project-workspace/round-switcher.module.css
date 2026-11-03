@@ -283,3 +283,17 @@
     transition: none;
   }
 }
+
+.importDc {
+  align-items: flex-start;
+  color: var(--muted-foreground);
+  display: flex;
+  font-size: 0.72rem;
+  gap: 0.4rem;
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+
+.importDc input {
+  margin-top: 0.15rem;
+}

@@ -8,7 +8,7 @@ import type { StaticState, StaticWorkbench } from "@/features/test-items/types";
 import type { ProjectPlatform } from "@/features/projects/types";
 import { CrWorkbench } from "./static-cr";
 import { CwWorkbench } from "./static-cw";
-import { DcWorkbench } from "./static-review";
+import { DcWorkbench } from "./static-dc";
 import { SaWorkbench } from "./static-sa";
 import { SaveChip } from "./static-shared";
 import styles from "./static-workbench.module.css";
@@ -16,9 +16,11 @@ import styles from "./static-workbench.module.css";
 function StaticWorkbenchEditor({
   initial,
   platform,
+  projectCode,
 }: {
   initial: StaticWorkbench;
   platform: ProjectPlatform;
+  projectCode: string;
 }) {
   const [state, setState] = useState(initial.state);
   const [saveState, setSaveState] = useState<"saved" | "editing" | "saving" | "error">("saved");
@@ -107,7 +109,13 @@ function StaticWorkbenchEditor({
       </header>
       <div className={styles.body}>
         {initial.kind === "DC" ? (
-          <DcWorkbench state={state} catalog={initial.catalog} update={update} />
+          <DcWorkbench
+            testItemId={initial.testItemId}
+            projectCode={projectCode}
+            state={state}
+            catalog={initial.catalog}
+            update={update}
+          />
         ) : null}
         {initial.kind === "SA" ? (
           <SaWorkbench state={state} catalog={initial.catalog} update={update} />
@@ -130,10 +138,12 @@ export function StaticWorkbenchSection({
   testItemId,
   kind,
   platform,
+  projectCode,
 }: {
   testItemId: string;
   kind: string;
   platform: ProjectPlatform;
+  projectCode: string;
 }) {
   const query = useQuery({
     queryKey: ["test-items", "static-workbench", testItemId],
@@ -156,6 +166,11 @@ export function StaticWorkbenchSection({
       </div>
     );
   return (
-    <StaticWorkbenchEditor key={query.data.testItemId} initial={query.data} platform={platform} />
+    <StaticWorkbenchEditor
+      key={query.data.testItemId}
+      initial={query.data}
+      platform={platform}
+      projectCode={projectCode}
+    />
   );
 }

@@ -55,6 +55,28 @@ func Register(api huma.API, service *projectservice.Service) {
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "update-project-status",
+		Method:      http.MethodPatch,
+		Path:        "/api/v1/projects/{code}/status",
+		Summary:     "更新项目状态",
+		Description: "由测试人员手动切换项目阶段，当前不做阶段门槛校验。",
+		Tags:        []string{"项目管理"},
+	}, func(ctx context.Context, input *ProjectStatusInput) (*ProjectOutput, error) {
+		project, err := handler.service.UpdateStatus(ctx, input.Code, input.Body.Status)
+		if err != nil {
+			switch {
+			case errors.Is(err, projectservice.ErrProjectNotFound):
+				return nil, huma.Error404NotFound("项目不存在")
+			case errors.Is(err, projectservice.ErrProjectStatusInvalid):
+				return nil, huma.Error400BadRequest("项目状态不合法")
+			default:
+				return nil, huma.Error500InternalServerError("更新项目状态失败")
+			}
+		}
+		return &ProjectOutput{Body: project}, nil
+	})
+
+	huma.Register(api, huma.Operation{
 		OperationID: "get-project-options",
 		Method:      http.MethodGet,
 		Path:        "/api/v1/project-options",
@@ -94,4 +116,11 @@ func Register(api huma.API, service *projectservice.Service) {
 		}
 		return &ProjectOutput{Body: project}, nil
 	})
+}
+
+type ProjectStatusInput struct {
+	Code string `path:"code"`
+	Body struct {
+		Status string `json:"status"`
+	}
 }

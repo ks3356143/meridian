@@ -31,7 +31,7 @@ func recommendedStaticCodes(level, platform string) []string {
 
 // EnsureRecommendedStaticItems 首次进入或显式生成时按项目安全等级补齐静态测试项。
 // 已生成过的项目不会被自动回填用户主动删除的项；显式 force=true 才补齐。
-func (s *Service) EnsureRecommendedStaticItems(ctx context.Context, projectID string, force bool) ([]TestItem, error) {
+func (s *Service) EnsureRecommendedStaticItems(ctx context.Context, projectID string, force bool, roundID ...string) ([]TestItem, error) {
 	var profile projectStaticProfile
 	if err := s.db.WithContext(ctx).Table("projects").
 		Select("security_level, platform").Where("id = ?", projectID).Scan(&profile).Error; err != nil {
@@ -48,14 +48,30 @@ func (s *Service) EnsureRecommendedStaticItems(ctx context.Context, projectID st
 	if !force && seededLevel == profile.SecurityLevel && seededPlatform == profile.Platform {
 		return []TestItem{}, nil
 	}
-	firstRound, err := s.EnsureRound(ctx, projectID)
+	targetRoundID := ""
+	if len(roundID) > 0 {
+		targetRoundID = roundID[0]
+	}
+	var targetRound Round
+	var err error
+	if targetRoundID == "" {
+		targetRound, err = s.EnsureRound(ctx, projectID)
+	} else {
+		targetRound, err = s.ResolveRound(ctx, projectID, targetRoundID)
+	}
 	if err != nil {
 		return nil, err
+	}
+	firstRound := targetRound
+	codes := recommendedStaticCodes(profile.SecurityLevel, profile.Platform)
+	if firstRound.RoundNumber > 1 {
+		// 第 2 轮起只有 DC 随轮存在。
+		codes = []string{"DC"}
 	}
 
 	var existing []TestItem
 	if err := s.db.WithContext(ctx).
-		Where("project_id = ? AND round_id = ? AND type_code IN ?", projectID, firstRound.ID, recommendedStaticCodes(profile.SecurityLevel, profile.Platform)).
+		Where("project_id = ? AND round_id = ? AND type_code IN ?", projectID, firstRound.ID, codes).
 		Find(&existing).Error; err != nil {
 		return nil, fmt.Errorf("查询现有静态测试项失败: %w", err)
 	}
@@ -65,7 +81,7 @@ func (s *Service) EnsureRecommendedStaticItems(ctx context.Context, projectID st
 	}
 
 	created := make([]TestItem, 0, 4)
-	for _, code := range recommendedStaticCodes(profile.SecurityLevel, profile.Platform) {
+	for _, code := range codes {
 		if _, exists := existingByType[code]; exists {
 			continue
 		}

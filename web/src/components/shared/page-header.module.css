@@ -1,20 +1,38 @@
+.surface {
+  padding: 10px 12px;
+}
+
 .corner {
-  height: 10px;
+  height: 12px;
   pointer-events: none;
   position: absolute;
-  width: 10px;
+  width: 12px;
 }
 
 .cornerTopLeft {
-  border-left: 1px solid color-mix(in srgb, var(--primary) 48%, var(--border));
-  border-top: 1px solid color-mix(in srgb, var(--primary) 48%, var(--border));
+  border-left: 1px solid color-mix(in srgb, var(--primary) 56%, var(--border));
+  border-top: 1px solid color-mix(in srgb, var(--primary) 56%, var(--border));
   left: 0;
   top: 0;
 }
 
-.cornerBottomRight {
-  border-bottom: 1px solid color-mix(in srgb, var(--primary) 42%, var(--border));
-  border-right: 1px solid color-mix(in srgb, var(--primary) 42%, var(--border));
-  bottom: 0;
+.cornerTopRight {
+  border-right: 1px solid color-mix(in srgb, var(--primary) 56%, var(--border));
+  border-top: 1px solid color-mix(in srgb, var(--primary) 56%, var(--border));
   right: 0;
+  top: 0;
+}
+
+.cornerBottomLeft {
+  border-bottom: 1px solid color-mix(in srgb, var(--info) 56%, var(--border));
+  border-left: 1px solid color-mix(in srgb, var(--info) 56%, var(--border));
+  bottom: 0;
+  left: 0;
+}
+
+.cornerBottomRight {
+  border-bottom: 1px solid color-mix(in srgb, var(--info) 56%, var(--border));
+  border-right: 1px solid color-mix(in srgb, var(--info) 56%, var(--border));
+  right: 0;
+  bottom: 0;
 }

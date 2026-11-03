@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   Bold as BoldIcon,
   Highlighter as HighlightIcon,
   ImagePlus,
+  ListChecks,
   Redo2,
   Table2,
   Undo2,
@@ -11,8 +12,20 @@ import { toast } from "sonner";
 
 import { Gapcursor, UndoRedo } from "@tiptap/extensions";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { requirementsApi } from "@/features/requirements/api";
+import { testItemsApi } from "@/features/test-items/api";
+import type { StaticReviewCheck, StaticReviewSheet } from "@/features/test-items/types";
 import type { RequirementBlockNode } from "@/features/requirements/types";
 import { insertAfterNodeSelection } from "../requirements/body/requirement-body-editor-utils";
 import {
@@ -50,6 +63,8 @@ type StepRichEditorProps = {
   } | null;
   /** 工具栏退出动画期间保持编辑器挂载，动画结束后再卸载。 */
   closing?: boolean;
+  /** DC 壳用例的实测结果：提供时工具栏出现「同步审查单」按钮。 */
+  syncStaticItemId?: string;
   onDone: (doc: RequirementBlockNode, changed: boolean) => Promise<boolean> | boolean;
   onCancel: () => void;
 };
@@ -61,6 +76,7 @@ export function StepRichEditor({
   initialPoint,
   initialRange,
   closing = false,
+  syncStaticItemId,
   onDone,
   onCancel,
 }: StepRichEditorProps) {
@@ -70,6 +86,13 @@ export function StepRichEditor({
   const baselineRef = useRef<string | null>(null);
   const onDoneRef = useRef(onDone);
   const onCancelRef = useRef(onCancel);
+  const [syncOpen, setSyncOpen] = useState(false);
+  const syncOpenRef = useRef(false);
+  const [syncFails, setSyncFails] = useState<Array<{ sheet: string; check: StaticReviewCheck }>>(
+    [],
+  );
+  const [syncSelected, setSyncSelected] = useState<Set<string>>(new Set());
+  const [syncLoading, setSyncLoading] = useState(false);
   useEffect(() => {
     onDoneRef.current = onDone;
     onCancelRef.current = onCancel;
@@ -174,6 +197,8 @@ export function StepRichEditor({
   // 提交延迟到 click 派发之后：blur 会立刻把上一格从编辑态切回展示态（行高微变），
   // 若同步重排，本次点击的 mouseup 可能落空、邻格要点两次才进编辑。
   const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    // 「同步审查单」对话框打开期间保持编辑器挂载，否则对话框会随编辑器一起卸载。
+    if (syncOpenRef.current) return;
     const next = event.relatedTarget as Node | null;
     if (next && wrapRef.current?.contains(next)) return;
     window.setTimeout(() => void commit(), 0);
@@ -245,6 +270,32 @@ export function StepRichEditor({
           <HighlightIcon aria-hidden />
         </ToolButton>
 
+        {syncStaticItemId ? (
+          <ToolButton
+            label="同步审查单"
+            onClick={() => {
+              syncOpenRef.current = true;
+              setSyncOpen(true);
+              setSyncLoading(true);
+              void testItemsApi
+                .staticWorkbench(syncStaticItemId)
+                .then((workbench) => {
+                  const fails: Array<{ sheet: string; check: StaticReviewCheck }> = [];
+                  for (const sheet of workbench.state.reviewSheets as StaticReviewSheet[]) {
+                    for (const check of sheet.checks) {
+                      if (check.result === "failed") fails.push({ sheet: sheet.name, check });
+                    }
+                  }
+                  setSyncFails(fails);
+                  setSyncSelected(new Set(fails.map((item) => item.check.id)));
+                })
+                .catch(() => toast.error("读取审查单失败"))
+                .finally(() => setSyncLoading(false));
+            }}
+          >
+            <ListChecks aria-hidden />
+          </ToolButton>
+        ) : null}
         <ToolButton label="插入图片" onClick={() => imageInputRef.current?.click()}>
           <ImagePlus aria-hidden />
         </ToolButton>
@@ -265,6 +316,91 @@ export function StepRichEditor({
         hidden
         onChange={(event) => void handleImageChosen(event)}
       />
+      <Dialog
+        open={syncOpen}
+        onOpenChange={(open) => {
+          setSyncOpen(open);
+          if (!open) syncOpenRef.current = false;
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>同步审查单不通过项</DialogTitle>
+            <DialogDescription>
+              选择要带入当前步骤的检查项，文字与截图会插入实际结果。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+            {syncLoading ? <p className="text-muted-foreground text-xs">正在读取审查单…</p> : null}
+            {!syncLoading && syncFails.length === 0 ? (
+              <p className="text-muted-foreground text-xs">当前没有不通过项。</p>
+            ) : null}
+            {syncFails.map(({ sheet, check }) => (
+              <label
+                key={check.id}
+                className="hover:bg-muted/50 flex items-start gap-2 rounded-sm px-1 py-1 text-xs"
+              >
+                <Checkbox
+                  checked={syncSelected.has(check.id)}
+                  onCheckedChange={(value) =>
+                    setSyncSelected((current) => {
+                      const next = new Set(current);
+                      if (value === true) next.add(check.id);
+                      else next.delete(check.id);
+                      return next;
+                    })
+                  }
+                />
+                <span className="min-w-0">
+                  <strong className="block truncate">{check.title}</strong>
+                  <span className="text-muted-foreground block truncate">
+                    {sheet} · {check.notes || check.previousNote || "未填写错误描述"}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                syncOpenRef.current = false;
+                setSyncOpen(false);
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              disabled={!syncSelected.size}
+              onClick={() => {
+                const nodes = syncFails
+                  .filter(({ check }) => syncSelected.has(check.id))
+                  .flatMap(({ sheet, check }) => {
+                    const text = `【${sheet}】${check.title}：${check.notes || check.previousNote || "未通过"}`;
+                    const blocks: unknown[] = [
+                      { type: "paragraph", content: [{ type: "text", text }] },
+                    ];
+                    for (const assetId of check.images ?? []) {
+                      blocks.push({ type: "assetImage", attrs: { assetId, alt: "审查截图" } });
+                    }
+                    return blocks;
+                  });
+                editor
+                  ?.chain()
+                  .focus()
+                  .insertContent(nodes as never)
+                  .run();
+                syncOpenRef.current = false;
+                setSyncOpen(false);
+              }}
+            >
+              带入选中项
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

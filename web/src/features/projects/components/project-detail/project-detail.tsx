@@ -8,14 +8,23 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
 import { gsap, useGSAP } from "@/lib/gsap";
+import { projectsApi } from "../../api";
 import { levelVariant, statusVariant } from "../../status-style";
 import { totalOpenIssues, type Project } from "../../types";
 import {
@@ -29,6 +38,11 @@ import { ProjectDetailTabs } from "./project-detail-tabs";
 
 export function ProjectDetail({ project }: { project: Project }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const statusMutation = useMutation({
+    mutationFn: (status: string) => projectsApi.updateStatus(project.id, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<DetailTabValue>("overview");
   useResetScrollOnTabChange(activeTab);
@@ -87,6 +101,29 @@ export function ProjectDetail({ project }: { project: Project }) {
                     {project.status}
                   </Badge>
                   <Badge variant={levelVariant[project.level]}>安全 {project.level}</Badge>
+                  <Select
+                    value={project.status}
+                    onValueChange={(value) => statusMutation.mutate(value)}
+                    disabled={statusMutation.isPending}
+                  >
+                    <SelectTrigger size="sm" aria-label="修改项目状态" className="h-6 w-32 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        "编制大纲中",
+                        "大纲已评审",
+                        "测试执行中",
+                        "回归验证中",
+                        "报告编制中",
+                        "已完成",
+                      ].map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <h1 className="mt-2.5 text-lg leading-snug font-bold tracking-tight break-words sm:text-2xl">
                   {project.name}

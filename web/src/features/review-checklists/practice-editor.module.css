@@ -1,0 +1,56 @@
+.editor {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--card);
+}
+
+.toolbar {
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem 0.35rem;
+}
+
+.tool {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.7rem;
+  height: 1.5rem;
+  justify-content: center;
+  min-width: 1.6rem;
+  padding: 0 0.3rem;
+}
+
+.tool:hover,
+.tool[data-active="true"] {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+  color: var(--primary);
+}
+
+.surface {
+  min-height: 4.5rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  outline: none;
+}
+
+.surface p {
+  margin: 0 0 0.3rem;
+}
+
+.surface ol {
+  margin: 0.2rem 0 0.3rem 1.1rem;
+  padding: 0;
+}
+
+.surface mark {
+  background: color-mix(in srgb, var(--warning) 35%, transparent);
+}

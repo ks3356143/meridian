@@ -13,6 +13,8 @@ type StepRichCellProps = {
   placeholder: string;
   projectCode: string;
   onSave: (doc: RequirementBlockNode) => Promise<unknown>;
+  /** DC 壳用例实测结果：显示「同步审查单」入口。 */
+  syncStaticItemId?: string;
 };
 
 /**
@@ -25,6 +27,7 @@ export function StepRichCell({
   placeholder,
   projectCode,
   onSave,
+  syncStaticItemId,
 }: StepRichCellProps) {
   const [editing, setEditing] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -87,6 +90,7 @@ export function StepRichCell({
           initialPoint={clickPoint}
           initialRange={selectionRange}
           closing={closing}
+          syncStaticItemId={syncStaticItemId}
           onDone={commit}
           onCancel={closeEditor}
         />

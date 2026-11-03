@@ -10,8 +10,8 @@
   --spotlight-y: 0px;
   background: radial-gradient(
     circle closest-side,
-    color-mix(in srgb, var(--primary) 21%, transparent),
-    color-mix(in srgb, var(--primary) 7%, transparent) 48%,
+    color-mix(in srgb, var(--primary) 26%, transparent),
+    color-mix(in srgb, var(--primary) 10%, transparent) 48%,
     transparent 74%
   );
   border-radius: inherit;
@@ -37,18 +37,20 @@
 
 .surface:hover > .glow,
 .surface:focus-within > .glow,
-.card:hover::after,
-.card:focus-within::after {
+.card[data-spotlight]:hover::after,
+.card[data-spotlight]:focus-within::after {
   opacity: 1;
 }
 
 .sheen {
   background: linear-gradient(
     105deg,
-    transparent 30%,
-    color-mix(in srgb, white 28%, transparent) 48%,
-    transparent 66%
+    transparent 28%,
+    color-mix(in srgb, var(--primary) 22%, transparent) 45%,
+    color-mix(in srgb, var(--info) 12%, transparent) 54%,
+    transparent 72%
   );
+  filter: saturate(1.1);
   height: 100%;
   left: 0;
   opacity: 0;

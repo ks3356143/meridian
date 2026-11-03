@@ -35,37 +35,52 @@ type StaticDocument struct {
 }
 
 type StaticCheckTemplate struct {
-	Category    string `json:"category"`
-	Title       string `json:"title"`
-	Requirement string `json:"requirement"`
-	Basis       string `json:"basis"`
-	Practice    string `json:"practice"`
+	Category     string `json:"category"`
+	Title        string `json:"title"`
+	Requirement  string `json:"requirement"`
+	Basis        string `json:"basis"`
+	Practice     string `json:"practice"`
+	GoodPractice string `json:"goodPractice"`
+	BadPractice  string `json:"badPractice"`
 }
 
 type StaticSheetTemplate struct {
-	Code     string                `json:"code"`
-	Kind     string                `json:"kind"`
-	Name     string                `json:"name"`
-	Language string                `json:"language,omitempty"`
-	Checks   []StaticCheckTemplate `json:"checks"`
+	Code            string                `json:"code"`
+	Kind            string                `json:"kind"`
+	Name            string                `json:"name"`
+	Appendix        string                `json:"appendix"`
+	Condition       string                `json:"condition"`
+	DocumentType    string                `json:"documentType"`
+	DocumentVersion string                `json:"documentVersion"`
+	SortOrder       int                   `json:"sortOrder"`
+	Language        string                `json:"language,omitempty"`
+	Checks          []StaticCheckTemplate `json:"checks"`
 }
 
 type StaticReviewCheck struct {
-	ID          string `json:"id"`
-	Seq         int    `json:"seq"`
-	Category    string `json:"category"`
-	Title       string `json:"title"`
-	Requirement string `json:"requirement"`
-	Basis       string `json:"basis"`
-	Practice    string `json:"practice"`
-	Result      string `json:"result"`
-	Notes       string `json:"notes"`
+	ID                  string   `json:"id"`
+	Seq                 int      `json:"seq"`
+	Category            string   `json:"category"`
+	Title               string   `json:"title"`
+	Requirement         string   `json:"requirement"`
+	Basis               string   `json:"basis"`
+	Practice            string   `json:"practice"`
+	GoodPractice        string   `json:"goodPractice"`
+	BadPractice         string   `json:"badPractice"`
+	Result              string   `json:"result"`
+	Notes               string   `json:"notes"`
+	Images              []string `json:"images"`
+	IssueID             string   `json:"issueId"`
+	CarriedFromPrevious bool     `json:"carriedFromPrevious"`
+	PreviousNote        string   `json:"previousNote"`
+	PreviousImages      []string `json:"previousImages"`
 }
 
 type StaticReviewSheet struct {
 	ID                    string              `json:"id"`
 	TemplateCode          string              `json:"templateCode"`
 	Name                  string              `json:"name"`
+	DocumentType          string              `json:"documentType"`
 	TargetDocumentName    string              `json:"targetDocumentName"`
 	TargetDocumentVersion string              `json:"targetDocumentVersion"`
 	Checks                []StaticReviewCheck `json:"checks"`
@@ -121,6 +136,7 @@ type StaticCodeFile struct {
 type StaticState struct {
 	Documents        []StaticDocument      `json:"documents"`
 	ReviewSheets     []StaticReviewSheet   `json:"reviewSheets"`
+	DocumentVersions map[string]string     `json:"documentVersions,omitempty"`
 	Metrics          StaticMetrics         `json:"metrics"`
 	MetricConclusion string                `json:"metricConclusion"`
 	RuleViolations   []StaticRuleViolation `json:"ruleViolations"`
@@ -148,11 +164,12 @@ type StaticAnalysisRequirement struct {
 }
 
 type StaticCatalogData struct {
-	DocumentOptions  []string                               `json:"documentOptions"`
-	ReviewSheets     []StaticSheetTemplate                  `json:"reviewSheets"`
-	CodeReviewSheets []StaticSheetTemplate                  `json:"codeReviewSheets"`
-	Analysis         map[string][]StaticAnalysisRequirement `json:"analysis"`
-	RuleGroups       []StaticRuleGroup                      `json:"ruleGroups"`
+	DocumentOptions   []string                               `json:"documentOptions"`
+	DocumentPlatforms map[string]map[string]bool             `json:"documentPlatforms"`
+	ReviewSheets      []StaticSheetTemplate                  `json:"reviewSheets"`
+	CodeReviewSheets  []StaticSheetTemplate                  `json:"codeReviewSheets"`
+	Analysis          map[string][]StaticAnalysisRequirement `json:"analysis"`
+	RuleGroups        []StaticRuleGroup                      `json:"ruleGroups"`
 }
 
 type StaticCatalog struct {
@@ -233,10 +250,18 @@ func (s *Service) GetStaticWorkbench(ctx context.Context, testItemID string) (St
 	if err != nil {
 		return StaticWorkbench{}, err
 	}
+	platform, err := s.projectPlatform(ctx, item.ProjectID)
+	if err != nil {
+		return StaticWorkbench{}, err
+	}
+	sheets, err := s.sheetTemplates(ctx, kind)
+	if err != nil {
+		return StaticWorkbench{}, err
+	}
 	var row staticWorkbenchRow
 	err = s.db.WithContext(ctx).Where("test_item_id = ?", testItemID).First(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		state, initErr := defaultStaticState(item.ID, kind)
+		state, initErr := defaultStaticState(item.ID, kind, platform, sheets)
 		if initErr != nil {
 			return StaticWorkbench{}, initErr
 		}
@@ -266,12 +291,17 @@ func (s *Service) GetStaticWorkbench(ctx context.Context, testItemID string) (St
 		return StaticWorkbench{}, fmt.Errorf("解析静态工作台失败: %w", err)
 	}
 	normalizeStaticState(&state)
+	catalog := catalogFor(kind)
+	if kind == "DC" {
+		catalog.ReviewSheets = sheets
+		catalog.DocumentOptions = documentsForPlatform(platform)
+	}
 	return StaticWorkbench{
 		TestItemID: item.ID,
 		Kind:       kind,
 		Version:    row.Version,
 		State:      state,
-		Catalog:    catalogFor(kind),
+		Catalog:    catalog,
 		UpdatedAt:  row.UpdatedAt,
 	}, nil
 }
@@ -311,6 +341,32 @@ func normalizeStaticState(state *StaticState) {
 	if state.ReviewSheets == nil {
 		state.ReviewSheets = []StaticReviewSheet{}
 	}
+	if state.DocumentVersions == nil {
+		state.DocumentVersions = map[string]string{}
+	}
+	for index := range state.ReviewSheets {
+		sheet := &state.ReviewSheets[index]
+		if strings.TrimSpace(sheet.DocumentType) == "" {
+			sheet.DocumentType = legacySheetDocumentType(*sheet)
+		}
+		if sheet.TargetDocumentName == "" && sheet.DocumentType != "" {
+			sheet.TargetDocumentName = sheet.DocumentType
+		}
+		if sheet.DocumentType != "" && sheet.TargetDocumentVersion != "" {
+			if _, exists := state.DocumentVersions[sheet.DocumentType]; !exists {
+				state.DocumentVersions[sheet.DocumentType] = sheet.TargetDocumentVersion
+			}
+		}
+		for checkIndex := range sheet.Checks {
+			check := &sheet.Checks[checkIndex]
+			if check.Images == nil {
+				check.Images = []string{}
+			}
+			if check.PreviousImages == nil {
+				check.PreviousImages = []string{}
+			}
+		}
+	}
 	if state.RuleViolations == nil {
 		state.RuleViolations = []StaticRuleViolation{}
 	}
@@ -326,16 +382,40 @@ func normalizeStaticState(state *StaticState) {
 }
 
 func validateStaticState(kind string, state StaticState) error {
+	valid := func(result string) bool {
+		return result == "" || result == "unreviewed" || result == "passed" || result == "failed" || result == "na"
+	}
+	seenCodes := make(map[string]bool, len(state.ReviewSheets))
+	seenTypes := make(map[string]bool, len(state.ReviewSheets))
 	for _, sheet := range state.ReviewSheets {
+		if sheet.TemplateCode != "" {
+			if seenCodes[sheet.TemplateCode] {
+				return ErrStaticInvalidState
+			}
+			seenCodes[sheet.TemplateCode] = true
+		}
+		documentType := sheet.DocumentType
+		if documentType == "" {
+			documentType = legacySheetDocumentType(sheet)
+		}
+		if documentType != "" {
+			if seenTypes[documentType] {
+				return ErrStaticInvalidState
+			}
+			seenTypes[documentType] = true
+		}
 		for _, check := range sheet.Checks {
-			if check.Result != "" && check.Result != "unreviewed" && check.Result != "passed" && check.Result != "failed" {
+			if !valid(check.Result) {
+				return ErrStaticInvalidState
+			}
+			if len(check.Images) > 9 {
 				return ErrStaticInvalidState
 			}
 		}
 	}
 	for _, target := range state.ReviewTargets {
 		for _, check := range target.Checks {
-			if check.Result != "" && check.Result != "unreviewed" && check.Result != "passed" && check.Result != "failed" {
+			if !valid(check.Result) {
 				return ErrStaticInvalidState
 			}
 		}
@@ -350,23 +430,78 @@ func validateStaticState(kind string, state StaticState) error {
 	return nil
 }
 
-func defaultStaticState(itemID, kind string) (StaticState, error) {
+// reviewSheetNameKey 把旧模板名（文档齐套性）与新模板名（文档齐套性审查单）归一。
+func reviewSheetNameKey(name string) string {
+	return strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(name), "审查单"))
+}
+
+// legacySheetDocumentType 兼容没有 documentType 字段的历史审查单快照。
+func legacySheetDocumentType(sheet StaticReviewSheet) string {
+	switch sheet.TemplateCode {
+	case "DC-KIT":
+		return "齐套性"
+	case "DC-SRS":
+		return "需求规格说明"
+	case "DC-DESIGN":
+		return "详细设计"
+	}
+	name := reviewSheetNameKey(sheet.Name)
+	switch {
+	case strings.Contains(name, "齐套"):
+		return "齐套性"
+	case strings.Contains(name, "需求规格"):
+		return "需求规格说明"
+	case strings.Contains(name, "用户手册"):
+		return "用户手册"
+	case strings.Contains(name, "任务书"):
+		return "任务书"
+	case strings.Contains(name, "概要设计"):
+		return "概要设计"
+	case strings.Contains(name, "设计"):
+		return "详细设计"
+	default:
+		return ""
+	}
+}
+
+func defaultStaticState(itemID, kind, platform string, sheets []StaticSheetTemplate) (StaticState, error) {
 	state := StaticState{}
 	catalog := catalogFor(kind)
 	switch kind {
 	case "DC":
-		for index, name := range catalog.DocumentOptions {
+		for index, name := range documentsForPlatform(platform) {
 			docID, err := id.New()
 			if err != nil {
 				return StaticState{}, err
 			}
 			state.Documents = append(state.Documents, StaticDocument{ID: docID, Name: name, Category: "GJB 438C", Seq: index + 1})
 		}
-		for _, template := range catalog.ReviewSheets {
-			if template.Code == "DC-USER" {
+		state.DocumentVersions = make(map[string]string, len(sheets))
+		for _, template := range sheets {
+			if template.DocumentType == "" {
 				continue
 			}
-			sheet, err := newReviewSheet(template)
+			if template.DocumentVersion != "" {
+				state.DocumentVersions[template.DocumentType] = template.DocumentVersion
+			}
+		}
+		// 项目初始只生成需求规格说明审查单；若该模板不存在，回退到第一张非齐套性模板。
+		var defaultTemplate *StaticSheetTemplate
+		for index := range sheets {
+			template := &sheets[index]
+			if template.DocumentType == "" || template.DocumentType == "齐套性" {
+				continue
+			}
+			if defaultTemplate == nil {
+				defaultTemplate = template
+			}
+			if template.DocumentType == "需求规格说明" {
+				defaultTemplate = template
+				break
+			}
+		}
+		if defaultTemplate != nil {
+			sheet, err := newReviewSheet(*defaultTemplate)
 			if err != nil {
 				return StaticState{}, err
 			}
@@ -398,7 +533,10 @@ func newReviewSheet(template StaticSheetTemplate) (StaticReviewSheet, error) {
 	}
 	sheet := StaticReviewSheet{
 		ID: sheetID, TemplateCode: template.Code, Name: template.Name,
-		Checks: make([]StaticReviewCheck, 0, len(template.Checks)),
+		DocumentType:          template.DocumentType,
+		TargetDocumentName:    template.DocumentType,
+		TargetDocumentVersion: template.DocumentVersion,
+		Checks:                make([]StaticReviewCheck, 0, len(template.Checks)),
 	}
 	for index, check := range template.Checks {
 		checkID, err := id.New()
@@ -407,8 +545,9 @@ func newReviewSheet(template StaticSheetTemplate) (StaticReviewSheet, error) {
 		}
 		sheet.Checks = append(sheet.Checks, StaticReviewCheck{
 			ID: checkID, Seq: index + 1, Category: check.Category, Title: check.Title,
-			Requirement: check.Requirement, Basis: check.Basis, Practice: check.Practice,
-			Result: "unreviewed",
+			Requirement: check.Requirement, Basis: check.Basis,
+			GoodPractice: check.GoodPractice, BadPractice: check.BadPractice,
+			Result: "passed", Images: []string{},
 		})
 	}
 	return sheet, nil

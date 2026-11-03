@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  ClipboardList,
   FolderKanban,
   FolderPlus,
   LayoutDashboard,
@@ -22,6 +23,30 @@ import { useLogout } from "@/features/auth/use-logout";
 import { useAuthStore } from "@/stores/auth-store";
 import { AppQuickSwitcher, type AppQuickSwitchItem } from "@/components/shared/app-quick-switcher";
 import { MAIN_CONTENT_ID, SkipLink } from "@/components/shared/skip-link";
+
+const SETTINGS_NAV: Array<AppQuickSwitchItem & { path: string }> = [
+  {
+    value: "dictionaries",
+    label: "字典配置",
+    description: "技术字典、依据标准与相关方",
+    icon: SlidersHorizontal,
+    path: "/settings/dictionaries",
+  },
+  {
+    value: "users",
+    label: "用户管理",
+    description: "团队成员账号与权限入口",
+    icon: Users,
+    path: "/settings/users",
+  },
+  {
+    value: "review-checklists",
+    label: "审查单配置",
+    description: "文档审查检查项与做法模板",
+    icon: ClipboardList,
+    path: "/settings/review-checklists",
+  },
+];
 
 export default function BasicLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -103,49 +128,34 @@ export default function BasicLayout() {
       icon: FolderPlus,
       path: "/projects/new",
     },
-    {
-      value: "dictionaries",
-      label: "字典配置",
-      description: "技术字典、依据标准与相关方",
-      icon: SlidersHorizontal,
-      path: "/settings/dictionaries",
-    },
-    {
-      value: "users",
-      label: "用户管理",
-      description: "团队成员账号与权限入口",
-      icon: Users,
-      path: "/settings/users",
-    },
+    ...SETTINGS_NAV,
   ];
+  const settingsActive = SETTINGS_NAV.find((item) =>
+    location.pathname.startsWith(item.path),
+  )?.value;
   const activeQuickSwitch =
     location.pathname === "/"
       ? "projects"
       : location.pathname === "/projects/new"
         ? "project-create"
-        : location.pathname.startsWith("/settings/dictionaries")
-          ? "dictionaries"
-          : location.pathname.startsWith("/settings/users")
-            ? "users"
-            : location.pathname.includes("/workspace")
-              ? "workspace"
-              : "project-detail";
+        : (settingsActive ??
+          (location.pathname.includes("/workspace") ? "workspace" : "project-detail"));
   const navigation = (
     <nav className="flex flex-1 flex-col gap-2" aria-label="主导航">
       <SidebarLink to="/" end icon={FolderKanban} onClick={() => setMobileNavOpen(false)}>
         项目列表
       </SidebarLink>
 
-      <SidebarLink
-        to="/settings/dictionaries"
-        icon={SlidersHorizontal}
-        onClick={() => setMobileNavOpen(false)}
-      >
-        字典配置
-      </SidebarLink>
-      <SidebarLink to="/settings/users" icon={Users} onClick={() => setMobileNavOpen(false)}>
-        用户管理
-      </SidebarLink>
+      {SETTINGS_NAV.map((item) => (
+        <SidebarLink
+          key={item.value}
+          to={item.path}
+          icon={item.icon}
+          onClick={() => setMobileNavOpen(false)}
+        >
+          {item.label}
+        </SidebarLink>
+      ))}
     </nav>
   );
 

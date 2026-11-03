@@ -271,7 +271,8 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 				return fmt.Errorf("查询目标文件夹失败: %w", err)
 			}
 		}
-		if itemType.IsStatic && round.RoundNumber > 1 {
+		// DC 随轮存在；SA/CR/CW 仍只允许第 1 轮（2026-11-03）。
+		if itemType.IsStatic && itemType.Code != "DC" && round.RoundNumber > 1 {
 			return ErrStaticAfterFirstRound
 		}
 		// 每个轮次内 DC/SA/CR/CW 各只允许一个静态测试项。
@@ -368,10 +369,16 @@ func (s *Service) CreateTestItem(ctx context.Context, input CreateTestItemInput)
 			return fmt.Errorf("创建测试项失败: %w", err)
 		}
 
-		// 静态测试项自动带 1 条壳用例（老项目口径）。
+		// 静态测试项自动带 1 条壳用例（老项目口径）；DC 额外初始化三条复审步骤。
 		if itemType.IsStatic {
-			if _, err := createCase(tx, created, "用例", ""); err != nil {
+			shellCase, err := createCase(tx, created, "用例", "")
+			if err != nil {
 				return err
+			}
+			if itemType.Code == "DC" {
+				if err := createDCShellSteps(tx, shellCase.ID); err != nil {
+					return err
+				}
 			}
 		}
 		// 类型带默认测试方法时（静态四类），同步种入 1 条默认子项，详情页开箱即用。
@@ -474,7 +481,7 @@ func (s *Service) UpdateTestItem(ctx context.Context, testItemID string, input U
 				if !typeFitsPlatform(newType.PlatformScope, platform) {
 					return ErrTypePlatformMismatch
 				}
-				if newType.IsStatic && item.RoundID != "" {
+				if newType.IsStatic && newType.Code != "DC" {
 					var round Round
 					if err := tx.Where("id = ? AND project_id = ?", item.RoundID, item.ProjectID).First(&round).Error; err != nil {
 						return fmt.Errorf("查询测试项轮次失败: %w", err)
@@ -690,6 +697,7 @@ type ItemCounts struct {
 	// 静态工作台进度（DC/CR 已审 / 总数；CW 文件数）。
 	StaticReviewed  int `json:"staticReviewed,omitempty"`
 	StaticTotal     int `json:"staticTotal,omitempty"`
+	StaticFailed    int `json:"staticFailed,omitempty"`
 	StaticFileCount int `json:"staticFileCount,omitempty"`
 	// SubItemNames：子项名称（树搜索按子项名匹配用）。
 	SubItemNames []string `json:"subItemNames"`
@@ -796,6 +804,9 @@ func (s *Service) countItemChildren(ctx context.Context, projectID, roundID stri
 					if check.Result != "" && check.Result != "unreviewed" {
 						entry.StaticReviewed++
 					}
+					if check.Result == "failed" {
+						entry.StaticFailed++
+					}
 				}
 			}
 		case "CR":
@@ -804,6 +815,9 @@ func (s *Service) countItemChildren(ctx context.Context, projectID, roundID stri
 				for _, check := range target.Checks {
 					if check.Result != "" && check.Result != "unreviewed" {
 						entry.StaticReviewed++
+					}
+					if check.Result == "failed" {
+						entry.StaticFailed++
 					}
 				}
 			}

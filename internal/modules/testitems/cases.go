@@ -197,6 +197,30 @@ func caseDefaults(tx *gorm.DB, item TestItem) (summary string, initText string, 
 	return summary, initText, prerequisites
 }
 
+// createDCShellSteps 为文档审查壳用例初始化三条复审步骤（老项目口径）。
+func createDCShellSteps(tx *gorm.DB, testCaseID string) error {
+	expects := []string{
+		"被测软件文档种类齐全，内容完整，描述准确，格式规范。",
+		"需求文档内容完整，描述准确，格式规范，文档文文一致、文实相符。",
+		"设计说明文档内容完整，描述准确，格式规范，文档文文一致、文实相符。",
+	}
+	now := time.Now()
+	for index, expect := range expects {
+		stepID, err := id.New()
+		if err != nil {
+			return err
+		}
+		step := CaseStep{
+			ID: stepID, TestCaseID: testCaseID, Seq: index + 1, ExpectText: expect,
+			Passed: "none", CreatedAt: now, UpdatedAt: now,
+		}
+		if err := tx.Create(&step).Error; err != nil {
+			return fmt.Errorf("创建文档审查复审步骤失败: %w", err)
+		}
+	}
+	return nil
+}
+
 func createCase(tx *gorm.DB, item TestItem, name string, summary string) (Case, error) {
 	created, err := createCaseAt(tx, item, 0, name)
 	if err != nil {

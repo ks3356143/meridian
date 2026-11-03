@@ -242,7 +242,7 @@ export function SaWorkbench({
             ))}
           </div>
           {group ? (
-            <div className={styles.ruleList}>
+            <div className={styles.ruleList} key={group.code}>
               <div className={styles.ruleGroupHeader}>
                 <strong>{group.name}</strong>
                 <Button

@@ -134,6 +134,8 @@ export function KpiBar({ projects }: { projects: Project[] }) {
           <Card
             key={item.label}
             size="sm"
+            sheen
+            spotlight
             data-tone={item.tone}
             className={cn(
               "dash-reveal group overflow-hidden border border-border/70 hover:border-primary/25",

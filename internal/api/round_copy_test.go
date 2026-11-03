@@ -100,7 +100,7 @@ func TestRoundCopyHTTPEndpoints(t *testing.T) {
 	if err := json.Unmarshal(createRecorder.Body.Bytes(), &created); err != nil {
 		t.Fatalf("解析创建轮次响应失败: %v", err)
 	}
-	if created["testItemCount"] != float64(1) || created["caseCount"] != float64(1) || created["stepCount"] != float64(0) {
+	if created["testItemCount"] != float64(2) || created["staticItemCount"] != float64(1) || created["caseCount"] != float64(2) || created["stepCount"] != float64(3) {
 		t.Fatalf("创建轮次复制计数不正确: %+v", created)
 	}
 	createdRound, _ := created["round"].(map[string]any)
@@ -142,19 +142,19 @@ func TestRoundCopyHTTPEndpoints(t *testing.T) {
 	}
 	staticInSecond := postJSONRecorder(t, handler, token, http.MethodPost,
 		"/api/v1/projects/"+projectCode+"/test-items?roundId="+targetRoundID, map[string]any{
-			"typeCode": "DC", "name": "第二轮静态项",
+			"typeCode": "SA", "name": "第二轮静态分析项",
 		})
 	if staticInSecond.Code != http.StatusUnprocessableEntity || !strings.Contains(staticInSecond.Body.String(), "静态测试项只能存在于第 1 轮") {
-		t.Fatalf("第二轮静态项错误不明确: %d %s", staticInSecond.Code, staticInSecond.Body.String())
+		t.Fatalf("第二轮 SA 应被拒绝: %d %s", staticInSecond.Code, staticInSecond.Body.String())
 	}
 	targetWorkspace := postJSONMap(t, handler, token, http.MethodGet,
 		"/api/v1/projects/"+projectCode+"/test-items?roundId="+targetRoundID, nil, http.StatusOK)
-	if len(workspaceItemIDs(targetWorkspace)) != 2 {
-		t.Fatalf("第二轮工作台应返回复制项和新增项: %+v", workspaceItemIDs(targetWorkspace))
+	if len(workspaceItemIDs(targetWorkspace)) != 3 {
+		t.Fatalf("第二轮工作台应返回复制项、自动带入的 DC 与新增项: %+v", workspaceItemIDs(targetWorkspace))
 	}
 	targetCases, _ := targetWorkspace["cases"].([]any)
-	if len(targetCases) != 1 {
-		t.Fatalf("第二轮工作台应返回 1 条复制用例: %+v", targetCases)
+	if len(targetCases) != 2 {
+		t.Fatalf("第二轮工作台应返回复制用例与 DC 壳用例: %+v", targetCases)
 	}
 	copiedCase, _ := targetCases[0].(map[string]any)
 	if copiedCase["previousRoundAvailable"] != true {
@@ -181,8 +181,8 @@ func TestRoundCopyHTTPEndpoints(t *testing.T) {
 		"/api/v1/projects/"+projectCode+"/test-rounds", map[string]any{
 			"sourceRoundId": targetRoundID, "testItemIds": []string{},
 		}, http.StatusOK)
-	if empty["testItemCount"] != float64(0) || empty["caseCount"] != float64(0) {
-		t.Fatalf("空轮次计数不正确: %+v", empty)
+	if empty["testItemCount"] != float64(1) || empty["staticItemCount"] != float64(1) || empty["caseCount"] != float64(1) {
+		t.Fatalf("空轮次应只自动带入 DC: %+v", empty)
 	}
 
 	roundsRecorder := postJSONRecorder(t, handler, token, http.MethodGet,
@@ -203,7 +203,8 @@ func TestRoundCopyHTTPEndpoints(t *testing.T) {
 		t.Fatalf("全部模式未标记 allRounds: %+v", aggregate)
 	}
 	aggregateItems, _ := aggregate["items"].([]any)
-	wantAggregate := len(workspaceItemIDs(workspace)) + len(workspaceItemIDs(targetWorkspace))
+	// 第 3 轮是空轮，仍会自动带入 1 个 DC。
+	wantAggregate := len(workspaceItemIDs(workspace)) + len(workspaceItemIDs(targetWorkspace)) + 1
 	if len(aggregateItems) != wantAggregate {
 		t.Fatalf("全部模式应聚合 %d 个测试项，实际 %d: %+v", wantAggregate, len(aggregateItems), aggregateItems)
 	}

@@ -1,0 +1,4 @@
+.dangerButton {
+  background: var(--destructive);
+  color: var(--primary-foreground);
+}

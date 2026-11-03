@@ -301,6 +301,7 @@ function TestItemDetailPanelInner({
                   testItemId={item.id}
                   kind={item.typeCode}
                   platform={platform}
+                  projectCode={projectId}
                 />
               </div>
             </TabsContent>

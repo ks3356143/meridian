@@ -22,8 +22,8 @@ func TestTestItemAndFolderUseRequestedRound(t *testing.T) {
 
 	if _, err := service.CreateTestItem(ctx, CreateTestItemInput{
 		ProjectID: projectID, RoundID: second.Round.ID, TypeCode: "DC", Name: "第二轮静态项",
-	}); !errors.Is(err, ErrStaticAfterFirstRound) {
-		t.Fatalf("第二轮创建静态项应被拒绝，实际 %v", err)
+	}); err != nil {
+		t.Fatalf("第二轮应允许创建静态项，实际 %v", err)
 	}
 
 	firstFolder, err := service.CreateFolder(ctx, CreateFolderInput{
@@ -57,8 +57,17 @@ func TestTestItemAndFolderUseRequestedRound(t *testing.T) {
 		t.Fatalf("第 2 轮创建污染第 1 轮测试项: items=%+v err=%v", firstItems, err)
 	}
 	secondItems, err := service.ListTestItemsByRound(ctx, projectID, second.Round.ID)
-	if err != nil || len(secondItems) != 1 || secondItems[0].ID != item.ID {
-		t.Fatalf("第 2 轮测试项查询不正确: items=%+v err=%v", secondItems, err)
+	if err != nil || len(secondItems) != 2 {
+		t.Fatalf("第 2 轮应包含 DC 自动带入项与新建项: items=%+v err=%v", secondItems, err)
+	}
+	foundNew := false
+	for _, candidate := range secondItems {
+		if candidate.ID == item.ID {
+			foundNew = true
+		}
+	}
+	if !foundNew {
+		t.Fatalf("第 2 轮测试项查询缺少新建项: items=%+v", secondItems)
 	}
 
 	subItem, err := service.CreateSubItem(ctx, item.ID, "第二轮子项")

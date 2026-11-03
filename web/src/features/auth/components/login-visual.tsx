@@ -121,7 +121,7 @@ export function LoginVisual() {
         aria-hidden
       />
       <svg
-        className="globe-wireframe text-primary/10 pointer-events-none absolute -top-32 -right-24 size-[34rem]"
+        className="globe-wireframe globe-wireframe-spin text-primary/10 pointer-events-none absolute -top-32 -right-24 size-[34rem]"
         viewBox="0 0 200 200"
         fill="none"
         aria-hidden

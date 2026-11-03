@@ -10,6 +10,7 @@ import { ProfileDetailTab } from "./profile-detail-tab";
 import { Checklist, MetricTile, StateChip, StatusPanel } from "./status-panel";
 import { workspacePath, type DetailTabValue } from "./status-model";
 import { DETAIL_TABS } from "./tab-meta";
+import styles from "./project-detail-tabs.module.css";
 
 export function ProjectDetailTabs({
   project,
@@ -42,7 +43,7 @@ export function ProjectDetailTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as DetailTabValue)}>
-      <TabsList ref={listRef} variant="line" className="w-full overflow-x-auto">
+      <TabsList ref={listRef} variant="hud" className={styles.tabRail}>
         {DETAIL_TABS.map((tab) => (
           <TabsTrigger key={tab.value} value={tab.value} className="min-w-24 shrink-0 px-3">
             <tab.icon aria-hidden />

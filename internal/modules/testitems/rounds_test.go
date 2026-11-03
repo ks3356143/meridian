@@ -182,15 +182,20 @@ func TestCreateRoundCopyWithPartialTreeResetsExecutionAndKeepsSource(t *testing.
 	if result.Round.RoundNumber != 2 || result.Round.RoundType != "regression" || result.Round.SourceRoundID == nil || *result.Round.SourceRoundID != sourceRound.ID {
 		t.Fatalf("新轮次元数据不正确: %+v", result.Round)
 	}
-	if result.FolderCount != 2 || result.TestItemCount != 1 || result.SubItemCount != 1 || result.CaseCount != 2 || result.StepCount != 1 || result.RequirementLinkCount != 1 || result.OpBlockCount != 1 {
+	if result.FolderCount != 2 || result.TestItemCount != 2 || result.StaticItemCount != 1 || result.SubItemCount != 2 || result.CaseCount != 3 || result.StepCount != 4 || result.RequirementLinkCount != 1 || result.OpBlockCount != 1 {
 		t.Fatalf("复制结果计数不正确: %+v", result)
 	}
 
 	targetItems := listRoundItemsForTest(t, service, projectID, result.Round.ID)
-	if len(targetItems) != 1 {
-		t.Fatalf("目标轮应只有 1 个测试项，实际 %+v", targetItems)
+	if len(targetItems) != 2 {
+		t.Fatalf("目标轮应包含 1 个动态项与 1 个自动带入的 DC，实际 %+v", targetItems)
 	}
-	targetItem := targetItems[0]
+	var targetItem TestItem
+	for _, candidate := range targetItems {
+		if candidate.TypeCode != "DC" {
+			targetItem = candidate
+		}
+	}
 	if targetItem.ID == sourceItem.ID || targetItem.ID == otherItem.ID || targetItem.LineageKey != sourceItem.LineageKey || targetItem.RoundID != result.Round.ID {
 		t.Fatalf("目标测试项身份不正确: source=%+v target=%+v", sourceItem, targetItem)
 	}
@@ -303,13 +308,17 @@ func TestCreateRoundCopyRejectsStaticAndAllowsEmptyRound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("创建空轮次失败: %v", err)
 	}
-	if result.Round.RoundNumber != 2 || result.TestItemCount != 0 || result.CaseCount != 0 || result.FolderCount != 0 {
-		t.Fatalf("空轮次结果不正确: %+v", result)
+	if result.Round.RoundNumber != 2 || result.StaticItemCount != 1 || result.FolderCount != 0 {
+		t.Fatalf("空轮次应仅自动带入静态项: %+v", result)
 	}
 	items := listRoundItemsForTest(t, service, projectID, result.Round.ID)
 	folders := listRoundFoldersForTest(t, service, projectID, result.Round.ID)
-	if len(items) != 0 || len(folders) != 0 {
-		t.Fatalf("空轮次不应有树数据: items=%+v folders=%+v", items, folders)
+	if len(items) != 1 || items[0].TypeCode != "DC" || len(folders) != 0 {
+		t.Fatalf("空轮次应只带静态项、不带文件夹: items=%+v folders=%+v", items, folders)
+	}
+	var copiedWorkbench staticWorkbenchRow
+	if err := service.db.Where("test_item_id = ?", items[0].ID).First(&copiedWorkbench).Error; err != nil {
+		t.Fatalf("静态工作台未随轮复制: %v", err)
 	}
 
 	if _, err := service.CreateRoundCopy(ctx, CreateRoundCopyInput{
