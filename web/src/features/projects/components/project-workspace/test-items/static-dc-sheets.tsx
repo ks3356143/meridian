@@ -65,6 +65,8 @@ export function DcSheetsTab({ ctx }: { ctx: DcSheetsContext }) {
     markAllPass,
   } = ctx;
   const requestIssue = onCreateIssue;
+  const addSheetEmptyText =
+    state.reviewSheets.length === 0 ? "请在审查单里面添加审查单！" : "所有审查单已添加";
   return (
     <TabsContent value="sheets" className={dcStyles.dcTabPanel}>
       {sheetsWithoutTarget.length > 0 ? (
@@ -94,15 +96,21 @@ export function DcSheetsTab({ ctx }: { ctx: DcSheetsContext }) {
         >
           <SelectTrigger size="sm" aria-label="添加审查单" className={dcStyles.dcAddSheet}>
             <SelectValue
-              placeholder={availableTemplates.length ? "添加审查单" : "所有审查单已添加"}
+              placeholder={availableTemplates.length ? "添加审查单" : addSheetEmptyText}
             />
           </SelectTrigger>
           <SelectContent>
-            {availableTemplates.map((template) => (
-              <SelectItem key={template.code} value={template.code}>
-                {template.name} · {template.checks.length} 项
+            {availableTemplates.length ? (
+              availableTemplates.map((template) => (
+                <SelectItem key={template.code} value={template.code}>
+                  {template.name} · {template.checks.length} 项
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="__empty__" disabled className={dcStyles.dcAddSheetEmpty}>
+                {addSheetEmptyText}
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
       </div>

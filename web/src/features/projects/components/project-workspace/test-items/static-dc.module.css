@@ -362,6 +362,13 @@
   min-width: 10rem;
 }
 
+.dcAddSheetEmpty {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  justify-content: center;
+  text-align: center;
+}
+
 .dcSheetCards {
   display: grid;
   gap: 0.55rem;
