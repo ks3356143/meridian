@@ -1,0 +1,57 @@
+/* 顶栏底边流光：整条宽度覆盖周期渐变，颜色缓慢流动（红-紫-绿-白），无阴影、无亮段边界。
+   渐变图两段同周期、首尾同色，平移一个周期后接缝不可见。 */
+.beam {
+  --topbar-beam-flow: linear-gradient(
+    90deg,
+    #ef4444 0%,
+    #8b5cf6 12.5%,
+    #16a34a 25%,
+    #ffffff 37.5%,
+    #ef4444 50%,
+    #8b5cf6 62.5%,
+    #16a34a 75%,
+    #ffffff 87.5%,
+    #ef4444 100%
+  );
+
+  inset-inline: 0;
+  background-image: var(--topbar-beam-flow);
+  background-size: 200% 100%;
+  height: 2px;
+  display: block;
+  position: absolute;
+  bottom: 0;
+  overflow: hidden;
+  animation: flow 8s linear infinite;
+}
+
+:global(.dark) .beam {
+  --topbar-beam-flow: linear-gradient(
+    90deg,
+    #f87171 0%,
+    #a78bfa 12.5%,
+    #4ade80 25%,
+    #ffffff 37.5%,
+    #f87171 50%,
+    #a78bfa 62.5%,
+    #4ade80 75%,
+    #ffffff 87.5%,
+    #f87171 100%
+  );
+}
+
+@keyframes flow {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: 0% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beam {
+    animation: none;
+  }
+}

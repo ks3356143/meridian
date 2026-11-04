@@ -10,6 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { WorkObjectLifecycleEvent } from "@/features/assets/api";
 import { getWorkObjectStatusMeta, type ReceivedWorkObject } from "../received-asset-model";
+import styles from "./work-object-history-dialog.module.css";
 
 const actionLabels = {
   confirm: "确认",
@@ -52,30 +53,32 @@ export function WorkObjectHistoryDialog({
         ) : events.length === 0 ? (
           <p className="text-muted-foreground py-6 text-center text-sm">暂无生命周期记录</p>
         ) : (
-          <ol className="grid max-h-80 gap-2 overflow-y-auto pr-1">
-            {events.map((event) => (
-              <li key={event.id} className="border-border grid gap-2 border p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-semibold">{actionLabels[event.action]}</span>
-                  <span className="text-muted-foreground font-mono text-[12px]">
-                    {new Date(event.operatedAt).toLocaleString("zh-CN")}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="outline" className="h-5 px-1.5 text-[12px]">
-                    {getWorkObjectStatusMeta(event.fromStatus).label}
-                  </Badge>
-                  <span className="text-muted-foreground text-[12px]">{"->"}</span>
-                  <Badge
-                    variant={getWorkObjectStatusMeta(event.toStatus).badgeVariant}
-                    className="h-5 px-1.5 text-[12px]"
-                  >
-                    {getWorkObjectStatusMeta(event.toStatus).label}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground text-xs leading-relaxed">{event.reason}</p>
-              </li>
-            ))}
+          <ol className={styles.events}>
+            {events.map((event) => {
+              return (
+                <li key={event.id} className={styles.event} data-action={event.action}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className={styles.action}>{actionLabels[event.action]}</span>
+                    <span className="text-muted-foreground font-mono text-[12px]">
+                      {new Date(event.operatedAt).toLocaleString("zh-CN")}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline" className="h-5 px-1.5 text-[12px]">
+                      {getWorkObjectStatusMeta(event.fromStatus).label}
+                    </Badge>
+                    <span className="text-muted-foreground text-[12px]">{"->"}</span>
+                    <Badge
+                      variant={getWorkObjectStatusMeta(event.toStatus).badgeVariant}
+                      className="h-5 px-1.5 text-[12px]"
+                    >
+                      {getWorkObjectStatusMeta(event.toStatus).label}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-xs leading-relaxed">{event.reason}</p>
+                </li>
+              );
+            })}
           </ol>
         )}
       </DialogContent>

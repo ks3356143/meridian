@@ -131,7 +131,7 @@ export function ProjectDetail({ project }: { project: Project }) {
               </div>
             </div>
 
-            <dl className="bg-card/45 border-border/70 grid grid-cols-2 gap-3 rounded-sm border p-3 backdrop-blur-[2px] sm:grid-cols-3 xl:grid-cols-4">
+            <dl className="bg-card/60 border-border/85 grid grid-cols-2 gap-3 rounded-sm border p-3 backdrop-blur-[2px] sm:grid-cols-3 xl:grid-cols-4">
               <MetadataItem label="性质" value={project.nature} />
               <MetadataItem label="平台" value={project.platform} />
               <MetadataItem label="软件" value={project.softwareType} />
@@ -240,7 +240,7 @@ function MetadataItem({
   tone?: "default" | "danger";
 }) {
   return (
-    <div className="border-border/70 min-w-0 flex flex-col gap-1.5 border-l pl-2.5">
+    <div className="border-border/85 min-w-0 flex flex-col gap-1.5 border-l pl-2.5">
       <dt className="text-muted-foreground text-[12px] leading-none">{label}</dt>
       <dd
         className={cn(

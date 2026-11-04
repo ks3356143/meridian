@@ -27,6 +27,29 @@
   z-index: 3;
 }
 
+/* 活动线常驻呼吸微光：只循环透明度，静态停留时也能看到光感。 */
+.tabIndicator::after {
+  animation: tabIndicatorPulse 2.6s ease-in-out infinite;
+  background: color-mix(in srgb, var(--primary) 72%, transparent);
+  content: "";
+  filter: blur(3px);
+  inset: -2px 0;
+  opacity: 0.42;
+  pointer-events: none;
+  position: absolute;
+}
+
+@keyframes tabIndicatorPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.72;
+  }
+}
+
 .tabList::after {
   content: "";
   position: absolute;
@@ -258,7 +281,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tabTrigger::before,
-  .tabTrigger::after {
+  .tabTrigger::after,
+  .tabIndicator::after {
     animation: none !important;
     transition: none !important;
   }

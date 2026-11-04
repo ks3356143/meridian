@@ -114,11 +114,11 @@
 .sidebarLink:hover {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--primary) 6%, transparent),
-    color-mix(in srgb, var(--primary) 2%, transparent)
+    color-mix(in srgb, var(--primary) 8%, transparent),
+    color-mix(in srgb, var(--primary) 2.5%, transparent)
   );
-  border-color: color-mix(in srgb, var(--primary) 14%, transparent);
-  box-shadow: 0 6px 16px -17px color-mix(in srgb, var(--primary) 52%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 18%, transparent);
+  box-shadow: 0 6px 16px -17px color-mix(in srgb, var(--primary) 58%, transparent);
   color: var(--primary);
 }
 
@@ -129,12 +129,12 @@
 .sidebarLink[data-state="active"] {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--primary) 9%, transparent),
-    color-mix(in srgb, var(--primary) 3%, transparent)
+    color-mix(in srgb, var(--primary) 13%, transparent),
+    color-mix(in srgb, var(--primary) 4%, transparent)
   );
-  border-color: transparent;
-  box-shadow: 0 8px 22px -21px color-mix(in srgb, var(--primary) 62%, transparent);
-  color: color-mix(in srgb, var(--primary) 74%, var(--foreground));
+  border-color: color-mix(in srgb, var(--primary) 18%, transparent);
+  box-shadow: 0 8px 22px -21px color-mix(in srgb, var(--primary) 70%, transparent);
+  color: color-mix(in srgb, var(--primary) 78%, var(--foreground));
   font-weight: 600;
 }
 
@@ -145,11 +145,11 @@
 .sidebarLink[data-state="active"]:hover {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--primary) 12%, transparent),
-    color-mix(in srgb, var(--primary) 4%, transparent)
+    color-mix(in srgb, var(--primary) 16%, transparent),
+    color-mix(in srgb, var(--primary) 5%, transparent)
   );
-  border-color: transparent;
-  box-shadow: 0 9px 24px -21px color-mix(in srgb, var(--primary) 68%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 24%, transparent);
+  box-shadow: 0 9px 24px -21px color-mix(in srgb, var(--primary) 76%, transparent);
 }
 
 .sidebarLink[data-state]:active:not([aria-haspopup]) {

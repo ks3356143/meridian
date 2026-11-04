@@ -124,6 +124,7 @@ export function IssuesModule() {
             key={issue.id}
             type="button"
             className={styles.row}
+            data-level={issue.level}
             onClick={() => openDetail(issue)}
           >
             <span className={styles.rowRound}>第 {issue.roundNumber} 轮</span>

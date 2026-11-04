@@ -16,25 +16,10 @@
   position: relative;
 }
 
-@keyframes workspace-topbar-sweep {
-  0% {
-    transform: translate(-120%);
-  }
-
-  to {
-    transform: translate(320%);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   [data-workspace-module],
   [data-module-card] {
     transition: none;
-  }
-
-  .workspace-topbar-beam::after {
-    animation: none;
-    opacity: 0;
   }
 }
 
@@ -49,14 +34,6 @@
   --topbar-chip-hover: color-mix(in srgb, var(--primary) 10%, var(--card));
   --topbar-chip-open: color-mix(in srgb, var(--primary) 14%, var(--card));
   --topbar-highlight: #ffffffb8;
-  --topbar-beam-track: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--primary) 46%, transparent),
-    color-mix(in srgb, var(--info) 34%, transparent)
-  );
-  --topbar-beam-start: color-mix(in srgb, var(--primary) 92%, var(--info));
-  --topbar-beam-end: var(--info);
-  --topbar-beam-glow: color-mix(in srgb, var(--primary) 34%, transparent);
   isolation: isolate;
   color: var(--topbar-foreground);
   border-bottom: 1px solid var(--topbar-border);
@@ -104,42 +81,6 @@
   min-width: 0;
   padding: 0.7rem clamp(0.75rem, 2vw, 1.5rem);
   display: flex;
-}
-
-.workspace-topbar-beam {
-  inset-inline: 0;
-  background: var(--topbar-beam-track);
-  height: 2px;
-  display: block;
-  position: absolute;
-  bottom: 0;
-  overflow: hidden;
-}
-
-.workspace-topbar-beam:after {
-  content: "";
-  inset-block: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--topbar-beam-start),
-    var(--topbar-beam-end),
-    transparent
-  );
-  width: 34%;
-  box-shadow: 0 0 10px var(--topbar-beam-glow);
-  animation: workspace-topbar-sweep 1.4s var(--ease-out-strong) 180ms 1 both;
-  position: absolute;
-  left: 0;
-  transform: translate(-120%);
-}
-
-/* 本规则必须排在基础动画之后，否则同特异度的 animation 声明会把 reduced-motion 覆盖掉。 */
-@media (prefers-reduced-motion: reduce) {
-  .workspace-topbar-beam::after {
-    animation: none;
-    opacity: 0;
-  }
 }
 
 .workspace-body {
@@ -803,10 +744,6 @@ main.workspace-route::-webkit-scrollbar-thumb {
   --topbar-chip-hover: #ffffff26;
   --topbar-chip-open: #ffffff30;
   --topbar-highlight: #ffffff1a;
-  --topbar-beam-track: linear-gradient(90deg, #ffffff2e, #ffffff1a);
-  --topbar-beam-start: #ffffffc7;
-  --topbar-beam-end: #ffffff94;
-  --topbar-beam-glow: #ffffff2e;
   border-bottom-color: var(--topbar-border);
   box-shadow:
     inset 0 1px 0 var(--topbar-highlight),

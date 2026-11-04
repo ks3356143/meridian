@@ -1,0 +1,83 @@
+/* 生命周期事件行：与审计弹窗同一套视觉——左侧 2px 语义色条、180ms hover、200ms 入场。 */
+.events {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.event {
+  border: 1px solid var(--border);
+  border-left: 2px solid color-mix(in srgb, var(--primary) 55%, var(--border));
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  transition:
+    background-color 180ms var(--ease-out-strong),
+    border-color 180ms var(--ease-out-strong);
+  animation: historyEventIn 200ms var(--ease-out-strong) both;
+}
+
+.event:hover {
+  background: color-mix(in srgb, var(--primary) 4%, transparent);
+}
+
+.event[data-action="confirm"],
+.event[data-action="restore"] {
+  border-left-color: var(--success);
+}
+
+.event[data-action="supersede"] {
+  border-left-color: var(--info);
+}
+
+.event[data-action="withdraw"] {
+  border-left-color: var(--warning);
+}
+
+.event[data-action="revoke"] {
+  border-left-color: var(--destructive);
+}
+
+@keyframes historyEventIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.action {
+  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.event[data-action="confirm"] .action,
+.event[data-action="restore"] .action {
+  color: var(--success);
+}
+
+.event[data-action="supersede"] .action {
+  color: var(--info);
+}
+
+.event[data-action="withdraw"] .action {
+  color: var(--warning);
+}
+
+.event[data-action="revoke"] .action {
+  color: var(--destructive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event {
+    animation: none;
+    transition: none;
+  }
+}

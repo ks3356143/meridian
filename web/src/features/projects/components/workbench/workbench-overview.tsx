@@ -226,7 +226,7 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
 
 function InfoItem({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="border-border/75 flex flex-col gap-1.5 border-l pl-2.5">
       <dt className="text-muted-foreground text-xs">{label}</dt>
       <dd className={mono ? "font-mono font-medium" : "font-medium"}>{value}</dd>
     </div>

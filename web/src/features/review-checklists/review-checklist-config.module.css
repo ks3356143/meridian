@@ -5,16 +5,16 @@
 
 .stats {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.55rem;
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .stats > div {
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--primary) 4%, transparent), transparent 55%),
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, transparent), transparent 55%),
     color-mix(in srgb, var(--card) 94%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  border-left: 2px solid color-mix(in srgb, var(--primary) 55%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--primary) 65%, var(--border));
   border-radius: 2px;
   display: flex;
   flex-direction: column;
@@ -52,13 +52,13 @@
 
 .tableWrap {
   background: color-mix(in srgb, var(--card) 96%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
   border-radius: 2px;
 }
 
 .tableWrap [data-slot="table-head"] {
-  background: color-mix(in srgb, var(--muted-foreground) 5%, transparent);
-  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 60%, var(--foreground));
   font-size: 0.66rem;
   font-weight: 650;
 }

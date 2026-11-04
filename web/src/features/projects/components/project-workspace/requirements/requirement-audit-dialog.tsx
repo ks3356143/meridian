@@ -77,7 +77,7 @@ export function RequirementAuditDialog({
 
 function AuditEventItem({ event }: { event: RequirementEvent }) {
   return (
-    <li className={styles.event}>
+    <li className={styles.event} data-action={event.action}>
       <div className={styles.eventHead}>
         <span className={styles.action}>{getActionLabel(event)}</span>
         <span className={styles.time}>{new Date(event.operatedAt).toLocaleString("zh-CN")}</span>

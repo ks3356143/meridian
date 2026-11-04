@@ -42,9 +42,39 @@
 
 .event {
   border: 1px solid var(--border);
+  border-left: 2px solid color-mix(in srgb, var(--primary) 55%, var(--border));
   display: grid;
   gap: 0.5rem;
   padding: 0.75rem;
+  transition:
+    background-color 180ms var(--ease-out-strong),
+    border-color 180ms var(--ease-out-strong);
+  animation: auditEventIn 200ms var(--ease-out-strong) both;
+}
+
+.event:hover {
+  background: color-mix(in srgb, var(--primary) 4%, transparent);
+}
+
+/* 删除/排除、恢复两类动作用语义色区分，其余保持主色。 */
+.event[data-action="exclude"] {
+  border-left-color: var(--destructive);
+}
+
+.event[data-action="restore"] {
+  border-left-color: var(--success);
+}
+
+@keyframes auditEventIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .eventHead {
@@ -56,8 +86,17 @@
 }
 
 .action {
+  color: color-mix(in srgb, var(--primary) 82%, var(--foreground));
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.event[data-action="exclude"] .action {
+  color: var(--destructive);
+}
+
+.event[data-action="restore"] .action {
+  color: var(--success);
 }
 
 .time {
@@ -92,4 +131,11 @@
 
 .operator {
   color: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event {
+    animation: none;
+    transition: none;
+  }
 }

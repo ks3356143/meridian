@@ -37,7 +37,7 @@ function SheetContent({
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          "panel-surface border-border fixed top-0 z-50 flex h-svh w-80 max-w-[86vw] flex-col gap-0 border bg-background shadow-xl transition ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "panel-surface border-border fixed top-0 z-50 flex h-svh w-80 max-w-[86vw] flex-col gap-0 border shadow-xl transition ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:animate-in data-[state=closed]:animate-out",
           side === "left" &&
             "left-0 border-r data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left",
           side === "right" &&

@@ -2,14 +2,14 @@
   --panel-tone: var(--primary);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--panel-tone) 9%, var(--card)),
-    color-mix(in srgb, var(--panel-tone) 3%, var(--card)) 62%,
+    color-mix(in srgb, var(--panel-tone) 12%, var(--card)),
+    color-mix(in srgb, var(--panel-tone) 4%, var(--card)) 62%,
     var(--card)
   );
   box-shadow:
     0 1px 2px #142a1e0a,
-    0 5px 12px -10px color-mix(in srgb, var(--panel-tone) 46%, transparent);
-  outline: 1px solid color-mix(in srgb, var(--panel-tone) 32%, transparent);
+    0 5px 12px -10px color-mix(in srgb, var(--panel-tone) 54%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--panel-tone) 42%, transparent);
   outline-offset: -1px;
   transition:
     box-shadow 0.22s cubic-bezier(0.32, 0.72, 0, 1),

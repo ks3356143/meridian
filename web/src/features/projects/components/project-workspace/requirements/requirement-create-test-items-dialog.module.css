@@ -1,7 +1,8 @@
 .dialog {
-  gap: 0.85rem;
-  max-width: 34rem;
-  padding: 1rem;
+  gap: 1rem;
+  /* 窄屏保留两侧 1rem 安全边距，避免覆盖共享组件的 max-w 后贴边。 */
+  max-width: min(34rem, calc(100vw - 2rem));
+  padding: 1.25rem;
 }
 
 .dialog :global([data-slot="alert-dialog-title"]) {
@@ -13,20 +14,29 @@
   line-height: 1.6;
 }
 
+/* 需求清单收进带左色条的浅底卡片，行间加分隔，避免纯文字堆叠。 */
 .list {
+  background: color-mix(in srgb, var(--muted) 50%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--primary) 58%, var(--border));
+  border-radius: 2px;
   display: grid;
-  gap: 0.2rem;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0.3rem 0.7rem;
 }
 
 .list li {
   color: var(--foreground);
   font-size: 0.72rem;
   overflow: hidden;
+  padding: 0.34rem 0;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.list li + li {
+  border-top: 1px solid color-mix(in srgb, var(--border) 58%, transparent);
 }
 
 .more,
@@ -35,12 +45,10 @@
   font-size: 0.72rem;
 }
 
-.more {
-  margin-top: -0.4rem;
-}
-
 .rule {
   align-items: start;
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 26%, var(--border));
 }
 
 .rule :global([data-slot="alert-title"]) {

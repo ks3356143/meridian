@@ -1,8 +1,8 @@
 [data-slot="card"]:not([data-tone]) {
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--primary) 5%, var(--card)),
-    color-mix(in srgb, var(--primary) 2%, var(--card)) 58%,
+    color-mix(in srgb, var(--primary) 8%, var(--card)),
+    color-mix(in srgb, var(--primary) 3.5%, var(--card)) 58%,
     var(--card)
   );
   position: relative;

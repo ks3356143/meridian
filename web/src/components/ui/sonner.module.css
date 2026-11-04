@@ -1,0 +1,223 @@
+/* 右下角 HUD 提示：直角、类型色左竖条、单次扫光、底部缓慢缩短的进度条。
+   参考 WorkStationForOne 的落点与进度条，视觉语言沿用项目 HUD Tab。
+   选择器统一带 [data-sonner-toast][data-styled] 前缀，覆盖 sonner 内置 0,2,0 规则。 */
+
+.toast {
+  --toast-accent: var(--primary);
+  /* 与 sonner 默认 duration 4000ms 对齐；单条自定义 duration 时用 toast 的 style 覆盖此变量。 */
+  --toast-life: 4000ms;
+  /* sonner 悬停关闭按钮时用 --gray2 作背景，默认值是近白色；覆盖为跟随主题的弱底色 */
+  --gray2: color-mix(in oklch, var(--muted) 55%, transparent);
+}
+
+.toast[data-sonner-toast][data-styled="true"] {
+  align-items: flex-start;
+  gap: 0.55rem;
+  overflow: hidden;
+  /* 描边改用 inset shadow 后不再占位，用 padding 补偿原来 1px 边框、2px 左竖条占去的空间 */
+  padding: calc(0.72rem + 1px) calc(1.9rem + 1px) calc(0.8rem + 1px) calc(0.95rem + 2px);
+  /* 边框与左竖条改画在 padding box 内侧，padding box 即视觉外沿，底部进度条才能贴边不留缝 */
+  border: 0;
+  border-radius: 2px;
+  background:
+    linear-gradient(
+        105deg,
+        transparent 40%,
+        color-mix(in oklch, var(--toast-accent) 9%, transparent) 50%,
+        transparent 60%
+      )
+      -180% 0 / 220% 100% no-repeat,
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--toast-accent) 5%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--card) 88%, transparent),
+      color-mix(in oklch, var(--card) 97%, transparent)
+    );
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  box-shadow:
+    inset 2px 0 0 var(--toast-accent),
+    inset 0 0 0 1px color-mix(in oklch, var(--toast-accent) 24%, var(--border)),
+    inset 0 -2px 0 color-mix(in oklch, var(--toast-accent) 13%, transparent),
+    0 0 0 1px color-mix(in oklch, var(--toast-accent) 7%, transparent),
+    0 16px 36px -16px color-mix(in oklch, var(--foreground) 34%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+  /* 扫光的 120ms 起播延迟已并入 keyframes：animation-delay 会残留到 sonner 的滑动出场动画上。 */
+  animation: toastSweep 1.1s var(--ease-out-strong) 1 both;
+  /* 保留 sonner 的进出场与堆叠过渡，描边颜色随 box-shadow 一起过渡 */
+  transition:
+    transform 400ms,
+    opacity 400ms,
+    height 400ms,
+    box-shadow 180ms var(--ease-out-strong);
+}
+
+.toast[data-sonner-toast][data-styled="true"]:hover {
+  box-shadow:
+    inset 2px 0 0 var(--toast-accent),
+    inset 0 0 0 1px color-mix(in oklch, var(--toast-accent) 42%, var(--border)),
+    inset 0 -2px 0 color-mix(in oklch, var(--toast-accent) 13%, transparent),
+    0 0 0 1px color-mix(in oklch, var(--toast-accent) 12%, transparent),
+    0 16px 36px -16px color-mix(in oklch, var(--foreground) 34%, transparent);
+}
+
+/* 描边换成 inset shadow 后，补回 sonner 被覆盖的键盘焦点环 */
+.toast[data-sonner-toast][data-styled="true"]:focus-visible {
+  box-shadow:
+    inset 2px 0 0 var(--toast-accent),
+    inset 0 0 0 1px color-mix(in oklch, var(--toast-accent) 24%, var(--border)),
+    inset 0 -2px 0 color-mix(in oklch, var(--toast-accent) 13%, transparent),
+    0 0 0 2px color-mix(in oklch, var(--ring) 34%, transparent),
+    0 16px 36px -16px color-mix(in oklch, var(--foreground) 34%, transparent);
+}
+
+.toast[data-type="success"] {
+  --toast-accent: var(--success);
+}
+
+.toast[data-type="warning"] {
+  --toast-accent: var(--warning);
+}
+
+.toast[data-type="error"] {
+  --toast-accent: var(--destructive);
+}
+
+.toast[data-type="info"] {
+  --toast-accent: var(--info);
+}
+
+.toast[data-sonner-toast][data-styled="true"]::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    var(--toast-accent),
+    color-mix(in oklch, var(--toast-accent) 24%, transparent)
+  );
+  transform-origin: left center;
+  animation: toastLifebar var(--toast-life) linear forwards;
+  pointer-events: none;
+}
+
+/* sonner 悬停会暂停关闭计时，进度条同步暂停 */
+.toast[data-sonner-toast][data-styled="true"]:hover::before {
+  animation-play-state: paused;
+}
+
+/* 进度条轨道改用 toast 自身的 inset box-shadow 绘制（见上方 box-shadow 第三层）：
+   sonner 的 ::after 是悬停展开时跨 toast 间隙的桥接伪元素，占用后指针经过间隙会收起整个通知栈。 */
+
+/* 拖动关闭时不给 transform 加过渡，否则卡片滞后于指针 */
+.toast[data-sonner-toast][data-swiping="true"] {
+  transition: none;
+}
+
+/* sonner 悬停任意一条时暂停整栈关闭计时；展开期间同步暂停所有进度条 */
+:global([data-sonner-toaster]:has([data-sonner-toast][data-expanded="true"])) .toast::before {
+  animation-play-state: paused;
+}
+
+/* loading 常驻，不显示倒计时 */
+.toast[data-type="loading"]::before {
+  display: none;
+}
+
+.toast[data-sonner-toast][data-styled="true"] [data-icon] {
+  width: auto;
+  height: auto;
+  margin-top: 0.18rem;
+  color: var(--toast-accent);
+}
+
+.toast[data-sonner-toast][data-styled="true"] [data-title] {
+  font-weight: 620;
+  letter-spacing: 0.01em;
+}
+
+.toast[data-sonner-toast][data-styled="true"] [data-description] {
+  color: color-mix(in oklch, var(--muted-foreground) 76%, var(--foreground));
+}
+
+/* 前加 [data-sonner-toaster] 提高一档：sonner 深色主题的关闭按钮规则同为 (0,4,0)，且运行时后注入，
+   同分会被它覆盖成黑底方块，必须显式压过。 */
+:global([data-sonner-toaster]) .toast[data-sonner-toast][data-styled="true"] [data-close-button] {
+  left: auto;
+  right: 0.3rem;
+  top: 0.3rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted-foreground);
+  transform: none;
+}
+
+.toast[data-sonner-toast][data-styled="true"]:hover [data-close-button]:hover {
+  border-color: color-mix(in oklch, var(--toast-accent) 40%, var(--border));
+  color: var(--foreground);
+}
+
+.toast[data-sonner-toast][data-styled="true"] [data-button] {
+  height: 1.5rem;
+  padding: 0 0.5rem;
+  border: 1px solid color-mix(in oklch, var(--toast-accent) 34%, transparent);
+  border-radius: 2px;
+  background: color-mix(in oklch, var(--toast-accent) 12%, transparent);
+  color: var(--toast-accent);
+  font-size: 0.72rem;
+}
+
+.toast[data-sonner-toast][data-styled="true"] [data-cancel] {
+  background: color-mix(in oklch, var(--muted) 60%, transparent);
+  border-color: color-mix(in oklch, var(--border) 70%, transparent);
+  color: var(--muted-foreground);
+}
+
+@keyframes toastSweep {
+  /* 前 11% 保持起点：等价于原先 shorthand 里的 120ms 延迟，但不污染 sonner 的出场动画 */
+  0%,
+  11% {
+    background-position:
+      -180% 0,
+      0 0,
+      0 0;
+  }
+
+  to {
+    background-position:
+      280% 0,
+      0 0,
+      0 0;
+  }
+}
+
+@keyframes toastLifebar {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast[data-sonner-toast][data-styled="true"] {
+    animation: none;
+  }
+
+  .toast[data-sonner-toast][data-styled="true"]::before {
+    animation: none;
+  }
+}

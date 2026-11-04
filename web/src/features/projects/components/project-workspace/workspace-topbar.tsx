@@ -8,6 +8,7 @@ import { useLogout } from "@/features/auth/use-logout";
 import { useAuthStore } from "@/stores/auth-store";
 import { levelVariant, statusVariant } from "../../status-style";
 import type { Project } from "../../types";
+import styles from "./workspace-topbar.module.css";
 
 export function WorkspaceTopbar({
   project,
@@ -93,7 +94,7 @@ export function WorkspaceTopbar({
           </Button>
         </div>
       </div>
-      <span className="workspace-topbar-beam" aria-hidden />
+      <span className={styles.beam} aria-hidden />
     </header>
   );
 }

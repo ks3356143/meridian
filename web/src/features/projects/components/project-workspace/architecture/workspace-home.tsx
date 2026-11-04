@@ -2,6 +2,7 @@ import { useOutletContext } from "react-router";
 import { useRef, type CSSProperties } from "react";
 import { Activity, CircleAlert, ListChecks, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { levelVariant } from "../../../status-style";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { gsap, useGSAP } from "@/lib/gsap";
 import type { ProjectWorkspaceOutletContext } from "../project-workspace-layout";
@@ -76,7 +77,7 @@ export function WorkspaceHome() {
               {project.status}
             </Badge>
             <Badge variant="outline">{project.platform}</Badge>
-            <Badge variant="outline">安全 {project.level}</Badge>
+            <Badge variant={levelVariant[project.level]}>安全 {project.level}</Badge>
           </div>
 
           <div className={styles.titleBlock}>
