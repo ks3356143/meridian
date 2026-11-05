@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
 import { Badge } from "@/components/ui/badge";
 import { SectionTitle } from "@/components/ui/section-title";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -782,7 +783,7 @@ function RequirementDetailForm({
             </p>
           ) : null}
           {linkedTestItemsQuery.isPending ? (
-            <p className={styles.relatedLoading}>正在读取关联测试项…</p>
+            <InlineLoading className={styles.relatedLoading} label="正在读取关联测试项" />
           ) : linkedTestItemsQuery.isError ? (
             <div className={styles.relatedErrorRow}>
               <span>关联测试项读取失败</span>

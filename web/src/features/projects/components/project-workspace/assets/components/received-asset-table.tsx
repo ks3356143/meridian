@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -577,9 +578,9 @@ function ReceivedAssetTableImpl({
 
 function ReceivedAssetTableLoading() {
   return (
-    <div className={styles.stateShell} aria-busy="true" aria-live="polite">
-      <span className="sr-only">正在加载工作对象</span>
-      <div className={styles.skeletonRows} aria-hidden>
+    <div className={styles.stateShell}>
+      <InlineLoading label="正在加载工作对象" />
+      <div className={styles.skeletonRows} aria-busy="true" aria-hidden>
         {[0, 1, 2].map((row) => (
           <div key={row} className={styles.skeletonRow}>
             <Skeleton className={styles.skeletonPrimary} />

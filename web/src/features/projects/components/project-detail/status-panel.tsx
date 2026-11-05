@@ -42,7 +42,7 @@ export function MetricTile({
       <p className="text-muted-foreground text-[12px]">{label}</p>
       <p
         className={cn(
-          "mt-2 truncate text-lg leading-none font-semibold",
+          "mt-2 truncate font-mono text-lg leading-none font-semibold tabular-nums",
           tone === "danger" && "text-destructive",
           tone === "warning" && "text-warning",
           tone === "info" && "text-info",

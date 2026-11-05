@@ -37,7 +37,7 @@ const toneStyles: Record<KpiTone, { card: string; icon: string; value: string }>
   warning: {
     card: "hover:bg-warning/[0.055]",
     icon: "border-warning/40 bg-warning/14 text-warning",
-    value: "text-warning",
+    value: "text-warning-ink",
   },
   success: {
     card: "hover:bg-success/[0.045]",

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { Gapcursor, UndoRedo } from "@tiptap/extensions";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -331,7 +332,7 @@ export function StepRichEditor({
             </DialogDescription>
           </DialogHeader>
           <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
-            {syncLoading ? <p className="text-muted-foreground text-xs">正在读取审查单…</p> : null}
+            {syncLoading ? <InlineLoading className="text-xs" label="正在读取审查单" /> : null}
             {!syncLoading && syncFails.length === 0 ? (
               <p className="text-muted-foreground text-xs">当前没有不通过项。</p>
             ) : null}

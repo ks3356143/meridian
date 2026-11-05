@@ -42,7 +42,7 @@ const SETTINGS_NAV: Array<AppQuickSwitchItem & { path: string }> = [
   {
     value: "review-checklists",
     label: "审查单配置",
-    description: "文档审查检查项与做法模板",
+    description: "文档审查检查项与推荐做法模板",
     icon: ClipboardList,
     path: "/settings/review-checklists",
   },

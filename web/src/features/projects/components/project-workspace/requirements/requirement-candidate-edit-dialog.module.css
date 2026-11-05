@@ -57,6 +57,12 @@
   opacity: 0;
 }
 
+.skeletonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 @keyframes candidateLoadingReveal {
   to {
     opacity: 1;

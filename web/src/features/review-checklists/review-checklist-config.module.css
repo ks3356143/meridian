@@ -9,7 +9,7 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.stats > div {
+.statCard {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, transparent), transparent 55%),
     color-mix(in srgb, var(--card) 94%, transparent);
@@ -26,28 +26,61 @@
     transform 180ms var(--ease-out-strong);
 }
 
-.stats > div:hover {
+.statCard:hover {
   border-color: color-mix(in srgb, var(--primary) 34%, var(--border));
   box-shadow: 0 10px 22px -20px color-mix(in srgb, var(--primary) 70%, transparent);
   transform: translateY(-1px);
 }
 
-.stats span {
+.statLabel {
   color: var(--muted-foreground);
   font-size: 0.64rem;
 }
 
-.stats strong {
+.statValue {
   color: var(--foreground);
   font-family: var(--font-mono);
-  font-size: 1.05rem;
-  line-height: 1.2;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
-.stats em {
+.statNote {
   color: var(--muted-foreground);
   font-size: 0.62rem;
   font-style: normal;
+}
+
+.statCard[data-tone="primary"] .statValue {
+  color: var(--primary);
+}
+
+.statCard[data-tone="info"] .statValue {
+  color: var(--info);
+}
+
+.statCard[data-tone="warning"] .statValue {
+  color: var(--warning-ink);
+}
+
+.statCard[data-tone="chart"] .statValue {
+  color: var(--chart-2);
+}
+
+.statCard[data-tone="info"] {
+  border-left-color: color-mix(in srgb, var(--info) 65%, var(--border));
+}
+
+.statCard[data-tone="warning"] {
+  border-left-color: color-mix(in srgb, var(--warning) 65%, var(--border));
+}
+
+.statCard[data-tone="chart"] {
+  border-left-color: color-mix(in srgb, var(--chart-2) 65%, var(--border));
+}
+
+.statCard :global([role="progressbar"]) {
+  margin-top: 0.2rem;
 }
 
 .tableWrap {

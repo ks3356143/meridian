@@ -58,6 +58,12 @@
 .cell[data-missing="true"] .editor:not(:focus) {
   animation: missingPulse 1.8s ease-in-out infinite;
   border-color: color-mix(in srgb, var(--destructive) 42%, var(--input)) !important;
+  /* 卡色内高光会在呼吸底色顶边留一条白线，缺失态改为无内高光。 */
+  box-shadow: none !important;
+}
+
+.cell[data-missing="true"] .editor:not(:focus):hover {
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--info) 66%, transparent) !important;
 }
 
 .cell[data-phase="saved"] .editor {

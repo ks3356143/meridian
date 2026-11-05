@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createColumnHelper, useTable, type SortingState } from "@tanstack/react-table";
-import { CircleCheck, CircleOff, Plus, Search } from "lucide-react";
+import { CircleCheck, CircleOff, Languages, Plus, Search, Server, Wrench } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { StatCard, type StatTone } from "@/components/shared/stat-card";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import { projectsApi } from "@/features/projects/api";
 import { DictionaryEditor } from "./dictionary-editor";
@@ -16,11 +18,26 @@ import type { DictionaryCategory, DictionaryOption } from "@/features/projects/t
 
 const features = managementTableFeatures;
 const columnHelper = createColumnHelper<typeof features, DictionaryOption>();
-const categoryLabels: Record<DictionaryCategory, string> = {
-  language: "编程语言",
-  runtime_environment: "运行环境",
-  development_environment: "开发环境",
+
+type CategoryMeta = {
+  label: string;
+  badgeVariant: "primary" | "info" | "warning";
+  icon: LucideIcon;
+  tone: StatTone;
 };
+
+// 全局 Badge 没有 chart 变体，运行环境徽标沿用 info 蓝色；统计卡色轨仍用 chart。
+const categoryMeta: Record<DictionaryCategory, CategoryMeta> = {
+  language: { label: "编程语言", badgeVariant: "primary", icon: Languages, tone: "primary" },
+  runtime_environment: { label: "运行环境", badgeVariant: "info", icon: Server, tone: "chart" },
+  development_environment: {
+    label: "开发环境",
+    badgeVariant: "warning",
+    icon: Wrench,
+    tone: "warning",
+  },
+};
+const categoryOrder = Object.keys(categoryMeta) as DictionaryCategory[];
 
 export function DictionaryManagementTab() {
   const queryClient = useQueryClient();
@@ -64,8 +81,8 @@ export function DictionaryManagementTab() {
         columnHelper.accessor("category", {
           header: "字典类型",
           cell: (info) => (
-            <Badge variant="outline" className="justify-center">
-              {categoryLabels[info.getValue()]}
+            <Badge variant={categoryMeta[info.getValue()].badgeVariant} className="justify-center">
+              {categoryMeta[info.getValue()].label}
             </Badge>
           ),
         }),
@@ -147,7 +164,7 @@ export function DictionaryManagementTab() {
       return (
         query.length === 0 ||
         item.name.toLowerCase().includes(query) ||
-        categoryLabels[item.category].toLowerCase().includes(query)
+        categoryMeta[item.category].label.toLowerCase().includes(query)
       );
     }),
     state: { sorting },
@@ -156,11 +173,47 @@ export function DictionaryManagementTab() {
   const filteredRows = table.getFilteredRowModel().rows;
   const filteredCount = filteredRows.length;
 
+  const categoryStats = useMemo(() => {
+    const all = dictionariesQuery.data ?? [];
+    const counts = new Map(categoryOrder.map((key) => [key, { total: 0, enabled: 0 }]));
+    for (const item of all) {
+      const entry = counts.get(item.category);
+      if (!entry) continue;
+      entry.total += 1;
+      if (item.isEnabled) entry.enabled += 1;
+    }
+    return categoryOrder.map((key) => {
+      const { total, enabled } = counts.get(key)!;
+      return {
+        key,
+        ...categoryMeta[key],
+        total,
+        enabled,
+        disabled: total - enabled,
+        share: all.length === 0 ? 0 : (total / all.length) * 100,
+      };
+    });
+  }, [dictionariesQuery.data]);
+
   if (dictionariesQuery.isPending) return <LoadingCard label="正在加载技术字典" />;
   if (dictionariesQuery.isError) return <ErrorCard onRetry={dictionariesQuery.refetch} />;
 
   return (
     <div className="dictionary-reveal min-w-0">
+      <div aria-label="字典类型分布" role="group" className="mb-3 grid gap-3 sm:grid-cols-3">
+        {categoryStats.map((stat) => (
+          <StatCard
+            key={stat.key}
+            tone={stat.tone}
+            icon={stat.icon}
+            label={stat.label}
+            value={stat.total}
+            detail={`启用 ${stat.enabled} · 停用 ${stat.disabled}`}
+            progress={stat.share}
+          />
+        ))}
+      </div>
+
       <ManagementSection
         title="技术字典"
         total={filteredCount}

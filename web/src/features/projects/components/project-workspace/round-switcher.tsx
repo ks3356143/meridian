@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, History, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -351,7 +352,7 @@ function NewRoundWizard({
 
         <div className={styles.candidates}>
           {previewQuery.isPending ? (
-            <div className={styles.state}>正在读取上轮测试项…</div>
+            <InlineLoading className={styles.loadingState} label="正在读取上轮测试项" />
           ) : previewQuery.isError ? (
             <div className={styles.stateError}>复制预览加载失败，请关闭后重试。</div>
           ) : visible.length === 0 ? (

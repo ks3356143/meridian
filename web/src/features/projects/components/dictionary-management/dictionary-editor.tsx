@@ -3,14 +3,8 @@ import { LoaderCircle, Save } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { HudDialogHeader } from "@/components/shared/hud-dialog-header";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -103,10 +97,11 @@ export function DictionaryEditor({
           if (mutation.isPending) event.preventDefault();
         }}
       >
-        <DialogHeader>
-          <DialogTitle>{item ? "编辑技术字典" : "新增技术字典"}</DialogTitle>
-          <DialogDescription>停用后不再出现在新建项目选项中。</DialogDescription>
-        </DialogHeader>
+        <HudDialogHeader
+          kicker="TECH DICTIONARY"
+          title={item ? "编辑技术字典" : "新增技术字典"}
+          description="停用后不再出现在新建项目选项中。"
+        />
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <Field className="gap-2">
             <FieldLabel htmlFor="dictionary-category">字典类型</FieldLabel>

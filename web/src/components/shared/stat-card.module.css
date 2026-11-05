@@ -1,0 +1,109 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-height: 5rem;
+}
+
+.head {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.label {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.iconBox {
+  align-items: center;
+  border: 1px solid;
+  border-radius: 2px;
+  display: flex;
+  flex: none;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.iconBox :global(svg) {
+  height: 1rem;
+  width: 1rem;
+}
+
+.valueRow {
+  align-items: flex-end;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.detail {
+  color: var(--muted-foreground);
+  flex: 1;
+  font-size: 11px;
+  line-height: 1.25;
+  min-width: 0;
+  text-align: right;
+}
+
+[data-tone="info"] .iconBox {
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+  border-color: color-mix(in srgb, var(--info) 35%, transparent);
+  color: var(--info);
+}
+
+[data-tone="info"] .value {
+  color: var(--info);
+}
+
+[data-tone="primary"] .iconBox {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  color: var(--primary);
+}
+
+[data-tone="primary"] .value {
+  color: var(--primary);
+}
+
+[data-tone="success"] .iconBox {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
+  color: var(--success);
+}
+
+[data-tone="success"] .value {
+  color: var(--success);
+}
+
+[data-tone="chart"] .iconBox {
+  background: color-mix(in srgb, var(--chart-2) 12%, transparent);
+  border-color: color-mix(in srgb, var(--chart-2) 35%, transparent);
+  color: var(--chart-2);
+}
+
+[data-tone="chart"] .value {
+  color: var(--chart-2);
+}
+
+[data-tone="warning"] .iconBox {
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+  color: var(--warning);
+}
+
+[data-tone="warning"] .value {
+  color: var(--warning-ink);
+}

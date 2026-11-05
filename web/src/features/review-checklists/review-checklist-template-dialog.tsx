@@ -175,7 +175,7 @@ export function ReviewChecklistTemplateDialog({
                           onPracticeIndexChange(practiceIndex === index ? null : index)
                         }
                       >
-                        做法
+                        推荐做法
                       </Button>
                       <Button
                         type="button"

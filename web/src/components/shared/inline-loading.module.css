@@ -1,0 +1,27 @@
+.root {
+  align-items: center;
+  color: var(--muted-foreground);
+  display: flex;
+  gap: 0.4rem;
+  line-height: 1.4;
+}
+
+.spinner {
+  animation: inlineLoadingSpin 0.9s linear infinite;
+  color: var(--primary);
+  flex: none;
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+@keyframes inlineLoadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -98,7 +99,7 @@ export function QuickIssuesPanel({
         </header>
 
         {notesQuery.isPending ? (
-          <div className={styles.state}>正在读取问题草稿…</div>
+          <InlineLoading className={styles.state} label="正在读取问题草稿" />
         ) : notesQuery.isError ? (
           <div className={styles.errorState}>
             问题草稿读取失败。

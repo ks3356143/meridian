@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpenCheck, ClipboardList, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { ConfirmAction } from "@/components/shared/confirm-action";
+import { InlineLoading } from "@/components/shared/inline-loading";
+import { SegmentedProgress } from "@/components/shared/segmented-progress";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -71,7 +73,7 @@ export function ReviewChecklistConfigPage() {
     onError: (error) => toast.error(error instanceof Error ? error.message : "删除失败"),
   });
 
-  const templates = templatesQuery.data ?? [];
+  const templates = useMemo(() => templatesQuery.data ?? [], [templatesQuery.data]);
 
   const openEdit = (template: ReviewChecklistTemplate) => {
     setPracticeIndex(null);
@@ -109,23 +111,34 @@ export function ReviewChecklistConfigPage() {
     });
   };
 
-  const totalItems = templates.reduce((sum, template) => sum + template.items.length, 0);
-  const practiceStats = templates.reduce(
-    (acc, template) => {
-      const done = practiceDone(template.items);
-      acc.configured += done.configured;
-      acc.total += done.total;
-      return acc;
-    },
-    { configured: 0, total: 0 },
-  );
-  const coveredTypes = DOCUMENT_TYPES.filter((type) =>
-    templates.some((template) => template.documentType === type),
-  ).length;
-  const latestUpdated = templates.reduce(
-    (latest, template) => (!latest || template.updatedAt > latest ? template.updatedAt : latest),
-    "",
-  );
+  const { totalItems, practicePercent, coveredTypes, latestUpdated } = useMemo(() => {
+    const totalItems = templates.reduce((sum, template) => sum + template.items.length, 0);
+    const practiceStats = templates.reduce(
+      (acc, template) => {
+        const done = practiceDone(template.items);
+        acc.configured += done.configured;
+        acc.total += done.total;
+        return acc;
+      },
+      { configured: 0, total: 0 },
+    );
+    const coveredTypes = DOCUMENT_TYPES.filter((type) =>
+      templates.some((template) => template.documentType === type),
+    ).length;
+    const latestUpdated = templates.reduce(
+      (latest, template) => (!latest || template.updatedAt > latest ? template.updatedAt : latest),
+      "",
+    );
+    return {
+      totalItems,
+      practiceStats,
+      practicePercent: practiceStats.total
+        ? (practiceStats.configured / practiceStats.total) * 100
+        : 0,
+      coveredTypes,
+      latestUpdated,
+    };
+  }, [templates]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -141,37 +154,46 @@ export function ReviewChecklistConfigPage() {
         }
       />
 
-      {templatesQuery.isPending ? <p className={styles.state}>正在读取审查单模板…</p> : null}
+      {templatesQuery.isPending ? (
+        <InlineLoading className={styles.state} label="正在读取审查单模板" />
+      ) : null}
       {templatesQuery.isError ? <p className={styles.state}>审查单模板读取失败，请重试。</p> : null}
 
-      <div className={styles.stats}>
-        <div>
-          <span>模板</span>
-          <strong>{templates.length}</strong>
-          <em>/ {DOCUMENT_TYPES.length} 类</em>
+      {templatesQuery.data ? (
+        <div className={styles.stats}>
+          <div className={styles.statCard} data-tone="primary">
+            <span className={styles.statLabel}>模板</span>
+            <strong className={styles.statValue}>{templates.length}</strong>
+            <em className={styles.statNote}>/ {DOCUMENT_TYPES.length} 类</em>
+          </div>
+          <div className={styles.statCard} data-tone="info">
+            <span className={styles.statLabel}>检查项</span>
+            <strong className={styles.statValue}>{totalItems}</strong>
+          </div>
+          <div className={styles.statCard} data-tone="warning">
+            <span className={styles.statLabel}>推荐做法配置</span>
+            <strong className={styles.statValue}>{Math.round(practicePercent)}%</strong>
+            <SegmentedProgress value={practicePercent} tone="warning" label="推荐做法覆盖率" />
+          </div>
+          <div className={styles.statCard} data-tone="chart">
+            <span className={styles.statLabel}>文档类型覆盖</span>
+            <strong className={styles.statValue}>
+              {coveredTypes}/{DOCUMENT_TYPES.length}
+            </strong>
+            <SegmentedProgress
+              value={(coveredTypes / DOCUMENT_TYPES.length) * 100}
+              tone="chart"
+              label="文档类型覆盖率"
+            />
+          </div>
+          <div className={styles.statCard} data-tone="info">
+            <span className={styles.statLabel}>最近更新</span>
+            <strong className={styles.statValue}>
+              {latestUpdated ? latestUpdated.slice(0, 10) : "—"}
+            </strong>
+          </div>
         </div>
-        <div>
-          <span>检查项</span>
-          <strong>{totalItems}</strong>
-        </div>
-        <div>
-          <span>做法配置</span>
-          <strong>
-            {practiceStats.total
-              ? Math.round((practiceStats.configured / practiceStats.total) * 100)
-              : 0}
-            %
-          </strong>
-        </div>
-        <div>
-          <span>文档类型覆盖</span>
-          <strong>{coveredTypes}/5</strong>
-        </div>
-        <div>
-          <span>最近更新</span>
-          <strong>{latestUpdated ? latestUpdated.slice(0, 10) : "—"}</strong>
-        </div>
-      </div>
+      ) : null}
 
       <div className={styles.tableWrap}>
         <Table>
@@ -182,7 +204,7 @@ export function ReviewChecklistConfigPage() {
               <TableHead className={styles.nameHead}>审查单名称</TableHead>
               <TableHead>检查项</TableHead>
               <TableHead>当前版本</TableHead>
-              <TableHead>做法</TableHead>
+              <TableHead>推荐做法</TableHead>
               <TableHead>适用条件</TableHead>
               <TableHead>最近更新</TableHead>
               <TableHead>操作</TableHead>

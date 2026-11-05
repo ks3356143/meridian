@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MultiSelectCombobox } from "@/components/shared/multi-select-combobox";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -98,11 +99,14 @@ export function RequirementCandidateEditDialog({
             submitting={submitting}
           />
         ) : (
-          <div className={styles.loadingSlot} aria-busy="true" aria-label="正在加载需求正文">
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-28 w-full" />
+          <div className={styles.loadingSlot}>
+            <InlineLoading label="正在加载需求正文" />
+            <div className={styles.skeletonGroup} aria-busy="true">
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-28 w-full" />
+            </div>
           </div>
         )}
       </DialogContent>

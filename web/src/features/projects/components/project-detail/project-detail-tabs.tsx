@@ -8,7 +8,7 @@ import { totalOpenIssues, type Project } from "../../types";
 import { OverviewDetailTab } from "./overview-detail-tab";
 import { ProfileDetailTab } from "./profile-detail-tab";
 import { Checklist, MetricTile, StateChip, StatusPanel } from "./status-panel";
-import { workspacePath, type DetailTabValue } from "./status-model";
+import { workspacePath, type DetailTabValue, type ReadinessState } from "./status-model";
 import { DETAIL_TABS } from "./tab-meta";
 import styles from "./project-detail-tabs.module.css";
 
@@ -66,14 +66,8 @@ export function ProjectDetailTabs({
         action="处理被测对象"
         onOpenWorkspace={openWorkspace}
       >
-        <Checklist
-          items={[
-            { label: "软件概述", state: "pending", detail: "富文本与模块组成待录入" },
-            { label: "接口说明", state: "pending", detail: "接口示意图与接口表待录入" },
-            { label: "静态测试环境", state: "pending", detail: "软件、硬件与固件配置待录入" },
-            { label: "版本基线", state: "pending", detail: "软件版本与技术文档版本待锁定" },
-          ]}
-        />
+        <StatusMetricRow items={DUT_ITEMS} />
+        <Checklist items={DUT_ITEMS} />
       </DetailStatusTab>
 
       <DetailStatusTab
@@ -82,14 +76,8 @@ export function ProjectDetailTabs({
         action="处理需求追溯"
         onOpenWorkspace={openWorkspace}
       >
-        <Checklist
-          items={[
-            { label: "来源文档", state: "pending", detail: "需求规格与研制方交付文档待登记" },
-            { label: "需求树", state: "pending", detail: "章节、需求标识和需求性质待建模" },
-            { label: "测试项关联", state: "pending", detail: "需求到测试项的覆盖关系待生成" },
-            { label: "追溯矩阵", state: "pending", detail: "需求、测试项、用例与问题关系待汇总" },
-          ]}
-        />
+        <StatusMetricRow items={REQUIREMENT_ITEMS} />
+        <Checklist items={REQUIREMENT_ITEMS} />
       </DetailStatusTab>
 
       <DetailStatusTab
@@ -191,6 +179,10 @@ export function ProjectDetailTabs({
         action="处理文档"
         onOpenWorkspace={openWorkspace}
       >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <MetricTile label="已生成" value={0} />
+          <MetricTile label="待生成" value={DETAIL_DOCUMENTS.length} tone="warning" />
+        </div>
         <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           {DETAIL_DOCUMENTS.map((documentName) => (
             <div
@@ -237,3 +229,32 @@ const DETAIL_DOCUMENTS = [
   "测评报告",
   "问题单合集",
 ];
+
+type ChecklistItem = { label: string; state: ReadinessState; detail: string };
+
+const DUT_ITEMS: ChecklistItem[] = [
+  { label: "软件概述", state: "pending", detail: "富文本与模块组成待录入" },
+  { label: "接口说明", state: "pending", detail: "接口示意图与接口表待录入" },
+  { label: "静态测试环境", state: "pending", detail: "软件、硬件与固件配置待录入" },
+  { label: "版本基线", state: "pending", detail: "软件版本与技术文档版本待锁定" },
+];
+
+const REQUIREMENT_ITEMS: ChecklistItem[] = [
+  { label: "来源文档", state: "pending", detail: "需求规格与研制方交付文档待登记" },
+  { label: "需求树", state: "pending", detail: "章节、需求标识和需求性质待建模" },
+  { label: "测试项关联", state: "pending", detail: "需求到测试项的覆盖关系待生成" },
+  { label: "追溯矩阵", state: "pending", detail: "需求、测试项、用例与问题关系待汇总" },
+];
+
+function StatusMetricRow({ items }: { items: ChecklistItem[] }) {
+  const ready = items.filter((item) => item.state === "ready").length;
+  const partial = items.filter((item) => item.state === "partial").length;
+  const pending = items.length - ready - partial;
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <MetricTile label="已具备" value={ready} tone={ready > 0 ? "info" : "default"} />
+      <MetricTile label="部分具备" value={partial} tone={partial > 0 ? "warning" : "default"} />
+      <MetricTile label="待补齐" value={pending} tone={pending > 0 ? "warning" : "default"} />
+    </div>
+  );
+}

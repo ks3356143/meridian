@@ -1,5 +1,6 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,21 +15,16 @@ export function QueryLoading({
   action?: ReactNode;
 }) {
   return (
-    <section
-      aria-busy="true"
-      aria-live="polite"
-      className="panel-surface border-border flex flex-col gap-4 rounded-sm border p-4"
-    >
+    <section className="panel-surface border-border flex flex-col gap-4 rounded-sm border p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Skeleton className="h-5 w-40" />
+        <InlineLoading className="text-sm font-medium" label={label} />
         {action ?? <Skeleton className="h-8 w-24" />}
       </div>
-      <div className="grid gap-2">
+      <div aria-busy="true" className="grid gap-2">
         {Array.from({ length: rows }).map((_, index) => (
           <Skeleton key={index} className="h-10 w-full" />
         ))}
       </div>
-      <span className="text-muted-foreground sr-only">{label}</span>
     </section>
   );
 }

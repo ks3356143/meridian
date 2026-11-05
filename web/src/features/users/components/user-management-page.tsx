@@ -1,19 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SortingState } from "@tanstack/react-table";
-import { Plus, Search, Users } from "lucide-react";
+import { Plus, Search, ShieldCheck, UserPlus, UserRound, Users } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { QueryError, QueryLoading } from "@/components/shared/query-state";
+import { StatCard, type StatTone } from "@/components/shared/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
+import { formatDateMedium } from "@/lib/date";
 import { usersApi } from "@/features/users/api";
 import { DeleteUserDialog } from "@/features/users/components/delete-user-dialog";
 import { UserFormDialog } from "@/features/users/components/user-form-dialog";
 import { UserManagementTable } from "@/features/users/components/user-management-table";
-import { userPasswordMinLength } from "@/features/users/constants";
+import { userPasswordMinLength, protectedAdminUsername } from "@/features/users/constants";
 import type {
   ManagedUser,
   UserDialogMode,
@@ -50,6 +52,59 @@ export function UserManagementPage() {
       [user.username, user.displayName].some((value) => value.toLowerCase().includes(query)),
     );
   }, [keyword, usersQuery.data]);
+
+  const [recentThreshold] = useState(() => Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const statItems = useMemo<
+    Array<{
+      icon: typeof Users;
+      label: string;
+      value: number;
+      tone: StatTone;
+      detail: string;
+    }>
+  >(() => {
+    const users = usersQuery.data ?? [];
+    const adminCount = users.filter((user) => user.username === protectedAdminUsername).length;
+    const memberCount = users.length - adminCount;
+    const recentCount = users.filter(
+      (user) => new Date(user.createdAt).getTime() >= recentThreshold,
+    ).length;
+    const latestCreated = users.reduce(
+      (latest, user) => (user.createdAt > latest ? user.createdAt : latest),
+      "",
+    );
+    return [
+      {
+        icon: Users,
+        label: "账号总数",
+        value: users.length,
+        tone: "info",
+        detail: `管理员 ${adminCount} · 成员 ${memberCount}`,
+      },
+      {
+        icon: ShieldCheck,
+        label: "系统管理员",
+        value: adminCount,
+        tone: "primary",
+        detail: "固定账号，密码不可修改",
+      },
+      {
+        icon: UserRound,
+        label: "普通成员",
+        value: memberCount,
+        tone: "success",
+        detail: "可在项目中担任负责人或成员",
+      },
+      {
+        icon: UserPlus,
+        label: "近 30 天新增",
+        value: recentCount,
+        tone: "chart",
+        detail: latestCreated ? `最近新增 ${formatDateMedium(latestCreated)}` : "暂无新增账号",
+      },
+    ];
+  }, [usersQuery.data, recentThreshold]);
 
   useSubtleReveal(containerRef, ".user-management-reveal", !usersQuery.isPending);
 
@@ -158,6 +213,25 @@ export function UserManagementPage() {
           </Button>
         }
       />
+
+      {usersQuery.isSuccess ? (
+        <div
+          aria-label="用户统计"
+          role="group"
+          className="user-management-reveal grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        >
+          {statItems.map((item) => (
+            <StatCard
+              key={item.label}
+              tone={item.tone}
+              icon={item.icon}
+              label={item.label}
+              value={item.value}
+              detail={item.detail}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {usersQuery.isPending ? <QueryLoading label="正在加载用户列表" /> : null}
       <div className="user-management-reveal">

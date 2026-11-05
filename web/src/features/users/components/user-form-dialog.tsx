@@ -1,14 +1,8 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { HudDialogHeader } from "@/components/shared/hud-dialog-header";
 import { protectedAdminUsername } from "@/features/users/constants";
 import type { UserDialogMode, UserFormErrors, UserFormValues } from "@/features/users/types";
 
@@ -48,13 +42,14 @@ export function UserFormDialog({
 
   return (
     <Dialog open={dialog.kind !== "closed"} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{isCreate ? "添加用户" : "编辑用户"}</DialogTitle>
-          <DialogDescription>
-            {isCreate ? "填写用户名、显示名称和密码。" : "修改显示名称，或输入新密码重置。"}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md">
+        <HudDialogHeader
+          kicker="USER ACCOUNT"
+          title={isCreate ? "添加用户" : "编辑用户"}
+          description={
+            isCreate ? "填写用户名、显示名称和密码。" : "修改显示名称，或输入新密码重置。"
+          }
+        />
         <form
           className="flex flex-col gap-4 py-2"
           onSubmit={(event) => {

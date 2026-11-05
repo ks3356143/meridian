@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOutletContext, useSearchParams } from "react-router";
 import { Bug, ChevronRight, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,6 +28,12 @@ import type { ProjectWorkspaceOutletContext } from "../project-workspace-layout"
 import styles from "./issues-module.module.css";
 
 const LEVELS = ["重大", "严重", "一般", "建议改进"];
+const LEVEL_TONES: Record<(typeof LEVELS)[number], "danger" | "warning" | "info" | "chart"> = {
+  重大: "danger",
+  严重: "warning",
+  一般: "info",
+  建议改进: "chart",
+};
 
 export function IssuesModule() {
   const { project } = useOutletContext<ProjectWorkspaceOutletContext>();
@@ -50,6 +57,17 @@ export function IssuesModule() {
 
   const active = (issuesQuery.data ?? []).find((issue) => issue.id === activeId) ?? null;
   const openCount = (issuesQuery.data ?? []).filter((issue) => issue.status === "open").length;
+  const severityStats = useMemo(() => {
+    const all = issuesQuery.data ?? [];
+    const counts = new Map(LEVELS.map((level) => [level, { total: 0, open: 0 }]));
+    for (const issue of all) {
+      const entry = counts.get(issue.level);
+      if (!entry) continue;
+      entry.total += 1;
+      if (issue.status === "open") entry.open += 1;
+    }
+    return LEVELS.map((level) => ({ level, tone: LEVEL_TONES[level], ...counts.get(level)! }));
+  }, [issuesQuery.data]);
 
   const updateMutation = useMutation({
     mutationFn: ({
@@ -108,7 +126,21 @@ export function IssuesModule() {
         </div>
       </header>
 
-      {issuesQuery.isPending ? <p className={styles.state}>正在读取问题单…</p> : null}
+      {issuesQuery.data ? (
+        <div className={styles.severity} aria-label="问题等级统计" role="group">
+          {severityStats.map((stat) => (
+            <div key={stat.level} className={styles.severityCard} data-tonal-panel={stat.tone}>
+              <span className={styles.severityLabel}>{stat.level}</span>
+              <strong className={styles.severityValue}>{stat.total}</strong>
+              <em className={styles.severityNote}>未关闭 {stat.open}</em>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {issuesQuery.isPending ? (
+        <InlineLoading className={styles.state} label="正在读取问题单" />
+      ) : null}
       {issuesQuery.isError ? <p className={styles.state}>问题单读取失败，请刷新重试。</p> : null}
       {!issuesQuery.isPending && issues.length === 0 ? (
         <div className={styles.empty}>

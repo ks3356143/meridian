@@ -246,6 +246,12 @@
   text-align: center;
 }
 
+/* 内联加载是 flex 行，text-align 不生效，显式居中与相邻空态保持一致。 */
+.loadingState {
+  composes: state;
+  justify-content: center;
+}
+
 .stateError {
   color: var(--destructive);
 }

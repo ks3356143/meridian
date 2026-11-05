@@ -64,6 +64,56 @@
   color: var(--primary);
 }
 
+.severity {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* 底色、描边与 2px 左色轨由全局 [data-tonal-panel] 提供，这里只管布局与排版。 */
+.severityCard {
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.severityLabel {
+  color: var(--muted-foreground);
+  font-size: 0.64rem;
+}
+
+.severityValue {
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.severityNote {
+  color: var(--muted-foreground);
+  font-size: 0.62rem;
+  font-style: normal;
+}
+
+.severityCard[data-tonal-panel="danger"] .severityValue {
+  color: var(--destructive);
+}
+
+.severityCard[data-tonal-panel="warning"] .severityValue {
+  color: var(--warning-ink);
+}
+
+.severityCard[data-tonal-panel="info"] .severityValue {
+  color: var(--info);
+}
+
+.severityCard[data-tonal-panel="chart"] .severityValue {
+  color: var(--chart-2);
+}
+
 .state {
   color: var(--muted-foreground);
   font-size: 0.78rem;
@@ -227,6 +277,10 @@
 }
 
 @media (max-width: 720px) {
+  .severity {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .row {
     grid-template-columns: minmax(0, 1fr) 4rem auto;
   }

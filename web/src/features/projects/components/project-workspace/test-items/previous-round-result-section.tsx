@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, History } from "lucide-react";
 import { ApiError } from "@/api/client";
+import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 import { testItemsApi } from "@/features/test-items/api";
 import type { PreviousRoundStep } from "@/features/test-items/types";
@@ -70,7 +71,7 @@ export function PreviousRoundResultSection({
         >
           {mounted ? (
             resultQuery.isPending ? (
-              <div className={styles.state}>正在读取上轮实测…</div>
+              <InlineLoading className={styles.state} label="正在读取上轮实测" />
             ) : resultQuery.isError ? (
               <div className={styles.error}>
                 <span>上轮实测读取失败。</span>
