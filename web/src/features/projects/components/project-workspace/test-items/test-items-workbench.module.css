@@ -477,6 +477,11 @@
   padding: 0.2rem 0.65rem;
 }
 
+.quickChipGroup {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
 .quickChip {
   border-color: color-mix(in srgb, var(--border) 90%, transparent);
   font-weight: 620;
@@ -500,7 +505,7 @@
   outline: none;
 }
 
-.quickChip[data-active="true"] {
+.quickChip[data-state="on"] {
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--primary) 13%, transparent),

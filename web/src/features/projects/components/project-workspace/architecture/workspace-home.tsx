@@ -6,6 +6,7 @@ import { levelVariant } from "../../../status-style";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { animate } from "@/lib/motion";
+import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
 import type { ProjectWorkspaceOutletContext } from "../project-workspace-layout";
 import { CurrentTaskPanel } from "./components/current-task-panel";
 import { DataFlowPanel } from "./components/data-flow-panel";
@@ -105,7 +106,13 @@ export function WorkspaceHome() {
         </div>
 
         <dl className={styles.metrics}>
-          <MetricTile icon={Activity} label="用例执行" value={`${executionRate}%`} tone="primary" />
+          <MetricTile
+            icon={Activity}
+            label="用例执行"
+            value={executionRate}
+            suffix="%"
+            tone="primary"
+          />
           <MetricTile
             icon={CircleAlert}
             label="未闭环问题"
@@ -136,11 +143,13 @@ function MetricTile({
   icon: Icon,
   label,
   value,
+  suffix,
   tone,
 }: {
   icon: LucideIcon;
   label: string;
-  value: number | string;
+  value: number;
+  suffix?: string;
   tone: "primary" | "warning" | "info" | "neutral";
 }) {
   return (
@@ -150,7 +159,10 @@ function MetricTile({
       </span>
       <div className={styles.metricCopy}>
         <dt>{label}</dt>
-        <dd className="font-mono">{value}</dd>
+        <dd className="font-mono">
+          <CountingNumber number={value} />
+          {suffix ?? ""}
+        </dd>
       </div>
     </div>
   );

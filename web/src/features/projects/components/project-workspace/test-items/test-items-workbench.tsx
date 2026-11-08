@@ -28,6 +28,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Item as ToggleGroupItem,
+  Root as ToggleGroupRoot,
+} from "@animate-ui/react/primitives/radix-ui/toggle-group";
 import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -906,29 +910,25 @@ export function TestItemsWorkbench({
         </div>
       </div>
       <div className={styles.filterRow}>
-        {(
-          [
-            { value: "all", label: "全部" },
-            { value: "incomplete", label: "未完善", count: quickCounts.incomplete },
-            { value: "failed", label: "有失败", count: quickCounts.failed },
-          ] as const
-        ).map((option) => (
-          <Button
-            key={option.value}
-            type="button"
-            size="xs"
-            variant="outline"
-            className={styles.quickChip}
-            data-active={quickFilter === option.value ? "true" : undefined}
-            aria-pressed={quickFilter === option.value}
-            onClick={() => setQuickFilter(option.value)}
-          >
-            {option.label}
-            {"count" in option ? (
-              <span className={styles.quickChipCount}>{option.count}</span>
-            ) : null}
-          </Button>
-        ))}
+        <ToggleGroupRoot
+          type="single"
+          value={quickFilter}
+          onValueChange={(value) => {
+            if (value) setQuickFilter(value as TestItemsQuickFilter);
+          }}
+          aria-label="测试项快捷筛选"
+          className={styles.quickChipGroup}
+        >
+          <ToggleGroupItem value="all" className={styles.quickChip}>
+            全部
+          </ToggleGroupItem>
+          <ToggleGroupItem value="incomplete" className={styles.quickChip}>
+            未完善<span className={styles.quickChipCount}>{quickCounts.incomplete}</span>
+          </ToggleGroupItem>
+          <ToggleGroupItem value="failed" className={styles.quickChip}>
+            有失败<span className={styles.quickChipCount}>{quickCounts.failed}</span>
+          </ToggleGroupItem>
+        </ToggleGroupRoot>
         <div className={styles.treeActions}>
           <Tooltip>
             <TooltipTrigger asChild>

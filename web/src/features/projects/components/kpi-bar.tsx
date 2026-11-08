@@ -10,6 +10,7 @@ import { cn } from "cn";
 import { Card, CardContent } from "@/components/ui/card";
 import { SegmentedProgress } from "@/components/shared/segmented-progress";
 import { TruncatedText } from "@/components/shared/truncated-text";
+import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
 import { totalOpenIssues, type Project } from "../types";
 
 type KpiTone = "info" | "primary" | "warning" | "success" | "chart" | "danger";
@@ -17,7 +18,8 @@ type KpiTone = "info" | "primary" | "warning" | "success" | "chart" | "danger";
 interface KpiItem {
   icon: typeof FolderKanban;
   label: string;
-  value: string;
+  value: number;
+  suffix?: string;
   tone: KpiTone;
   detail: string;
   progress?: number;
@@ -76,7 +78,7 @@ export function KpiBar({ projects }: { projects: Project[] }) {
     {
       icon: FolderKanban,
       label: "项目总数",
-      value: String(projects.length),
+      value: projects.length,
       tone: "info",
       detail: `执行 ${executing} · 完成 ${completed}`,
       progress: projects.length === 0 ? 0 : (completed / projects.length) * 100,
@@ -84,21 +86,21 @@ export function KpiBar({ projects }: { projects: Project[] }) {
     {
       icon: FlaskConical,
       label: "测试执行中",
-      value: String(executing),
+      value: executing,
       tone: "primary",
       detail: `编制 ${drafting} · 其他 ${projects.length - drafting - executing - completed}`,
     },
     {
       icon: FileEdit,
       label: "编制评审中",
-      value: String(drafting),
+      value: drafting,
       tone: "warning",
       detail: "大纲编制与已评审",
     },
     {
       icon: FileCheck2,
       label: "已完成",
-      value: String(completed),
+      value: completed,
       tone: "success",
       detail:
         projects.length === 0
@@ -109,7 +111,8 @@ export function KpiBar({ projects }: { projects: Project[] }) {
     {
       icon: Activity,
       label: "用例执行率",
-      value: `${executionRate}%`,
+      value: executionRate,
+      suffix: "%",
       tone: "primary",
       detail: `${executedCases}/${totalCases}`,
       progress: executionRate,
@@ -117,7 +120,7 @@ export function KpiBar({ projects }: { projects: Project[] }) {
     {
       icon: CircleAlert,
       label: "未闭环问题",
-      value: String(openTotal),
+      value: openTotal,
       tone: openTotal > 0 ? "danger" : "success",
       detail: `重 ${openCritical} · 一般 ${normal} · 建议 ${suggestion}`,
     },
@@ -162,7 +165,8 @@ export function KpiBar({ projects }: { projects: Project[] }) {
                     tone.value,
                   )}
                 >
-                  {item.value}
+                  <CountingNumber number={item.value} />
+                  {item.suffix ?? ""}
                 </span>
                 <TruncatedText
                   value={item.detail}

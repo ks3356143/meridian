@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "cn";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Content as HoverCardContent,
+  Portal as HoverCardPortal,
+  Root as HoverCard,
+  Trigger as HoverCardTrigger,
+} from "@animate-ui/react/primitives/radix-ui/hover-card";
 import styles from "./truncated-text.module.css";
 
 export function TruncatedText({
@@ -78,11 +83,13 @@ export function TruncatedText({
   if (!truncated) return label;
 
   return (
-    <Tooltip open={open} onOpenChange={setOpen}>
-      <TooltipTrigger asChild>{label}</TooltipTrigger>
-      <TooltipContent side="top" className={styles.compactTooltip}>
-        {tooltipText}
-      </TooltipContent>
-    </Tooltip>
+    <HoverCard open={open} onOpenChange={setOpen} openDelay={0} closeDelay={80}>
+      <HoverCardTrigger asChild>{label}</HoverCardTrigger>
+      <HoverCardPortal>
+        <HoverCardContent side="top" align="center" className={styles.compactCard}>
+          {tooltipText}
+        </HoverCardContent>
+      </HoverCardPortal>
+    </HoverCard>
   );
 }

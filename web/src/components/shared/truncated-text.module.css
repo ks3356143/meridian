@@ -1,5 +1,13 @@
-.compactTooltip {
-  max-width: 18rem;
+.compactCard {
+  background: var(--popover);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, var(--primary));
+  box-shadow: 0 10px 28px -18px color-mix(in srgb, var(--foreground) 42%, transparent);
+  color: var(--popover-foreground);
+  font-size: 0.72rem;
+  line-height: 1.55;
+  max-width: 20rem;
   overflow-wrap: anywhere;
+  padding: 0.4rem 0.55rem;
   word-break: break-all;
+  z-index: 50;
 }

@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import {
+  ScrollProgress,
+  ScrollProgressProvider,
+} from "@animate-ui/react/primitives/scroll-progress";
+import {
   ClipboardList,
   FolderKanban,
   FolderPlus,
@@ -161,82 +165,89 @@ export default function BasicLayout() {
   );
 
   return (
-    <div className="bg-background flex min-h-svh flex-col min-[900px]:grid min-[900px]:grid-cols-[236px_minmax(0,1fr)]">
-      <SkipLink />
-      <aside
-        className={`${styles.sidebar} sticky top-0 z-20 hidden h-svh flex-col overflow-hidden min-[900px]:flex`}
-      >
-        <div
-          className="visual-glow pointer-events-none absolute -top-24 -right-20 size-80 opacity-35"
-          aria-hidden
-        />
-        <div className={`${styles.brandBar} relative flex h-14 items-center gap-2.5 border-b px-5`}>
-          <BrandLogo className="text-primary size-8 shrink-0" />
-          <div className="min-w-0">
-            <p className="brand-wordmark truncate text-sm font-semibold">ChenMeridian</p>
-            <p className="text-muted-foreground font-mono text-[11px]">V0.0.2</p>
-          </div>
-        </div>
-        <div className={`${styles.navBody} relative flex flex-1 flex-col`}>{navigation}</div>
-        <div className={`${styles.profileBar} relative flex items-center gap-2 border-t px-5 py-3`}>
-          <ShieldCheck className="text-primary size-4" aria-hidden />
-          <div className="min-w-0">
-            <p className="truncate text-xs font-medium">{user.displayName}</p>
-          </div>
-        </div>
-      </aside>
-
-      <div className="flex min-h-svh flex-col">
-        <header
-          className={`${styles.appHeader} sticky top-0 z-10 flex h-14 items-center justify-between gap-4 px-4`}
+    <ScrollProgressProvider global>
+      <div className="bg-background flex min-h-svh flex-col min-[900px]:grid min-[900px]:grid-cols-[236px_minmax(0,1fr)]">
+        <ScrollProgress mode="scaleX" aria-hidden className={styles.scrollProgress} />
+        <SkipLink />
+        <aside
+          className={`${styles.sidebar} sticky top-0 z-20 hidden h-svh flex-col overflow-hidden min-[900px]:flex`}
         >
-          <div className="flex min-w-0 items-center gap-3">
-            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  className={styles.mobileNavTrigger}
-                  aria-label="打开导航菜单"
-                >
-                  <MenuIcon aria-hidden />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80">
-                <SheetHeader className="items-center gap-2 pr-12">
-                  <BrandLogo className="text-primary size-8" aria-hidden />
-                  <SheetTitle className="brand-wordmark">ChenMeridian</SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-1 flex-col p-3">{navigation}</div>
-              </SheetContent>
-            </Sheet>
+          <div
+            className="visual-glow pointer-events-none absolute -top-24 -right-20 size-80 opacity-35"
+            aria-hidden
+          />
+          <div
+            className={`${styles.brandBar} relative flex h-14 items-center gap-2.5 border-b px-5`}
+          >
+            <BrandLogo className="text-primary size-8 shrink-0" />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{user.displayName}</p>
+              <p className="brand-wordmark truncate text-sm font-semibold">ChenMeridian</p>
+              <p className="text-muted-foreground font-mono text-[11px]">V0.0.2</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <AppQuickSwitcher
-              items={quickSwitchItems}
-              activeValue={activeQuickSwitch}
-              onSelect={(value) => {
-                const target = quickSwitchItems.find((item) => item.value === value);
-                if (target) navigate(target.path);
-              }}
-            />
-            <ThemeToggle />
-            <Button variant="outline" size="sm" onClick={logout}>
-              <LogOut data-icon="inline-start" />
-              退出
-            </Button>
+          <div className={`${styles.navBody} relative flex flex-1 flex-col`}>{navigation}</div>
+          <div
+            className={`${styles.profileBar} relative flex items-center gap-2 border-t px-5 py-3`}
+          >
+            <ShieldCheck className="text-primary size-4" aria-hidden />
+            <div className="min-w-0">
+              <p className="truncate text-xs font-medium">{user.displayName}</p>
+            </div>
           </div>
-        </header>
-        <Fade asChild key={location.pathname} initialOpacity={0.9}>
-          <main id={MAIN_CONTENT_ID} tabIndex={-1} className={`${styles.mainContent} flex-1`}>
-            <Outlet />
-          </main>
-        </Fade>
+        </aside>
+
+        <div className="flex min-h-svh flex-col">
+          <header
+            className={`${styles.appHeader} sticky top-0 z-10 flex h-14 items-center justify-between gap-4 px-4`}
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    className={styles.mobileNavTrigger}
+                    aria-label="打开导航菜单"
+                  >
+                    <MenuIcon aria-hidden />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80">
+                  <SheetHeader className="items-center gap-2 pr-12">
+                    <BrandLogo className="text-primary size-8" aria-hidden />
+                    <SheetTitle className="brand-wordmark">ChenMeridian</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-1 flex-col p-3">{navigation}</div>
+                </SheetContent>
+              </Sheet>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{user.displayName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <AppQuickSwitcher
+                items={quickSwitchItems}
+                activeValue={activeQuickSwitch}
+                onSelect={(value) => {
+                  const target = quickSwitchItems.find((item) => item.value === value);
+                  if (target) navigate(target.path);
+                }}
+              />
+              <ThemeToggle />
+              <Button variant="outline" size="sm" onClick={logout}>
+                <LogOut data-icon="inline-start" />
+                退出
+              </Button>
+            </div>
+          </header>
+          <Fade asChild key={location.pathname} initialOpacity={0.9}>
+            <main id={MAIN_CONTENT_ID} tabIndex={-1} className={`${styles.mainContent} flex-1`}>
+              <Outlet />
+            </main>
+          </Fade>
+        </div>
       </div>
-    </div>
+    </ScrollProgressProvider>
   );
 }
 

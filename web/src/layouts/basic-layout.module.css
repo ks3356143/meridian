@@ -151,3 +151,15 @@
     display: none;
   }
 }
+
+.scrollProgress {
+  background: linear-gradient(90deg, var(--primary), var(--info));
+  box-shadow: 0 0 10px -2px color-mix(in srgb, var(--primary) 70%, transparent);
+  height: 3px;
+  inset-inline: 0;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  transform-origin: left;
+  z-index: 40;
+}
