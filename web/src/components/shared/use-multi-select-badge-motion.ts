@@ -1,5 +1,5 @@
-import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { animate } from "@/lib/motion";
 import type { MultiSelectOption } from "./multi-select-types";
 
 interface BadgeMotionOptions {
@@ -44,56 +44,54 @@ export function useMultiSelectBadgeMotion({ options, value, triggerRef }: BadgeM
   const selectedKey = JSON.stringify(value);
   const exitingKey = JSON.stringify([...exitingSelected].sort());
 
-  useGSAP(
-    () => {
-      if (!triggerRef.current) return;
-      const previousAnimatedValue = animatedValueRef.current;
-      animatedValueRef.current = value;
+  useEffect(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const previousAnimatedValue = animatedValueRef.current;
+    animatedValueRef.current = value;
 
-      const badges = triggerRef.current.querySelectorAll<HTMLElement>("[data-selected-value]");
-      const enteredValues = previousAnimatedValue
-        ? new Set(value.filter((item) => !previousAnimatedValue.includes(item)))
-        : new Set<string>();
-      const enterTargets = Array.from(badges).filter(
-        (badge) =>
-          enteredValues.has(badge.dataset.selectedValue ?? "") &&
-          !exitingSelected.has(badge.dataset.selectedValue ?? ""),
-      );
-      const exitTargets = Array.from(badges).filter((badge) =>
-        exitingSelected.has(badge.dataset.selectedValue ?? ""),
-      );
+    const badges = trigger.querySelectorAll<HTMLElement>("[data-selected-value]");
+    const enteredValues = previousAnimatedValue
+      ? new Set(value.filter((item) => !previousAnimatedValue.includes(item)))
+      : new Set<string>();
+    const exiting = new Set(exitingValues.filter((item) => !value.includes(item)));
+    const enterTargets = Array.from(badges).filter(
+      (badge) =>
+        enteredValues.has(badge.dataset.selectedValue ?? "") &&
+        !exiting.has(badge.dataset.selectedValue ?? ""),
+    );
+    const exitTargets = Array.from(badges).filter((badge) =>
+      exiting.has(badge.dataset.selectedValue ?? ""),
+    );
 
-      if (enterTargets.length > 0) {
-        gsap.from(enterTargets, {
-          autoAlpha: 0,
-          scale: 0.84,
-          x: -6,
-          duration: 0.22,
-          ease: "back.out(1.8)",
-          clearProps: "all",
-          overwrite: "auto",
-        });
-      }
-      if (exitTargets.length > 0) {
-        gsap.to(exitTargets, {
-          autoAlpha: 0,
-          scale: 0.82,
-          x: -8,
-          duration: 0.16,
-          ease: "power2.in",
-          overwrite: "auto",
-          onComplete: () => {
-            setExitingValues((current) =>
-              current.filter(
-                (item) => !exitTargets.some((badge) => badge.dataset.selectedValue === item),
-              ),
-            );
-          },
-        });
-      }
-    },
-    { dependencies: [selectedKey, exitingKey], scope: triggerRef },
-  );
+    const enterControls = enterTargets.map((badge) =>
+      animate(
+        badge,
+        { opacity: [0, 1], scale: [0.84, 1], x: [-6, 0] },
+        { duration: 0.22, ease: "backOut" },
+      ),
+    );
+    const exitControls = exitTargets.map((badge) =>
+      animate(badge, { opacity: 0, scale: 0.82, x: -8 }, { duration: 0.16, ease: "easeIn" }),
+    );
+    exitControls.forEach((control) =>
+      control.then(
+        () => {
+          setExitingValues((current) =>
+            current.filter(
+              (item) => !exitTargets.some((badge) => badge.dataset.selectedValue === item),
+            ),
+          );
+        },
+        () => {},
+      ),
+    );
+
+    return () => {
+      enterControls.forEach((control) => control.stop());
+      exitControls.forEach((control) => control.stop());
+    };
+  }, [exitingKey, exitingValues, selectedKey, triggerRef, value]);
 
   return { visibleOptions, exitingSelected };
 }
