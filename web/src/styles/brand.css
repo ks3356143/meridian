@@ -6,34 +6,6 @@
   color: transparent;
 }
 
-.shiny-text {
-  animation: shiny-text-sweep 2.4s linear infinite;
-  background-image: linear-gradient(
-    120deg,
-    var(--muted-foreground) 0%,
-    var(--muted-foreground) 35%,
-    color-mix(in srgb, var(--muted-foreground) 25%, white) 50%,
-    var(--muted-foreground) 65%,
-    var(--muted-foreground) 100%
-  );
-  background-size: 200% auto;
-  background-position: 150% center;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-
-@keyframes shiny-text-sweep {
-  from {
-    background-position: 150% center;
-  }
-
-  to {
-    background-position: -50% center;
-  }
-}
-
 .meridian-beam {
   position: relative;
   background: linear-gradient(

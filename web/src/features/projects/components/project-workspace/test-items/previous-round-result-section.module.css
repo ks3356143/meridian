@@ -90,25 +90,6 @@
   transform: rotate(180deg);
 }
 
-.bodyWrap {
-  display: grid;
-  grid-template-rows: minmax(0, 0fr);
-  opacity: 0;
-  pointer-events: none;
-  visibility: hidden;
-  transition:
-    grid-template-rows 0.24s var(--ease-in-out-strong),
-    opacity 0.2s var(--ease-out-strong),
-    visibility 0.2s;
-}
-
-.section[data-expanded="true"] .bodyWrap {
-  grid-template-rows: minmax(0, 1fr);
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-}
-
 .body {
   border-top: 1px solid color-mix(in srgb, var(--chart-5) 28%, var(--border));
   min-height: 0;

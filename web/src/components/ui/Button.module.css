@@ -22,7 +22,6 @@
     background-color 0.18s var(--ease-out-strong),
     border-color 0.18s var(--ease-out-strong),
     box-shadow 0.18s var(--ease-out-strong),
-    transform 0.14s var(--ease-out-strong),
     filter 0.18s var(--ease-out-strong);
 }
 
@@ -39,10 +38,6 @@
   border-color: color-mix(in srgb, var(--ring) 82%, var(--border));
   outline: 2px solid color-mix(in srgb, var(--ring) 58%, transparent);
   outline-offset: 2px;
-}
-
-.button:active:not([aria-haspopup]) {
-  transform: translateY(1px) scale(0.992);
 }
 
 .button:disabled {
@@ -264,42 +259,4 @@
 .sizeIconLg {
   height: 2.5rem;
   width: 2.5rem;
-}
-
-.rippleClip {
-  border-radius: inherit;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  position: absolute;
-}
-
-.ripple {
-  animation: buttonRippleIn 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-  background: currentColor;
-  border-radius: 50%;
-  height: var(--ripple-size);
-  left: var(--ripple-x);
-  opacity: 0.22;
-  pointer-events: none;
-  position: absolute;
-  top: var(--ripple-y);
-  transform: translate(-50%, -50%) scale(0);
-  width: var(--ripple-size);
-}
-
-@keyframes buttonRippleIn {
-  0% {
-    opacity: 0.26;
-    transform: translate(-50%, -50%) scale(0);
-  }
-
-  30% {
-    opacity: 0.2;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1);
-  }
 }

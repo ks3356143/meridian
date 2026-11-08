@@ -1,4 +1,8 @@
 import { useState } from "react";
+import {
+  Root as Collapsible,
+  CollapsibleContent,
+} from "@animate-ui/react/primitives/radix-ui/collapsible";
 import { CalendarDays, Check, Loader2, Sparkles, UsersRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { YearMonthCalendar } from "@/components/ui/calendar";
@@ -63,124 +67,121 @@ export function CaseBatchBar({
   };
 
   return (
-    <div
-      className={styles.collapse}
-      data-visible={selectedCount > 0 ? "true" : undefined}
-      aria-hidden={selectedCount === 0 || undefined}
-      inert={selectedCount === 0}
-    >
-      <div className={styles.bar}>
-        <div className={styles.lead}>
-          <span className={styles.spark} aria-hidden>
-            <Sparkles className={styles.icon} />
-          </span>
-          <span className={styles.count}>已选 {selectedCount} 条</span>
-        </div>
-        <div className={styles.controls}>
-          <Select value={testerChoice} onValueChange={setTesterChoice}>
-            <SelectTrigger size="sm" className={styles.trigger} aria-label="批量测试人员">
-              <UsersRound className={styles.icon} aria-hidden />
-              <SelectValue>
-                {testerChoice === KEEP
-                  ? "测试人员：不修改"
-                  : testerChoice === CLEAR
-                    ? "清除测试人员"
-                    : (members.find((member) => member.id === testerChoice)?.displayName ??
-                      members.find((member) => member.id === testerChoice)?.username ??
-                      "测试人员")}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={KEEP}>不修改测试人员</SelectItem>
-              {members.map((member) => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.displayName || member.username}
-                </SelectItem>
-              ))}
-              <SelectItem value={CLEAR}>清除指派</SelectItem>
-            </SelectContent>
-          </Select>
+    <Collapsible open={selectedCount > 0}>
+      <CollapsibleContent>
+        <div className={styles.bar}>
+          <div className={styles.lead}>
+            <span className={styles.spark} aria-hidden>
+              <Sparkles className={styles.icon} />
+            </span>
+            <span className={styles.count}>已选 {selectedCount} 条</span>
+          </div>
+          <div className={styles.controls}>
+            <Select value={testerChoice} onValueChange={setTesterChoice}>
+              <SelectTrigger size="sm" className={styles.trigger} aria-label="批量测试人员">
+                <UsersRound className={styles.icon} aria-hidden />
+                <SelectValue>
+                  {testerChoice === KEEP
+                    ? "测试人员：不修改"
+                    : testerChoice === CLEAR
+                      ? "清除测试人员"
+                      : (members.find((member) => member.id === testerChoice)?.displayName ??
+                        members.find((member) => member.id === testerChoice)?.username ??
+                        "测试人员")}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={KEEP}>不修改测试人员</SelectItem>
+                {members.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.displayName || member.username}
+                  </SelectItem>
+                ))}
+                <SelectItem value={CLEAR}>清除指派</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={statusChoice} onValueChange={setStatusChoice}>
-            <SelectTrigger size="sm" className={styles.trigger} aria-label="批量执行状态">
-              <Check className={styles.icon} aria-hidden />
-              <SelectValue>
-                {statusChoice === KEEP
-                  ? "状态：不修改"
-                  : statusChoice === "pending"
-                    ? "状态：未执行"
-                    : statusChoice === "passed"
-                      ? "状态：通过"
-                      : "状态：未通过"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={KEEP}>不修改状态</SelectItem>
-              <SelectItem value="pending">未执行</SelectItem>
-              <SelectItem value="passed">通过</SelectItem>
-              <SelectItem value="failed">未通过</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={statusChoice} onValueChange={setStatusChoice}>
+              <SelectTrigger size="sm" className={styles.trigger} aria-label="批量执行状态">
+                <Check className={styles.icon} aria-hidden />
+                <SelectValue>
+                  {statusChoice === KEEP
+                    ? "状态：不修改"
+                    : statusChoice === "pending"
+                      ? "状态：未执行"
+                      : statusChoice === "passed"
+                        ? "状态：通过"
+                        : "状态：未通过"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={KEEP}>不修改状态</SelectItem>
+                <SelectItem value="pending">未执行</SelectItem>
+                <SelectItem value="passed">通过</SelectItem>
+                <SelectItem value="failed">未通过</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button type="button" size="xs" variant="outline" className={styles.dateTrigger}>
-                <CalendarDays className={styles.icon} aria-hidden />
-                {dateChoice === KEEP
-                  ? "日期：不修改"
-                  : dateChoice === CLEAR
-                    ? "清除执行日期"
-                    : dateLabel}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className={styles.calendarPopover}>
-              <YearMonthCalendar
-                selected={execDate}
-                onSelect={(date) => {
-                  setExecDate(date);
-                  if (date) {
-                    setDateChoice("set");
-                    setCalendarOpen(false);
-                  }
-                }}
-              />
-              <div className={styles.calendarActions}>
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => {
-                    setDateChoice(CLEAR);
-                    setExecDate(undefined);
-                    setCalendarOpen(false);
-                  }}
-                >
-                  清除执行日期
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" size="xs" variant="outline" className={styles.dateTrigger}>
+                  <CalendarDays className={styles.icon} aria-hidden />
+                  {dateChoice === KEEP
+                    ? "日期：不修改"
+                    : dateChoice === CLEAR
+                      ? "清除执行日期"
+                      : dateLabel}
                 </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverTrigger>
+              <PopoverContent align="start" className={styles.calendarPopover}>
+                <YearMonthCalendar
+                  selected={execDate}
+                  onSelect={(date) => {
+                    setExecDate(date);
+                    if (date) {
+                      setDateChoice("set");
+                      setCalendarOpen(false);
+                    }
+                  }}
+                />
+                <div className={styles.calendarActions}>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => {
+                      setDateChoice(CLEAR);
+                      setExecDate(undefined);
+                      setCalendarOpen(false);
+                    }}
+                  >
+                    清除执行日期
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
 
-          <Button
-            type="button"
-            size="xs"
-            disabled={!hasChange || pending}
-            onClick={() => void apply()}
-          >
-            {pending ? <Loader2 className={styles.spin} aria-hidden /> : null}
-            应用到所选
-          </Button>
-          <Button
-            type="button"
-            size="icon-xs"
-            variant="ghost"
-            aria-label="取消选择"
-            onClick={onClearSelection}
-          >
-            <X aria-hidden />
-          </Button>
+            <Button
+              type="button"
+              size="xs"
+              disabled={!hasChange || pending}
+              onClick={() => void apply()}
+            >
+              {pending ? <Loader2 className={styles.spin} aria-hidden /> : null}
+              应用到所选
+            </Button>
+            <Button
+              type="button"
+              size="icon-xs"
+              variant="ghost"
+              aria-label="取消选择"
+              onClick={onClearSelection}
+            >
+              <X aria-hidden />
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

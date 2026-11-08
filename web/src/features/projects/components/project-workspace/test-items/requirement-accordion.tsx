@@ -1,4 +1,8 @@
 import { memo, useState } from "react";
+import {
+  Root as Collapsible,
+  CollapsibleContent,
+} from "@animate-ui/react/primitives/radix-ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { QueryError } from "@/components/shared/query-state";
@@ -43,41 +47,48 @@ export const RequirementAccordion = memo(function RequirementAccordionImpl({
   };
 
   return (
-    <div className={styles.accordion} data-open={open ? "true" : undefined}>
-      <button type="button" className={styles.accordionHead} aria-expanded={open} onClick={toggle}>
-        {reference.sourceName ? (
-          <span className={styles.accordionSource}>{reference.sourceName}</span>
-        ) : null}
-        <span className={styles.accordionChapter}>§{reference.chapterNumber}</span>
-        <span className={styles.accordionName}>{reference.name}</span>
-        <ChevronRight className={styles.accordionChevron} aria-hidden />
-      </button>
-      <div className={styles.accordionBody}>
-        <div className={styles.accordionInner}>
-          {open && payloadQuery.isPending && !payload ? (
-            <div className={styles.accordionLoading} aria-busy="true" aria-live="polite">
-              <Loader2 className={styles.accordionSpinner} aria-hidden />
-              <span>正在加载需求正文</span>
-            </div>
+    <Collapsible asChild open={open}>
+      <div className={styles.accordion} data-open={open ? "true" : undefined}>
+        <button
+          type="button"
+          className={styles.accordionHead}
+          aria-expanded={open}
+          onClick={toggle}
+        >
+          {reference.sourceName ? (
+            <span className={styles.accordionSource}>{reference.sourceName}</span>
           ) : null}
-          {open && payloadQuery.isError && !payload ? (
-            <div className={styles.accordionLoading}>
-              <QueryError title="需求正文加载失败" onRetry={() => void payloadQuery.refetch()} />
-            </div>
-          ) : null}
-          {mounted && payload ? (
-            payload.mode === "blocks" ? (
-              <div className={styles.accordionRich}>
-                <RequirementBody doc={payload.body.doc} projectCode={projectCode} />
+          <span className={styles.accordionChapter}>§{reference.chapterNumber}</span>
+          <span className={styles.accordionName}>{reference.name}</span>
+          <ChevronRight className={styles.accordionChevron} aria-hidden />
+        </button>
+        <CollapsibleContent>
+          <div className={styles.accordionInner}>
+            {open && payloadQuery.isPending && !payload ? (
+              <div className={styles.accordionLoading} aria-busy="true" aria-live="polite">
+                <Loader2 className={styles.accordionSpinner} aria-hidden />
+                <span>正在加载需求正文</span>
               </div>
-            ) : payload.content.description.trim() ? (
-              <p className={styles.accordionText}>{payload.content.description}</p>
-            ) : (
-              <span className={styles.requirementMissing}>该需求描述待补全，关联前请先补充</span>
-            )
-          ) : null}
-        </div>
+            ) : null}
+            {open && payloadQuery.isError && !payload ? (
+              <div className={styles.accordionLoading}>
+                <QueryError title="需求正文加载失败" onRetry={() => void payloadQuery.refetch()} />
+              </div>
+            ) : null}
+            {mounted && payload ? (
+              payload.mode === "blocks" ? (
+                <div className={styles.accordionRich}>
+                  <RequirementBody doc={payload.body.doc} projectCode={projectCode} />
+                </div>
+              ) : payload.content.description.trim() ? (
+                <p className={styles.accordionText}>{payload.content.description}</p>
+              ) : (
+                <span className={styles.requirementMissing}>该需求描述待补全，关联前请先补充</span>
+              )
+            ) : null}
+          </div>
+        </CollapsibleContent>
       </div>
-    </div>
+    </Collapsible>
   );
 });

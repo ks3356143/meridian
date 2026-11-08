@@ -1,5 +1,4 @@
-import type { CSSProperties } from "react";
-import { cn } from "cn";
+import { GradientText } from "@animate-ui/react/primitives/texts/gradient";
 
 interface ShinyTextProps {
   text: string;
@@ -8,12 +7,14 @@ interface ShinyTextProps {
 }
 
 export function ShinyText({ text, speed = 2, className }: ShinyTextProps) {
-  const style: CSSProperties = { animationDuration: `${Math.max(0.1, speed)}s` };
-
   return (
-    <span className={cn("shiny-text", className)} style={style} aria-label={text}>
-      {text}
-    </span>
+    <GradientText
+      text={text}
+      className={className}
+      aria-label={text}
+      gradient="linear-gradient(110deg, var(--muted-foreground) 0%, var(--muted-foreground) 35%, color-mix(in srgb, var(--muted-foreground) 25%, white) 50%, var(--muted-foreground) 65%, var(--muted-foreground) 100%)"
+      transition={{ duration: Math.max(0.1, speed) * 2.5, repeat: Infinity, ease: "linear" }}
+    />
   );
 }
 

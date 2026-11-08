@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Root as Collapsible,
+  CollapsibleContent,
+} from "@animate-ui/react/primitives/radix-ui/collapsible";
 import { ChevronDown, History } from "lucide-react";
 import { ApiError } from "@/api/client";
 import { InlineLoading } from "@/components/shared/inline-loading";
@@ -33,85 +37,87 @@ export function PreviousRoundResultSection({
   const status = result?.previousCase.status ?? "pending";
 
   return (
-    <section className={styles.section} data-expanded={expanded || undefined}>
-      <button
-        type="button"
-        className={styles.trigger}
-        aria-expanded={expanded}
-        onClick={() => {
-          setMounted(true);
-          setExpanded((current) => !current);
-        }}
-      >
-        <span className={styles.glyph} aria-hidden>
-          <History />
-        </span>
-        <span className={styles.title}>
-          <strong>上轮实测</strong>
-          <small>
-            {expanded && result
-              ? `${result.previousRound.name} · ${caseStatusLabel(status)}`
-              : "默认折叠，展开后读取只读记录"}
-          </small>
-        </span>
-        {result ? (
-          <span className={styles.summary} data-status={status}>
-            {result.testerName || "未记录测试人员"}
-          </span>
-        ) : null}
-        <ChevronDown className={styles.chevron} aria-hidden />
-      </button>
-
-      <div className={styles.bodyWrap}>
-        <div
-          className={styles.body}
-          aria-busy={(expanded && resultQuery.isPending) || undefined}
-          aria-hidden={!expanded}
-          inert={!expanded}
+    <Collapsible asChild open={expanded}>
+      <section className={styles.section} data-expanded={expanded || undefined}>
+        <button
+          type="button"
+          className={styles.trigger}
+          aria-expanded={expanded}
+          onClick={() => {
+            setMounted(true);
+            setExpanded((current) => !current);
+          }}
         >
-          {mounted ? (
-            resultQuery.isPending ? (
-              <InlineLoading className={styles.state} label="正在读取上轮实测" />
-            ) : resultQuery.isError ? (
-              <div className={styles.error}>
-                <span>上轮实测读取失败。</span>
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="outline"
-                  onClick={() => resultQuery.refetch()}
-                >
-                  重试
-                </Button>
-              </div>
-            ) : result ? (
-              <>
-                <div className={styles.meta}>
-                  <span className={styles.statusChip} data-status={result.previousCase.status}>
-                    {caseStatusLabel(result.previousCase.status)}
-                  </span>
-                  <span>执行日期：{formatDateOnly(result.previousCase.execDate, "未记录")}</span>
-                  <span>测试人员：{result.testerName || "未记录"}</span>
-                </div>
-                {result.steps.length === 0 ? (
-                  <div className={styles.state}>上轮用例没有步骤记录。</div>
-                ) : (
-                  <div className={styles.steps}>
-                    {result.steps.map((step, index) => (
-                      <PreviousStepCard
-                        key={`${step.currentStepId ?? "previous"}-${step.previousStep.id || index}`}
-                        step={step}
-                        projectCode={projectCode}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : null
+          <span className={styles.glyph} aria-hidden>
+            <History />
+          </span>
+          <span className={styles.title}>
+            <strong>上轮实测</strong>
+            <small>
+              {expanded && result
+                ? `${result.previousRound.name} · ${caseStatusLabel(status)}`
+                : "默认折叠，展开后读取只读记录"}
+            </small>
+          </span>
+          {result ? (
+            <span className={styles.summary} data-status={status}>
+              {result.testerName || "未记录测试人员"}
+            </span>
           ) : null}
-        </div>
-      </div>
-    </section>
+          <ChevronDown className={styles.chevron} aria-hidden />
+        </button>
+
+        <CollapsibleContent>
+          <div
+            className={styles.body}
+            aria-busy={(expanded && resultQuery.isPending) || undefined}
+            aria-hidden={!expanded}
+            inert={!expanded}
+          >
+            {mounted ? (
+              resultQuery.isPending ? (
+                <InlineLoading className={styles.state} label="正在读取上轮实测" />
+              ) : resultQuery.isError ? (
+                <div className={styles.error}>
+                  <span>上轮实测读取失败。</span>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    onClick={() => resultQuery.refetch()}
+                  >
+                    重试
+                  </Button>
+                </div>
+              ) : result ? (
+                <>
+                  <div className={styles.meta}>
+                    <span className={styles.statusChip} data-status={result.previousCase.status}>
+                      {caseStatusLabel(result.previousCase.status)}
+                    </span>
+                    <span>执行日期：{formatDateOnly(result.previousCase.execDate, "未记录")}</span>
+                    <span>测试人员：{result.testerName || "未记录"}</span>
+                  </div>
+                  {result.steps.length === 0 ? (
+                    <div className={styles.state}>上轮用例没有步骤记录。</div>
+                  ) : (
+                    <div className={styles.steps}>
+                      {result.steps.map((step, index) => (
+                        <PreviousStepCard
+                          key={`${step.currentStepId ?? "previous"}-${step.previousStep.id || index}`}
+                          step={step}
+                          projectCode={projectCode}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : null
+            ) : null}
+          </div>
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }
 

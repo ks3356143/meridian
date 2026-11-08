@@ -1,7 +1,7 @@
-import * as React from "react";
-import type { CSSProperties } from "react";
+import type { ReactElement, ReactNode } from "react";
+import type { HTMLMotionProps } from "motion/react";
 import { cn } from "cn";
-import { Slot, Slottable } from "radix-ui/slot";
+import { RippleButton, RippleButtonRipples } from "@animate-ui/react/primitives/buttons/ripple";
 import styles from "./Button.module.css";
 
 export type ButtonVariant = keyof typeof buttonVariantClasses;
@@ -49,12 +49,12 @@ export function buttonVariants({
   );
 }
 
-interface Ripple {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-}
+type ButtonProps = Omit<HTMLMotionProps<"button">, "children"> & {
+  children?: ReactNode;
+} & ButtonVariantOptions & {
+    asChild?: boolean;
+    disableRipple?: boolean;
+  };
 
 function Button({
   className,
@@ -64,70 +64,32 @@ function Button({
   asChild = false,
   disableRipple = false,
   children,
-  onPointerDown,
-  disabled,
   ...props
-}: React.ComponentProps<"button"> &
-  ButtonVariantOptions & {
-    asChild?: boolean;
-    disableRipple?: boolean;
-  }) {
-  const Comp = asChild ? Slot : "button";
-  const [ripples, setRipples] = React.useState<Ripple[]>([]);
-  const rippleIdRef = React.useRef(0);
+}: ButtonProps) {
+  const shared = {
+    "data-slot": "button",
+    "data-variant": variant,
+    "data-size": size,
+    className: buttonVariants({ variant, size, className, sheen }),
+    hoverScale: 1,
+    tapScale: 0.98,
+  } as const;
 
-  const removeRipple = React.useCallback((id: number) => {
-    setRipples((previous) => previous.filter((ripple) => ripple.id !== id));
-  }, []);
-
-  const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
-    onPointerDown?.(event as React.PointerEvent<HTMLButtonElement>);
-    if (disabled || disableRipple || variant === "link" || event.button !== 0) return;
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    const rippleSize = Math.max(rect.width, rect.height) * 2.4;
-    const id = ++rippleIdRef.current;
-    setRipples((previous) => [
-      ...previous,
-      {
-        id,
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-        size: rippleSize,
-      },
-    ]);
-    window.setTimeout(() => removeRipple(id), 520);
-  };
+  if (asChild) {
+    return (
+      <RippleButton {...shared} asChild {...props}>
+        {children as ReactElement}
+      </RippleButton>
+    );
+  }
 
   return (
-    <Comp
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      className={buttonVariants({ variant, size, className, sheen })}
-      onPointerDown={handlePointerDown}
-      disabled={disabled}
-      {...props}
-    >
-      {asChild ? <Slottable>{children}</Slottable> : children}
-      {variant === "link" || disableRipple || ripples.length === 0 ? null : (
-        <span className={styles.rippleClip} aria-hidden>
-          {ripples.map((ripple) => (
-            <span
-              key={ripple.id}
-              className={styles.ripple}
-              style={
-                {
-                  "--ripple-x": `${ripple.x}px`,
-                  "--ripple-y": `${ripple.y}px`,
-                  "--ripple-size": `${ripple.size}px`,
-                } as CSSProperties
-              }
-            />
-          ))}
-        </span>
+    <RippleButton {...shared} {...props}>
+      {children}
+      {variant === "link" || disableRipple ? null : (
+        <RippleButtonRipples color="color-mix(in srgb, currentColor 45%, transparent)" scale={9} />
       )}
-    </Comp>
+    </RippleButton>
   );
 }
 
