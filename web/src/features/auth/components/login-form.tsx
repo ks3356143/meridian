@@ -1,4 +1,4 @@
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -29,29 +29,8 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
   const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
-  useGSAP(
-    () => {
-      gsap.fromTo(
-        ".login-reveal",
-        { opacity: 0.9 },
-        { opacity: 1, duration: 0.22, ease: "power2.out", clearProps: "opacity" },
-      );
-
-      gsap.fromTo(
-        ".login-field",
-        { opacity: 0.9 },
-        {
-          opacity: 1,
-          duration: 0.18,
-          stagger: 0.03,
-          ease: "power2.out",
-          delay: 0.04,
-          clearProps: "opacity",
-        },
-      );
-    },
-    { scope: containerRef },
-  );
+  useSubtleReveal(containerRef, ".login-reveal");
+  useSubtleReveal(containerRef, ".login-field");
 
   const updateValue = (field: keyof FormValues, value: string) => {
     setValues((previous) => ({ ...previous, [field]: value }));

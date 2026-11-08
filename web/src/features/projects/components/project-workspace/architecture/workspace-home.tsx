@@ -4,7 +4,7 @@ import { Activity, CircleAlert, ListChecks, type LucideIcon } from "lucide-react
 import { Badge } from "@/components/ui/badge";
 import { levelVariant } from "../../../status-style";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { animate } from "@/lib/motion";
 import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
 import type { ProjectWorkspaceOutletContext } from "../project-workspace-layout";
@@ -31,45 +31,9 @@ export function WorkspaceHome() {
     return () => controls.stop();
   }, [progress]);
 
-  useGSAP(
-    () => {
-      if (!containerRef.current) return;
-      gsap
-        .timeline({ defaults: { ease: "power2.out" } })
-        .fromTo(
-          "[data-home-hero]",
-          { opacity: 0.9 },
-          {
-            opacity: 1,
-            duration: 0.2,
-            clearProps: "transform,opacity,willChange",
-          },
-        )
-        .fromTo(
-          "[data-home-metric]",
-          { opacity: 0.88 },
-          {
-            opacity: 1,
-            duration: 0.18,
-            stagger: 0.02,
-            clearProps: "transform,opacity,willChange",
-          },
-          "-=0.16",
-        )
-        .fromTo(
-          [".workspace-home-main", ".workspace-home-aside"],
-          { opacity: 0.88 },
-          {
-            opacity: 1,
-            duration: 0.18,
-            stagger: 0.03,
-            clearProps: "transform,opacity,willChange",
-          },
-          "-=0.12",
-        );
-    },
-    { scope: containerRef },
-  );
+  useSubtleReveal(containerRef, "[data-home-hero]");
+  useSubtleReveal(containerRef, "[data-home-metric]");
+  useSubtleReveal(containerRef, ".workspace-home-main, .workspace-home-aside");
 
   return (
     <div ref={containerRef} className="workspace-home">

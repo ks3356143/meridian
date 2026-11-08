@@ -1,4 +1,4 @@
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, FolderKanban, FolderPlus } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
@@ -50,19 +50,7 @@ export function Component() {
     });
   }, [deferredKeyword, filters.level, filters.platform, filters.status, projects]);
 
-  useGSAP(
-    () => {
-      if (!containerRef.current) return;
-      gsap.from(".dash-reveal", {
-        opacity: 0.84,
-        duration: 0.22,
-        stagger: 0.03,
-        ease: "power2.out",
-        clearProps: "opacity",
-      });
-    },
-    { scope: containerRef, dependencies: [projectsQuery.isPending] },
-  );
+  useSubtleReveal(containerRef, ".dash-reveal", !projectsQuery.isPending);
 
   // 日期只在挂载时计算一次：渲染期不调用 Date（React purity），跨天刷新页面自然更新。
   const [today] = useState(() =>

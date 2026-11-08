@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { projectsApi } from "../../api";
 import { levelVariant, statusVariant } from "../../status-style";
 import { totalOpenIssues, type Project } from "../../types";
@@ -53,22 +53,8 @@ export function ProjectDetail({ project }: { project: Project }) {
   const stages = getProjectStages();
   const stageIndex = getStageIndex(project.status);
 
-  useGSAP(
-    () => {
-      if (!containerRef.current) return;
-      gsap.fromTo(
-        ".project-detail-enter",
-        { opacity: 0.9 },
-        { opacity: 1, duration: 0.2, stagger: 0.025, ease: "power2.out", clearProps: "opacity" },
-      );
-      gsap.fromTo(
-        ".project-detail-enter-item",
-        { opacity: 0.9 },
-        { opacity: 1, duration: 0.18, stagger: 0.018, ease: "power2.out", clearProps: "opacity" },
-      );
-    },
-    { scope: containerRef },
-  );
+  useSubtleReveal(containerRef, ".project-detail-enter");
+  useSubtleReveal(containerRef, ".project-detail-enter-item");
 
   return (
     <div ref={containerRef} className="flex min-w-0 flex-col gap-6">

@@ -25,7 +25,7 @@ import {
   StandardField,
 } from "@/features/projects/components/project-create/standard-field";
 import type { CreateProjectPayload, DictionaryOption } from "@/features/projects/types";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import styles from "./ProjectCreatePage.module.css";
 
 const initialDictionarySelections: DictionarySelections = {
@@ -62,19 +62,7 @@ export function Component() {
   );
   const referenceStandardIds = selectedStandardIds ?? defaultReferenceStandardIds;
 
-  useGSAP(
-    () => {
-      if (!containerRef.current) return;
-      gsap.from(".project-create-reveal", {
-        opacity: 0.84,
-        duration: 0.22,
-        stagger: 0.03,
-        ease: "power2.out",
-        clearProps: "opacity",
-      });
-    },
-    { scope: containerRef, dependencies: [optionsQuery.isPending] },
-  );
+  useSubtleReveal(containerRef, ".project-create-reveal", !optionsQuery.isPending);
 
   const dictionaryOptions = useMemo(() => {
     const existing = optionsQuery.data?.dictionaries ?? [];
