@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import { InlineLoading } from "@/components/shared/inline-loading";
 import { SegmentedProgress } from "@/components/shared/segmented-progress";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -214,72 +215,76 @@ export function ReviewChecklistConfigPage() {
             {templates.map((template, index) => {
               const done = practiceDone(template.items);
               return (
-                <TableRow
+                <Fade
                   key={template.id}
-                  className={styles.tableRow}
-                  style={{ animationDelay: `${index * 28}ms` }}
+                  asChild
+                  delay={index * 28}
+                  initialOpacity={0}
+                  transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
                 >
-                  <TableCell className={styles.seqCell}>
-                    {String(index + 1).padStart(2, "0")}
-                  </TableCell>
-                  <TableCell>
-                    <span className={styles.typeChip}>{template.documentType || "未分类"}</span>
-                  </TableCell>
-                  <TableCell className={styles.nameCol}>
-                    <div className={styles.nameCell}>
-                      <BookOpenCheck aria-hidden />
-                      <strong>{template.name}</strong>
-                    </div>
-                  </TableCell>
-                  <TableCell className={styles.numCell}>{template.items.length} 项</TableCell>
-                  <TableCell className={styles.numCell}>
-                    {template.documentVersion || "未设置"}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={styles.practiceBadge}
-                      data-state={
-                        done.configured === 0
-                          ? "empty"
-                          : done.configured === done.total
-                            ? "full"
-                            : "partial"
-                      }
-                    >
-                      {done.configured}/{done.total}
-                    </span>
-                  </TableCell>
-                  <TableCell>{conditionLabel(template.condition)}</TableCell>
-                  <TableCell className={styles.numCell}>
-                    {template.updatedAt.slice(0, 10)}
-                  </TableCell>
-                  <TableCell>
-                    <div className={styles.rowActions}>
-                      <Button
-                        type="button"
-                        size="xs"
-                        variant="outline"
-                        onClick={() => openEdit(template)}
+                  <TableRow>
+                    <TableCell className={styles.seqCell}>
+                      {String(index + 1).padStart(2, "0")}
+                    </TableCell>
+                    <TableCell>
+                      <span className={styles.typeChip}>{template.documentType || "未分类"}</span>
+                    </TableCell>
+                    <TableCell className={styles.nameCol}>
+                      <div className={styles.nameCell}>
+                        <BookOpenCheck aria-hidden />
+                        <strong>{template.name}</strong>
+                      </div>
+                    </TableCell>
+                    <TableCell className={styles.numCell}>{template.items.length} 项</TableCell>
+                    <TableCell className={styles.numCell}>
+                      {template.documentVersion || "未设置"}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={styles.practiceBadge}
+                        data-state={
+                          done.configured === 0
+                            ? "empty"
+                            : done.configured === done.total
+                              ? "full"
+                              : "partial"
+                        }
                       >
-                        编辑
-                      </Button>
-                      <ConfirmAction
-                        title="删除审查单模板"
-                        description={`确认删除“${template.name}”？已绑定到测试项的审查单不受影响。`}
-                        onConfirm={() => deleteMutation.mutate(template.id)}
-                      >
+                        {done.configured}/{done.total}
+                      </span>
+                    </TableCell>
+                    <TableCell>{conditionLabel(template.condition)}</TableCell>
+                    <TableCell className={styles.numCell}>
+                      {template.updatedAt.slice(0, 10)}
+                    </TableCell>
+                    <TableCell>
+                      <div className={styles.rowActions}>
                         <Button
                           type="button"
-                          size="icon-xs"
-                          variant="ghost"
-                          aria-label={`删除${template.name}`}
+                          size="xs"
+                          variant="outline"
+                          onClick={() => openEdit(template)}
                         >
-                          <Trash2 aria-hidden />
+                          编辑
                         </Button>
-                      </ConfirmAction>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                        <ConfirmAction
+                          title="删除审查单模板"
+                          description={`确认删除“${template.name}”？已绑定到测试项的审查单不受影响。`}
+                          onConfirm={() => deleteMutation.mutate(template.id)}
+                        >
+                          <Button
+                            type="button"
+                            size="icon-xs"
+                            variant="ghost"
+                            aria-label={`删除${template.name}`}
+                          >
+                            <Trash2 aria-hidden />
+                          </Button>
+                        </ConfirmAction>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </Fade>
               );
             })}
           </TableBody>

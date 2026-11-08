@@ -240,11 +240,6 @@
   text-align: center;
 }
 
-.dcDocTableRow {
-  animation: dc-row-in 0.22s var(--ease-out-strong) both;
-  animation-delay: calc(var(--row-index, 0) * 24ms);
-}
-
 .dcDocTableRow:hover td {
   background: color-mix(in srgb, var(--primary) 3.5%, transparent);
 }
@@ -300,15 +295,6 @@
   white-space: nowrap;
 }
 
-@keyframes dc-row-in {
-  from {
-    transform: translateY(3px);
-  }
-  to {
-    transform: none;
-  }
-}
-
 .dcSheetToolbar {
   align-items: center;
   display: flex;
@@ -342,7 +328,6 @@
 }
 
 .dcSheetCard {
-  animation: dc-row-in 0.22s var(--ease-out-strong) both;
   background: color-mix(in srgb, var(--card) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 2px;

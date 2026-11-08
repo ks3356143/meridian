@@ -289,25 +289,9 @@
   animation: saveSpin 0.85s linear infinite;
 }
 
-.statusChip[data-save-state="saved"] svg {
-  animation: savePop 0.28s cubic-bezier(0.32, 0.72, 0, 1.2);
-}
-
 @keyframes saveSpin {
   to {
     rotate: 360deg;
-  }
-}
-
-@keyframes savePop {
-  from {
-    opacity: 0;
-    scale: 0.65;
-  }
-
-  to {
-    opacity: 1;
-    scale: 1;
   }
 }
 
@@ -739,21 +723,8 @@
 }
 
 .sectionStep svg {
-  animation: sectionStepCheckIn 180ms var(--ease-out-strong) 1 both;
   height: 0.6rem;
   width: 0.6rem;
-}
-
-@keyframes sectionStepCheckIn {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 .sectionCount {

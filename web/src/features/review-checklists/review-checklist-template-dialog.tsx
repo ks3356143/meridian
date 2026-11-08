@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import {
   Dialog,
   DialogContent,
@@ -135,88 +136,92 @@ export function ReviewChecklistTemplateDialog({
 
             <div className={styles.itemList}>
               {draft.items.map((item, index) => (
-                <div
+                <Fade
                   key={index}
-                  className={styles.itemRow}
-                  style={{ animationDelay: `${index * 18}ms` }}
+                  asChild
+                  delay={index * 18}
+                  initialOpacity={0}
+                  transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
                 >
-                  <span className={styles.itemSeq}>{index + 1}</span>
-                  <div className={styles.itemFields}>
-                    <div className={styles.itemMain}>
-                      <Input
-                        value={item.category}
-                        placeholder="类别"
-                        aria-label={`第 ${index + 1} 项类别`}
-                        onChange={(event) => onPatchItem(index, { category: event.target.value })}
-                      />
-                      <Input
-                        value={item.title}
-                        placeholder="检查项"
-                        aria-label={`第 ${index + 1} 项检查项`}
-                        onChange={(event) =>
-                          onPatchItem(index, {
-                            title: event.target.value,
-                            requirement: event.target.value,
-                          })
-                        }
-                      />
-                      <Input
-                        value={item.basis}
-                        placeholder="依据，如 GJB 438C §4.1"
-                        aria-label={`第 ${index + 1} 项依据`}
-                        onChange={(event) => onPatchItem(index, { basis: event.target.value })}
-                      />
-                      <Button
-                        type="button"
-                        size="xs"
-                        variant={practiceIndex === index ? "default" : "outline"}
-                        className={styles.practiceButton}
-                        onClick={() =>
-                          onPracticeIndexChange(practiceIndex === index ? null : index)
-                        }
-                      >
-                        推荐做法
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon-xs"
-                        variant="ghost"
-                        className={styles.deleteButton}
-                        aria-label={`删除第 ${index + 1} 项`}
-                        disabled={draft.items.length <= 1}
-                        onClick={() => {
-                          onPracticeIndexChange(null);
-                          onChange({
-                            ...draft,
-                            items: draft.items.filter((_, itemIndex) => itemIndex !== index),
-                          });
-                        }}
-                      >
-                        <Trash2 aria-hidden />
-                      </Button>
-                    </div>
-                    {practiceIndex === index ? (
-                      <div className={styles.practiceGrid}>
-                        <div>
-                          <span className={styles.practiceLabel}>推荐做法</span>
-                          <PracticeEditor
-                            value={item.goodPractice}
-                            ariaLabel={`第 ${index + 1} 项推荐做法`}
-                            onChange={(html) => onPatchItem(index, { goodPractice: html })}
-                          />
-                        </div>
-                        <div>
-                          <span className={styles.practiceLabel}>不推荐做法</span>
-                          <PracticeEditor
-                            value={item.badPractice}
-                            ariaLabel={`第 ${index + 1} 项不推荐做法`}
-                            onChange={(html) => onPatchItem(index, { badPractice: html })}
-                          />
-                        </div>
+                  <div className={styles.itemRow}>
+                    <span className={styles.itemSeq}>{index + 1}</span>
+                    <div className={styles.itemFields}>
+                      <div className={styles.itemMain}>
+                        <Input
+                          value={item.category}
+                          placeholder="类别"
+                          aria-label={`第 ${index + 1} 项类别`}
+                          onChange={(event) => onPatchItem(index, { category: event.target.value })}
+                        />
+                        <Input
+                          value={item.title}
+                          placeholder="检查项"
+                          aria-label={`第 ${index + 1} 项检查项`}
+                          onChange={(event) =>
+                            onPatchItem(index, {
+                              title: event.target.value,
+                              requirement: event.target.value,
+                            })
+                          }
+                        />
+                        <Input
+                          value={item.basis}
+                          placeholder="依据，如 GJB 438C §4.1"
+                          aria-label={`第 ${index + 1} 项依据`}
+                          onChange={(event) => onPatchItem(index, { basis: event.target.value })}
+                        />
+                        <Button
+                          type="button"
+                          size="xs"
+                          variant={practiceIndex === index ? "default" : "outline"}
+                          className={styles.practiceButton}
+                          onClick={() =>
+                            onPracticeIndexChange(practiceIndex === index ? null : index)
+                          }
+                        >
+                          推荐做法
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="ghost"
+                          className={styles.deleteButton}
+                          aria-label={`删除第 ${index + 1} 项`}
+                          disabled={draft.items.length <= 1}
+                          onClick={() => {
+                            onPracticeIndexChange(null);
+                            onChange({
+                              ...draft,
+                              items: draft.items.filter((_, itemIndex) => itemIndex !== index),
+                            });
+                          }}
+                        >
+                          <Trash2 aria-hidden />
+                        </Button>
                       </div>
-                    ) : null}
+                      {practiceIndex === index ? (
+                        <div className={styles.practiceGrid}>
+                          <div>
+                            <span className={styles.practiceLabel}>推荐做法</span>
+                            <PracticeEditor
+                              value={item.goodPractice}
+                              ariaLabel={`第 ${index + 1} 项推荐做法`}
+                              onChange={(html) => onPatchItem(index, { goodPractice: html })}
+                            />
+                          </div>
+                          <div>
+                            <span className={styles.practiceLabel}>不推荐做法</span>
+                            <PracticeEditor
+                              value={item.badPractice}
+                              ariaLabel={`第 ${index + 1} 项不推荐做法`}
+                              onChange={(html) => onPatchItem(index, { badPractice: html })}
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
+                </Fade>
               ))}
             </div>
           </div>

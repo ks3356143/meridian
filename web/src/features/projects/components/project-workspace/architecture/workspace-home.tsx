@@ -1,10 +1,11 @@
 import { useOutletContext } from "react-router";
-import { useRef, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { Activity, CircleAlert, ListChecks, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { levelVariant } from "../../../status-style";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
 import { gsap, useGSAP } from "@/lib/gsap";
+import { animate } from "@/lib/motion";
 import type { ProjectWorkspaceOutletContext } from "../project-workspace-layout";
 import { CurrentTaskPanel } from "./components/current-task-panel";
 import { DataFlowPanel } from "./components/data-flow-panel";
@@ -16,6 +17,18 @@ import styles from "./workspace-home.module.css";
 export function WorkspaceHome() {
   const { project, executionRate, openIssues } = useOutletContext<ProjectWorkspaceOutletContext>();
   const containerRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLSpanElement>(null);
+  const progress = Math.min(1, Math.max(0, executionRate / 100));
+  useEffect(() => {
+    const element = progressRef.current;
+    if (!element) return;
+    const controls = animate(
+      element,
+      { scaleX: [0, progress], opacity: [0.35, 1] },
+      { duration: 0.86, delay: 0.16, ease: [0.22, 0.85, 0.24, 1] },
+    );
+    return () => controls.stop();
+  }, [progress]);
 
   useGSAP(
     () => {
@@ -101,6 +114,7 @@ export function WorkspaceHome() {
           />
           <MetricTile icon={ListChecks} label="测试用例" value={project.casesTotal} tone="info" />
         </dl>
+        <span ref={progressRef} className={styles.heroProgress} aria-hidden />
       </SpotlightSurface>
 
       <div className="workspace-home-grid">

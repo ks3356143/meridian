@@ -285,7 +285,13 @@ export function DcWorkbench({ testItemId, projectCode, state, catalog, update }:
             </div>
             <div className={dcStyles.dcConfigGrid}>
               {configItems.map((item, index) => (
-                <Fade key={item.label} asChild delay={index * 0.026} initialOpacity={0.7}>
+                <Fade
+                  key={item.label}
+                  asChild
+                  delay={index * 26}
+                  initialOpacity={0.7}
+                  transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+                >
                   <div
                     className={dcStyles.dcConfigRow}
                     data-ok={item.ok ? "true" : undefined}

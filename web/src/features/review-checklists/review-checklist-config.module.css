@@ -100,24 +100,8 @@
   font-size: 0.72rem;
 }
 
-.tableRow {
-  animation: rc-row-in 0.22s var(--ease-out-strong) both;
-}
-
 .tableWrap [data-slot="table-body"] tr:hover [data-slot="table-cell"] {
   background: color-mix(in srgb, var(--primary) 4%, transparent);
-}
-
-@keyframes rc-row-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
 }
 
 /* 短文本列一律上下左右居中，仅审查单名称保持左对齐。 */
@@ -299,7 +283,6 @@
 
 .itemRow {
   align-items: center;
-  animation: rc-row-in 0.22s var(--ease-out-strong) both;
   background: color-mix(in srgb, var(--muted-foreground) 3%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   border-left: 2px solid color-mix(in srgb, var(--primary) 38%, var(--border));

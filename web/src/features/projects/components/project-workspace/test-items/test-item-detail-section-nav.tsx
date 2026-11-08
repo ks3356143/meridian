@@ -1,4 +1,5 @@
 import { Check, CheckCircle2, CloudUpload, Loader2 } from "lucide-react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import styles from "./test-item-detail.module.css";
 
 export type TestItemSaveState = "saved" | "editing" | "saving" | "error";
@@ -46,7 +47,9 @@ export function TestItemSectionNav({
           </>
         ) : (
           <>
-            <CheckCircle2 aria-hidden />
+            <Fade asChild transition={{ type: "spring", stiffness: 320, damping: 18 }}>
+              <CheckCircle2 aria-hidden />
+            </Fade>
             已自动保存
           </>
         )}
@@ -67,7 +70,13 @@ export function TestItemSectionNav({
             data-done={section.done ? "true" : undefined}
             aria-hidden
           >
-            {section.done ? <Check aria-hidden /> : section.step}
+            {section.done ? (
+              <Fade asChild transition={{ duration: 0.18 }}>
+                <Check aria-hidden />
+              </Fade>
+            ) : (
+              section.step
+            )}
           </span>
           {section.label}
           {section.count !== null && section.count > 0 ? (

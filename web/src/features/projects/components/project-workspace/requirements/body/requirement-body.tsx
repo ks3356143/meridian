@@ -9,6 +9,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { animate } from "@/lib/motion";
 import { requestBlob } from "@/api/client";
 import type { RequirementBlockNode } from "@/features/requirements/types";
 import { vectorImageNotice } from "./requirement-body-assets";
@@ -305,8 +306,7 @@ function AssetImageBlock({
     retry: false,
   });
 
-  const [objectUrl, setObjectUrl] = useState<string>();
-  // 失败按 assetId 记账：同一实例被复用到另一张图时，不会带着上一张图的失败态。
+  const [objectUrl, setObjectUrl] = useState<string>(); // 失败按 assetId 记账：同一实例被复用到另一张图时，不会带着上一张图的失败态。
   const [failedAssetId, setFailedAssetId] = useState("");
   useEffect(() => {
     if (!assetQuery.data) {
@@ -322,6 +322,17 @@ function AssetImageBlock({
   const vectorNotice = vectorImageNotice(assetQuery.data?.type ?? "");
   const showFallback =
     !assetId || failedAssetId === assetId || assetQuery.isError || Boolean(vectorNotice);
+  const imgRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+    const controls = animate(
+      img,
+      { opacity: [0, 1], scale: [0.985, 1] },
+      { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
+    );
+    return () => controls.stop();
+  }, [objectUrl]);
 
   return (
     <figure className={styles.figure} data-align={readImageAlign(block.attrs) || undefined}>
@@ -338,6 +349,7 @@ function AssetImageBlock({
           </span>
         ) : objectUrl ? (
           <img
+            ref={imgRef}
             src={objectUrl}
             alt={alt}
             decoding="async"

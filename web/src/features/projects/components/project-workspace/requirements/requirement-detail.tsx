@@ -12,6 +12,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import {
   lazy,
   memo,
@@ -627,7 +628,9 @@ function RequirementDetailForm({
               </>
             ) : (
               <>
-                <CheckCircle2 aria-hidden />
+                <Fade asChild transition={{ type: "spring", stiffness: 320, damping: 18 }}>
+                  <CheckCircle2 aria-hidden />
+                </Fade>
                 已自动保存
               </>
             )}

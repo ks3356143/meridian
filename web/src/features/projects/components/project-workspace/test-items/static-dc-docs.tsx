@@ -1,6 +1,5 @@
 import { AlertTriangle, FileCheck2, FileText, Plus, X } from "lucide-react";
 import { Fade } from "@animate-ui/react/primitives/effects/fade";
-import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
@@ -58,61 +57,70 @@ export function DcDocsTab({
           </thead>
           <tbody>
             {state.documents.map((doc, index) => (
-              <tr
+              <Fade
                 key={doc.id}
-                style={{ "--row-index": index } as CSSProperties}
-                className={dcStyles.dcDocTableRow}
+                asChild
+                delay={index * 24}
+                initialOpacity={0}
+                transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
               >
-                <td className={dcStyles.dcDocSeq}>{String(index + 1).padStart(2, "0")}</td>
-                <td>
-                  <div className={dcStyles.dcDocName}>
-                    <FileText aria-hidden />
+                <tr className={dcStyles.dcDocTableRow}>
+                  <td className={dcStyles.dcDocSeq}>{String(index + 1).padStart(2, "0")}</td>
+                  <td>
+                    <div className={dcStyles.dcDocName}>
+                      <FileText aria-hidden />
+                      <Input
+                        value={doc.name}
+                        aria-label="受审文档名称"
+                        className={dcStyles.dcDocNameInput}
+                        onChange={(event) =>
+                          update((next) => {
+                            const target = next.documents.find((item) => item.id === doc.id);
+                            if (target) target.name = event.target.value;
+                          })
+                        }
+                      />
+                    </div>
+                  </td>
+                  <td>
                     <Input
-                      value={doc.name}
-                      aria-label="受审文档名称"
-                      className={dcStyles.dcDocNameInput}
+                      value={doc.version}
+                      placeholder="版本"
+                      aria-label="受审文档版本"
+                      className={dcStyles.dcDocVersionInput}
                       onChange={(event) =>
                         update((next) => {
                           const target = next.documents.find((item) => item.id === doc.id);
-                          if (target) target.name = event.target.value;
+                          if (target) target.version = event.target.value;
                         })
                       }
                     />
-                  </div>
-                </td>
-                <td>
-                  <Input
-                    value={doc.version}
-                    placeholder="版本"
-                    aria-label="受审文档版本"
-                    className={dcStyles.dcDocVersionInput}
-                    onChange={(event) =>
-                      update((next) => {
-                        const target = next.documents.find((item) => item.id === doc.id);
-                        if (target) target.version = event.target.value;
-                      })
-                    }
-                  />
-                </td>
-                <td>
-                  <span className={dcStyles.dcDocCategory}>{doc.category || "未分类"}</span>
-                </td>
-                <td>
-                  <ConfirmAction
-                    title="删除受审文档"
-                    description={`确认从清单中移除“${doc.name || "未命名文档"}”？`}
-                    onConfirm={() =>
-                      update((next) => {
-                        next.documents = next.documents.filter((item) => item.id !== doc.id);
-                      })
-                    }
-                  >
-                    <Button type="button" size="icon-xs" variant="ghost" aria-label="删除受审文档">
-                      <X aria-hidden />
-                    </Button>
-                  </ConfirmAction>
-                </td>
-              </tr>
+                  </td>
+                  <td>
+                    <span className={dcStyles.dcDocCategory}>{doc.category || "未分类"}</span>
+                  </td>
+                  <td>
+                    <ConfirmAction
+                      title="删除受审文档"
+                      description={`确认从清单中移除“${doc.name || "未命名文档"}”？`}
+                      onConfirm={() =>
+                        update((next) => {
+                          next.documents = next.documents.filter((item) => item.id !== doc.id);
+                        })
+                      }
+                    >
+                      <Button
+                        type="button"
+                        size="icon-xs"
+                        variant="ghost"
+                        aria-label="删除受审文档"
+                      >
+                        <X aria-hidden />
+                      </Button>
+                    </ConfirmAction>
+                  </td>
+                </tr>
+              </Fade>
             ))}
           </tbody>
         </table>

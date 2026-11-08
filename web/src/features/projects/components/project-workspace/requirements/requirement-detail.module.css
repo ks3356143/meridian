@@ -243,10 +243,6 @@
   animation: saveSpin 0.85s linear infinite;
 }
 
-.statusChip[data-save-state="saved"] svg {
-  animation: savePop 0.28s cubic-bezier(0.32, 0.72, 0, 1.2);
-}
-
 .statusChip[data-save-state="error"] {
   border-color: color-mix(in srgb, var(--destructive) 34%, var(--border));
   color: var(--destructive);
@@ -255,17 +251,6 @@
 @keyframes saveSpin {
   to {
     rotate: 360deg;
-  }
-}
-
-@keyframes savePop {
-  from {
-    opacity: 0;
-    scale: 0.65;
-  }
-  to {
-    opacity: 1;
-    scale: 1;
   }
 }
 

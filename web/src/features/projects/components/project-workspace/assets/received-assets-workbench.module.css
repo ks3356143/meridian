@@ -509,22 +509,6 @@
   }
 }
 
-.header {
-  animation: assetsPanelIn 320ms var(--ease-out-strong) both;
-}
-
-.revealSequence [data-assets-panel] {
-  animation: assetsPanelIn 320ms var(--ease-out-strong) both;
-}
-
-.revealSequence :global(.received-assets-sidebar) [data-assets-panel]:nth-of-type(2) {
-  animation-delay: 50ms;
-}
-
-.revealSequence :global(.received-table-panel) {
-  animation-delay: 100ms;
-}
-
 .heroSkeleton {
   align-items: center;
   background: color-mix(in srgb, var(--card) 94%, var(--primary) 4%);
@@ -606,18 +590,6 @@
 .bodySkeletonTable {
   height: 100%;
   width: 100%;
-}
-
-@keyframes assetsPanelIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @media (max-width: 1100px) {

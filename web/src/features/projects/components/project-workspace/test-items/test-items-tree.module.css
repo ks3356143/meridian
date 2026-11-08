@@ -446,17 +446,3 @@
   padding: 0 0.26rem;
   white-space: nowrap;
 }
-
-.rowHost {
-  animation: testTreeRowsIn 140ms var(--ease-out-strong) both;
-}
-
-@keyframes testTreeRowsIn {
-  from {
-    opacity: 0.82;
-  }
-
-  to {
-    opacity: 1;
-  }
-}

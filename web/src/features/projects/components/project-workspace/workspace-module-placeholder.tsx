@@ -84,39 +84,41 @@ export function WorkspaceModulePlaceholder({
 
       <div className={styles.content}>
         {currentBlock ? (
-          <SpotlightSurface
-            as="article"
+          <Fade
             key={currentBlock.label}
-            data-module-card
-            className={styles.currentCard}
+            asChild
+            initialOpacity={0.72}
+            transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
           >
-            <div className={styles.cardHeader}>
-              <div className={styles.cardCopy}>
-                <p className={styles.eyebrow}>MODULE PREVIEW · 功能规划</p>
-                <SectionTitle as="h3" size="lg" className={styles.currentTitle}>
-                  {currentBlock.label}
-                </SectionTitle>
-                <p className={styles.currentDescription}>{currentBlock.content}</p>
-              </div>
-              <Badge variant="outline">暂未接入</Badge>
-            </div>
-
-            <Fade asChild initialOpacity={0.82}>
-              <div className={styles.notice}>
-                <Construction className={styles.noticeIcon} aria-hidden />
-                <div>
-                  <strong>当前仅展示模块规划</strong>
-                  <p>此页面没有可用的录入、保存、生成或导出操作，不是按钮失效。</p>
+            <SpotlightSurface as="article" data-module-card className={styles.currentCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardCopy}>
+                  <p className={styles.eyebrow}>MODULE PREVIEW · 功能规划</p>
+                  <SectionTitle as="h3" size="lg" className={styles.currentTitle}>
+                    {currentBlock.label}
+                  </SectionTitle>
+                  <p className={styles.currentDescription}>{currentBlock.content}</p>
                 </div>
+                <Badge variant="outline">暂未接入</Badge>
               </div>
-            </Fade>
 
-            <dl className={styles.contextGrid}>
-              <ContextTile label="当前状态" value="暂未接入" />
-              <ContextTile label="数据写入" value="不会发生" />
-              <ContextTile label="规划归属" value={title} />
-            </dl>
-          </SpotlightSurface>
+              <Fade asChild initialOpacity={0.82}>
+                <div className={styles.notice}>
+                  <Construction className={styles.noticeIcon} aria-hidden />
+                  <div>
+                    <strong>当前仅展示模块规划</strong>
+                    <p>此页面没有可用的录入、保存、生成或导出操作，不是按钮失效。</p>
+                  </div>
+                </div>
+              </Fade>
+
+              <dl className={styles.contextGrid}>
+                <ContextTile label="当前状态" value="暂未接入" />
+                <ContextTile label="数据写入" value="不会发生" />
+                <ContextTile label="规划归属" value={title} />
+              </dl>
+            </SpotlightSurface>
+          </Fade>
         ) : null}
 
         <section className={styles.scopeSection} aria-labelledby="planned-scope-title">
@@ -128,16 +130,24 @@ export function WorkspaceModulePlaceholder({
             <span className={styles.scopeCount}>{blocks.length} 项</span>
           </div>
           <div className={styles.planGrid}>
-            {blocks.map((block) => (
-              <article key={block.label} data-module-card className={styles.planCard}>
-                <div className={styles.planCardHeader}>
-                  <SectionTitle as="h4" className={styles.planTitle}>
-                    {block.label}
-                  </SectionTitle>
-                  <Badge variant="secondary">{block.status}</Badge>
-                </div>
-                <p>{block.content}</p>
-              </article>
+            {blocks.map((block, index) => (
+              <Fade
+                key={block.label}
+                asChild
+                delay={index * 24}
+                initialOpacity={0.72}
+                transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+              >
+                <article data-module-card className={styles.planCard}>
+                  <div className={styles.planCardHeader}>
+                    <SectionTitle as="h4" className={styles.planTitle}>
+                      {block.label}
+                    </SectionTitle>
+                    <Badge variant="secondary">{block.status}</Badge>
+                  </div>
+                  <p>{block.content}</p>
+                </article>
+              </Fade>
             ))}
           </div>
         </section>

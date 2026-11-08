@@ -123,140 +123,143 @@ export function DcSheetsTab({ ctx }: { ctx: DcSheetsContext }) {
           const sheetStats = checkStats(sheet.checks);
           const expanded = expandedSheets.has(sheet.id);
           return (
-            <div
+            <Fade
               key={sheet.id}
-              className={dcStyles.dcSheetCard}
-              data-expanded={expanded ? "true" : undefined}
+              asChild
+              initialOpacity={0}
+              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
             >
-              <button
-                type="button"
-                className={dcStyles.dcSheetCardHead}
-                aria-expanded={expanded}
-                onClick={() =>
-                  setExpandedSheets((current) => {
-                    const next = new Set(current);
-                    if (next.has(sheet.id)) next.delete(sheet.id);
-                    else next.add(sheet.id);
-                    return next;
-                  })
-                }
-              >
-                <span className={dcStyles.dcSheetCardTitle}>
-                  <FileText aria-hidden />
-                  {sheet.name}
-                </span>
-                <Progress
-                  value={sheetStats.rate}
-                  className={styles.progress}
-                  data-tone={sheetStats.fail ? "danger" : "success"}
-                />
-                <span className={dcStyles.dcSheetCardMeta}>
-                  {sheetStats.fail ? (
-                    <em data-tone="danger">
-                      <strong>{sheetStats.fail}</strong> 不通过
-                    </em>
-                  ) : null}
-                  <span className={dcStyles.dcSheetStat}>
-                    <strong>
-                      {sheetStats.pass}/{sheetStats.total}
-                    </strong>
-                    <small>通过</small>
+              <div className={dcStyles.dcSheetCard} data-expanded={expanded ? "true" : undefined}>
+                <button
+                  type="button"
+                  className={dcStyles.dcSheetCardHead}
+                  aria-expanded={expanded}
+                  onClick={() =>
+                    setExpandedSheets((current) => {
+                      const next = new Set(current);
+                      if (next.has(sheet.id)) next.delete(sheet.id);
+                      else next.add(sheet.id);
+                      return next;
+                    })
+                  }
+                >
+                  <span className={dcStyles.dcSheetCardTitle}>
+                    <FileText aria-hidden />
+                    {sheet.name}
                   </span>
-                  <ChevronDown className={dcStyles.dcSheetChevron} aria-hidden />
-                </span>
-              </button>
-              <div
-                className={dcStyles.dcCollapse}
-                data-expanded={expanded ? "true" : undefined}
-                aria-hidden={!expanded}
-                inert={!expanded}
-              >
-                <div className={dcStyles.dcCollapseInner}>
-                  <div className={dcStyles.dcSheetPanel}>
-                    {!isCompletenessSheet(sheet.templateCode) ? (
-                      <div className={dcStyles.dcTargetDoc}>
-                        <span>
-                          受审文档：
-                          <strong>
-                            {sheet.documentType || sheet.targetDocumentName || "未指定"}
-                          </strong>
-                        </span>
-                        <span>
-                          使用版本：
-                          <strong>{sheet.targetDocumentVersion || "未设置"}</strong>
-                        </span>
-                      </div>
+                  <Progress
+                    value={sheetStats.rate}
+                    className={styles.progress}
+                    data-tone={sheetStats.fail ? "danger" : "success"}
+                  />
+                  <span className={dcStyles.dcSheetCardMeta}>
+                    {sheetStats.fail ? (
+                      <em data-tone="danger">
+                        <strong>{sheetStats.fail}</strong> 不通过
+                      </em>
                     ) : null}
-                    <div className={styles.sheetTools}>
-                      {sheetStats.fail === 0 ? (
+                    <span className={dcStyles.dcSheetStat}>
+                      <strong>
+                        {sheetStats.pass}/{sheetStats.total}
+                      </strong>
+                      <small>通过</small>
+                    </span>
+                    <ChevronDown className={dcStyles.dcSheetChevron} aria-hidden />
+                  </span>
+                </button>
+                <div
+                  className={dcStyles.dcCollapse}
+                  data-expanded={expanded ? "true" : undefined}
+                  aria-hidden={!expanded}
+                  inert={!expanded}
+                >
+                  <div className={dcStyles.dcCollapseInner}>
+                    <div className={dcStyles.dcSheetPanel}>
+                      {!isCompletenessSheet(sheet.templateCode) ? (
+                        <div className={dcStyles.dcTargetDoc}>
+                          <span>
+                            受审文档：
+                            <strong>
+                              {sheet.documentType || sheet.targetDocumentName || "未指定"}
+                            </strong>
+                          </span>
+                          <span>
+                            使用版本：
+                            <strong>{sheet.targetDocumentVersion || "未设置"}</strong>
+                          </span>
+                        </div>
+                      ) : null}
+                      <div className={styles.sheetTools}>
+                        {sheetStats.fail === 0 ? (
+                          <Button
+                            type="button"
+                            size="xs"
+                            variant="outline"
+                            onClick={() => markAllPass(sheet)}
+                          >
+                            全部通过
+                          </Button>
+                        ) : (
+                          <ConfirmAction
+                            title="全部通过"
+                            description={`当前有 ${sheetStats.fail} 项不通过，全部通过会清空错误描述与截图证据，继续？`}
+                            confirmLabel="确认全部通过"
+                            onConfirm={() => markAllPass(sheet)}
+                          >
+                            <Button type="button" size="xs" variant="outline">
+                              全部通过
+                            </Button>
+                          </ConfirmAction>
+                        )}
+                      </div>
+                      <DcCheckTable
+                        projectCode={projectCode}
+                        sheet={sheet}
+                        onlyFails={onlyFailsMode}
+                        onCycle={(check) =>
+                          updateCheck(sheet.id, check.id, (target) => {
+                            target.result = nextResult(target.result);
+                          })
+                        }
+                        onNotesChange={(check, value) =>
+                          updateCheck(sheet.id, check.id, (target) => {
+                            target.notes = value;
+                          })
+                        }
+                        onRemoveImage={(check, assetId) =>
+                          updateCheck(sheet.id, check.id, (target) => {
+                            target.images = (target.images ?? []).filter((id) => id !== assetId);
+                          })
+                        }
+                        onUpload={(check, files) => void uploadEvidence(sheet, check, files)}
+                        onCreateIssue={(check) => requestIssue(sheet, check)}
+                      />
+                      <ConfirmAction
+                        title="删除审查单"
+                        description={`确认删除“${sheet.name}”及其全部审查结果？`}
+                        onConfirm={() =>
+                          update((next) => {
+                            next.reviewSheets = next.reviewSheets.filter(
+                              (item) => item.id !== sheet.id,
+                            );
+                          })
+                        }
+                      >
                         <Button
                           type="button"
                           size="xs"
-                          variant="outline"
-                          onClick={() => markAllPass(sheet)}
+                          variant="ghost"
+                          className={dcStyles.dcSheetDelete}
                         >
-                          全部通过
+                          <Trash2 aria-hidden />
+                          删除审查单
                         </Button>
-                      ) : (
-                        <ConfirmAction
-                          title="全部通过"
-                          description={`当前有 ${sheetStats.fail} 项不通过，全部通过会清空错误描述与截图证据，继续？`}
-                          confirmLabel="确认全部通过"
-                          onConfirm={() => markAllPass(sheet)}
-                        >
-                          <Button type="button" size="xs" variant="outline">
-                            全部通过
-                          </Button>
-                        </ConfirmAction>
-                      )}
+                      </ConfirmAction>
                     </div>
-                    <DcCheckTable
-                      projectCode={projectCode}
-                      sheet={sheet}
-                      onlyFails={onlyFailsMode}
-                      onCycle={(check) =>
-                        updateCheck(sheet.id, check.id, (target) => {
-                          target.result = nextResult(target.result);
-                        })
-                      }
-                      onNotesChange={(check, value) =>
-                        updateCheck(sheet.id, check.id, (target) => {
-                          target.notes = value;
-                        })
-                      }
-                      onRemoveImage={(check, assetId) =>
-                        updateCheck(sheet.id, check.id, (target) => {
-                          target.images = (target.images ?? []).filter((id) => id !== assetId);
-                        })
-                      }
-                      onUpload={(check, files) => void uploadEvidence(sheet, check, files)}
-                      onCreateIssue={(check) => requestIssue(sheet, check)}
-                    />
-                    <ConfirmAction
-                      title="删除审查单"
-                      description={`确认删除“${sheet.name}”及其全部审查结果？`}
-                      onConfirm={() =>
-                        update((next) => {
-                          next.reviewSheets = next.reviewSheets.filter(
-                            (item) => item.id !== sheet.id,
-                          );
-                        })
-                      }
-                    >
-                      <Button
-                        type="button"
-                        size="xs"
-                        variant="ghost"
-                        className={dcStyles.dcSheetDelete}
-                      >
-                        <Trash2 aria-hidden />
-                        删除审查单
-                      </Button>
-                    </ConfirmAction>
                   </div>
                 </div>
               </div>
-            </div>
+            </Fade>
           );
         })}
         {state.reviewSheets.length === 0 ? (

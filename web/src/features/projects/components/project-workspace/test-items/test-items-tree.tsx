@@ -20,6 +20,7 @@ import {
   type TreeApi,
 } from "react-arborist";
 import { cn } from "cn";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { TruncatedText } from "@/components/shared/truncated-text";
 import {
   ContextMenu,
@@ -340,7 +341,11 @@ function TestItemsTreeRowHost({
       {children}
     </div>
   );
-  return row;
+  return (
+    <Fade asChild initialOpacity={0.82} transition={{ duration: 0.14, ease: "easeOut" }}>
+      {row}
+    </Fade>
+  );
 }
 
 /** 菜单项按节点类型渲染；动作由工作台接管（删除类先弹二次确认）。 */

@@ -13,6 +13,7 @@ import { useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/shared/date-picker";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -122,331 +123,357 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
           </div>
         </div>
       ) : (
-        <SpotlightSurface as="header" className={styles.header} data-assets-panel>
-          <div className={styles.heroMain}>
-            <div className={styles.eyebrowRow}>
-              <Badge variant="secondary" className={styles.contextBadge}>
-                <Boxes data-icon="inline-start" aria-hidden />
-                资料与对象
-              </Badge>
-              <Badge
-                variant="outline"
-                className={styles.dataBadge}
-                data-state={
-                  workbench.workObjectsQuery.isError
-                    ? "error"
-                    : workbench.workObjectsQuery.isFetching
-                      ? "syncing"
-                      : "live"
-                }
-              >
-                {workbench.workObjectsQuery.isError
-                  ? "加载失败"
-                  : workbench.workObjectsQuery.isFetching
-                    ? "同步中"
-                    : "真实数据"}
-              </Badge>
-            </div>
-
-            <div className={styles.titleBlock}>
-              <span className={styles.kicker}>ASSET INTAKE · 资料接收</span>
-              <div className={styles.titleRow}>
-                <span className={styles.titleAccent} aria-hidden />
-                <h2 id="received-assets-title" className={styles.title}>
-                  接收文件录入
-                </h2>
-              </div>
-            </div>
-
-            <p className={styles.description}>
-              把客户交付资料登记为工作对象，再进入需求解析和版本比对。
-            </p>
-          </div>
-
-          <div className={styles.heroAside}>
-            <ol className={styles.flow} aria-label="资料处理流程">
-              {INTAKE_FLOW.map((step, index) => (
-                <li
-                  key={step}
-                  className={styles.flowStep}
-                  data-active={index === 0 ? "true" : undefined}
-                  aria-current={index === 0 ? "step" : undefined}
+        <Fade asChild initialOpacity={0} transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}>
+          <SpotlightSurface as="header" className={styles.header} data-assets-panel>
+            <div className={styles.heroMain}>
+              <div className={styles.eyebrowRow}>
+                <Badge variant="secondary" className={styles.contextBadge}>
+                  <Boxes data-icon="inline-start" aria-hidden />
+                  资料与对象
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={styles.dataBadge}
+                  data-state={
+                    workbench.workObjectsQuery.isError
+                      ? "error"
+                      : workbench.workObjectsQuery.isFetching
+                        ? "syncing"
+                        : "live"
+                  }
                 >
-                  {index > 0 ? <ArrowRight className={styles.flowArrow} aria-hidden /> : null}
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ol>
+                  {workbench.workObjectsQuery.isError
+                    ? "加载失败"
+                    : workbench.workObjectsQuery.isFetching
+                      ? "同步中"
+                      : "真实数据"}
+                </Badge>
+              </div>
 
-            <dl className={styles.summary}>
-              <SummaryTile label="待确认" value={workbench.summary.draftCount} tone="warning" />
-              <SummaryTile label="已确认" value={workbench.summary.confirmedCount} tone="primary" />
-              <SummaryTile label="历史版本" value={workbench.summary.historicalCount} tone="info" />
-              <SummaryTile
-                label="代码包"
-                value={workbench.summary.codePackageCount}
-                tone="neutral"
-              />
-            </dl>
-          </div>
-        </SpotlightSurface>
+              <div className={styles.titleBlock}>
+                <span className={styles.kicker}>ASSET INTAKE · 资料接收</span>
+                <div className={styles.titleRow}>
+                  <span className={styles.titleAccent} aria-hidden />
+                  <h2 id="received-assets-title" className={styles.title}>
+                    接收文件录入
+                  </h2>
+                </div>
+              </div>
+
+              <p className={styles.description}>
+                把客户交付资料登记为工作对象，再进入需求解析和版本比对。
+              </p>
+            </div>
+
+            <div className={styles.heroAside}>
+              <ol className={styles.flow} aria-label="资料处理流程">
+                {INTAKE_FLOW.map((step, index) => (
+                  <li
+                    key={step}
+                    className={styles.flowStep}
+                    data-active={index === 0 ? "true" : undefined}
+                    aria-current={index === 0 ? "step" : undefined}
+                  >
+                    {index > 0 ? <ArrowRight className={styles.flowArrow} aria-hidden /> : null}
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+
+              <dl className={styles.summary}>
+                <SummaryTile label="待确认" value={workbench.summary.draftCount} tone="warning" />
+                <SummaryTile
+                  label="已确认"
+                  value={workbench.summary.confirmedCount}
+                  tone="primary"
+                />
+                <SummaryTile
+                  label="历史版本"
+                  value={workbench.summary.historicalCount}
+                  tone="info"
+                />
+                <SummaryTile
+                  label="代码包"
+                  value={workbench.summary.codePackageCount}
+                  tone="neutral"
+                />
+              </dl>
+            </div>
+          </SpotlightSurface>
+        </Fade>
       )}
 
       {renderStage >= 2 ? (
         <>
-          <div className={`received-assets-grid ${styles.revealSequence}`}>
+          <div className="received-assets-grid">
             <div className="received-assets-sidebar">
               <ReceivedAssetDropzone onFiles={workbench.addFiles} />
 
-              <section
-                className="received-panel"
-                aria-labelledby="received-batch-title"
-                data-assets-panel
+              <Fade
+                asChild
+                delay={50}
+                initialOpacity={0}
+                transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
               >
-                <header className="received-panel-header">
-                  <span className="received-panel-icon">
-                    <ShieldCheck aria-hidden />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 id="received-batch-title" className="text-sm font-semibold">
-                      接收信息
-                    </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">随本次上传保存并可批量套用</p>
-                  </div>
-                </header>
+                <section
+                  className="received-panel"
+                  aria-labelledby="received-batch-title"
+                  data-assets-panel
+                >
+                  <header className="received-panel-header">
+                    <span className="received-panel-icon">
+                      <ShieldCheck aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 id="received-batch-title" className="text-sm font-semibold">
+                        接收信息
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        随本次上传保存并可批量套用
+                      </p>
+                    </div>
+                  </header>
 
-                <FieldGroup className="gap-3">
-                  <Field>
-                    <FieldLabel htmlFor="received-at">接收日期</FieldLabel>
-                    <DatePicker
-                      id="received-at"
-                      value={workbench.defaults.receivedAt}
-                      onChange={(receivedAt) =>
-                        workbench.setDefaults((previous) => ({ ...previous, receivedAt }))
-                      }
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="received-source">提供方</FieldLabel>
-                    <Input
-                      id="received-source"
-                      value={workbench.defaults.source}
-                      onChange={(event) =>
-                        workbench.setDefaults((previous) => ({
-                          ...previous,
-                          source: event.target.value,
-                        }))
-                      }
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="received-mode">接收方式</FieldLabel>
-                    <Select
-                      value={workbench.defaults.receiveMode}
-                      onValueChange={(value) =>
-                        workbench.setDefaults((previous) => ({
-                          ...previous,
-                          receiveMode: value as ReceiveMode,
-                        }))
-                      }
-                    >
-                      <SelectTrigger id="received-mode" size="sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {receiveModeOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                </FieldGroup>
-
-                <div className="grid gap-2">
-                  <ButtonWithReason
-                    type="button"
-                    size="sm"
-                    reason={
-                      workbench.isApplyingDefaults
-                        ? "正在应用接收信息"
-                        : "当前没有待确认资料，暂无可套用的接收信息"
-                    }
-                    disabled={!workbench.summary.draftCount || workbench.isApplyingDefaults}
-                    onClick={workbench.applyDefaults}
-                  >
-                    {workbench.isApplyingDefaults ? (
-                      <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden />
-                    ) : (
-                      <CircleCheck data-icon="inline-start" aria-hidden />
-                    )}
-                    应用到待确认
-                  </ButtonWithReason>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={workbench.isCreatingManual}
-                    onClick={() => workbench.setManualOpen(true)}
-                  >
-                    <FilePlus2 data-icon="inline-start" aria-hidden />
-                    手工登记
-                  </Button>
-                </div>
-              </section>
-            </div>
-
-            <section
-              className="received-panel received-table-panel"
-              data-assets-panel
-              aria-labelledby="received-queue-title"
-            >
-              <div className="received-table-toolbar">
-                <div className="min-w-0">
-                  <h3 id="received-queue-title" className="text-base font-semibold">
-                    工作对象队列
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    上传后立即入库；修改在离开输入框或切换选项时保存
-                  </p>
-                </div>
-                <div className={styles.queueControls}>
-                  <div
-                    className={styles.searchField}
-                    data-active={workbench.isSearchActive || undefined}
-                  >
-                    <Search className={styles.searchIcon} aria-hidden />
-                    <Input
-                      value={workbench.searchQuery}
-                      placeholder="搜索名称、文件、版本或提供方"
-                      aria-label="搜索工作对象"
-                      className={styles.searchInput}
-                      onChange={(event) => workbench.changeSearchQuery(event.target.value)}
-                    />
-                    {workbench.searchQuery ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        className={styles.searchClear}
-                        aria-label="清除工作对象搜索"
-                        onClick={workbench.clearSearch}
+                  <FieldGroup className="gap-3">
+                    <Field>
+                      <FieldLabel htmlFor="received-at">接收日期</FieldLabel>
+                      <DatePicker
+                        id="received-at"
+                        value={workbench.defaults.receivedAt}
+                        onChange={(receivedAt) =>
+                          workbench.setDefaults((previous) => ({ ...previous, receivedAt }))
+                        }
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="received-source">提供方</FieldLabel>
+                      <Input
+                        id="received-source"
+                        value={workbench.defaults.source}
+                        onChange={(event) =>
+                          workbench.setDefaults((previous) => ({
+                            ...previous,
+                            source: event.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="received-mode">接收方式</FieldLabel>
+                      <Select
+                        value={workbench.defaults.receiveMode}
+                        onValueChange={(value) =>
+                          workbench.setDefaults((previous) => ({
+                            ...previous,
+                            receiveMode: value as ReceiveMode,
+                          }))
+                        }
                       >
-                        <X aria-hidden />
-                      </Button>
-                    ) : null}
-                  </div>
-                  <div className={styles.batchActions}>
+                        <SelectTrigger id="received-mode" size="sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {receiveModeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </FieldGroup>
+
+                  <div className="grid gap-2">
                     <ButtonWithReason
                       type="button"
                       size="sm"
                       reason={
-                        workbench.isConfirming ? "正在确认所选对象" : "请先在待确认列表中勾选对象"
+                        workbench.isApplyingDefaults
+                          ? "正在应用接收信息"
+                          : "当前没有待确认资料，暂无可套用的接收信息"
                       }
-                      disabled={!workbench.selectedIds.length || workbench.isConfirming}
-                      onClick={() => workbench.confirmAssets(workbench.selectedIds)}
+                      disabled={!workbench.summary.draftCount || workbench.isApplyingDefaults}
+                      onClick={workbench.applyDefaults}
                     >
-                      {workbench.isConfirming ? (
+                      {workbench.isApplyingDefaults ? (
                         <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden />
-                      ) : null}
-                      确认选中
+                      ) : (
+                        <CircleCheck data-icon="inline-start" aria-hidden />
+                      )}
+                      应用到待确认
                     </ButtonWithReason>
-                    <ButtonWithReason
+                    <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      reason={workbench.isConfirming ? "正在确认工作对象" : "当前没有待确认资料"}
-                      disabled={!workbench.summary.draftCount || workbench.isConfirming}
-                      onClick={() =>
-                        workbench.confirmAssets(
-                          workbench.assets
-                            .filter((asset) => asset.status === "draft")
-                            .map((asset) => asset.id),
-                        )
-                      }
+                      disabled={workbench.isCreatingManual}
+                      onClick={() => workbench.setManualOpen(true)}
                     >
-                      确认全部
-                    </ButtonWithReason>
+                      <FilePlus2 data-icon="inline-start" aria-hidden />
+                      手工登记
+                    </Button>
+                  </div>
+                </section>
+              </Fade>
+            </div>
+
+            <Fade
+              asChild
+              delay={100}
+              initialOpacity={0}
+              transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+            >
+              <section
+                className="received-panel received-table-panel"
+                data-assets-panel
+                aria-labelledby="received-queue-title"
+              >
+                <div className="received-table-toolbar">
+                  <div className="min-w-0">
+                    <h3 id="received-queue-title" className="text-base font-semibold">
+                      工作对象队列
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      上传后立即入库；修改在离开输入框或切换选项时保存
+                    </p>
+                  </div>
+                  <div className={styles.queueControls}>
+                    <div
+                      className={styles.searchField}
+                      data-active={workbench.isSearchActive || undefined}
+                    >
+                      <Search className={styles.searchIcon} aria-hidden />
+                      <Input
+                        value={workbench.searchQuery}
+                        placeholder="搜索名称、文件、版本或提供方"
+                        aria-label="搜索工作对象"
+                        className={styles.searchInput}
+                        onChange={(event) => workbench.changeSearchQuery(event.target.value)}
+                      />
+                      {workbench.searchQuery ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className={styles.searchClear}
+                          aria-label="清除工作对象搜索"
+                          onClick={workbench.clearSearch}
+                        >
+                          <X aria-hidden />
+                        </Button>
+                      ) : null}
+                    </div>
+                    <div className={styles.batchActions}>
+                      <ButtonWithReason
+                        type="button"
+                        size="sm"
+                        reason={
+                          workbench.isConfirming ? "正在确认所选对象" : "请先在待确认列表中勾选对象"
+                        }
+                        disabled={!workbench.selectedIds.length || workbench.isConfirming}
+                        onClick={() => workbench.confirmAssets(workbench.selectedIds)}
+                      >
+                        {workbench.isConfirming ? (
+                          <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden />
+                        ) : null}
+                        确认选中
+                      </ButtonWithReason>
+                      <ButtonWithReason
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        reason={workbench.isConfirming ? "正在确认工作对象" : "当前没有待确认资料"}
+                        disabled={!workbench.summary.draftCount || workbench.isConfirming}
+                        onClick={() =>
+                          workbench.confirmAssets(
+                            workbench.assets
+                              .filter((asset) => asset.status === "draft")
+                              .map((asset) => asset.id),
+                          )
+                        }
+                      >
+                        确认全部
+                      </ButtonWithReason>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Tabs
-                value={workbench.queueFilter}
-                onValueChange={workbench.changeQueueFilter}
-                className="w-full min-w-0 gap-3"
-              >
-                <TabsList className={styles.filterTabs}>
-                  <TabsTrigger value="draft" className="px-3 text-xs">
-                    待确认 {workbench.summary.draftCount}
-                  </TabsTrigger>
-                  <TabsTrigger value="confirmed" className="px-3 text-xs">
-                    已确认 {workbench.summary.confirmedCount}
-                  </TabsTrigger>
-                  <TabsTrigger value="superseded" className="px-3 text-xs">
-                    已替代 {workbench.summary.supersededCount}
-                  </TabsTrigger>
-                  <TabsTrigger value="revoked" className="px-3 text-xs">
-                    已作废 {workbench.summary.revokedCount}
-                  </TabsTrigger>
-                  <TabsTrigger value="all" className="px-3 text-xs">
-                    全部 {workbench.assets.length}
-                  </TabsTrigger>
-                </TabsList>
-                <ReceivedAssetTable
-                  assets={workbench.visibleAssets}
-                  draftPatches={workbench.draftPatches}
-                  selectedIds={workbench.selectedIds}
-                  loading={workbench.workObjectsQuery.isPending}
-                  error={
-                    workbench.workObjectsQuery.isError && !workbench.workObjectsQuery.data
-                      ? loadErrorMessage
-                      : undefined
-                  }
-                  onRetry={() => void workbench.workObjectsQuery.refetch()}
-                  emptyTitle={emptyCopy.title}
-                  emptyDescription={emptyCopy.description}
-                  searchActive={workbench.isSearchActive}
-                  onClearSearch={workbench.clearSearch}
-                  onToggle={workbench.toggleAsset}
-                  onToggleAll={workbench.toggleVisibleAssets}
-                  onEdit={workbench.editAsset}
-                  onUpdate={workbench.updateAsset}
-                  onConfirm={(id) => workbench.confirmAssets([id])}
-                  onCorrect={workbench.openCorrection}
-                  onWithdraw={workbench.withdrawAsset}
-                  onRevoke={workbench.revokeAsset}
-                  onHistory={workbench.openHistory}
-                  onRemove={workbench.removeAsset}
-                />
-              </Tabs>
-
-              <footer className="received-table-footer">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>已选 {workbench.selectedIds.length}</span>
-                  <span className="text-border">|</span>
-                  <span>已确认文档 {workbench.summary.confirmedDocumentCount}</span>
-                  {workbench.isSearchActive ? (
-                    <>
-                      <span className="text-border">|</span>
-                      <span aria-live="polite">匹配 {workbench.visibleAssetCount} 项</span>
-                    </>
-                  ) : null}
-                </div>
-                <ButtonWithReason
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  reason="还没有已确认文档，暂时无法进入需求解析"
-                  disabled={!workbench.summary.confirmedDocumentCount}
-                  onClick={() => navigate(`/projects/${project.id}/workspace/requirements`)}
+                <Tabs
+                  value={workbench.queueFilter}
+                  onValueChange={workbench.changeQueueFilter}
+                  className="w-full min-w-0 gap-3"
                 >
-                  进入需求解析
-                  <ArrowRight data-icon="inline-end" aria-hidden />
-                </ButtonWithReason>
-              </footer>
-            </section>
+                  <TabsList className={styles.filterTabs}>
+                    <TabsTrigger value="draft" className="px-3 text-xs">
+                      待确认 {workbench.summary.draftCount}
+                    </TabsTrigger>
+                    <TabsTrigger value="confirmed" className="px-3 text-xs">
+                      已确认 {workbench.summary.confirmedCount}
+                    </TabsTrigger>
+                    <TabsTrigger value="superseded" className="px-3 text-xs">
+                      已替代 {workbench.summary.supersededCount}
+                    </TabsTrigger>
+                    <TabsTrigger value="revoked" className="px-3 text-xs">
+                      已作废 {workbench.summary.revokedCount}
+                    </TabsTrigger>
+                    <TabsTrigger value="all" className="px-3 text-xs">
+                      全部 {workbench.assets.length}
+                    </TabsTrigger>
+                  </TabsList>
+                  <ReceivedAssetTable
+                    assets={workbench.visibleAssets}
+                    draftPatches={workbench.draftPatches}
+                    selectedIds={workbench.selectedIds}
+                    loading={workbench.workObjectsQuery.isPending}
+                    error={
+                      workbench.workObjectsQuery.isError && !workbench.workObjectsQuery.data
+                        ? loadErrorMessage
+                        : undefined
+                    }
+                    onRetry={() => void workbench.workObjectsQuery.refetch()}
+                    emptyTitle={emptyCopy.title}
+                    emptyDescription={emptyCopy.description}
+                    searchActive={workbench.isSearchActive}
+                    onClearSearch={workbench.clearSearch}
+                    onToggle={workbench.toggleAsset}
+                    onToggleAll={workbench.toggleVisibleAssets}
+                    onEdit={workbench.editAsset}
+                    onUpdate={workbench.updateAsset}
+                    onConfirm={(id) => workbench.confirmAssets([id])}
+                    onCorrect={workbench.openCorrection}
+                    onWithdraw={workbench.withdrawAsset}
+                    onRevoke={workbench.revokeAsset}
+                    onHistory={workbench.openHistory}
+                    onRemove={workbench.removeAsset}
+                  />
+                </Tabs>
+
+                <footer className="received-table-footer">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span>已选 {workbench.selectedIds.length}</span>
+                    <span className="text-border">|</span>
+                    <span>已确认文档 {workbench.summary.confirmedDocumentCount}</span>
+                    {workbench.isSearchActive ? (
+                      <>
+                        <span className="text-border">|</span>
+                        <span aria-live="polite">匹配 {workbench.visibleAssetCount} 项</span>
+                      </>
+                    ) : null}
+                  </div>
+                  <ButtonWithReason
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    reason="还没有已确认文档，暂时无法进入需求解析"
+                    disabled={!workbench.summary.confirmedDocumentCount}
+                    onClick={() => navigate(`/projects/${project.id}/workspace/requirements`)}
+                  >
+                    进入需求解析
+                    <ArrowRight data-icon="inline-end" aria-hidden />
+                  </ButtonWithReason>
+                </footer>
+              </section>
+            </Fade>
           </div>
 
           {workbench.manualOpen ? (
