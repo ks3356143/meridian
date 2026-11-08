@@ -54,6 +54,7 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
+      transition={{ duration: 0.24 }}
       className={cn(styles.content, "text-sm")}
       {...props}
     >

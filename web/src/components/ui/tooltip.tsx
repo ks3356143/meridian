@@ -27,6 +27,8 @@ function TooltipContent({
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
+        transition={{ duration: 0.16 }}
+        exitTransition={{ duration: 0.12 }}
         sideOffset={sideOffset}
         className={cn(
           "panel-surface border-border z-50 w-fit rounded-sm border px-2 py-1 text-xs font-medium text-foreground shadow-sm",

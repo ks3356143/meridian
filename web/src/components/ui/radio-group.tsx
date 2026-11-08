@@ -30,6 +30,8 @@ function RadioGroupItem({
     >
       <RadioGroupPrimitive.Indicator
         data-slot="radio-group-indicator"
+        transition={{ duration: 0.16, delay: 0 }}
+        exitTransition={{ duration: 0.12 }}
         className="relative flex items-center justify-center"
       >
         <span className="bg-primary size-2 rounded-full shadow-[0_0_8px_-1px_var(--primary)]" />

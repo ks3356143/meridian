@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ReducedMotionContext } from "@animate-ui/react/utils/motion";
+import { AnimateUIProvider } from "@animate-ui/react/provider";
 import { MotionConfig } from "@/lib/motion";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +11,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <AppThemeProvider>
       <QueryProvider>
-        <ReducedMotionContext.Provider value="never">
+        <AnimateUIProvider reducedMotion="never">
           <MotionConfig reducedMotion="never">
             <TooltipProvider delayDuration={150}>
               <SelectionDragGuard />
@@ -19,7 +19,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
               <Toaster />
             </TooltipProvider>
           </MotionConfig>
-        </ReducedMotionContext.Provider>
+        </AnimateUIProvider>
       </QueryProvider>
     </AppThemeProvider>
   );

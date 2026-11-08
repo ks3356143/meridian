@@ -47,6 +47,8 @@ function DialogContent({
       <DialogPrimitive.Content
         onOpenAutoFocus={focusReturn.onOpenAutoFocus}
         onCloseAutoFocus={focusReturn.onCloseAutoFocus}
+        transition={{ duration: 0.22 }}
+        exitTransition={{ duration: 0.15 }}
         data-slot="dialog-content"
         className={cn(
           "panel-surface border-border fixed top-1/2 left-1/2 z-50 flex max-h-[min(44rem,calc(100vh-2rem))] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-sm border p-5",

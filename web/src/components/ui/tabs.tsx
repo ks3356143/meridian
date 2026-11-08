@@ -80,6 +80,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
 function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
   return (
     <TabsPrimitive.Content
+      transition={{ duration: 0.22, height: { duration: 0.3 } }}
       data-slot="tabs-content"
       className={cn(styles.content, "flex-1 text-sm outline-none", className)}
       {...props}

@@ -34,6 +34,8 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         data-side={side}
+        transition={{ duration: 0.26 }}
+        exitTransition={{ duration: 0.18 }}
         className={cn(
           "panel-surface border-border fixed top-0 z-50 flex h-svh w-80 max-w-[86vw] flex-col gap-0 border shadow-xl",
           side === "left" && "left-0 border-r",
