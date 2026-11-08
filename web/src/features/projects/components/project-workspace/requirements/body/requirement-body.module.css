@@ -320,15 +320,6 @@ th.tableCell {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .imageLoading svg,
-  .imageFrame[data-state="loading"],
-  .imageFrame[data-state="ready"],
-  .imageFrame[data-state="ready"] img {
-    animation: none;
-  }
-}
-
 @media (max-width: 1100px) {
   .frame {
     height: min(62vh, 36rem);

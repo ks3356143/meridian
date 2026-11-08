@@ -364,16 +364,3 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .tableRow,
-  .itemRow {
-    animation: none;
-  }
-
-  .stats > div,
-  .addItemButton,
-  .practiceButton {
-    transition: none;
-  }
-}

@@ -311,13 +311,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .statusChip[data-save-state="saving"] svg,
-  .statusChip[data-save-state="saved"] svg {
-    animation: none;
-  }
-}
-
 .heroSide {
   /* 查找、删除与完善度卡片同排；空间不足时整体换行，不挤压标题。 */
   align-items: center;
@@ -1492,37 +1485,6 @@
   color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .sectionLink,
-  .unlinkButton,
-  .caseTable td,
-  .linkChip {
-    transition: none;
-  }
-
-  .sectionLink::after {
-    transition: none;
-  }
-
-  .sectionLink::before {
-    display: none;
-  }
-
-  .sectionStep svg {
-    animation: none;
-  }
-
-  .heroCompleteness[data-state="incomplete"],
-  .heroCompleteness[data-state="done"],
-  .linkChip {
-    animation: none;
-  }
-
-  .statusChip {
-    animation: none;
-  }
-}
-
 /* 用例行：行名可点（回定位到树），行尾动作按钮平时隐身，hover / 键盘聚焦时亮起。 */
 .caseRowName {
   align-items: center;
@@ -1609,11 +1571,4 @@
   position: absolute;
   white-space: nowrap;
   width: 1px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .caseRowName,
-  .caseRowAction {
-    transition: none;
-  }
 }

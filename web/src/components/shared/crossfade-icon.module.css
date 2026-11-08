@@ -20,9 +20,3 @@
 .icon[data-visible="false"] {
   opacity: 0;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .icon {
-    transition: none;
-  }
-}

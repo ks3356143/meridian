@@ -11,7 +11,7 @@
 - 组件库铁律：能使用成熟组件库的交互组件必须使用组件库。项目内优先 shadcn/ui 与 Radix UI；表格、路由、数据等场景使用 TanStack、React Router 等对应专业组件库。仅纯展示、布局或确无组件库能力时允许手写，且必须补齐无障碍、键盘操作和微动效。
 - 路由：使用 `createBrowserRouter` 和 `RouterProvider`；页面用 lazy route，目录使用传统 `web/src`。
 - 状态与数据：Zustand + TanStack Query + TanStack Table。
-- 动效：GSAP + `@gsap/react`，动画必须尊重 reduced motion。
+- 动效：组件级动效统一用 Animate UI（`@animate-ui/react` 的 Radix 原语），GSAP 只用于几何测量、时间轴编排和品牌持续视觉，直接使用 Motion 仅限 Animate UI 未覆盖的小场景；具体边界见 [srs/07-前端体验/03-品牌与动效/01-动效原则与验收.md](../../srs/07-前端体验/03-品牌与动效/01-动效原则与验收.md)。
 - 拖拽排序：`@dnd-kit/core` + `@dnd-kit/sortable`（内置键盘传感器与无障碍，禁止手搓拖拽）。
 - 主题：默认浅色，支持深浅色切换。
 - 提示：统一使用 `sonner`。

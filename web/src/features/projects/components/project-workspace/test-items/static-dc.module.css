@@ -742,21 +742,3 @@
     width: 100%;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .dcCollapse,
-  .dcConfigChevron,
-  .dcSheetChevron,
-  .dcSheetCardHead,
-  .dcPracticeTrigger,
-  .dcImageAdd {
-    transition: none;
-  }
-
-  .dcDocTableRow,
-  .dcBanner,
-  .dcConfigRow,
-  .dcSheetCard {
-    animation: none;
-  }
-}

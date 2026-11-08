@@ -194,16 +194,3 @@
   color: color-mix(in srgb, var(--warning) 90%, var(--foreground));
   font-size: 0.7rem;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .accordionHead,
-  .accordionBody,
-  .accordionChevron,
-  .accordionSource {
-    transition: none;
-  }
-
-  .accordionSpinner {
-    animation: none;
-  }
-}

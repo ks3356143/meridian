@@ -49,9 +49,3 @@
     background-position: 0% 0;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .beam {
-    animation: none;
-  }
-}

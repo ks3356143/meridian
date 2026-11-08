@@ -123,13 +123,3 @@
     z-index: 30;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .floatingCreate,
-  .floatingCreate::before,
-  .floatingCreateEdge,
-  .floatingCreateIcon,
-  .floatingCreateLabel {
-    transition: none;
-  }
-}

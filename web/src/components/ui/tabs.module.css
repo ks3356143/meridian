@@ -14,21 +14,6 @@
   outline: 2px solid color-mix(in srgb, var(--ring) 52%, transparent);
   outline-offset: -2px;
 }
-.content[data-state="active"] {
-  animation: tabsContentIn 200ms var(--ease-out-strong) both;
-}
-
-@keyframes tabsContentIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 
 /* HUD 变体：角括号、扫描光、等宽分段，文字强制左右上下居中。 */
 .hudList {
@@ -212,20 +197,5 @@
 
   50% {
     opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .content[data-state="active"] {
-    animation: none;
-  }
-
-  .hudList,
-  .hudList [data-slot="tabs-trigger"][data-state="active"]::after {
-    animation: none;
-  }
-
-  .hudList [data-slot="tabs-trigger"] {
-    transition: none;
   }
 }

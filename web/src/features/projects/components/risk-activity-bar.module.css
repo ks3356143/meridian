@@ -1,4 +1,4 @@
-/* 风险与活动卡片：语义色条 + 紧凑三行信息，hover 提色，危险卡色条低速呼吸。 */
+/* 风险与活动卡片：语义色条 + 紧凑三行信息，hover 提色。 */
 .grid {
   display: grid;
   gap: 0.5rem;
@@ -168,11 +168,4 @@
   border: 1px dashed var(--border);
   color: var(--muted-foreground);
   font-size: 0.75rem;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card,
-  .arrow {
-    transition: none;
-  }
 }

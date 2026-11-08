@@ -191,21 +191,3 @@
     0 1px 2px #142a1e09,
     0 5px 12px -11px color-mix(in srgb, var(--primary) 38%, transparent);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .detail-stage-active,
-  .detail-stage-active:after,
-  .detail-module-card[data-module-focus="true"],
-  .detail-module-card[data-module-focus="true"]:after,
-  .detail-module-card[data-module-state="partial"]:after,
-  .detail-module-card[data-module-state="partial"]
-    .detail-status-progress[data-slot="progress"]
-    [data-slot="progress-indicator"] {
-    animation: none;
-  }
-
-  .detail-stage-active,
-  .detail-module-card[data-module-focus="true"] {
-    background-position: 0%;
-  }
-}

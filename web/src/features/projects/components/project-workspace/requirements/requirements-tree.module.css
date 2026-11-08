@@ -1006,27 +1006,6 @@
   gap: 0.12rem;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .guide,
-  .chevron svg,
-  .row::before {
-    transition: none;
-  }
-
-  .row[data-selection-motion="true"],
-  .row[data-selection-motion="true"] .title {
-    animation: none;
-  }
-
-  .row[data-created="true"] {
-    animation: none;
-  }
-
-  .helpPopover {
-    animation: none;
-  }
-}
-
 @keyframes createdRow {
   0% {
     background: color-mix(in srgb, var(--primary) 19%, var(--card));

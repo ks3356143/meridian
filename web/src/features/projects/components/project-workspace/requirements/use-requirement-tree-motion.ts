@@ -34,10 +34,6 @@ const TOGGLE_DURATION_MIN = 0.2;
 const TOGGLE_DURATION_MAX = 0.36;
 const TOGGLE_DURATION_PER_ROW = 0.004;
 
-function prefersReducedMotion() {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
 export function useRequirementTreeMotion<T>({
   treeRef,
   shellRef,
@@ -144,7 +140,7 @@ export function useRequirementTreeMotion<T>({
 
       const requestTreeExit = (id: string) =>
         new Promise<void>((resolve) => {
-          if (!shell || prefersReducedMotion()) {
+          if (!shell) {
             resolve();
             return;
           }
@@ -194,7 +190,7 @@ export function useRequirementTreeMotion<T>({
         active.finish();
       }
 
-      if (!shell || prefersReducedMotion()) {
+      if (!shell) {
         node.toggle();
         return;
       }
@@ -534,12 +530,11 @@ function syncStructureMotion(
   const rows = getTreeRows(shell);
   const previous = snapshotRef.current;
   if (previous?.signature === signature) return;
-  const reducedMotion = prefersReducedMotion();
 
   prepareForCapture(rows);
   const animations: Array<{ el: HTMLElement; dy: number }> = [];
   for (const row of rows) {
-    if (!previous || reducedMotion) continue;
+    if (!previous) continue;
     const previousTop = previous.positions.get(row.id);
     if (previousTop == null) continue;
     // 快照与当前值都用内联 top：混用 getBoundingClientRect 会带上 padding 常量误差。
@@ -560,7 +555,7 @@ function syncStructureMotion(
     );
   }
 
-  if (previous && rows.length && !reducedMotion) {
+  if (previous && rows.length) {
     const enteringRows = rows
       .filter((row) => !previous.positions.has(row.id))
       .map((row) => row.inner);

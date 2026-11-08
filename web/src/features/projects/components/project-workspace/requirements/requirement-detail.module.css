@@ -601,43 +601,6 @@
   color: color-mix(in srgb, var(--destructive) 82%, var(--foreground));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .shell,
-  .shell::before,
-  .shell::after {
-    animation: none;
-    transition: none;
-  }
-
-  .statusChip,
-  .statusChip svg,
-  .descriptionRefresh svg,
-  .descriptionRefreshOverlay svg,
-  .buttonSpinner {
-    animation: none;
-    transition: none;
-  }
-
-  .bodyDialog,
-  .bodyDialog::backdrop {
-    transition: none;
-  }
-
-  .descriptionHeader,
-  .descriptionTitle,
-  .descriptionTitle::before {
-    transition: none;
-  }
-
-  .relatedJump {
-    transition: none;
-  }
-
-  .relatedJump:hover {
-    transform: none;
-  }
-}
-
 @media (max-width: 1100px) {
   .shell {
     height: auto;
@@ -697,23 +660,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .detailLoadOverlay {
-    align-items: center;
-    background: color-mix(in srgb, var(--card) 94%, transparent);
-    display: grid;
-    inset: 0;
-    justify-items: center;
-    padding: 1rem;
-    position: absolute;
-    z-index: 30;
-  }
-
-  .loadingSlot {
-    animation: none;
-    opacity: 1;
-  }
-}
 .emptyBody {
   align-items: center;
   color: var(--muted-foreground);

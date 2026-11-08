@@ -264,38 +264,3 @@
       0 0 24px -4px color-mix(in srgb, var(--destructive) 58%, transparent);
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  [data-slot="field-error"],
-  [data-slot="field-error-content"] {
-    animation: none;
-  }
-
-  [data-slot="input"]:not([data-slot="composite-input"] [data-slot="input"]),
-  [data-slot="select-trigger"],
-  [data-slot="composite-input"],
-  [data-invalid-group] {
-    transition: none;
-  }
-
-  [data-slot="input"][aria-invalid="true"],
-  [data-slot="select-trigger"][aria-invalid="true"],
-  [data-slot="composite-input"][data-invalid="true"],
-  [data-invalid-group="true"] {
-    animation: none;
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 50%, transparent),
-      0 0 0 2px color-mix(in srgb, var(--destructive) 26%, transparent),
-      0 0 18px -5px color-mix(in srgb, var(--destructive) 46%, transparent) !important;
-  }
-
-  [data-slot="input"][aria-invalid="true"]:focus-visible,
-  [data-slot="select-trigger"][aria-invalid="true"]:focus-visible,
-  [data-slot="composite-input"][data-invalid="true"]:focus-within {
-    animation: none;
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--destructive) 55%, transparent),
-      0 0 0 2px color-mix(in srgb, var(--destructive) 28%, transparent),
-      0 0 20px -5px color-mix(in srgb, var(--destructive) 52%, transparent) !important;
-  }
-}

@@ -16,13 +16,6 @@
   position: relative;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  [data-workspace-module],
-  [data-module-card] {
-    transition: none;
-  }
-}
-
 .workspace-topbar {
   --topbar-foreground: var(--foreground);
   --topbar-muted: color-mix(in srgb, var(--foreground) 60%, transparent);
@@ -157,12 +150,6 @@ main.workspace-route::-webkit-scrollbar-thumb {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .workspace-route {
-    animation: none;
-  }
-}
-
 .workspace-home {
   min-width: 0;
 }
@@ -246,12 +233,6 @@ main.workspace-route::-webkit-scrollbar-thumb {
 .workspace-task-danger {
   background: var(--destructive);
   color: var(--destructive);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .workspace-task-rail {
-    transition: none;
-  }
 }
 
 .workspace-tree-row {
@@ -914,10 +895,4 @@ main.workspace-route::-webkit-scrollbar-thumb {
   border-color: color-mix(in srgb, var(--module-tone) 58%, transparent);
   background: color-mix(in srgb, var(--module-tone) 9%, var(--card));
   box-shadow: 0 5px 12px -10px color-mix(in srgb, var(--module-tone) 52%, transparent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-module-card] {
-    animation: none;
-  }
 }

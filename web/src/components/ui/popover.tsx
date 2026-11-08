@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as PopoverPrimitive from "radix-ui/popover";
+import * as PopoverPrimitive from "@animate-ui/react/primitives/radix-ui/popover";
 import { cn } from "cn";
 
 function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
@@ -25,7 +25,7 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "panel-surface border-border text-popover-foreground z-50 flex w-72 origin-(--radix-popover-content-transform-origin) flex-col gap-3 rounded-sm border p-3.5 text-sm shadow-[0_16px_38px_-28px_rgb(20_42_30_/_0.46)] outline-none transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-strong)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-1 data-[side=left]:slide-in-from-right-1 data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1",
+          "panel-surface border-border text-popover-foreground z-50 flex w-72 origin-(--radix-popover-content-transform-origin) flex-col gap-3 rounded-sm border p-3.5 text-sm shadow-[0_16px_38px_-28px_rgb(20_42_30_/_0.46)] outline-none transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-strong)]",
           className,
         )}
         {...props}

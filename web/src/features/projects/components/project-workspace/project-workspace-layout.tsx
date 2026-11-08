@@ -184,10 +184,9 @@ export function ProjectWorkspaceLayout({
       const currentX = previous.ready ? Number(gsap.getProperty(indicator, "x")) : nextX;
       const currentScale = previous.ready ? Number(gsap.getProperty(indicator, "scaleX")) : 1;
       const currentWidth = previous.ready ? previous.width * currentScale : nextWidth;
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       gsap.killTweensOf(indicator);
       indicator.style.width = `${nextWidth}px`;
-      if (!previous.ready || reducedMotion) {
+      if (!previous.ready) {
         gsap.set(indicator, { x: nextX, scaleX: 1 });
       } else {
         // 宽度只提交一次，过渡期间只动 transform，避免导航每帧触发盒模型布局。
@@ -214,7 +213,6 @@ export function ProjectWorkspaceLayout({
   useGSAP(
     () => {
       if (!containerRef.current) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
       gsap.fromTo(
         ".workspace-topbar",

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as ContextMenuPrimitive from "radix-ui/context-menu";
+import * as ContextMenuPrimitive from "@animate-ui/react/primitives/radix-ui/context-menu";
 import { cn } from "cn";
 import styles from "./context-menu.module.css";
 

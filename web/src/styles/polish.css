@@ -173,11 +173,3 @@
     0 0 0 2px color-mix(in srgb, var(--destructive) 24%, transparent),
     0 0 18px -6px color-mix(in srgb, var(--destructive) 42%, transparent) !important;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  [data-slot="card"][data-tone],
-  [data-risk-card],
-  [data-slot="multi-select-trigger"] {
-    transition: none;
-  }
-}

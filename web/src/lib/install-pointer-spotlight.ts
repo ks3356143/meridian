@@ -6,7 +6,6 @@ export function installPointerSpotlight() {
   installed = true;
 
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let active: HTMLElement | null = null;
   let frame = 0;
   let lastClientX = 0;
@@ -14,7 +13,7 @@ export function installPointerSpotlight() {
   let nextX = 0;
   let nextY = 0;
 
-  const canRun = () => finePointer.matches && !reducedMotion.matches && !document.hidden;
+  const canRun = () => finePointer.matches && !document.hidden;
   const clear = () => {
     if (frame) {
       cancelAnimationFrame(frame);
@@ -76,5 +75,4 @@ export function installPointerSpotlight() {
   window.addEventListener("blur", clear);
   document.addEventListener("visibilitychange", clear);
   finePointer.addEventListener("change", clear);
-  reducedMotion.addEventListener("change", clear);
 }

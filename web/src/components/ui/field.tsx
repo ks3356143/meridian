@@ -211,14 +211,10 @@ function FieldError({
   useEffect(() => {
     if (content || !exiting) return;
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const timer = window.setTimeout(
-      () => {
-        setLastContent(null);
-        setExiting(false);
-      },
-      reducedMotion ? 0 : 180,
-    );
+    const timer = window.setTimeout(() => {
+      setLastContent(null);
+      setExiting(false);
+    }, 180);
 
     return () => window.clearTimeout(timer);
   }, [content, exiting]);

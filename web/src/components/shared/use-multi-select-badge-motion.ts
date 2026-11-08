@@ -50,11 +50,6 @@ export function useMultiSelectBadgeMotion({ options, value, triggerRef }: BadgeM
       const previousAnimatedValue = animatedValueRef.current;
       animatedValueRef.current = value;
 
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        if (exitingSelected.size > 0) setExitingValues([]);
-        return;
-      }
-
       const badges = triggerRef.current.querySelectorAll<HTMLElement>("[data-selected-value]");
       const enteredValues = previousAnimatedValue
         ? new Set(value.filter((item) => !previousAnimatedValue.includes(item)))

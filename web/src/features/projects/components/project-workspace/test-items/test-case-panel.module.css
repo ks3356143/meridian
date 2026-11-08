@@ -612,18 +612,6 @@
   color: var(--primary-foreground);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .passButton,
-  .stepAction {
-    transition: none;
-  }
-
-  .stepsTable tbody tr[data-search-hit="true"] td {
-    animation: none;
-    background: color-mix(in srgb, var(--warning) 20%, transparent);
-  }
-}
-
 /* 行标签上的字段级操作（综述回填按钮）：标签与按钮同行居中。 */
 .headAction {
   align-items: center;

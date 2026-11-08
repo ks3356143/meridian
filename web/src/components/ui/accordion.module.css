@@ -79,73 +79,9 @@
   overflow: hidden;
 }
 
-.content[data-state="open"] {
-  animation: accordionDown 200ms var(--ease-out-strong) both;
-}
-
-.content[data-state="closed"] {
-  animation: accordionUp 170ms var(--ease-in-out-strong) both;
-}
-
 .contentInner {
   padding-top: 0.55rem;
   transform-origin: top center;
-}
-
-.content[data-state="open"] .contentInner {
-  animation: accordionInnerIn 200ms var(--ease-out-strong) both;
-}
-
-.content[data-state="closed"] .contentInner {
-  animation: accordionInnerOut 170ms var(--ease-in-out-strong) both;
-}
-
-@keyframes accordionDown {
-  from {
-    height: 0;
-    opacity: 0;
-  }
-
-  to {
-    height: var(--radix-accordion-content-height);
-    opacity: 1;
-  }
-}
-
-@keyframes accordionUp {
-  from {
-    height: var(--radix-accordion-content-height);
-    opacity: 1;
-  }
-
-  to {
-    height: 0;
-    opacity: 0;
-  }
-}
-
-@keyframes accordionInnerIn {
-  from {
-    opacity: 0;
-    transform: translateY(-3px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes accordionInnerOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateY(-2px);
-  }
 }
 
 @media (max-width: 480px) {
@@ -161,20 +97,5 @@
 
   .trigger[data-state="open"] .indicator::before {
     content: "";
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .trigger,
-  .indicator,
-  .indicator > svg {
-    transition: none;
-  }
-
-  .content[data-state="open"],
-  .content[data-state="closed"],
-  .content[data-state="open"] .contentInner,
-  .content[data-state="closed"] .contentInner {
-    animation: none;
   }
 }

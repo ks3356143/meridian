@@ -303,19 +303,3 @@
     transform: translate(-50%, -50%) scale(1);
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .button,
-  .ripple {
-    animation: none;
-    transition: none;
-  }
-
-  .ripple {
-    opacity: 0;
-  }
-
-  .sheen::after {
-    display: none;
-  }
-}

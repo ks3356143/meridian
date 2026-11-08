@@ -125,13 +125,3 @@
     rotate: 360deg;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .collapse,
-  .bar,
-  .spark,
-  .spin {
-    animation: none;
-    transition: none;
-  }
-}

@@ -270,22 +270,8 @@
   width: 0.8rem;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .numberButton {
-    transition: none;
-  }
-}
-
 @media (max-width: 900px) {
   .stepsRow {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card,
-  .handle,
-  .actions {
-    transition: none;
   }
 }

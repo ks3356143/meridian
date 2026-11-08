@@ -385,7 +385,6 @@ function RequirementsTreeImpl({
   useGSAP(
     () => {
       if (!batchMode || !shellRef.current) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
       const bar = shellRef.current.querySelector<HTMLElement>(`.${styles.batchBar}`);
       const actions = shellRef.current.querySelector<HTMLElement>(`.${styles.batchActions}`);

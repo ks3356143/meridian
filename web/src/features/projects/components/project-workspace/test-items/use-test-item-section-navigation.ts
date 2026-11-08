@@ -61,8 +61,7 @@ export function useTestItemSectionNavigation({
       if (!element) return;
       setActiveSection(id);
       jumpSpyLockRef.current = true;
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      element.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
     },
     [scrollRef],
   );

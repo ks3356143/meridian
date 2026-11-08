@@ -269,10 +269,3 @@
     width: 100%;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .route-status-panel::after {
-    animation: none;
-    opacity: 0.45;
-  }
-}

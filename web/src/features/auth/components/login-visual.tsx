@@ -31,11 +31,6 @@ export function LoginVisual() {
 
   useGSAP(
     () => {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        containerRef.current?.querySelector(".flow-step")?.classList.add("is-active");
-        return;
-      }
-
       gsap.from(".visual-reveal", {
         opacity: 0,
         y: 20,

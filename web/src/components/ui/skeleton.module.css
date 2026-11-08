@@ -20,10 +20,3 @@
     background-position: -80% 0;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .skeleton {
-    animation: none;
-    background: color-mix(in srgb, var(--muted) 76%, var(--card));
-  }
-}

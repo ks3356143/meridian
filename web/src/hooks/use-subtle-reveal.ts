@@ -9,8 +9,6 @@ export function useSubtleReveal(
   useGSAP(
     () => {
       if (!enabled || !scopeRef.current) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
       gsap.fromTo(
         selector,
         { opacity: 0.88 },

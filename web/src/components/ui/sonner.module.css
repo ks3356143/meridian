@@ -211,13 +211,3 @@
     transform: scaleX(0);
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .toast[data-sonner-toast][data-styled="true"] {
-    animation: none;
-  }
-
-  .toast[data-sonner-toast][data-styled="true"]::before {
-    animation: none;
-  }
-}

@@ -53,8 +53,6 @@ export function Component() {
   useGSAP(
     () => {
       if (!containerRef.current) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
       gsap.from(".dash-reveal", {
         opacity: 0.84,
         duration: 0.22,

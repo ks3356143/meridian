@@ -31,8 +31,6 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
 
   useGSAP(
     () => {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
       gsap.fromTo(
         ".login-reveal",
         { opacity: 0.9 },

@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as SheetPrimitive from "radix-ui/dialog";
+import * as SheetPrimitive from "@animate-ui/react/primitives/radix-ui/dialog";
 import { X } from "lucide-react";
 import { cn } from "cn";
 
@@ -29,23 +29,17 @@ function SheetContent({
     <SheetPrimitive.Portal>
       <SheetPrimitive.Overlay
         data-slot="sheet-overlay"
-        className={cn(
-          "fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
-        )}
+        className={cn("fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px]")}
       />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          "panel-surface border-border fixed top-0 z-50 flex h-svh w-80 max-w-[86vw] flex-col gap-0 border shadow-xl transition ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:animate-in data-[state=closed]:animate-out",
-          side === "left" &&
-            "left-0 border-r data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left",
-          side === "right" &&
-            "right-0 border-l data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right",
-          side === "top" &&
-            "top-0 w-screen border-b data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top",
-          side === "bottom" &&
-            "bottom-0 w-screen border-t data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
+          "panel-surface border-border fixed top-0 z-50 flex h-svh w-80 max-w-[86vw] flex-col gap-0 border shadow-xl",
+          side === "left" && "left-0 border-r",
+          side === "right" && "right-0 border-l",
+          side === "top" && "top-0 w-screen border-b",
+          side === "bottom" && "bottom-0 w-screen border-t",
           className,
         )}
         {...props}

@@ -172,14 +172,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .parseButton,
-  .parseButton::before,
-  .parseButton::after {
-    animation: none;
-    transition: none;
-  }
-}
 .selectionBar {
   align-items: center;
   background: color-mix(in srgb, var(--warning) 6%, var(--card));

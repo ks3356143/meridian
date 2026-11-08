@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as SwitchPrimitive from "radix-ui/switch";
+import * as SwitchPrimitive from "@animate-ui/react/primitives/radix-ui/switch";
 import { cn } from "cn";
 
 function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
@@ -15,7 +15,7 @@ function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimi
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "pointer-events-none block size-3.5 translate-x-0.5 rounded-[1px] bg-background shadow-sm transition-transform duration-200 ease-[var(--ease-out-strong)] data-[state=checked]:translate-x-[1.125rem] data-[state=checked]:bg-primary-foreground",
+          "pointer-events-none block size-3.5 translate-x-0.5 rounded-[1px] bg-background shadow-sm data-[state=checked]:translate-x-[1.125rem] data-[state=checked]:bg-primary-foreground",
         )}
       />
     </SwitchPrimitive.Root>

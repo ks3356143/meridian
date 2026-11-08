@@ -323,7 +323,7 @@ function RequirementDetailForm({
   const linkedTestItems = linkedTestItemsQuery.data ?? [];
   const scrollToRelated = () => {
     relatedRef.current?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      behavior: "smooth",
       block: "start",
     });
   };

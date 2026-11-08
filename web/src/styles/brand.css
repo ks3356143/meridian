@@ -174,25 +174,3 @@
     transform: rotate(360deg);
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .shiny-text,
-  .visual-wordmark,
-  .globe-wireframe-spin,
-  .orbit-spin,
-  .page-header-beam::after {
-    animation: none;
-  }
-
-  .page-header-beam::after {
-    opacity: 0;
-  }
-
-  .shiny-text {
-    background-position: 0% center;
-  }
-
-  .btn-sheen::after {
-    transition: none;
-  }
-}

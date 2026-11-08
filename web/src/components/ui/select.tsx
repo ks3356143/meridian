@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
-import * as SelectPrimitive from "radix-ui/select";
+import * as SelectPrimitive from "@animate-ui/react/primitives/radix-ui/select";
 import { cn } from "cn";
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
@@ -59,7 +59,7 @@ function SelectContent({
         data-slot="select-content"
         position={position}
         className={cn(
-          "panel-surface border-border text-popover-foreground relative z-50 max-h-(--radix-select-content-available-height) min-w-40 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-sm border shadow-[0_16px_38px_-28px_rgb(20_42_30_/_0.46)] duration-150 ease-[var(--ease-out-strong)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
+          "panel-surface border-border text-popover-foreground relative z-50 max-h-(--radix-select-content-available-height) min-w-40 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-sm border shadow-[0_16px_38px_-28px_rgb(20_42_30_/_0.46)] duration-150 ease-[var(--ease-out-strong)]",
           className,
         )}
         {...props}

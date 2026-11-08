@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as TooltipPrimitive from "radix-ui/tooltip";
+import * as TooltipPrimitive from "@animate-ui/react/primitives/radix-ui/tooltip";
 import { cn } from "cn";
 
 function TooltipProvider({
@@ -30,11 +30,6 @@ function TooltipContent({
         sideOffset={sideOffset}
         className={cn(
           "panel-surface border-border z-50 w-fit rounded-sm border px-2 py-1 text-xs font-medium text-foreground shadow-sm",
-          "data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=delayed-open]:duration-[160ms]",
-          "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:duration-[120ms]",
-          "data-[side=bottom]:data-[state=delayed-open]:slide-in-from-top-1 data-[side=bottom]:data-[state=closed]:slide-out-to-top-1",
-          "data-[side=top]:data-[state=delayed-open]:slide-in-from-bottom-1 data-[side=top]:data-[state=closed]:slide-out-to-bottom-1",
-          "motion-reduce:animate-none motion-reduce:transition-none",
           className,
         )}
         {...props}

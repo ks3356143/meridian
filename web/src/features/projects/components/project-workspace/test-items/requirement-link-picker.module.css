@@ -109,9 +109,3 @@
   color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
   font-size: 0.72rem;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .linkResult {
-    transition: none;
-  }
-}

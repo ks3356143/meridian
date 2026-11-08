@@ -1,6 +1,6 @@
 import * as React from "react";
 import { XIcon } from "lucide-react";
-import * as DialogPrimitive from "radix-ui/dialog";
+import * as DialogPrimitive from "@animate-ui/react/primitives/radix-ui/dialog";
 import { cn } from "cn";
 import { useOverlayFocusReturn } from "./use-overlay-focus-return";
 
@@ -23,10 +23,7 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn(
-        "fixed inset-0 z-50 bg-foreground/35 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        className,
-      )}
+      className={cn("fixed inset-0 z-50 bg-foreground/35 backdrop-blur-[2px]", className)}
       {...props}
     />
   );
@@ -53,7 +50,6 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "panel-surface border-border fixed top-1/2 left-1/2 z-50 flex max-h-[min(44rem,calc(100vh-2rem))] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-sm border p-5",
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-97 data-[state=open]:zoom-in-97 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-bottom-2",
           className,
         )}
         {...props}

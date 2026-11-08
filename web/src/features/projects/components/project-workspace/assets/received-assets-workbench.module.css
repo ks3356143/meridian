@@ -386,12 +386,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .dataBadge[data-state="syncing"]::before {
-    animation: none;
-  }
-}
-
 .queueControls {
   align-items: center;
   display: flex;
@@ -512,13 +506,6 @@
     padding-inline: 0.18rem;
     white-space: nowrap;
     width: 100%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .searchField,
-  .searchIcon {
-    transition: none;
   }
 }
 
@@ -652,13 +639,6 @@
   .bodySkeletonSidebar {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 15rem 20rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .header,
-  .revealSequence [data-assets-panel] {
-    animation: none;
   }
 }
 

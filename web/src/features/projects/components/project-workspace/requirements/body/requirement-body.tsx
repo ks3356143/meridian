@@ -177,7 +177,7 @@ function TableBlock({ block }: { block: RequirementBlockNode }) {
     const direction = event.key === "ArrowRight" ? 1 : -1;
     target.scrollBy({
       left: direction * Math.max(96, target.clientWidth * 0.28),
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      behavior: "smooth",
     });
   };
   const scrollRegionProps = {

@@ -115,11 +115,3 @@
   color: var(--foreground);
   font-weight: 600;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .flow-marker,
-  .flow-marker::after,
-  .flow-label {
-    transition: none;
-  }
-}

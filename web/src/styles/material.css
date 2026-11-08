@@ -66,9 +66,3 @@
     background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
     border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .panel-surface {
-    transition: none;
-  }
-}

@@ -716,21 +716,6 @@
   margin: 0 0 0.35rem;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .spin,
-  .ruleList,
-  .targetCard,
-  .violationFields,
-  .fileTable tbody tr {
-    animation: none;
-  }
-
-  .resultButton,
-  .ruleGroupButton {
-    transition: none;
-  }
-}
-
 @keyframes staticSpin {
   to {
     rotate: 360deg;

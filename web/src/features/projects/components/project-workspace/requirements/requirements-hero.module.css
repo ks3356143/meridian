@@ -298,13 +298,3 @@
     inset 0 2px 5px color-mix(in srgb, var(--destructive) 18%, transparent),
     0 3px 10px -9px color-mix(in srgb, var(--destructive) 88%, transparent);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .queueAction svg {
-    transition: none;
-  }
-
-  .queueAction:hover svg {
-    transform: none;
-  }
-}

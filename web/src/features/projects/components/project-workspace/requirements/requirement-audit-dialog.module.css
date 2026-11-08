@@ -132,10 +132,3 @@
 .operator {
   color: color-mix(in srgb, var(--foreground) 70%, transparent);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .event {
-    animation: none;
-    transition: none;
-  }
-}

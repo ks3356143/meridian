@@ -245,20 +245,3 @@
     background: color-mix(in srgb, var(--primary) 62%, var(--muted));
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  [data-slot="input"],
-  [data-slot="textarea"],
-  [data-slot="select-trigger"],
-  [data-slot="select-content"],
-  [data-slot="popover-content"],
-  [data-slot="command-item"],
-  [data-slot="tabs-trigger"],
-  [data-slot="tabs-trigger"]::after,
-  [data-slot="checkbox"],
-  [data-slot="switch"],
-  [data-slot="switch-thumb"] {
-    animation: none !important;
-    transition: none !important;
-  }
-}

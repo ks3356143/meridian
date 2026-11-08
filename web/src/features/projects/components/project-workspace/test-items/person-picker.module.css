@@ -141,15 +141,3 @@
   font-size: 0.68rem;
   margin-left: auto;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .trigger,
-  .avatar,
-  .chevron {
-    transition: none;
-  }
-
-  .trigger[data-state="open"] .chevron {
-    transform: none;
-  }
-}

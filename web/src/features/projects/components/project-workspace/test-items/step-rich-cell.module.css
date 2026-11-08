@@ -257,29 +257,3 @@
     box-shadow: 0 0 0 8px transparent;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .toolbar {
-    transition: none;
-  }
-
-  @starting-style {
-    .toolbar {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  .display,
-  .proseMirror {
-    transition: none;
-  }
-
-  .spinner {
-    animation-duration: 1.6s;
-  }
-
-  .cell[data-phase="saved"] {
-    animation: none;
-  }
-}

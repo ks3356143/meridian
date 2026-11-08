@@ -52,9 +52,3 @@
 .trigger[data-state="open"] .chevron {
   transform: rotate(180deg);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-}

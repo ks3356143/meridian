@@ -290,14 +290,3 @@
     font-size: 1.12rem;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .hero::after {
-    animation: none;
-  }
-
-  .metricItem,
-  .metricIcon {
-    transition: none;
-  }
-}

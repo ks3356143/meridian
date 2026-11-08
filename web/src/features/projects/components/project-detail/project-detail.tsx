@@ -56,8 +56,6 @@ export function ProjectDetail({ project }: { project: Project }) {
   useGSAP(
     () => {
       if (!containerRef.current) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
       gsap.fromTo(
         ".project-detail-enter",
         { opacity: 0.9 },

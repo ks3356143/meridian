@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CheckIcon } from "lucide-react";
-import * as CheckboxPrimitive from "radix-ui/checkbox";
+import * as CheckboxPrimitive from "@animate-ui/react/primitives/radix-ui/checkbox";
 import { cn } from "cn";
 
 function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {

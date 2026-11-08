@@ -74,10 +74,3 @@
 .event[data-action="revoke"] .action {
   color: var(--destructive);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .event {
-    animation: none;
-    transition: none;
-  }
-}

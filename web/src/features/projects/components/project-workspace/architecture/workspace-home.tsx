@@ -20,8 +20,6 @@ export function WorkspaceHome() {
   useGSAP(
     () => {
       if (!containerRef.current) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
       gsap
         .timeline({ defaults: { ease: "power2.out" } })
         .fromTo(

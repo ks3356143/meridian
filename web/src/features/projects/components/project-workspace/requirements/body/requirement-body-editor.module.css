@@ -157,12 +157,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .proseMirror :global(.ProseMirror-gapcursor::after) {
-    animation: none;
-  }
-}
-
 .proseMirror > *:first-child {
   margin-top: 0;
 }
@@ -385,12 +379,5 @@
 
   .toolbarGroupLabel {
     display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .imageNode,
-  .imageNodeActions {
-    transition: none;
   }
 }

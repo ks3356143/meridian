@@ -354,12 +354,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .detailAnimated[data-stale]::before {
-    animation: none;
-  }
-}
-
 .detailEmpty {
   align-items: center;
   color: color-mix(in srgb, var(--muted-foreground) 94%, transparent);
@@ -598,17 +592,4 @@
   color: color-mix(in srgb, var(--muted-foreground) 90%, transparent);
   font-size: 0.68rem;
   line-height: 1.45;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .treeActionButton,
-  .createButton,
-  .folderButton,
-  .requirementButton,
-  .utilityButton,
-  .quickChip,
-  .searchGlyph,
-  .searchRow {
-    transition: none;
-  }
 }

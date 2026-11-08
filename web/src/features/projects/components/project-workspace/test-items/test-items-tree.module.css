@@ -414,24 +414,6 @@
   color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .twistyIcon {
-    transition: none;
-  }
-
-  .row {
-    transition: none;
-  }
-
-  .rowHost {
-    transition: none;
-  }
-
-  .incomplete::after {
-    animation: none;
-  }
-}
-
 /* 行内重命名：与行同高、直角，聚焦时荧光边框；不改变行高避免列表跳动。 */
 .renameInput {
   background: var(--background);
@@ -452,12 +434,6 @@
 .renameInput:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .renameInput {
-    transition: none;
-  }
 }
 
 .staticProgress {
@@ -482,11 +458,5 @@
 
   to {
     opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rowHost {
-    animation: none;
   }
 }

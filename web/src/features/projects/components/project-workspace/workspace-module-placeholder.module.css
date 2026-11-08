@@ -388,17 +388,3 @@
     display: none;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .notice {
-    animation: none;
-  }
-
-  .planCard {
-    transition: none;
-  }
-
-  .planCard:hover {
-    transform: none;
-  }
-}

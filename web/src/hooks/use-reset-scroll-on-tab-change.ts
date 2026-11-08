@@ -12,9 +12,6 @@ export function useResetScrollOnTabChange(activeKey: string, target: ScrollTarge
   useEffect(() => {
     if (previousKey.current === activeKey) return;
     previousKey.current = activeKey;
-    const behavior: ScrollBehavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "auto"
-      : "smooth";
 
     let innerFrame = 0;
     // 等新 TAB 的内容完成布局再滚，避免内容高度骤变把平滑滚动打断成瞬移。
@@ -23,10 +20,10 @@ export function useResetScrollOnTabChange(activeKey: string, target: ScrollTarge
         if (target === "workspace-route") {
           document
             .querySelector<HTMLElement>("main.workspace-route")
-            ?.scrollTo({ top: 0, left: 0, behavior });
+            ?.scrollTo({ top: 0, left: 0, behavior: "smooth" });
           return;
         }
-        window.scrollTo({ top: 0, left: 0, behavior });
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
       });
     });
 

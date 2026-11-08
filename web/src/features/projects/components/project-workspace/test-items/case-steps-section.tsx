@@ -294,8 +294,7 @@ function CaseStepsSectionInner({
     if (!focusStep || !stepsQuery.isSuccess) return;
     const row = document.querySelector(`[data-step-id="${CSS.escape(focusStep.stepId)}"]`);
     if (!row) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    row.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [focusStep, stepsQuery.isSuccess, steps.length]);
   const structurePending =
     createStepMutation.isPending ||

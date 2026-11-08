@@ -299,27 +299,3 @@
     display: none;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .trigger,
-  .item,
-  .itemIcon,
-  .enter {
-    transition: none;
-  }
-
-  .dialog[data-state="open"]::before {
-    animation: none;
-    opacity: 0;
-  }
-
-  .itemIcon,
-  .item[data-selected="true"] .itemIcon {
-    transform: none;
-  }
-
-  .enter,
-  .item[data-selected="true"] .enter {
-    transform: none;
-  }
-}

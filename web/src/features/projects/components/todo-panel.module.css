@@ -193,9 +193,3 @@
   color: var(--muted-foreground);
   font-size: 0.75rem;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .item {
-    transition: none;
-  }
-}

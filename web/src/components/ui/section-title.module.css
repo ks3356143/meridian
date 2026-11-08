@@ -40,9 +40,3 @@
     transform: translateY(-0.04em) scaleY(1);
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .title::before {
-    animation: none;
-  }
-}

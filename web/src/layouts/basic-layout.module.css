@@ -165,15 +165,3 @@
     display: none;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .routeContent {
-    animation: none;
-  }
-
-  .sidebarLink,
-  .sidebarLink svg,
-  .sidebarLink::before {
-    transition: none;
-  }
-}

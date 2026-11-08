@@ -278,12 +278,3 @@
     display: inline;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .tabTrigger::before,
-  .tabTrigger::after,
-  .tabIndicator::after {
-    animation: none !important;
-    transition: none !important;
-  }
-}

@@ -279,11 +279,3 @@
     margin-left: 0;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .section,
-  .chevron,
-  .bodyWrap {
-    transition: none;
-  }
-}

@@ -69,13 +69,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .loadingSlot {
-    animation: none;
-    opacity: 1;
-  }
-}
-
 .loadError {
   align-items: center;
   color: var(--destructive);
