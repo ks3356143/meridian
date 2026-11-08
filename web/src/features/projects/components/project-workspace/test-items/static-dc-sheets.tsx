@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { AlertTriangle, ChevronDown, FileCheck2, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -70,13 +71,15 @@ export function DcSheetsTab({ ctx }: { ctx: DcSheetsContext }) {
   return (
     <TabsContent value="sheets" className={dcStyles.dcTabPanel}>
       {sheetsWithoutTarget.length > 0 ? (
-        <div className={dcStyles.dcBanner} data-tone="warn">
-          <AlertTriangle aria-hidden />
-          <span>
-            以下审查单尚未指定受审文档：
-            {sheetsWithoutTarget.map((sheet) => sheet.name).join("、")}
-          </span>
-        </div>
+        <Fade asChild initialOpacity={0.75}>
+          <div className={dcStyles.dcBanner} data-tone="warn">
+            <AlertTriangle aria-hidden />
+            <span>
+              以下审查单尚未指定受审文档：
+              {sheetsWithoutTarget.map((sheet) => sheet.name).join("、")}
+            </span>
+          </div>
+        </Fade>
       ) : null}
       <div className={dcStyles.dcSheetToolbar}>
         <label className={dcStyles.dcFilter}>

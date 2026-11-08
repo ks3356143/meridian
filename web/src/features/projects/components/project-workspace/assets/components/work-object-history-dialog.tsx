@@ -1,4 +1,5 @@
 import { History } from "lucide-react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -56,27 +57,29 @@ export function WorkObjectHistoryDialog({
           <ol className={styles.events}>
             {events.map((event) => {
               return (
-                <li key={event.id} className={styles.event} data-action={event.action}>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className={styles.action}>{actionLabels[event.action]}</span>
-                    <span className="text-muted-foreground font-mono text-[12px]">
-                      {new Date(event.operatedAt).toLocaleString("zh-CN")}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge variant="outline" className="h-5 px-1.5 text-[12px]">
-                      {getWorkObjectStatusMeta(event.fromStatus).label}
-                    </Badge>
-                    <span className="text-muted-foreground text-[12px]">{"->"}</span>
-                    <Badge
-                      variant={getWorkObjectStatusMeta(event.toStatus).badgeVariant}
-                      className="h-5 px-1.5 text-[12px]"
-                    >
-                      {getWorkObjectStatusMeta(event.toStatus).label}
-                    </Badge>
-                  </div>
-                  <p className="text-muted-foreground text-xs leading-relaxed">{event.reason}</p>
-                </li>
+                <Fade asChild key={event.id} initialOpacity={0.8}>
+                  <li className={styles.event} data-action={event.action}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className={styles.action}>{actionLabels[event.action]}</span>
+                      <span className="text-muted-foreground font-mono text-[12px]">
+                        {new Date(event.operatedAt).toLocaleString("zh-CN")}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge variant="outline" className="h-5 px-1.5 text-[12px]">
+                        {getWorkObjectStatusMeta(event.fromStatus).label}
+                      </Badge>
+                      <span className="text-muted-foreground text-[12px]">{"->"}</span>
+                      <Badge
+                        variant={getWorkObjectStatusMeta(event.toStatus).badgeVariant}
+                        className="h-5 px-1.5 text-[12px]"
+                      >
+                        {getWorkObjectStatusMeta(event.toStatus).label}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground text-xs leading-relaxed">{event.reason}</p>
+                  </li>
+                </Fade>
               );
             })}
           </ol>

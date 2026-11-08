@@ -1,4 +1,5 @@
 import { AlertTriangle, FileCheck2, FileText, Plus, X } from "lucide-react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,23 +23,27 @@ export function DcDocsTab({
   return (
     <TabsContent value="docs" className={dcStyles.dcTabPanel}>
       {missingDocs.length > 0 ? (
-        <div className={dcStyles.dcBanner} data-tone="warn">
-          <AlertTriangle aria-hidden />
-          <span>当前平台推荐文档还差 {missingDocs.length} 项</span>
-          <Button
-            type="button"
-            size="xs"
-            variant="outline"
-            onClick={() => addDocuments(missingDocs)}
-          >
-            补齐推荐文档
-          </Button>
-        </div>
+        <Fade asChild initialOpacity={0.75}>
+          <div className={dcStyles.dcBanner} data-tone="warn">
+            <AlertTriangle aria-hidden />
+            <span>当前平台推荐文档还差 {missingDocs.length} 项</span>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={() => addDocuments(missingDocs)}
+            >
+              补齐推荐文档
+            </Button>
+          </div>
+        </Fade>
       ) : (
-        <div className={dcStyles.dcBanner} data-tone="ok">
-          <FileCheck2 aria-hidden />
-          <span>受审文档清单已补齐。</span>
-        </div>
+        <Fade asChild initialOpacity={0.75}>
+          <div className={dcStyles.dcBanner} data-tone="ok">
+            <FileCheck2 aria-hidden />
+            <span>受审文档清单已补齐。</span>
+          </div>
+        </Fade>
       )}
       <div className={dcStyles.dcDocTableWrap}>
         <table className={dcStyles.dcDocTable}>

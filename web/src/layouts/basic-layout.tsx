@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import {
   ClipboardList,
   FolderKanban,
@@ -229,14 +230,11 @@ export default function BasicLayout() {
             </Button>
           </div>
         </header>
-        <main
-          id={MAIN_CONTENT_ID}
-          tabIndex={-1}
-          key={location.pathname}
-          className={`${styles.mainContent} ${styles.routeContent} flex-1`}
-        >
-          <Outlet />
-        </main>
+        <Fade asChild key={location.pathname} initialOpacity={0.9}>
+          <main id={MAIN_CONTENT_ID} tabIndex={-1} className={`${styles.mainContent} flex-1`}>
+            <Outlet />
+          </main>
+        </Fade>
       </div>
     </div>
   );

@@ -47,20 +47,6 @@
   width: 100%;
 }
 
-.routeContent {
-  animation: routeContentIn var(--motion-slow) var(--ease-out-strong) both;
-}
-
-@keyframes routeContentIn {
-  from {
-    opacity: 0.78;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
 .sidebarLink::before {
   background: var(--primary);
   content: "";

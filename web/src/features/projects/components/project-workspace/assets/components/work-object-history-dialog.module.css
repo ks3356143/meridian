@@ -16,7 +16,6 @@
   transition:
     background-color 180ms var(--ease-out-strong),
     border-color 180ms var(--ease-out-strong);
-  animation: historyEventIn 200ms var(--ease-out-strong) both;
 }
 
 .event:hover {
@@ -38,18 +37,6 @@
 
 .event[data-action="revoke"] {
   border-left-color: var(--destructive);
-}
-
-@keyframes historyEventIn {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
 }
 
 .action {

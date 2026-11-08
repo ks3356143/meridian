@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -77,25 +78,27 @@ export function RequirementAuditDialog({
 
 function AuditEventItem({ event }: { event: RequirementEvent }) {
   return (
-    <li className={styles.event} data-action={event.action}>
-      <div className={styles.eventHead}>
-        <span className={styles.action}>{getActionLabel(event)}</span>
-        <span className={styles.time}>{new Date(event.operatedAt).toLocaleString("zh-CN")}</span>
-      </div>
-      <div className={styles.states}>
-        <Badge variant={statusMeta[event.fromStatus].variant} className={styles.stateBadge}>
-          {statusMeta[event.fromStatus].label}
-        </Badge>
-        <span className={styles.arrow}>-&gt;</span>
-        <Badge variant={statusMeta[event.toStatus].variant} className={styles.stateBadge}>
-          {statusMeta[event.toStatus].label}
-        </Badge>
-      </div>
-      <p className={styles.detail}>
-        {event.detail || "未填写说明"}
-        <span className={styles.operator}> 操作人：{event.operatedByName || "系统"}</span>
-      </p>
-    </li>
+    <Fade asChild initialOpacity={0.8}>
+      <li className={styles.event} data-action={event.action}>
+        <div className={styles.eventHead}>
+          <span className={styles.action}>{getActionLabel(event)}</span>
+          <span className={styles.time}>{new Date(event.operatedAt).toLocaleString("zh-CN")}</span>
+        </div>
+        <div className={styles.states}>
+          <Badge variant={statusMeta[event.fromStatus].variant} className={styles.stateBadge}>
+            {statusMeta[event.fromStatus].label}
+          </Badge>
+          <span className={styles.arrow}>-&gt;</span>
+          <Badge variant={statusMeta[event.toStatus].variant} className={styles.stateBadge}>
+            {statusMeta[event.toStatus].label}
+          </Badge>
+        </div>
+        <p className={styles.detail}>
+          {event.detail || "未填写说明"}
+          <span className={styles.operator}> 操作人：{event.operatedByName || "系统"}</span>
+        </p>
+      </li>
+    </Fade>
   );
 }
 

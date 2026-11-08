@@ -1,5 +1,6 @@
 import { CircleDashed, Construction, Type } from "lucide-react";
 import { useState } from "react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,13 +101,15 @@ export function WorkspaceModulePlaceholder({
               <Badge variant="outline">暂未接入</Badge>
             </div>
 
-            <div className={styles.notice}>
-              <Construction className={styles.noticeIcon} aria-hidden />
-              <div>
-                <strong>当前仅展示模块规划</strong>
-                <p>此页面没有可用的录入、保存、生成或导出操作，不是按钮失效。</p>
+            <Fade asChild initialOpacity={0.82}>
+              <div className={styles.notice}>
+                <Construction className={styles.noticeIcon} aria-hidden />
+                <div>
+                  <strong>当前仅展示模块规划</strong>
+                  <p>此页面没有可用的录入、保存、生成或导出操作，不是按钮失效。</p>
+                </div>
               </div>
-            </div>
+            </Fade>
 
             <dl className={styles.contextGrid}>
               <ContextTile label="当前状态" value="暂未接入" />

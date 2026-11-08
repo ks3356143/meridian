@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { cn } from "cn";
 import styles from "./empty-hint.module.css";
 
@@ -20,9 +21,11 @@ export function EmptyHint({
   children: ReactNode;
 }) {
   return (
-    <div className={cn(styles.hint, className)} data-tone={tone} role="note">
-      <span className={styles.body}>{children}</span>
-      {action ? <span className={styles.action}>{action}</span> : null}
-    </div>
+    <Fade asChild initialOpacity={0.76}>
+      <div className={cn(styles.hint, className)} data-tone={tone} role="note">
+        <span className={styles.body}>{children}</span>
+        {action ? <span className={styles.action}>{action}</span> : null}
+      </div>
+    </Fade>
   );
 }

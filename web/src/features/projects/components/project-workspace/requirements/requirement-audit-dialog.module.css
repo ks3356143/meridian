@@ -49,7 +49,6 @@
   transition:
     background-color 180ms var(--ease-out-strong),
     border-color 180ms var(--ease-out-strong);
-  animation: auditEventIn 200ms var(--ease-out-strong) both;
 }
 
 .event:hover {
@@ -63,18 +62,6 @@
 
 .event[data-action="restore"] {
   border-left-color: var(--success);
-}
-
-@keyframes auditEventIn {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
 }
 
 .eventHead {

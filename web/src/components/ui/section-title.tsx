@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { cn } from "cn";
 
 import styles from "./section-title.module.css";
@@ -22,6 +23,9 @@ function SectionTitle({
       className={cn(styles.title, size === "lg" && styles.lg, className)}
       {...props}
     >
+      <Fade asChild initialOpacity={0.35}>
+        <span className={styles.rule} aria-hidden />
+      </Fade>
       {children}
     </Tag>
   );

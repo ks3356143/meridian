@@ -8,7 +8,6 @@
   gap: 0.5rem;
   min-height: 2rem;
   padding: 0.3rem 0.5rem;
-  animation: emptyHintIn var(--motion-base) var(--ease-out-strong) both;
 }
 
 .body {
@@ -46,16 +45,4 @@
   border-color: color-mix(in srgb, var(--info) 20%, transparent);
   border-left-color: color-mix(in srgb, var(--info) 58%, transparent);
   color: color-mix(in srgb, var(--info) 86%, var(--foreground));
-}
-
-@keyframes emptyHintIn {
-  from {
-    opacity: 0.76;
-    transform: translateY(3px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }

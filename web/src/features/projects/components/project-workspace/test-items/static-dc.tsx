@@ -3,6 +3,7 @@ import {
   Root as Collapsible,
   CollapsibleContent,
 } from "@animate-ui/react/primitives/radix-ui/collapsible";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { ChevronDown, ClipboardList, FileText } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -284,17 +285,17 @@ export function DcWorkbench({ testItemId, projectCode, state, catalog, update }:
             </div>
             <div className={dcStyles.dcConfigGrid}>
               {configItems.map((item, index) => (
-                <div
-                  key={item.label}
-                  className={dcStyles.dcConfigRow}
-                  data-ok={item.ok ? "true" : undefined}
-                  style={{ animationDelay: `${index * 26}ms` }}
-                  title={`${item.label}：${item.hint}`}
-                >
-                  <span className={dcStyles.dcConfigIcon}>{item.ok ? "✓" : "●"}</span>
-                  <span className={dcStyles.dcConfigLabel}>{item.label}</span>
-                  <em>{item.hint}</em>
-                </div>
+                <Fade key={item.label} asChild delay={index * 0.026} initialOpacity={0.7}>
+                  <div
+                    className={dcStyles.dcConfigRow}
+                    data-ok={item.ok ? "true" : undefined}
+                    title={`${item.label}：${item.hint}`}
+                  >
+                    <span className={dcStyles.dcConfigIcon}>{item.ok ? "✓" : "●"}</span>
+                    <span className={dcStyles.dcConfigLabel}>{item.label}</span>
+                    <em>{item.hint}</em>
+                  </div>
+                </Fade>
               ))}
             </div>
           </div>
