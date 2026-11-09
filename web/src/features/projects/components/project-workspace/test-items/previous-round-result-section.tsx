@@ -67,7 +67,8 @@ export function PreviousRoundResultSection({
           <ChevronDown className={styles.chevron} aria-hidden />
         </button>
 
-        <CollapsibleContent>
+        {/* forceMount：富文本表格首帧布局与稳定帧差 90px，保持挂载可避免每次展开都量到首帧高度、动画收尾跳变 */}
+        <CollapsibleContent forceMount>
           <div
             className={styles.body}
             aria-busy={(expanded && resultQuery.isPending) || undefined}

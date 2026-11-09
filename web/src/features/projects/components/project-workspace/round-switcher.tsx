@@ -226,7 +226,10 @@ function NewRoundWizard({
       }),
     onSuccess: (result) => {
       toast.success(`已创建 ${result.round.name}，带入 ${result.testItemCount} 个测试项`);
-      void queryClient.invalidateQueries({ queryKey: ["projects", projectCode, "test-rounds"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", projectCode, "test-rounds"],
+        exact: true, // 精确失效列表本身：前缀失效会连带重取 copy-preview，旧源轮次随即 422
+      });
       void queryClient.invalidateQueries({ queryKey: ["projects", projectCode, "test-items"] });
       onCreated(result.round.id);
     },
