@@ -5,7 +5,7 @@
 ## 技术栈
 
 - 后端：Go、Huma v2、GORM、pure Go SQLite、JWT
-- 前端：Vite、React、React Router 8 SPA Data Mode、Tailwind CSS 4、shadcn/ui + Radix、TanStack Query/Table、GSAP
+- 前端：Vite、React、React Router 8 SPA Data Mode、Tailwind CSS 4、shadcn/ui + Radix、TanStack Query/Table；动效 Animate UI + Motion（GSAP 兜底）
 - 存储：SQLite 保存业务数据；`data/file-assets/` 保存接收文件；结构由显式 SQL migration 管理
 
 ## 本地运行

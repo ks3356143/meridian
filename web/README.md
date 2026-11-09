@@ -19,6 +19,6 @@
 ## 约定
 
 - 业务状态放 `features`，路由页不承载可复用业务组件。
-- 交互组件优先使用 shadcn/ui 和 Radix；动画尊重 `prefers-reduced-motion`。
+- 交互组件优先使用 shadcn/ui 和 Radix；动效全站完整播放（reduced-motion 降级已按用户要求关闭，口径见 `srs/07-前端体验/03-品牌与动效/01-动效原则与验收.md`）。
 - 炫酷交互组件优先从 React Bits registry（`@react-bits`）安装，落位 `src/components/ui/`。
 - 接口类型与 API 封装保存在对应模块内，不在页面里直接拼写请求。
