@@ -9,9 +9,15 @@
   padding: 0.1rem 0.15rem 0.8rem;
 }
 
-.block {
+/* 块虚拟化只在需求阅读页显式开启。content-visibility 的跳渲染会用外接占位高（96px）
+   参与首帧布局，放进开合面板、折叠区这类“挂载即量高”的容器，测量值与真实内容差一截；
+   嵌入场景（上轮实测、手风琴、步骤单元格）一律关闭，保证量高即真实高度。 */
+.viewport[data-virtualized] .block {
   contain-intrinsic-size: auto 96px;
   content-visibility: auto;
+}
+
+.block {
   padding-bottom: 0.55rem;
   width: 100%;
 }

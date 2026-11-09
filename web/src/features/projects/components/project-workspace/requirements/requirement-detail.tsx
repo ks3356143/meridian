@@ -863,7 +863,7 @@ function RequirementDetailForm({
                   </div>
                 }
               >
-                <LazyRequirementBody doc={bodyBaselineDoc} projectCode={projectCode} />
+                <LazyRequirementBody doc={bodyBaselineDoc} projectCode={projectCode} virtualize />
               </Suspense>
             ) : (
               <div className={styles.emptyBody}>

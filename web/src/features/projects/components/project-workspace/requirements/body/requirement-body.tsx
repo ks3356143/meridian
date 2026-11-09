@@ -44,7 +44,11 @@ export function RequirementBlocks({
   );
 }
 
-function RequirementBodyImpl({ doc, projectCode }: RequirementBodyProps) {
+function RequirementBodyImpl({
+  doc,
+  projectCode,
+  virtualize,
+}: RequirementBodyProps & { virtualize?: boolean }) {
   const blocks = doc.content ?? [];
 
   if (blocks.length === 0) {
@@ -53,7 +57,12 @@ function RequirementBodyImpl({ doc, projectCode }: RequirementBodyProps) {
 
   return (
     <section className={styles.frame} aria-label="需求正文">
-      <div className={styles.viewport} role="document" aria-label="结构化需求正文">
+      <div
+        className={styles.viewport}
+        role="document"
+        aria-label="结构化需求正文"
+        data-virtualized={virtualize || undefined}
+      >
         <RequirementBlocks doc={doc} projectCode={projectCode} />
       </div>
     </section>
