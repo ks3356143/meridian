@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Root as Collapsible,
@@ -30,6 +30,13 @@ export function PreviousRoundResultSection({
     enabled: expanded,
     staleTime: 30_000,
   });
+  // 首次拿到结果（成功或失败）前不展开：展开动画一旦开到加载态高度，数据到达后会跳变；
+  // 就绪后再展开，量高即真实内容高度，开合全程平滑。settled 保持粘性，重试时面板不回缩。
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (resultQuery.isSuccess || resultQuery.isError) setSettled(true);
+  }, [resultQuery.isSuccess, resultQuery.isError]);
+  const panelOpen = expanded && settled;
   if (expanded && resultQuery.error instanceof ApiError && resultQuery.error.status === 404) {
     return null;
   }
@@ -37,12 +44,12 @@ export function PreviousRoundResultSection({
   const status = result?.previousCase.status ?? "pending";
 
   return (
-    <Collapsible asChild open={expanded}>
+    <Collapsible asChild open={panelOpen}>
       <section className={styles.section} data-expanded={expanded || undefined}>
         <button
           type="button"
           className={styles.trigger}
-          aria-expanded={expanded}
+          aria-expanded={panelOpen}
           onClick={() => {
             setMounted(true);
             setExpanded((current) => !current);
@@ -54,9 +61,11 @@ export function PreviousRoundResultSection({
           <span className={styles.title}>
             <strong>上轮实测</strong>
             <small>
-              {expanded && result
+              {panelOpen && result
                 ? `${result.previousRound.name} · ${caseStatusLabel(status)}`
-                : "默认折叠，展开后读取只读记录"}
+                : expanded && !settled
+                  ? "正在读取上轮实测"
+                  : "默认折叠，展开后读取只读记录"}
             </small>
           </span>
           {result ? (

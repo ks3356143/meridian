@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   Root as Collapsible,
   CollapsibleContent,
@@ -41,18 +41,25 @@ export const RequirementAccordion = memo(function RequirementAccordionImpl({
     staleTime: 60_000,
   });
   const payload = payloadQuery.data;
+  // 与上轮实测块同口径：首次结果就绪前不展开，避免动画开到加载态高度后数据到达跳变；
+  // settled 粘性保持，重试时面板不回缩。加载中由标题行尾的 spinner 提供反馈。
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (payloadQuery.isSuccess || payloadQuery.isError) setSettled(true);
+  }, [payloadQuery.isSuccess, payloadQuery.isError]);
+  const panelOpen = open && settled;
   const toggle = () => {
     setOpen((current) => !current);
     setMounted(true);
   };
 
   return (
-    <Collapsible asChild open={open}>
+    <Collapsible asChild open={panelOpen}>
       <div className={styles.accordion} data-open={open ? "true" : undefined}>
         <button
           type="button"
           className={styles.accordionHead}
-          aria-expanded={open}
+          aria-expanded={panelOpen}
           onClick={toggle}
         >
           {reference.sourceName ? (
@@ -60,17 +67,20 @@ export const RequirementAccordion = memo(function RequirementAccordionImpl({
           ) : null}
           <span className={styles.accordionChapter}>§{reference.chapterNumber}</span>
           <span className={styles.accordionName}>{reference.name}</span>
+          {open && !settled ? (
+            <Loader2 className={styles.accordionSpinner} aria-label="正在加载需求正文" />
+          ) : null}
           <ChevronRight className={styles.accordionChevron} aria-hidden />
         </button>
         <CollapsibleContent>
           <div className={styles.accordionInner}>
-            {open && payloadQuery.isPending && !payload ? (
+            {panelOpen && payloadQuery.isPending && !payload ? (
               <div className={styles.accordionLoading} aria-busy="true" aria-live="polite">
                 <Loader2 className={styles.accordionSpinner} aria-hidden />
                 <span>正在加载需求正文</span>
               </div>
             ) : null}
-            {open && payloadQuery.isError && !payload ? (
+            {panelOpen && payloadQuery.isError && !payload ? (
               <div className={styles.accordionLoading}>
                 <QueryError title="需求正文加载失败" onRetry={() => void payloadQuery.refetch()} />
               </div>
