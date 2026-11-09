@@ -255,11 +255,14 @@ export function TestItemsWorkbench({
     [project.platform, scopedWorkspace],
   );
   const searchActive = searchQuery.trim() !== "" || quickFilter !== "all";
-  const staticItemCount = scopedWorkspace
-    ? scopedWorkspace.items.filter(
-        (item) => activeTypes.find((type) => type.code === item.typeCode)?.isStatic,
-      ).length
-    : 0;
+  // 静态项计数随筛选与数据变化重算；用 Set 把逐项线性查找降为 O(1)。
+  const staticItemCount = useMemo(() => {
+    if (!scopedWorkspace) return 0;
+    const staticCodes = new Set(
+      activeTypes.filter((type) => type.isStatic).map((type) => type.code),
+    );
+    return scopedWorkspace.items.filter((item) => staticCodes.has(item.typeCode)).length;
+  }, [scopedWorkspace, activeTypes]);
   const filteredTree = useMemo(
     () => filterTestItemsTree(treeNodes, searchQuery, quickFilter),
     [treeNodes, searchQuery, quickFilter],
