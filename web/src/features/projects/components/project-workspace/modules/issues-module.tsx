@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOutletContext, useSearchParams } from "react-router";
 import { Bug, ChevronRight, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { InlineLoading } from "@/components/shared/inline-loading";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +51,9 @@ export function IssuesModule() {
     queryKey: ["issues", project.id, roundId ?? "all"],
     queryFn: () => issuesApi.list(project.id, roundId),
   });
+  const pageRef = useRef<HTMLDivElement>(null);
+  // 数据就绪后再淡入，避免加载态先入场、数据到达又跳一次。
+  useSubtleReveal(pageRef, "[data-issues-reveal]", !issuesQuery.isPending);
 
   const issues = useMemo(() => {
     const all = issuesQuery.data ?? [];
@@ -92,8 +97,8 @@ export function IssuesModule() {
   };
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
+    <div ref={pageRef} className={styles.page}>
+      <header className={styles.header} data-issues-reveal>
         <div className={styles.heading}>
           <span className={styles.iconBox} aria-hidden>
             <ShieldAlert />
@@ -127,11 +132,13 @@ export function IssuesModule() {
       </header>
 
       {issuesQuery.data ? (
-        <div className={styles.severity} aria-label="问题等级统计" role="group">
+        <div className={styles.severity} aria-label="问题等级统计" role="group" data-issues-reveal>
           {severityStats.map((stat) => (
             <div key={stat.level} className={styles.severityCard} data-tonal-panel={stat.tone}>
               <span className={styles.severityLabel}>{stat.level}</span>
-              <strong className={styles.severityValue}>{stat.total}</strong>
+              <strong className={styles.severityValue}>
+                <CountingNumber number={stat.total} />
+              </strong>
               <em className={styles.severityNote}>未关闭 {stat.open}</em>
             </div>
           ))}
@@ -143,14 +150,14 @@ export function IssuesModule() {
       ) : null}
       {issuesQuery.isError ? <p className={styles.state}>问题单读取失败，请刷新重试。</p> : null}
       {!issuesQuery.isPending && issues.length === 0 ? (
-        <div className={styles.empty}>
+        <div className={styles.empty} data-issues-reveal>
           <Bug aria-hidden />
           <strong>还没有问题单</strong>
           <span>在文档审查里把不通过的检查项「立问题单」，就会出现在这里。</span>
         </div>
       ) : null}
 
-      <div className={styles.list}>
+      <div className={styles.list} data-issues-reveal>
         {issues.map((issue) => (
           <button
             key={issue.id}

@@ -7,9 +7,10 @@ import {
   ListChecks,
   Settings2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { cn } from "cn";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,10 +40,12 @@ export function OutlineWorkbench({ project }: { project: Project }) {
   const nextTask = sections
     .flatMap((section) => section.tasks.map((task) => ({ section, task })))
     .find((item) => item.section.status !== "ready" && item.section.status !== "auto");
+  const pageRef = useRef<HTMLDivElement>(null);
+  useSubtleReveal(pageRef, "[data-outline-reveal]");
 
   return (
-    <div className="grid min-w-0 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-      <aside className="panel-surface flex min-w-0 flex-col rounded-sm border">
+    <div ref={pageRef} className="grid min-w-0 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+      <aside className="panel-surface flex min-w-0 flex-col rounded-sm border" data-outline-reveal>
         <div className="border-border border-b p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
@@ -94,7 +97,10 @@ export function OutlineWorkbench({ project }: { project: Project }) {
       </aside>
 
       <div className="flex min-w-0 flex-col gap-4">
-        <section className="panel-surface relative overflow-hidden rounded-sm border">
+        <section
+          className="panel-surface relative overflow-hidden rounded-sm border"
+          data-outline-reveal
+        >
           <span className="bg-primary absolute inset-y-0 left-0 w-1.5" aria-hidden />
           <div className="grid gap-4 p-4 pl-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
             <div className="min-w-0">
@@ -141,7 +147,7 @@ export function OutlineWorkbench({ project }: { project: Project }) {
           </div>
         </section>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]" data-outline-reveal>
           <Card data-tone="primary">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
