@@ -531,13 +531,7 @@
 }
 
 .ruleList {
-  animation: static-panel-in 0.22s var(--ease-out-strong) both;
   border: 1px solid var(--border);
-}
-
-.targetCard,
-.violationFields {
-  animation: static-panel-in 0.22s var(--ease-out-strong) both;
 }
 
 .targetStat {
@@ -555,19 +549,6 @@
 
 .targetStat small {
   font-size: 0.64rem;
-}
-
-.fileTable tbody tr {
-  animation: static-panel-in 0.18s var(--ease-out-strong) both;
-}
-
-@keyframes static-panel-in {
-  from {
-    transform: translateY(4px);
-  }
-  to {
-    transform: none;
-  }
 }
 
 .ruleGroupHeader {

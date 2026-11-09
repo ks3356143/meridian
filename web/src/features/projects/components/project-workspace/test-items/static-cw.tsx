@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { StaticCodeFile, StaticState } from "@/features/test-items/types";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { ConfirmAction } from "./static-shared";
 import { uid, type StaticUpdater } from "./static-model";
 import styles from "./static-workbench.module.css";
@@ -70,53 +71,61 @@ export function CwWorkbench({ state, update }: { state: StaticState; update: Sta
           </thead>
           <tbody>
             {state.codeFiles.map((file, index) => (
-              <tr key={file.id}>
-                <td>{index + 1}</td>
-                <td>
-                  <Input
-                    value={file.name}
-                    placeholder="例如 src/main.c"
-                    aria-label={`第 ${index + 1} 个文件`}
-                    onChange={(event) =>
-                      update((next) => {
-                        const target = next.codeFiles.find((item) => item.id === file.id);
-                        if (target) target.name = event.target.value;
-                      })
-                    }
-                  />
-                </td>
-                <td>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={file.lines ?? ""}
-                    aria-label={`第 ${index + 1} 个文件行数`}
-                    onChange={(event) =>
-                      update((next) => {
-                        const target = next.codeFiles.find((item) => item.id === file.id);
-                        if (target)
-                          target.lines =
-                            event.target.value === "" ? null : Number(event.target.value);
-                      })
-                    }
-                  />
-                </td>
-                <td>
-                  <ConfirmAction
-                    title="删除文件行"
-                    description={`确认移除“${file.name || "未命名文件"}”？`}
-                    onConfirm={() =>
-                      update((next) => {
-                        next.codeFiles = next.codeFiles.filter((item) => item.id !== file.id);
-                      })
-                    }
-                  >
-                    <Button type="button" size="icon-xs" variant="ghost" aria-label="删除文件行">
-                      <Trash2 aria-hidden />
-                    </Button>
-                  </ConfirmAction>
-                </td>
-              </tr>
+              <Fade
+                key={file.id}
+                asChild
+                delay={Math.min(index * 18, 144)}
+                initialOpacity={0.6}
+                transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+              >
+                <tr>
+                  <td>{index + 1}</td>
+                  <td>
+                    <Input
+                      value={file.name}
+                      placeholder="例如 src/main.c"
+                      aria-label={`第 ${index + 1} 个文件`}
+                      onChange={(event) =>
+                        update((next) => {
+                          const target = next.codeFiles.find((item) => item.id === file.id);
+                          if (target) target.name = event.target.value;
+                        })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={file.lines ?? ""}
+                      aria-label={`第 ${index + 1} 个文件行数`}
+                      onChange={(event) =>
+                        update((next) => {
+                          const target = next.codeFiles.find((item) => item.id === file.id);
+                          if (target)
+                            target.lines =
+                              event.target.value === "" ? null : Number(event.target.value);
+                        })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <ConfirmAction
+                      title="删除文件行"
+                      description={`确认移除“${file.name || "未命名文件"}”？`}
+                      onConfirm={() =>
+                        update((next) => {
+                          next.codeFiles = next.codeFiles.filter((item) => item.id !== file.id);
+                        })
+                      }
+                    >
+                      <Button type="button" size="icon-xs" variant="ghost" aria-label="删除文件行">
+                        <Trash2 aria-hidden />
+                      </Button>
+                    </ConfirmAction>
+                  </td>
+                </tr>
+              </Fade>
             ))}
           </tbody>
         </table>

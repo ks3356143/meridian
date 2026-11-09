@@ -1,8 +1,9 @@
 import { flexRender } from "@tanstack/react-table";
-import { memo, type ComponentPropsWithoutRef, type CSSProperties } from "react";
+import { memo, type ComponentPropsWithoutRef } from "react";
 import type { Row } from "@tanstack/table-core";
 import { cn } from "cn";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import styles from "./data-table-row.module.css";
 import { dataTableCellResponsiveClass, type DataTableRowData } from "./data-table-types";
 import type { ManagementTableFeatures } from "./table-features";
@@ -21,16 +22,14 @@ function DataTableRowImpl<TData extends DataTableRowData>(props: DataTableRowPro
   const { row, active, onRowActivate, alignedColumns, animateEntry } = props;
   const rowProps = onRowActivate ? getActivatableRowProps(row.original, onRowActivate) : {};
 
-  return (
+  const rowNode = (
     <TableRow
       {...rowProps}
       data-selected={active ? "true" : undefined}
-      style={animateEntry ? ({ "--row-index": row.index } as CSSProperties) : undefined}
       className={cn(
         "group/row border-border transition-[background-color,box-shadow] hover:bg-primary/8",
         active && "bg-primary/12",
         active && styles.selectedRow,
-        animateEntry && styles.enterRow,
         onRowActivate &&
           "relative cursor-pointer focus-visible:bg-primary/10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
       )}
@@ -62,6 +61,17 @@ function DataTableRowImpl<TData extends DataTableRowData>(props: DataTableRowPro
         );
       })}
     </TableRow>
+  );
+  if (!animateEntry) return rowNode;
+  return (
+    <Fade
+      asChild
+      delay={Math.min(row.index * 18, 144)}
+      initialOpacity={0.72}
+      transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+    >
+      {rowNode}
+    </Fade>
   );
 }
 

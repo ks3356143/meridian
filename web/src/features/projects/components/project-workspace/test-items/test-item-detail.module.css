@@ -1024,20 +1024,8 @@
   padding: 0.08rem 0.3rem;
   transition: box-shadow 0.18s var(--ease-out-strong);
 
-  /* 新增关联入场：透明度 + 轻光晕，无位移。 */
-  animation: chipIn 0.22s ease-out 1;
-}
-
-@keyframes chipIn {
-  0% {
-    box-shadow: 0 0 0 0 transparent;
-    opacity: 0;
-  }
-
-  100% {
-    box-shadow: 0 0 12px -9px color-mix(in srgb, var(--primary) 70%, transparent);
-    opacity: 1;
-  }
+  /* 入场由 Fade 承担；静止态保留轻光晕。 */
+  box-shadow: 0 0 12px -9px color-mix(in srgb, var(--primary) 70%, transparent);
 }
 
 .linkChip:hover {

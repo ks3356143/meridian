@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Check } from "lucide-react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
+
 import {
   Accordion,
   AccordionContent,
@@ -242,62 +244,75 @@ export function SaWorkbench({
             ))}
           </div>
           {group ? (
-            <div className={styles.ruleList} key={group.code}>
-              <div className={styles.ruleGroupHeader}>
-                <strong>{group.name}</strong>
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="outline"
-                  onClick={() => passGroup(group.rules.map((rule) => rule.code))}
-                >
-                  <Check aria-hidden />
-                  整组通过
-                </Button>
-              </div>
-              {group.rules.map((rule) => {
-                const violation = violations.get(rule.code);
-                return (
-                  <div
-                    className={styles.ruleRow}
-                    key={rule.code}
-                    data-violation={violation ? "true" : undefined}
+            <Fade
+              key={group.code}
+              asChild
+              initialOpacity={0.55}
+              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            >
+              <div className={styles.ruleList}>
+                <div className={styles.ruleGroupHeader}>
+                  <strong>{group.name}</strong>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    onClick={() => passGroup(group.rules.map((rule) => rule.code))}
                   >
-                    <Checkbox
-                      checked={Boolean(violation)}
-                      aria-label={`${rule.code} 违规`}
-                      onCheckedChange={(checked) => toggleRule(rule.code, checked === true)}
-                    />
-                    <span className={styles.ruleCode}>{rule.code}</span>
-                    <span className={styles.ruleDescription}>{rule.description}</span>
-                    {violation ? (
-                      <div className={styles.violationFields}>
-                        <Input
-                          value={violation.reason}
-                          placeholder="违规原因（必填）"
-                          aria-label={`${rule.code} 违规原因`}
-                          onChange={(event) =>
-                            updateViolation(rule.code, (next) => {
-                              next.reason = event.target.value;
-                            })
-                          }
-                        />
-                        <Input
-                          value={violation.location}
-                          placeholder="位置（可选）"
-                          aria-label={`${rule.code} 违规位置`}
-                          onChange={(event) =>
-                            updateViolation(rule.code, (next) => {
-                              next.location = event.target.value;
-                            })
-                          }
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
+                    <Check aria-hidden />
+                    整组通过
+                  </Button>
+                </div>
+                {group.rules.map((rule) => {
+                  const violation = violations.get(rule.code);
+                  return (
+                    <div
+                      className={styles.ruleRow}
+                      key={rule.code}
+                      data-violation={violation ? "true" : undefined}
+                    >
+                      <Checkbox
+                        checked={Boolean(violation)}
+                        aria-label={`${rule.code} 违规`}
+                        onCheckedChange={(checked) => toggleRule(rule.code, checked === true)}
+                      />
+                      <span className={styles.ruleCode}>{rule.code}</span>
+                      <span className={styles.ruleDescription}>{rule.description}</span>
+                      {violation ? (
+                        <Fade
+                          asChild
+                          initialOpacity={0.55}
+                          transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+                        >
+                          <div className={styles.violationFields}>
+                            <Input
+                              value={violation.reason}
+                              placeholder="违规原因（必填）"
+                              aria-label={`${rule.code} 违规原因`}
+                              onChange={(event) =>
+                                updateViolation(rule.code, (next) => {
+                                  next.reason = event.target.value;
+                                })
+                              }
+                            />
+                            <Input
+                              value={violation.location}
+                              placeholder="位置（可选）"
+                              aria-label={`${rule.code} 违规位置`}
+                              onChange={(event) =>
+                                updateViolation(rule.code, (next) => {
+                                  next.location = event.target.value;
+                                })
+                              }
+                            />
+                          </div>
+                        </Fade>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </Fade>
           ) : null}
         </AccordionContent>
       </AccordionItem>

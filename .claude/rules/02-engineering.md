@@ -12,7 +12,7 @@
 - 路由：使用 `createBrowserRouter` 和 `RouterProvider`；页面用 lazy route，目录使用传统 `web/src`。
 - 状态与数据：Zustand + TanStack Query + TanStack Table。
 - 动效优先级（2026-11-09 用户口径，动效是基本必要项——默认必须有，讨论的是形式与强度不是要不要做）：① Animate UI（`@animate-ui/react`，免费开源，已装）成熟原语直接用；② 参考 Motion UI（motion.dev/ui，Motion+ 付费）的设计，用 Motion（`motion` 包，免费 MIT，已装）免费 API 实现，**禁止安装付费私有包、禁止复制源码**；③ 网上设计参考与 OpenDesign 参考，借鉴手法、落地仍走 ①②；④ GSAP 兜底（几何测量、时间轴编排、品牌持续视觉，现仅剩三处）。Animate UI 已自带的能力（texts、carousel、cursor、scroll-progress、pinned-list）优先用 Animate UI 版本，不得重复自造。
-- 手搓的边界：自写 CSS `@keyframes`、手写动画状态机属于手搓，禁止；用 Motion 免费 API 实现属于允许范围。完整边界见 [srs/07-前端体验/03-品牌与动效/01-动效原则与验收.md](../../srs/07-前端体验/03-品牌与动效/01-动效原则与验收.md)。
+- 手写动画的边界（2026-11-09 用户放宽）：不强制禁止手写 CSS `@keyframes`——效果优先，先找成熟实现（Animate UI → Motion → 参考 → GSAP 兜底）；确无成熟原语可实现的状态反馈与装饰效果（荧光呼吸/状态脉冲、表单错误态、loading、品牌循环）允许手写并注明。完整边界见 [srs/07-前端体验/03-品牌与动效/01-动效原则与验收.md](../../srs/07-前端体验/03-品牌与动效/01-动效原则与验收.md)。
 - 拖拽排序：`@dnd-kit/core` + `@dnd-kit/sortable`（内置键盘传感器与无障碍，禁止手搓拖拽）。
 - 主题：默认浅色，支持深浅色切换。
 - 提示：统一使用 `sonner`。

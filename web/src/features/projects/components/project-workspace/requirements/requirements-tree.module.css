@@ -553,14 +553,6 @@
   opacity: 1;
 }
 
-.row[data-selection-motion="true"] {
-  animation: treeSelectionGlow 280ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.row[data-selection-motion="true"] .title {
-  animation: treeSelectionTextIn 200ms ease-out;
-}
-
 .row[data-node-type="source"] {
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--info) 7%, transparent), transparent 78%),
@@ -709,6 +701,7 @@
   box-shadow: inset 2px 0 0 color-mix(in srgb, var(--info) 72%, transparent);
 }
 
+/* 新建行高亮属于状态脉冲语言（SRS 07/03 豁免清单），保留手写 keyframes。 */
 .row[data-created="true"] {
   animation: createdRow 1.8s ease-out;
   border-color: color-mix(in srgb, var(--primary) 46%, var(--border));
@@ -1010,36 +1003,6 @@
     box-shadow:
       inset 3px 0 0 var(--primary),
       0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
-  }
-}
-
-@keyframes treeSelectionGlow {
-  0% {
-    background: linear-gradient(90deg, transparent, transparent), transparent;
-    border-color: transparent;
-  }
-  55% {
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--primary) 22%, transparent), transparent 72%),
-      color-mix(in srgb, var(--primary) 8%, var(--card));
-    border-color: color-mix(in srgb, var(--primary) 66%, var(--border));
-  }
-  100% {
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--primary) 18%, transparent), transparent 72%),
-      color-mix(in srgb, var(--primary) 7%, var(--card));
-    border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
-  }
-}
-
-@keyframes treeSelectionTextIn {
-  0% {
-    filter: brightness(1.12);
-    opacity: 0.68;
-  }
-  100% {
-    filter: brightness(1);
-    opacity: 1;
   }
 }
 

@@ -98,7 +98,6 @@
       transparent 28rem
     ),
     var(--card);
-  animation: workspace-route-enter 220ms var(--ease-out-strong);
 }
 
 .workspace-route[data-workspace-section="assets"] {
@@ -139,15 +138,6 @@ main.workspace-route::-webkit-scrollbar-track {
 main.workspace-route::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--primary) 44%, var(--muted));
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-}
-
-@keyframes workspace-route-enter {
-  from {
-    opacity: 0.88;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .workspace-home {

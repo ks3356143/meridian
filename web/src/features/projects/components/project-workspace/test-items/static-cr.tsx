@@ -18,6 +18,7 @@ import type {
 } from "@/features/test-items/types";
 import type { ProjectPlatform } from "@/features/projects/types";
 import { ReviewCheckTable } from "./static-review";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { ConfirmAction } from "./static-shared";
 import { reviewStats, uid, type StaticUpdater } from "./static-model";
 import styles from "./static-workbench.module.css";
@@ -56,9 +57,16 @@ export function CrWorkbench({
         title: check.title,
         requirement: check.requirement,
         basis: check.basis,
-        practice: check.practice,
+        practice: check.practice ?? "",
+        goodPractice: check.goodPractice ?? "",
+        badPractice: check.badPractice ?? "",
         result: "unreviewed",
         notes: "",
+        images: [],
+        issueId: "",
+        carriedFromPrevious: false,
+        previousNote: "",
+        previousImages: [],
       })),
     };
     update((next) => {
@@ -153,41 +161,48 @@ export function CrWorkbench({
         state.reviewTargets.map((target) => {
           const stats = reviewStats(target.checks);
           return (
-            <section className={styles.targetCard} key={target.id}>
-              <div className={styles.targetHeader}>
-                <div>
-                  <Badge variant="outline">{target.language}</Badge>
-                  <strong>{target.name}</strong>
-                  <span className={styles.targetStat}>
-                    <strong>
-                      {stats.reviewed}/{stats.total}
-                    </strong>
-                    <small>通过率 {stats.rate}%</small>
-                  </span>
+            <Fade
+              key={target.id}
+              asChild
+              initialOpacity={0.55}
+              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            >
+              <section className={styles.targetCard}>
+                <div className={styles.targetHeader}>
+                  <div>
+                    <Badge variant="outline">{target.language}</Badge>
+                    <strong>{target.name}</strong>
+                    <span className={styles.targetStat}>
+                      <strong>
+                        {stats.reviewed}/{stats.total}
+                      </strong>
+                      <small>通过率 {stats.rate}%</small>
+                    </span>
+                  </div>
+                  <ConfirmAction
+                    title="删除审查目标"
+                    description={`确认删除“${target.name}”及其审查结果？`}
+                    onConfirm={() =>
+                      update((next) => {
+                        next.reviewTargets = next.reviewTargets.filter(
+                          (item) => item.id !== target.id,
+                        );
+                      })
+                    }
+                  >
+                    <Button type="button" size="icon-sm" variant="ghost" aria-label="删除审查目标">
+                      <Trash2 aria-hidden />
+                    </Button>
+                  </ConfirmAction>
                 </div>
-                <ConfirmAction
-                  title="删除审查目标"
-                  description={`确认删除“${target.name}”及其审查结果？`}
-                  onConfirm={() =>
-                    update((next) => {
-                      next.reviewTargets = next.reviewTargets.filter(
-                        (item) => item.id !== target.id,
-                      );
-                    })
-                  }
-                >
-                  <Button type="button" size="icon-sm" variant="ghost" aria-label="删除审查目标">
-                    <Trash2 aria-hidden />
-                  </Button>
-                </ConfirmAction>
-              </div>
-              <div className={styles.tableWrap}>
-                <ReviewCheckTable
-                  checks={target.checks}
-                  onUpdate={(checkID, recipe) => updateCheck(target.id, checkID, recipe)}
-                />
-              </div>
-            </section>
+                <div className={styles.tableWrap}>
+                  <ReviewCheckTable
+                    checks={target.checks}
+                    onUpdate={(checkID, recipe) => updateCheck(target.id, checkID, recipe)}
+                  />
+                </div>
+              </section>
+            </Fade>
           );
         })
       )}

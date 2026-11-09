@@ -1,4 +1,5 @@
 import { Pencil, X } from "lucide-react";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -202,25 +203,32 @@ export function TestItemBasicInfo({
                     {detail.requirements.length > 0 ? (
                       <div className={styles.linkRow}>
                         {detail.requirements.map((reference) => (
-                          <span key={reference.id} className={styles.linkChip}>
-                            {reference.sourceName ? (
-                              <span className={styles.linkSource}>{reference.sourceName}</span>
-                            ) : null}
-                            <span className={styles.linkChapter}>§{reference.chapterNumber}</span>
-                            <TruncatedText
-                              value={reference.name}
-                              className={styles.linkName}
-                              tooltipValue={reference.name}
-                            />
-                            <button
-                              type="button"
-                              className={styles.unlinkButton}
-                              aria-label={`解除关联 §${reference.chapterNumber} ${reference.name}`}
-                              onClick={() => void onUnlink(reference.id)}
-                            >
-                              <X aria-hidden />
-                            </button>
-                          </span>
+                          <Fade
+                            key={reference.id}
+                            asChild
+                            initialOpacity={0}
+                            transition={{ duration: 0.22, ease: "easeOut" }}
+                          >
+                            <span className={styles.linkChip}>
+                              {reference.sourceName ? (
+                                <span className={styles.linkSource}>{reference.sourceName}</span>
+                              ) : null}
+                              <span className={styles.linkChapter}>§{reference.chapterNumber}</span>
+                              <TruncatedText
+                                value={reference.name}
+                                className={styles.linkName}
+                                tooltipValue={reference.name}
+                              />
+                              <button
+                                type="button"
+                                className={styles.unlinkButton}
+                                aria-label={`解除关联 §${reference.chapterNumber} ${reference.name}`}
+                                onClick={() => void onUnlink(reference.id)}
+                              >
+                                <X aria-hidden />
+                              </button>
+                            </span>
+                          </Fade>
                         ))}
                       </div>
                     ) : null}
