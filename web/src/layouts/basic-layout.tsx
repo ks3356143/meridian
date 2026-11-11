@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Fade } from "@animate-ui/react/primitives/effects/fade";
+import { EntranceFade } from "@/components/shared/entrance-fade";
 import {
   ScrollProgress,
   ScrollProgressProvider,
@@ -240,7 +240,7 @@ export default function BasicLayout() {
               </Button>
             </div>
           </header>
-          <Fade
+          <EntranceFade
             asChild
             key={location.pathname}
             initialOpacity={0.55}
@@ -249,7 +249,7 @@ export default function BasicLayout() {
             <main id={MAIN_CONTENT_ID} tabIndex={-1} className={`${styles.mainContent} flex-1`}>
               <Outlet />
             </main>
-          </Fade>
+          </EntranceFade>
         </div>
       </div>
     </ScrollProgressProvider>

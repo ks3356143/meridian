@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { cn } from "cn";
-import { animate } from "@/lib/motion";
+import { animate, prefersReducedMotion } from "@/lib/motion";
 import styles from "./segmented-progress.module.css";
 
 type SegmentedProgressTone = "primary" | "info" | "warning" | "success" | "danger" | "chart";
@@ -24,11 +24,12 @@ export function SegmentedProgress({
   const previousActive = useRef(0);
 
   // 一次性充能：首次挂载与进度前进时，新点亮的段从左到右依次淡入，不回放旧状态。
+  // 减少动态效果时不做充能，段直接呈点亮态。
   useLayoutEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
     const from = Math.min(previousActive.current, active);
     previousActive.current = active;
+    const track = trackRef.current;
+    if (!track || prefersReducedMotion()) return;
     const fresh = [...track.children].slice(from, active) as HTMLElement[];
     const controls = fresh.map((segment, index) =>
       animate(

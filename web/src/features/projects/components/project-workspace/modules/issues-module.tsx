@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOutletContext, useSearchParams } from "react-router";
 import { Bug, ChevronRight, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
-import { Fade } from "@animate-ui/react/primitives/effects/fade";
+import { EntranceFade } from "@/components/shared/entrance-fade";
 import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
 import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { InlineLoading } from "@/components/shared/inline-loading";
@@ -158,7 +158,7 @@ export function IssuesModule() {
         />
       ) : null}
       {!issuesQuery.isPending && !issuesQuery.isError && issues.length === 0 ? (
-        <Fade asChild key={`empty-${statusFilter}`} initialOpacity={0.76}>
+        <EntranceFade asChild key={`empty-${statusFilter}`} initialOpacity={0.76}>
           <div className={styles.empty} data-issues-reveal>
             <Bug aria-hidden />
             <strong>{statusFilter === "all" ? "还没有问题单" : "当前筛选没有问题单"}</strong>
@@ -178,10 +178,10 @@ export function IssuesModule() {
               </Button>
             ) : null}
           </div>
-        </Fade>
+        </EntranceFade>
       ) : null}
 
-      <Fade
+      <EntranceFade
         asChild
         key={`list-${statusFilter}`}
         initialOpacity={0.85}
@@ -189,7 +189,7 @@ export function IssuesModule() {
       >
         <div className={styles.list} data-issues-reveal>
           {issues.map((issue, index) => (
-            <Fade
+            <EntranceFade
               key={issue.id}
               asChild
               delay={Math.min(index * 0.04, 0.24)}
@@ -218,10 +218,10 @@ export function IssuesModule() {
                 </span>
                 <ChevronRight className={styles.rowArrow} aria-hidden />
               </button>
-            </Fade>
+            </EntranceFade>
           ))}
         </div>
-      </Fade>
+      </EntranceFade>
 
       <Dialog open={active !== null} onOpenChange={(open) => !open && setActiveId(null)}>
         <DialogContent className="sm:max-w-xl">

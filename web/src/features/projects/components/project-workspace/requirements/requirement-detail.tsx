@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Fade } from "@animate-ui/react/primitives/effects/fade";
+import { EntranceFade } from "@/components/shared/entrance-fade";
 import {
   lazy,
   memo,
@@ -515,7 +516,11 @@ function RequirementDetailForm({
   };
 
   return (
-    <Fade asChild initialOpacity={0.82} transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}>
+    <EntranceFade
+      asChild
+      initialOpacity={0.82}
+      transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+    >
       <section
         className={styles.shell}
         data-incomplete={incomplete ? "true" : undefined}
@@ -1012,7 +1017,7 @@ function RequirementDetailForm({
           onClick={handleCreateTestItem}
         />
       </section>
-    </Fade>
+    </EntranceFade>
   );
 
   function update<K extends keyof ReturnType<typeof toDraft>>(

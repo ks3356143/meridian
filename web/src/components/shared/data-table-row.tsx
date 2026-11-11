@@ -3,7 +3,7 @@ import { memo, useLayoutEffect, useRef, type ComponentPropsWithoutRef } from "re
 import type { Row } from "@tanstack/table-core";
 import { cn } from "cn";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { animate } from "@/lib/motion";
+import { animate, prefersReducedMotion } from "@/lib/motion";
 import styles from "./data-table-row.module.css";
 import { dataTableCellResponsiveClass, type DataTableRowData } from "./data-table-types";
 import type { ManagementTableFeatures } from "./table-features";
@@ -26,7 +26,7 @@ function DataTableRowImpl<TData extends DataTableRowData>(props: DataTableRowPro
   // 入场同时带轻位移：先写首帧（layout 阶段、绘制前），再动画到终态，避免闪烁。
   useLayoutEffect(() => {
     const element = rowRef.current;
-    if (!animateEntry || !element) return;
+    if (!animateEntry || !element || prefersReducedMotion()) return;
     element.style.opacity = "0.55";
     element.style.transform = "translateY(6px)";
     const control = animate(

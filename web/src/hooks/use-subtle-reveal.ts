@@ -1,5 +1,5 @@
 import { useLayoutEffect, type RefObject } from "react";
-import { animate } from "@/lib/motion";
+import { animate, prefersReducedMotion } from "@/lib/motion";
 
 /**
  * 作用域内元素依次淡入上浮：透明度 + 轻位移 + 错峰，负责页面级入场编排；
@@ -13,6 +13,8 @@ export function useSubtleReveal(
   useLayoutEffect(() => {
     const scope = scopeRef.current;
     if (!enabled || !scope) return;
+    // 减少动态效果：不写入首帧也不播放，直接呈现终态。
+    if (prefersReducedMotion()) return;
     const elements = [...scope.querySelectorAll<HTMLElement>(selector)];
     // 绘制前先写首帧，避免元素以终态闪一帧再回落到入场态。
     elements.forEach((element) => {

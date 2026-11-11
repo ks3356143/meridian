@@ -38,7 +38,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
 import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
-import { Fade } from "@animate-ui/react/primitives/effects/fade";
+import { EntranceFade } from "@/components/shared/entrance-fade";
 import type {
   BatchAssignCasesPayload,
   CreateTestItemPayload,
@@ -763,7 +763,7 @@ export function TestItemsWorkbench({
     return (
       <section ref={pageRef} className={styles.workbench}>
         {viewBar}
-        <Fade
+        <EntranceFade
           asChild
           key={view}
           initialOpacity={0.82}
@@ -776,7 +776,7 @@ export function TestItemsWorkbench({
               onOpenType={openTypeInTree}
             />
           </div>
-        </Fade>
+        </EntranceFade>
       </section>
     );
   }
@@ -785,7 +785,7 @@ export function TestItemsWorkbench({
     return (
       <section ref={pageRef} className={styles.workbench}>
         {viewBar}
-        <Fade
+        <EntranceFade
           asChild
           key={view}
           initialOpacity={0.82}
@@ -798,7 +798,7 @@ export function TestItemsWorkbench({
               onOpenTarget={openTraceTarget}
             />
           </div>
-        </Fade>
+        </EntranceFade>
       </section>
     );
   }
@@ -807,7 +807,7 @@ export function TestItemsWorkbench({
     return (
       <section ref={pageRef} className={styles.workbench}>
         {viewBar}
-        <Fade
+        <EntranceFade
           asChild
           key={view}
           initialOpacity={0.82}
@@ -821,7 +821,7 @@ export function TestItemsWorkbench({
               onOpenStep={openAnnotationStep}
             />
           </div>
-        </Fade>
+        </EntranceFade>
       </section>
     );
   }
@@ -1148,7 +1148,7 @@ export function TestItemsWorkbench({
   return (
     <section ref={pageRef} className={styles.workbench}>
       {viewBar}
-      <Fade
+      <EntranceFade
         asChild
         key={view}
         initialOpacity={0.82}
@@ -1185,7 +1185,7 @@ export function TestItemsWorkbench({
             </>
           )}
         </div>
-      </Fade>
+      </EntranceFade>
 
       {detail ? (
         <ChangeItemTypeDialog

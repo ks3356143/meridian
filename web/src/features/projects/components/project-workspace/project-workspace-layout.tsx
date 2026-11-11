@@ -13,7 +13,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate, useNavigationType } from "react-router";
 import { QueryLoading } from "@/components/shared/query-state";
 import { AppQuickSwitcher } from "@/components/shared/app-quick-switcher";
-import { Fade } from "@animate-ui/react/primitives/effects/fade";
+import { EntranceFade } from "@/components/shared/entrance-fade";
 import { MAIN_CONTENT_ID, SkipLink } from "@/components/shared/skip-link";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { gsap, useGSAP } from "@/lib/gsap";
@@ -333,7 +333,7 @@ export function ProjectWorkspaceLayout({
           </Tabs>
         </nav>
 
-        <Fade
+        <EntranceFade
           asChild
           key={location.pathname}
           initialOpacity={0.55}
@@ -347,7 +347,7 @@ export function ProjectWorkspaceLayout({
           >
             {switchingSection ? <QueryLoading label="正在加载工作区模块" rows={6} /> : children}
           </main>
-        </Fade>
+        </EntranceFade>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as ProgressPrimitive from "@animate-ui/react/primitives/radix-ui/progress";
 import { cn } from "cn";
+import { prefersReducedMotion } from "@/lib/motion";
 
 function Progress({
   className,
@@ -8,7 +9,8 @@ function Progress({
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
   // 首次挂载从 0 充能到真实值：Animate UI 的 Indicator 只在数值变化时做弹簧，initial:false 不吃首帧。
-  const [charged, setCharged] = React.useState(false);
+  // 系统开启减少动态效果时直接终态呈现。
+  const [charged, setCharged] = React.useState(prefersReducedMotion);
   React.useEffect(() => {
     const frame = window.requestAnimationFrame(() => setCharged(true));
     return () => window.cancelAnimationFrame(frame);
