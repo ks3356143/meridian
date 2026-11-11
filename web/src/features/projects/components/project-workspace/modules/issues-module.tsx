@@ -3,9 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOutletContext, useSearchParams } from "react-router";
 import { Bug, ChevronRight, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
 import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { InlineLoading } from "@/components/shared/inline-loading";
+import { QueryError } from "@/components/shared/query-state";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -148,42 +150,78 @@ export function IssuesModule() {
       {issuesQuery.isPending ? (
         <InlineLoading className={styles.state} label="正在读取问题单" />
       ) : null}
-      {issuesQuery.isError ? <p className={styles.state}>问题单读取失败，请刷新重试。</p> : null}
-      {!issuesQuery.isPending && issues.length === 0 ? (
-        <div className={styles.empty} data-issues-reveal>
-          <Bug aria-hidden />
-          <strong>还没有问题单</strong>
-          <span>在文档审查里把不通过的检查项「立问题单」，就会出现在这里。</span>
-        </div>
+      {issuesQuery.isError ? (
+        <QueryError
+          title="问题单读取失败"
+          description="请确认后端服务可用后重试。"
+          onRetry={() => void issuesQuery.refetch()}
+        />
+      ) : null}
+      {!issuesQuery.isPending && !issuesQuery.isError && issues.length === 0 ? (
+        <Fade asChild key={`empty-${statusFilter}`} initialOpacity={0.76}>
+          <div className={styles.empty} data-issues-reveal>
+            <Bug aria-hidden />
+            <strong>{statusFilter === "all" ? "还没有问题单" : "当前筛选没有问题单"}</strong>
+            <span>
+              {statusFilter === "all"
+                ? "在文档审查里把不通过的检查项「立问题单」，就会出现在这里。"
+                : "切换到「全部」可以查看其他状态的问题单。"}
+            </span>
+            {statusFilter !== "all" ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setStatusFilter("all")}
+              >
+                查看全部
+              </Button>
+            ) : null}
+          </div>
+        </Fade>
       ) : null}
 
-      <div className={styles.list} data-issues-reveal>
-        {issues.map((issue) => (
-          <button
-            key={issue.id}
-            type="button"
-            className={styles.row}
-            data-level={issue.level}
-            onClick={() => openDetail(issue)}
-          >
-            <span className={styles.rowRound}>第 {issue.roundNumber} 轮</span>
-            <span className={styles.rowMain}>
-              <strong>{issue.title}</strong>
-              <span>
-                {issue.testItemIdentifier || "—"} · {issue.sourceSheetName || "文档审查"}
-                {issue.sourceCheckTitle ? ` · ${issue.sourceCheckTitle}` : ""}
-              </span>
-            </span>
-            <span className={styles.rowLevel} data-level={issue.level}>
-              {issue.level}
-            </span>
-            <span className={styles.rowStatus} data-status={issue.status}>
-              {issue.status === "open" ? "开放" : "已关闭"}
-            </span>
-            <ChevronRight className={styles.rowArrow} aria-hidden />
-          </button>
-        ))}
-      </div>
+      <Fade
+        asChild
+        key={`list-${statusFilter}`}
+        initialOpacity={0.85}
+        transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
+      >
+        <div className={styles.list} data-issues-reveal>
+          {issues.map((issue, index) => (
+            <Fade
+              key={issue.id}
+              asChild
+              delay={Math.min(index * 0.04, 0.24)}
+              initialOpacity={0.55}
+              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <button
+                type="button"
+                className={styles.row}
+                data-level={issue.level}
+                onClick={() => openDetail(issue)}
+              >
+                <span className={styles.rowRound}>第 {issue.roundNumber} 轮</span>
+                <span className={styles.rowMain}>
+                  <strong>{issue.title}</strong>
+                  <span>
+                    {issue.testItemIdentifier || "—"} · {issue.sourceSheetName || "文档审查"}
+                    {issue.sourceCheckTitle ? ` · ${issue.sourceCheckTitle}` : ""}
+                  </span>
+                </span>
+                <span className={styles.rowLevel} data-level={issue.level}>
+                  {issue.level}
+                </span>
+                <span className={styles.rowStatus} data-status={issue.status}>
+                  {issue.status === "open" ? "开放" : "已关闭"}
+                </span>
+                <ChevronRight className={styles.rowArrow} aria-hidden />
+              </button>
+            </Fade>
+          ))}
+        </div>
+      </Fade>
 
       <Dialog open={active !== null} onOpenChange={(open) => !open && setActiveId(null)}>
         <DialogContent className="sm:max-w-xl">

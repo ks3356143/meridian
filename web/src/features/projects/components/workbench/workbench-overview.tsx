@@ -8,8 +8,11 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
+import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
 import { cn } from "cn";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SegmentedProgress } from "@/components/shared/segmented-progress";
@@ -37,6 +40,8 @@ const toneIcon: Record<ModuleTone, string> = {
 };
 
 export function WorkbenchOverview({ project, rate }: { project: Project; rate: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useSubtleReveal(containerRef, "[data-overview-reveal]");
   const roundsQuery = useQuery({
     queryKey: ["projects", project.id, "test-rounds"],
     queryFn: () => testItemsApi.rounds(project.id),
@@ -47,7 +52,7 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
     ? "…"
     : roundsQuery.isError
       ? "读取失败"
-      : String(laterRoundCount);
+      : laterRoundCount;
 
   const modules: Array<{
     icon: typeof ListChecks;
@@ -84,8 +89,8 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
   ];
 
   return (
-    <div className="flex flex-col gap-5">
-      <Card data-tone="info" className="overflow-hidden">
+    <div ref={containerRef} className="flex flex-col gap-5">
+      <Card data-tone="info" data-overview-reveal className="overflow-hidden">
         <CardHeader>
           <CardTitle>项目基础信息</CardTitle>
           <CardDescription>供测评大纲首页和交付文档引用的基础元数据。</CardDescription>
@@ -108,11 +113,12 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-overview-reveal>
         {modules.map((module) => (
           <Card
             key={module.name}
             size="sm"
+            spotlight
             data-tone={module.tone}
             data-unavailable={module.unavailable ? "true" : undefined}
             className="group overflow-hidden"
@@ -127,7 +133,11 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
                     toneText[module.tone],
                   )}
                 >
-                  {module.value}
+                  {typeof module.value === "number" ? (
+                    <CountingNumber number={module.value} />
+                  ) : (
+                    module.value
+                  )}
                 </p>
                 {module.note ? (
                   <p className="text-muted-foreground mt-1.5 text-[11px] leading-none">
@@ -148,7 +158,7 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
         ))}
       </div>
 
-      <Card data-tone="primary" className="overflow-hidden">
+      <Card data-tone="primary" data-overview-reveal className="overflow-hidden">
         <CardHeader>
           <CardTitle>执行进度</CardTitle>
           <CardDescription>
@@ -169,7 +179,7 @@ export function WorkbenchOverview({ project, rate }: { project: Project; rate: n
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_minmax(280px,380px)]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_minmax(280px,380px)]" data-overview-reveal>
         <Card data-tone="warning" className="overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

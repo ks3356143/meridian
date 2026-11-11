@@ -7,6 +7,14 @@ function Progress({
   value,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+  // 首次挂载从 0 充能到真实值：Animate UI 的 Indicator 只在数值变化时做弹簧，initial:false 不吃首帧。
+  const [charged, setCharged] = React.useState(false);
+  React.useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setCharged(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+  const shown = charged ? (value ?? 0) : 0;
+
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -17,7 +25,7 @@ function Progress({
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
         className="bg-primary h-full w-full flex-none origin-left"
-        style={{ transform: `translateX(-${100 - (value ?? 0)}%)` }}
+        style={{ transform: `translateX(-${100 - shown}%)` }}
       />
     </ProgressPrimitive.Root>
   );

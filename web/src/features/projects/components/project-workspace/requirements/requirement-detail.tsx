@@ -515,489 +515,504 @@ function RequirementDetailForm({
   };
 
   return (
-    <section
-      className={styles.shell}
-      data-incomplete={incomplete ? "true" : undefined}
-      aria-busy={detailPending ? true : undefined}
-      aria-label="需求详情容器"
-    >
-      {detailPending || detailError ? (
-        <div className={styles.detailLoadOverlay} aria-live="polite">
-          {detailError ? (
-            <QueryError title={detailError} onRetry={onRetryDetail} />
-          ) : (
-            <QueryLoading label="正在加载需求正文" rows={5} />
-          )}
-        </div>
-      ) : null}
-      <header className={styles.header}>
-        <div className="min-w-0">
-          <p className={styles.eyebrow}>
-            {source ? `${requirementSourceLabel(source)}${source.version}` : "来源文档"}
-          </p>
-          <h3>
-            §{draft.chapterNumber || requirement.chapterNumber} {draft.name || requirement.name}
-          </h3>
-          {lastModifiedAt && !Number.isNaN(lastModifiedAt.getTime()) ? (
-            <p
-              className={styles.auditHint}
-              data-audit-action={requirement.lastModifiedAction === "create" ? "create" : "update"}
-            >
-              <History aria-hidden />
-              <span>
-                {lastModifiedLabel}：{requirement.lastModifiedByName || "系统"} ·{" "}
-                {lastModifiedAt.toLocaleString("zh-CN")}
-              </span>
-            </p>
-          ) : null}
-        </div>
-        <div className={styles.status}>
-          <Badge variant="primary">已确认</Badge>
-          {incomplete ? (
-            <Badge variant="warning" className={styles.incompleteBadge}>
-              <AlertTriangle aria-hidden />
-              待补描述
-            </Badge>
-          ) : null}
-          {identifierPending ? (
-            <Badge variant="warning" className={styles.identifierBadge}>
-              <Sparkles aria-hidden />
-              待确认标识
-            </Badge>
-          ) : null}
-          <Badge variant="outline">{kindLabel ?? "其他"}</Badge>
-          {secondaryKindLabels.length ? (
-            <Badge variant="outline">副类型：{secondaryKindLabels.join(" / ")}</Badge>
-          ) : null}
-          {linkedTestItems.length > 0 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              className={styles.relatedJump}
-              onClick={scrollToRelated}
-            >
-              <Link2 data-icon="inline-start" aria-hidden />
-              关联测试项 {linkedTestItems.length}
-            </Button>
-          ) : null}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={styles.copyTrigger}
-                aria-label="复制新增已确认需求"
-                onClick={() => onCopy(requirement, draft)}
-              >
-                <CopyPlus data-icon="inline-start" aria-hidden />
-                复制新增
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">复制新增已确认需求</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={styles.deleteTrigger}
-                aria-label="删除已确认需求"
-                onClick={() => onDelete(requirement, dirty)}
-              >
-                <Trash2 data-icon="inline-start" aria-hidden />
-                删除
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">删除已确认需求</TooltipContent>
-          </Tooltip>
-          <span className={styles.statusChip} data-save-state={status} aria-live="polite">
-            {status === "saving" ? (
-              <>
-                <Loader2 aria-hidden />
-                保存中
-              </>
-            ) : status === "error" ? (
-              "保存失败"
-            ) : status === "editing" ? (
-              <>
-                <CloudUpload aria-hidden />
-                待自动保存
-              </>
+    <Fade asChild initialOpacity={0.82} transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}>
+      <section
+        className={styles.shell}
+        data-incomplete={incomplete ? "true" : undefined}
+        aria-busy={detailPending ? true : undefined}
+        aria-label="需求详情容器"
+      >
+        {detailPending || detailError ? (
+          <div className={styles.detailLoadOverlay} aria-live="polite">
+            {detailError ? (
+              <QueryError title={detailError} onRetry={onRetryDetail} />
             ) : (
-              <>
-                <Fade asChild transition={{ type: "spring", stiffness: 320, damping: 18 }}>
-                  <CheckCircle2 aria-hidden />
-                </Fade>
-                已自动保存
-              </>
+              <QueryLoading label="正在加载需求正文" rows={5} />
             )}
-          </span>
-        </div>
-      </header>
-
-      <div ref={bodyScrollRef} className={styles.body} onBlur={saveDraft}>
-        <div className={styles.grid}>
-          <Field data-invalid={errors.chapterNumber ? true : undefined}>
-            <FieldLabel htmlFor="detail-chapter">
-              章节号
-              <span className={styles.requiredMark} aria-hidden>
-                *
-              </span>
-            </FieldLabel>
-            <Input
-              id="detail-chapter"
-              value={draft.chapterNumber}
-              autoComplete="off"
-              aria-invalid={errors.chapterNumber ? true : undefined}
-              aria-required="true"
-              aria-describedby={errors.chapterNumber ? "detail-chapter-error" : undefined}
-              onChange={(event) => update("chapterNumber", event.target.value)}
-            />
-            <FieldError id="detail-chapter-error">{errors.chapterNumber}</FieldError>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="detail-code">标识</FieldLabel>
-            <Input
-              id="detail-code"
-              value={draft.externalIdentifier}
-              autoComplete="off"
-              onChange={(event) => update("externalIdentifier", event.target.value)}
-            />
-          </Field>
-          <Field data-invalid={errors.name ? true : undefined}>
-            <FieldLabel htmlFor="detail-name">
-              名称
-              <span className={styles.requiredMark} aria-hidden>
-                *
-              </span>
-            </FieldLabel>
-            <Input
-              id="detail-name"
-              value={draft.name}
-              autoComplete="off"
-              aria-invalid={errors.name ? true : undefined}
-              aria-required="true"
-              aria-describedby={errors.name ? "detail-name-error" : undefined}
-              onChange={(event) => update("name", event.target.value)}
-            />
-            <FieldError id="detail-name-error">{errors.name}</FieldError>
-          </Field>
-          <Field data-invalid={errors.primaryKind ? true : undefined}>
-            <FieldLabel htmlFor="detail-kind">
-              需求类型
-              <span className={styles.requiredMark} aria-hidden>
-                *
-              </span>
-            </FieldLabel>
-            <Select
-              value={draft.primaryKind}
-              onValueChange={(value) => {
-                const primaryKind = value as RequirementPrimaryKind;
-                setDraft((previous) => ({
-                  ...previous,
-                  primaryKind,
-                  secondaryKinds: previous.secondaryKinds.filter((kind) => kind !== primaryKind),
-                }));
-                setSaveState("editing");
-              }}
-            >
-              <SelectTrigger
-                id="detail-kind"
-                className="h-8"
-                aria-invalid={errors.primaryKind ? true : undefined}
-                aria-required="true"
-                aria-describedby={errors.primaryKind ? "detail-kind-error" : undefined}
-              >
-                <SelectValue placeholder="请选择" />
-              </SelectTrigger>
-              <SelectContent>
-                {requirementKindOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FieldError id="detail-kind-error">{errors.primaryKind}</FieldError>
-          </Field>
-
-          <Field className={styles.secondary}>
-            <FieldLabel htmlFor="detail-secondary-kind">副类型</FieldLabel>
-            <MultiSelectCombobox
-              id="detail-secondary-kind"
-              ariaLabel="编辑副类型"
-              options={getRequirementSecondaryKindOptions(draft.primaryKind)}
-              value={draft.secondaryKinds}
-              onChange={(secondaryKinds) =>
-                update(
-                  "secondaryKinds",
-                  secondaryKinds as ReturnType<typeof toDraft>["secondaryKinds"],
-                )
-              }
-              placeholder="可选，多选"
-              searchPlaceholder="搜索副类型"
-              emptyText="没有匹配的副类型"
-            />
-            <FieldError id="detail-secondary-kind-error">{errors.secondaryKinds}</FieldError>
-          </Field>
-        </div>
-        <section ref={relatedRef} className={styles.related}>
-          <header>
-            <div>
-              <h4>
-                <Link2 aria-hidden />
-                关联测试项
-              </h4>
-              <p>从当前需求创建测试项，或查看已经关联的测试项。</p>
-            </div>
-            <div className={styles.relatedActions}>
-              <Button
-                ref={fabTriggerRef}
-                type="button"
-                size="xs"
-                disabled={!canCreateTestItem}
-                aria-busy={createTestItemMutation.isPending || undefined}
-                onClick={handleCreateTestItem}
-              >
-                {createTestItemMutation.isPending ? (
-                  <Loader2 data-icon="inline-start" className={styles.buttonSpinner} aria-hidden />
-                ) : (
-                  <Plus aria-hidden />
-                )}
-                {createTestItemMutation.isPending ? "创建中…" : "创建并关联测试项"}
-              </Button>
-            </div>
-          </header>
-          {!canCreateTestItem &&
-          !createTestItemMutation.isPending &&
-          !linkedTestItemsQuery.isPending &&
-          !linkedTestItemsQuery.isError ? (
-            <p className={styles.relatedHint}>
-              {incomplete
-                ? "补全描述后才能创建测试项。"
-                : dirty || bodyDirty
-                  ? "先保存需求修改，再创建测试项。"
-                  : bodyBusy
-                    ? "正在保存需求，请稍候。"
-                    : ""}
+          </div>
+        ) : null}
+        <header className={styles.header}>
+          <div className="min-w-0">
+            <p className={styles.eyebrow}>
+              {source ? `${requirementSourceLabel(source)}${source.version}` : "来源文档"}
             </p>
-          ) : null}
-          {linkedTestItemsQuery.isPending ? (
-            <InlineLoading className={styles.relatedLoading} label="正在读取关联测试项" />
-          ) : linkedTestItemsQuery.isError ? (
-            <div className={styles.relatedErrorRow}>
-              <span>关联测试项读取失败</span>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                onClick={() => void linkedTestItemsQuery.refetch()}
+            <h3>
+              §{draft.chapterNumber || requirement.chapterNumber} {draft.name || requirement.name}
+            </h3>
+            {lastModifiedAt && !Number.isNaN(lastModifiedAt.getTime()) ? (
+              <p
+                className={styles.auditHint}
+                data-audit-action={
+                  requirement.lastModifiedAction === "create" ? "create" : "update"
+                }
               >
-                <RefreshCw aria-hidden />
-                重试
-              </Button>
-            </div>
-          ) : linkedTestItems.length === 0 ? (
-            <p className={styles.relatedEmpty}>尚未关联测试项。</p>
-          ) : (
-            <ul className={styles.relatedList} aria-label="已关联测试项">
-              {linkedTestItems.map((item) => (
-                <li key={item.id} className={styles.relatedItem}>
-                  <span className={styles.relatedItemMain}>
-                    <span className={styles.relatedIdent}>{item.identifier}</span>
-                    <span className={styles.relatedName}>{item.name}</span>
-                  </span>
-                  <span className={styles.relatedType}>{item.typeCode}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-        <section
-          className={styles.descriptionCard}
-          aria-busy={bodyRefreshVisible ? true : undefined}
-          aria-label="测试项的需求描述"
-        >
-          <div ref={descriptionSentinelRef} className={styles.descriptionSentinel} aria-hidden />
-          <header
-            className={styles.descriptionHeader}
-            data-stuck={descriptionStuck ? "true" : undefined}
-          >
-            <SectionTitle as="h4" className={styles.descriptionTitle}>
-              测试项的需求描述
-            </SectionTitle>
-            <div className={styles.descriptionActions}>
-              {bodyRefreshVisible ? (
-                <span className={styles.descriptionRefresh} role="status" aria-live="polite">
-                  <Loader2 aria-hidden />
-                  正在刷新
+                <History aria-hidden />
+                <span>
+                  {lastModifiedLabel}：{requirement.lastModifiedByName || "系统"} ·{" "}
+                  {lastModifiedAt.toLocaleString("zh-CN")}
                 </span>
-              ) : null}
+              </p>
+            ) : null}
+          </div>
+          <div className={styles.status}>
+            <Badge variant="primary">已确认</Badge>
+            {incomplete ? (
+              <Badge variant="warning" className={styles.incompleteBadge}>
+                <AlertTriangle aria-hidden />
+                待补描述
+              </Badge>
+            ) : null}
+            {identifierPending ? (
+              <Badge variant="warning" className={styles.identifierBadge}>
+                <Sparkles aria-hidden />
+                待确认标识
+              </Badge>
+            ) : null}
+            <Badge variant="outline">{kindLabel ?? "其他"}</Badge>
+            {secondaryKindLabels.length ? (
+              <Badge variant="outline">副类型：{secondaryKindLabels.join(" / ")}</Badge>
+            ) : null}
+            {linkedTestItems.length > 0 ? (
               <Button
                 type="button"
-                size="sm"
-                variant={descriptionStuck ? "outline" : "default"}
-                sheen
-                disabled={bodyRefreshVisible || bodyBusy}
-                onClick={startBodyEditing}
+                variant="ghost"
+                size="xs"
+                className={styles.relatedJump}
+                onClick={scrollToRelated}
               >
-                编辑正文
+                <Link2 data-icon="inline-start" aria-hidden />
+                关联测试项 {linkedTestItems.length}
               </Button>
-            </div>
-          </header>
-          <div className={styles.descriptionBody} aria-busy={bodyRefreshVisible ? true : undefined}>
-            {bodyRefreshVisible ? (
-              <div className={styles.descriptionRefreshOverlay} role="status" aria-live="polite">
-                <Loader2 aria-hidden />
-                <span>正在刷新正文…</span>
-              </div>
             ) : null}
-            {hasBody ? (
-              <Suspense
-                fallback={
-                  <div className={styles.bodyLoading}>
-                    <QueryLoading label="正在加载正文" rows={4} />
-                  </div>
-                }
-              >
-                <LazyRequirementBody doc={bodyBaselineDoc} projectCode={projectCode} virtualize />
-              </Suspense>
-            ) : (
-              <div className={styles.emptyBody}>
-                <p>暂无正文内容，点击“编辑正文”录入。</p>
-              </div>
-            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={styles.copyTrigger}
+                  aria-label="复制新增已确认需求"
+                  onClick={() => onCopy(requirement, draft)}
+                >
+                  <CopyPlus data-icon="inline-start" aria-hidden />
+                  复制新增
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">复制新增已确认需求</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={styles.deleteTrigger}
+                  aria-label="删除已确认需求"
+                  onClick={() => onDelete(requirement, dirty)}
+                >
+                  <Trash2 data-icon="inline-start" aria-hidden />
+                  删除
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">删除已确认需求</TooltipContent>
+            </Tooltip>
+            <span className={styles.statusChip} data-save-state={status} aria-live="polite">
+              {status === "saving" ? (
+                <>
+                  <Loader2 aria-hidden />
+                  保存中
+                </>
+              ) : status === "error" ? (
+                "保存失败"
+              ) : status === "editing" ? (
+                <>
+                  <CloudUpload aria-hidden />
+                  待自动保存
+                </>
+              ) : (
+                <>
+                  <Fade asChild transition={{ type: "spring", stiffness: 320, damping: 18 }}>
+                    <CheckCircle2 aria-hidden />
+                  </Fade>
+                  已自动保存
+                </>
+              )}
+            </span>
           </div>
-        </section>
+        </header>
 
-        <dialog
-          ref={bodyDialogRef}
-          className={styles.bodyDialog}
-          aria-labelledby="body-dialog-title"
-          aria-busy={bodyBusy ? true : undefined}
-          onCancel={handleBodyDialogCancel}
-          onClose={handleBodyDialogClose}
-        >
-          <header className={styles.bodyDialogHeader}>
-            <div className={styles.bodyDialogHeading}>
-              <h2 id="body-dialog-title" className={styles.bodyDialogTitle}>
-                编辑“测试项的需求描述”
-              </h2>
-              <p className={styles.bodyDialogDescription}>
-                支持段落首行缩进与对齐、表格、多级有序列表和图片；其他 Word 格式会自动忽略。
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className={styles.bodyDialogClose}
-              aria-label="关闭正文编辑"
-              title="关闭"
-              disabled={bodyBusy}
-              onClick={() => requestBodyDialogClose(false)}
-            >
-              <X aria-hidden />
-            </Button>
-          </header>
-          {bodyError ? (
-            <p className={styles.bodyDialogError} role="alert">
-              {bodyError}
-            </p>
-          ) : null}
-          <div className={styles.bodyDialogEditor}>
-            {bodyEditorMounted ? (
-              <Suspense
-                fallback={
-                  <div className={styles.bodyLoading}>
-                    <QueryLoading label="正在加载正文编辑器" rows={4} />
-                  </div>
-                }
+        <div ref={bodyScrollRef} className={styles.body} onBlur={saveDraft}>
+          <div className={styles.grid}>
+            <Field data-invalid={errors.chapterNumber ? true : undefined}>
+              <FieldLabel htmlFor="detail-chapter">
+                章节号
+                <span className={styles.requiredMark} aria-hidden>
+                  *
+                </span>
+              </FieldLabel>
+              <Input
+                id="detail-chapter"
+                value={draft.chapterNumber}
+                autoComplete="off"
+                aria-invalid={errors.chapterNumber ? true : undefined}
+                aria-required="true"
+                aria-describedby={errors.chapterNumber ? "detail-chapter-error" : undefined}
+                onChange={(event) => update("chapterNumber", event.target.value)}
+              />
+              <FieldError id="detail-chapter-error">{errors.chapterNumber}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="detail-code">标识</FieldLabel>
+              <Input
+                id="detail-code"
+                value={draft.externalIdentifier}
+                autoComplete="off"
+                onChange={(event) => update("externalIdentifier", event.target.value)}
+              />
+            </Field>
+            <Field data-invalid={errors.name ? true : undefined}>
+              <FieldLabel htmlFor="detail-name">
+                名称
+                <span className={styles.requiredMark} aria-hidden>
+                  *
+                </span>
+              </FieldLabel>
+              <Input
+                id="detail-name"
+                value={draft.name}
+                autoComplete="off"
+                aria-invalid={errors.name ? true : undefined}
+                aria-required="true"
+                aria-describedby={errors.name ? "detail-name-error" : undefined}
+                onChange={(event) => update("name", event.target.value)}
+              />
+              <FieldError id="detail-name-error">{errors.name}</FieldError>
+            </Field>
+            <Field data-invalid={errors.primaryKind ? true : undefined}>
+              <FieldLabel htmlFor="detail-kind">
+                需求类型
+                <span className={styles.requiredMark} aria-hidden>
+                  *
+                </span>
+              </FieldLabel>
+              <Select
+                value={draft.primaryKind}
+                onValueChange={(value) => {
+                  const primaryKind = value as RequirementPrimaryKind;
+                  setDraft((previous) => ({
+                    ...previous,
+                    primaryKind,
+                    secondaryKinds: previous.secondaryKinds.filter((kind) => kind !== primaryKind),
+                  }));
+                  setSaveState("editing");
+                }}
               >
-                <LazyRequirementBodyEditor
-                  doc={bodyEditBaselineDoc}
-                  projectCode={projectCode}
-                  session={bodyEditorSession}
-                  focusOnOpen={bodyEditing}
-                  busy={bodyBusy}
-                  handleRef={bodyEditorHandleRef}
-                  onChange={handleBodyChange}
-                />
-              </Suspense>
-            ) : null}
+                <SelectTrigger
+                  id="detail-kind"
+                  className="h-8"
+                  aria-invalid={errors.primaryKind ? true : undefined}
+                  aria-required="true"
+                  aria-describedby={errors.primaryKind ? "detail-kind-error" : undefined}
+                >
+                  <SelectValue placeholder="请选择" />
+                </SelectTrigger>
+                <SelectContent>
+                  {requirementKindOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError id="detail-kind-error">{errors.primaryKind}</FieldError>
+            </Field>
+
+            <Field className={styles.secondary}>
+              <FieldLabel htmlFor="detail-secondary-kind">副类型</FieldLabel>
+              <MultiSelectCombobox
+                id="detail-secondary-kind"
+                ariaLabel="编辑副类型"
+                options={getRequirementSecondaryKindOptions(draft.primaryKind)}
+                value={draft.secondaryKinds}
+                onChange={(secondaryKinds) =>
+                  update(
+                    "secondaryKinds",
+                    secondaryKinds as ReturnType<typeof toDraft>["secondaryKinds"],
+                  )
+                }
+                placeholder="可选，多选"
+                searchPlaceholder="搜索副类型"
+                emptyText="没有匹配的副类型"
+              />
+              <FieldError id="detail-secondary-kind-error">{errors.secondaryKinds}</FieldError>
+            </Field>
           </div>
-          <footer className={styles.bodyDialogFooter}>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={bodyBusy}
-              onClick={() => requestBodyDialogClose(false)}
+          <section ref={relatedRef} className={styles.related}>
+            <header>
+              <div>
+                <h4>
+                  <Link2 aria-hidden />
+                  关联测试项
+                </h4>
+                <p>从当前需求创建测试项，或查看已经关联的测试项。</p>
+              </div>
+              <div className={styles.relatedActions}>
+                <Button
+                  ref={fabTriggerRef}
+                  type="button"
+                  size="xs"
+                  disabled={!canCreateTestItem}
+                  aria-busy={createTestItemMutation.isPending || undefined}
+                  onClick={handleCreateTestItem}
+                >
+                  {createTestItemMutation.isPending ? (
+                    <Loader2
+                      data-icon="inline-start"
+                      className={styles.buttonSpinner}
+                      aria-hidden
+                    />
+                  ) : (
+                    <Plus aria-hidden />
+                  )}
+                  {createTestItemMutation.isPending ? "创建中…" : "创建并关联测试项"}
+                </Button>
+              </div>
+            </header>
+            {!canCreateTestItem &&
+            !createTestItemMutation.isPending &&
+            !linkedTestItemsQuery.isPending &&
+            !linkedTestItemsQuery.isError ? (
+              <p className={styles.relatedHint}>
+                {incomplete
+                  ? "补全描述后才能创建测试项。"
+                  : dirty || bodyDirty
+                    ? "先保存需求修改，再创建测试项。"
+                    : bodyBusy
+                      ? "正在保存需求，请稍候。"
+                      : ""}
+              </p>
+            ) : null}
+            {linkedTestItemsQuery.isPending ? (
+              <InlineLoading className={styles.relatedLoading} label="正在读取关联测试项" />
+            ) : linkedTestItemsQuery.isError ? (
+              <div className={styles.relatedErrorRow}>
+                <span>关联测试项读取失败</span>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  onClick={() => void linkedTestItemsQuery.refetch()}
+                >
+                  <RefreshCw aria-hidden />
+                  重试
+                </Button>
+              </div>
+            ) : linkedTestItems.length === 0 ? (
+              <p className={styles.relatedEmpty}>尚未关联测试项。</p>
+            ) : (
+              <ul className={styles.relatedList} aria-label="已关联测试项">
+                {linkedTestItems.map((item) => (
+                  <li key={item.id} className={styles.relatedItem}>
+                    <span className={styles.relatedItemMain}>
+                      <span className={styles.relatedIdent}>{item.identifier}</span>
+                      <span className={styles.relatedName}>{item.name}</span>
+                    </span>
+                    <span className={styles.relatedType}>{item.typeCode}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section
+            className={styles.descriptionCard}
+            aria-busy={bodyRefreshVisible ? true : undefined}
+            aria-label="测试项的需求描述"
+          >
+            <div ref={descriptionSentinelRef} className={styles.descriptionSentinel} aria-hidden />
+            <header
+              className={styles.descriptionHeader}
+              data-stuck={descriptionStuck ? "true" : undefined}
             >
-              取消
-            </Button>
-            <Button
-              type="button"
-              disabled={!bodyCanSave || bodyBusy}
-              onClick={() => void saveBody()}
-            >
-              {bodyBusy ? (
-                <Loader2 data-icon="inline-start" className={styles.buttonSpinner} aria-hidden />
-              ) : null}
-              {bodySaving ? "保存中…" : bodyRefreshing ? "正在刷新…" : "保存正文"}
-            </Button>
-          </footer>
-          {bodyDiscardOpen ? (
+              <SectionTitle as="h4" className={styles.descriptionTitle}>
+                测试项的需求描述
+              </SectionTitle>
+              <div className={styles.descriptionActions}>
+                {bodyRefreshVisible ? (
+                  <span className={styles.descriptionRefresh} role="status" aria-live="polite">
+                    <Loader2 aria-hidden />
+                    正在刷新
+                  </span>
+                ) : null}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={descriptionStuck ? "outline" : "default"}
+                  sheen
+                  disabled={bodyRefreshVisible || bodyBusy}
+                  onClick={startBodyEditing}
+                >
+                  编辑正文
+                </Button>
+              </div>
+            </header>
             <div
-              className={styles.discardOverlay}
-              role="alertdialog"
-              aria-modal="true"
-              aria-labelledby="body-discard-title"
+              className={styles.descriptionBody}
+              aria-busy={bodyRefreshVisible ? true : undefined}
             >
-              <div className={styles.discardPanel}>
-                <h3 id="body-discard-title">正文尚未保存</h3>
-                <p>关闭后当前修改会丢失，确定要放弃吗？</p>
-                <div className={styles.discardActions}>
-                  <Button type="button" variant="outline" onClick={() => setBodyDiscardOpen(false)}>
-                    继续编辑
-                  </Button>
-                  <Button type="button" variant="destructive" onClick={discardBodyEditing}>
-                    放弃修改
-                  </Button>
+              {bodyRefreshVisible ? (
+                <div className={styles.descriptionRefreshOverlay} role="status" aria-live="polite">
+                  <Loader2 aria-hidden />
+                  <span>正在刷新正文…</span>
+                </div>
+              ) : null}
+              {hasBody ? (
+                <Suspense
+                  fallback={
+                    <div className={styles.bodyLoading}>
+                      <QueryLoading label="正在加载正文" rows={4} />
+                    </div>
+                  }
+                >
+                  <LazyRequirementBody doc={bodyBaselineDoc} projectCode={projectCode} virtualize />
+                </Suspense>
+              ) : (
+                <div className={styles.emptyBody}>
+                  <p>暂无正文内容，点击“编辑正文”录入。</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <dialog
+            ref={bodyDialogRef}
+            className={styles.bodyDialog}
+            aria-labelledby="body-dialog-title"
+            aria-busy={bodyBusy ? true : undefined}
+            onCancel={handleBodyDialogCancel}
+            onClose={handleBodyDialogClose}
+          >
+            <header className={styles.bodyDialogHeader}>
+              <div className={styles.bodyDialogHeading}>
+                <h2 id="body-dialog-title" className={styles.bodyDialogTitle}>
+                  编辑“测试项的需求描述”
+                </h2>
+                <p className={styles.bodyDialogDescription}>
+                  支持段落首行缩进与对齐、表格、多级有序列表和图片；其他 Word 格式会自动忽略。
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className={styles.bodyDialogClose}
+                aria-label="关闭正文编辑"
+                title="关闭"
+                disabled={bodyBusy}
+                onClick={() => requestBodyDialogClose(false)}
+              >
+                <X aria-hidden />
+              </Button>
+            </header>
+            {bodyError ? (
+              <p className={styles.bodyDialogError} role="alert">
+                {bodyError}
+              </p>
+            ) : null}
+            <div className={styles.bodyDialogEditor}>
+              {bodyEditorMounted ? (
+                <Suspense
+                  fallback={
+                    <div className={styles.bodyLoading}>
+                      <QueryLoading label="正在加载正文编辑器" rows={4} />
+                    </div>
+                  }
+                >
+                  <LazyRequirementBodyEditor
+                    doc={bodyEditBaselineDoc}
+                    projectCode={projectCode}
+                    session={bodyEditorSession}
+                    focusOnOpen={bodyEditing}
+                    busy={bodyBusy}
+                    handleRef={bodyEditorHandleRef}
+                    onChange={handleBodyChange}
+                  />
+                </Suspense>
+              ) : null}
+            </div>
+            <footer className={styles.bodyDialogFooter}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={bodyBusy}
+                onClick={() => requestBodyDialogClose(false)}
+              >
+                取消
+              </Button>
+              <Button
+                type="button"
+                disabled={!bodyCanSave || bodyBusy}
+                onClick={() => void saveBody()}
+              >
+                {bodyBusy ? (
+                  <Loader2 data-icon="inline-start" className={styles.buttonSpinner} aria-hidden />
+                ) : null}
+                {bodySaving ? "保存中…" : bodyRefreshing ? "正在刷新…" : "保存正文"}
+              </Button>
+            </footer>
+            {bodyDiscardOpen ? (
+              <div
+                className={styles.discardOverlay}
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="body-discard-title"
+              >
+                <div className={styles.discardPanel}>
+                  <h3 id="body-discard-title">正文尚未保存</h3>
+                  <p>关闭后当前修改会丢失，确定要放弃吗？</p>
+                  <div className={styles.discardActions}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setBodyDiscardOpen(false)}
+                    >
+                      继续编辑
+                    </Button>
+                    <Button type="button" variant="destructive" onClick={discardBodyEditing}>
+                      放弃修改
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : null}
-        </dialog>
+            ) : null}
+          </dialog>
 
-        <AlertDialog open={confirmCreateOpen} onOpenChange={setConfirmCreateOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>创建新的关联测试项？</AlertDialogTitle>
-              <AlertDialogDescription>
-                已有关联需求，是否创建一个新的关联测试项？
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>取消</AlertDialogCancel>
-              <AlertDialogAction
-                disabled={createTestItemMutation.isPending}
-                onClick={() => createTestItemMutation.mutate(true)}
-              >
-                {createTestItemMutation.isPending ? "创建中…" : "创建"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-      <RequirementFloatingCreateButton
-        triggerRef={fabTriggerRef}
-        enabled={canCreateTestItem}
-        onClick={handleCreateTestItem}
-      />
-    </section>
+          <AlertDialog open={confirmCreateOpen} onOpenChange={setConfirmCreateOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>创建新的关联测试项？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  已有关联需求，是否创建一个新的关联测试项？
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={createTestItemMutation.isPending}
+                  onClick={() => createTestItemMutation.mutate(true)}
+                >
+                  {createTestItemMutation.isPending ? "创建中…" : "创建"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+        <RequirementFloatingCreateButton
+          triggerRef={fabTriggerRef}
+          enabled={canCreateTestItem}
+          onClick={handleCreateTestItem}
+        />
+      </section>
+    </Fade>
   );
 
   function update<K extends keyof ReturnType<typeof toDraft>>(

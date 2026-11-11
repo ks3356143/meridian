@@ -56,6 +56,16 @@
   cursor: pointer;
   font-size: 0.7rem;
   padding: 0.15rem 0.6rem;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.filterChip:hover:not([data-active="true"]) {
+  background: var(--interactive-surface);
+  border-color: var(--interactive-border-soft);
+  color: var(--foreground);
 }
 
 .filterChip[data-active="true"] {

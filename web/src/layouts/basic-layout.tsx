@@ -240,7 +240,12 @@ export default function BasicLayout() {
               </Button>
             </div>
           </header>
-          <Fade asChild key={location.pathname} initialOpacity={0.9}>
+          <Fade
+            asChild
+            key={location.pathname}
+            initialOpacity={0.55}
+            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+          >
             <main id={MAIN_CONTENT_ID} tabIndex={-1} className={`${styles.mainContent} flex-1`}>
               <Outlet />
             </main>

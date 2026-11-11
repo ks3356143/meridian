@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, ScrollRestoration, useLocation } from "react-router";
 import { useAuthStore } from "@/stores/auth-store";
 import { AuthRequiredScreen } from "@/components/router-util/auth-required-screen";
 import { RouteLoading } from "@/components/router-util/route-loading";
@@ -14,6 +14,7 @@ export function RootRoute() {
 
   return (
     <Suspense fallback={<RouteLoading />}>
+      <ScrollRestoration />
       <Outlet />
     </Suspense>
   );

@@ -37,6 +37,8 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import type {
   BatchAssignCasesPayload,
   CreateTestItemPayload,
@@ -140,6 +142,8 @@ export function TestItemsWorkbench({
   } = useTestItemsWorkbench(project, roundId);
   const wideLayout = useMediaQuery("(min-width: 1321px)");
   const treeRef = useRef<TreeApi<TestItemsTreeNode>>(null);
+  const pageRef = useRef<HTMLElement>(null);
+  useSubtleReveal(pageRef, ":scope > *");
   const [createOpen, setCreateOpen] = useState(false);
   const [folderOpen, setFolderOpen] = useState(false);
   const [requirementsOpen, setRequirementsOpen] = useState(false);
@@ -757,46 +761,67 @@ export function TestItemsWorkbench({
 
   if (view === "coverage") {
     return (
-      <section className={styles.workbench}>
+      <section ref={pageRef} className={styles.workbench}>
         {viewBar}
-        <div className={styles.viewBody}>
-          <TypeCoverageView
-            projectCode={project.id}
-            roundId={roundId}
-            onOpenType={openTypeInTree}
-          />
-        </div>
+        <Fade
+          asChild
+          key={view}
+          initialOpacity={0.82}
+          transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+        >
+          <div className={styles.viewBody}>
+            <TypeCoverageView
+              projectCode={project.id}
+              roundId={roundId}
+              onOpenType={openTypeInTree}
+            />
+          </div>
+        </Fade>
       </section>
     );
   }
 
   if (view === "trace") {
     return (
-      <section className={styles.workbench}>
+      <section ref={pageRef} className={styles.workbench}>
         {viewBar}
-        <div className={styles.viewBody}>
-          <TraceabilityView
-            projectCode={project.id}
-            roundId={roundId}
-            onOpenTarget={openTraceTarget}
-          />
-        </div>
+        <Fade
+          asChild
+          key={view}
+          initialOpacity={0.82}
+          transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+        >
+          <div className={styles.viewBody}>
+            <TraceabilityView
+              projectCode={project.id}
+              roundId={roundId}
+              onOpenTarget={openTraceTarget}
+            />
+          </div>
+        </Fade>
       </section>
     );
   }
 
   if (view === "annotations") {
     return (
-      <section className={styles.workbench}>
+      <section ref={pageRef} className={styles.workbench}>
         {viewBar}
-        <div className={styles.viewBody}>
-          <AnnotationsView
-            projectCode={project.id}
-            roundId={roundId}
-            onOpenRequirement={openRequirement}
-            onOpenStep={openAnnotationStep}
-          />
-        </div>
+        <Fade
+          asChild
+          key={view}
+          initialOpacity={0.82}
+          transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+        >
+          <div className={styles.viewBody}>
+            <AnnotationsView
+              projectCode={project.id}
+              roundId={roundId}
+              onOpenRequirement={openRequirement}
+              onOpenStep={openAnnotationStep}
+            />
+          </div>
+        </Fade>
       </section>
     );
   }
@@ -1121,39 +1146,46 @@ export function TestItemsWorkbench({
   );
 
   return (
-    <section className={styles.workbench}>
+    <section ref={pageRef} className={styles.workbench}>
       {viewBar}
-      <div className={styles.viewBody}>
-        {wideLayout ? (
-          <ResizablePanelGroup
-            id="test-items-container-layout"
-            defaultLayout={treePanelLayout}
-            onLayoutChanged={(layout) => {
-              treePanelLayout = layout;
-            }}
-            resizeTargetMinimumSize={{ coarse: 36, fine: 24 }}
-          >
-            <ResizablePanel
-              id="test-items-tree-panel"
-              className={styles.panelFrame}
-              defaultSize={380}
-              minSize="380px"
-              maxSize="680px"
+      <Fade
+        asChild
+        key={view}
+        initialOpacity={0.82}
+        transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+      >
+        <div className={styles.viewBody}>
+          {wideLayout ? (
+            <ResizablePanelGroup
+              id="test-items-container-layout"
+              defaultLayout={treePanelLayout}
+              onLayoutChanged={(layout) => {
+                treePanelLayout = layout;
+              }}
+              resizeTargetMinimumSize={{ coarse: 36, fine: 24 }}
             >
+              <ResizablePanel
+                id="test-items-tree-panel"
+                className={styles.panelFrame}
+                defaultSize={380}
+                minSize="380px"
+                maxSize="680px"
+              >
+                {treePane}
+              </ResizablePanel>
+              <ResizableHandle id="test-items-tree-handle" aria-label="调整测试项目录宽度" />
+              <ResizablePanel id="test-items-right-panel" className={styles.panelFrame}>
+                {detailPane}
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          ) : (
+            <>
               {treePane}
-            </ResizablePanel>
-            <ResizableHandle id="test-items-tree-handle" aria-label="调整测试项目录宽度" />
-            <ResizablePanel id="test-items-right-panel" className={styles.panelFrame}>
               {detailPane}
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        ) : (
-          <>
-            {treePane}
-            {detailPane}
-          </>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      </Fade>
 
       {detail ? (
         <ChangeItemTypeDialog

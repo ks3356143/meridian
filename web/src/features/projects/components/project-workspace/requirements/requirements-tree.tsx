@@ -433,6 +433,7 @@ function RequirementsTreeImpl({
       ref={shellRef}
       className={styles.shell}
       data-batch={batchMode ? "true" : undefined}
+      data-requirements-reveal
       aria-label="需求目录容器"
     >
       <div className={styles.tabs}>

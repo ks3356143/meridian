@@ -28,6 +28,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { requirementsApi } from "@/features/requirements/api";
 import type { RequirementRecord, SaveRequirementPayload } from "@/features/requirements/types";
 import type { Project } from "../../../types";
@@ -95,6 +96,8 @@ export function RequirementsLayout({ project }: { project: Project }) {
     candidateStatusMutation,
     invalidate,
   } = useRequirementsWorkbench(project);
+  const surfaceRef = useRef<HTMLElement>(null);
+  useSubtleReveal(surfaceRef, "[data-requirements-reveal]", !workbenchQuery.isPending);
   const [createOpen, setCreateOpen] = useState(false);
   const [createSeed, setCreateSeed] = useState<RequirementCreateSeed | null>(null);
   const [deletedOpen, setDeletedOpen] = useState(false);
@@ -813,7 +816,7 @@ export function RequirementsLayout({ project }: { project: Project }) {
   }
 
   const surface = wideLayout ? (
-    <section className={styles.workbench}>
+    <section ref={surfaceRef} className={styles.workbench}>
       <ResizablePanelGroup
         id="requirements-container-layout"
         defaultLayout={requirementsPanelLayout}
@@ -832,17 +835,17 @@ export function RequirementsLayout({ project }: { project: Project }) {
         <ResizableHandle id="requirements-tree-handle" aria-label="调整需求目录宽度" />
         <ResizablePanel id="requirements-right-panel" className={styles.panelFrame}>
           <div className={styles.rightPane}>
-            {hero}
+            <div data-requirements-reveal>{hero}</div>
             {detail}
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </section>
   ) : (
-    <section className={styles.workbench}>
+    <section ref={surfaceRef} className={styles.workbench}>
       {tree}
       <div className={styles.rightPane}>
-        {hero}
+        <div data-requirements-reveal>{hero}</div>
         {detail}
       </div>
     </section>

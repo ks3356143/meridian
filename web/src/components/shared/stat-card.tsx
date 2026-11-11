@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
 import { Card, CardContent } from "@/components/ui/card";
 import { SegmentedProgress } from "@/components/shared/segmented-progress";
 import { TruncatedText } from "@/components/shared/truncated-text";
@@ -23,7 +24,7 @@ export function StatCard({
   progress?: number;
 }) {
   return (
-    <Card size="sm" data-tone={tone} className="overflow-hidden">
+    <Card size="sm" spotlight data-tone={tone} className="overflow-hidden">
       <CardContent className={styles.content}>
         <div className={styles.head}>
           <span className={styles.label}>{label}</span>
@@ -32,7 +33,9 @@ export function StatCard({
           </span>
         </div>
         <div className={styles.valueRow}>
-          <span className={styles.value}>{value}</span>
+          <span className={styles.value}>
+            {typeof value === "number" ? <CountingNumber number={value} /> : value}
+          </span>
           {detail ? <TruncatedText value={detail} className={styles.detail} /> : null}
         </div>
         {progress === undefined ? null : (

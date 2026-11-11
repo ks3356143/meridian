@@ -1,9 +1,9 @@
 import { flexRender } from "@tanstack/react-table";
-import { memo, type ComponentPropsWithoutRef } from "react";
+import { memo, useLayoutEffect, useRef, type ComponentPropsWithoutRef } from "react";
 import type { Row } from "@tanstack/table-core";
 import { cn } from "cn";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Fade } from "@animate-ui/react/primitives/effects/fade";
+import { animate } from "@/lib/motion";
 import styles from "./data-table-row.module.css";
 import { dataTableCellResponsiveClass, type DataTableRowData } from "./data-table-types";
 import type { ManagementTableFeatures } from "./table-features";
@@ -20,11 +20,31 @@ type DataTableRowProps<TData extends DataTableRowData> = {
 
 function DataTableRowImpl<TData extends DataTableRowData>(props: DataTableRowProps<TData>) {
   const { row, active, onRowActivate, alignedColumns, animateEntry } = props;
+  const rowRef = useRef<HTMLTableRowElement>(null);
   const rowProps = onRowActivate ? getActivatableRowProps(row.original, onRowActivate) : {};
 
-  const rowNode = (
+  // 入场同时带轻位移：先写首帧（layout 阶段、绘制前），再动画到终态，避免闪烁。
+  useLayoutEffect(() => {
+    const element = rowRef.current;
+    if (!animateEntry || !element) return;
+    element.style.opacity = "0.55";
+    element.style.transform = "translateY(6px)";
+    const control = animate(
+      element,
+      { opacity: [0.55, 1], y: [6, 0] },
+      {
+        duration: 0.3,
+        delay: Math.min(row.index * 0.018, 0.144),
+        ease: [0.23, 1, 0.32, 1],
+      },
+    );
+    return () => control.stop();
+  }, [animateEntry, row.index]);
+
+  return (
     <TableRow
       {...rowProps}
+      ref={rowRef}
       data-selected={active ? "true" : undefined}
       className={cn(
         "group/row border-border transition-[background-color,box-shadow] hover:bg-primary/8",
@@ -61,17 +81,6 @@ function DataTableRowImpl<TData extends DataTableRowData>(props: DataTableRowPro
         );
       })}
     </TableRow>
-  );
-  if (!animateEntry) return rowNode;
-  return (
-    <Fade
-      asChild
-      delay={Math.min(row.index * 18, 144)}
-      initialOpacity={0.72}
-      transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
-    >
-      {rowNode}
-    </Fade>
   );
 }
 

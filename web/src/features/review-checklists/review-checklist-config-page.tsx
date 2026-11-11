@@ -1,10 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
+import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
 import { BookOpenCheck, ClipboardList, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { ConfirmAction } from "@/components/shared/confirm-action";
+import { EmptyHint } from "@/components/shared/empty-hint";
 import { InlineLoading } from "@/components/shared/inline-loading";
+import { QueryError } from "@/components/shared/query-state";
 import { SegmentedProgress } from "@/components/shared/segmented-progress";
 import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { Button } from "@/components/ui/button";
@@ -75,6 +79,8 @@ export function ReviewChecklistConfigPage() {
   });
 
   const templates = useMemo(() => templatesQuery.data ?? [], [templatesQuery.data]);
+  const pageRef = useRef<HTMLDivElement>(null);
+  useSubtleReveal(pageRef, "[data-review-reveal]", Boolean(templatesQuery.data));
 
   const openEdit = (template: ReviewChecklistTemplate) => {
     setPracticeIndex(null);
@@ -142,7 +148,7 @@ export function ReviewChecklistConfigPage() {
   }, [templates]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={pageRef} className="flex flex-col gap-6">
       <PageHeader
         icon={ClipboardList}
         title="审查单配置"
@@ -158,28 +164,40 @@ export function ReviewChecklistConfigPage() {
       {templatesQuery.isPending ? (
         <InlineLoading className={styles.state} label="正在读取审查单模板" />
       ) : null}
-      {templatesQuery.isError ? <p className={styles.state}>审查单模板读取失败，请重试。</p> : null}
+      {templatesQuery.isError ? (
+        <QueryError
+          title="审查单模板读取失败"
+          description="请确认后端服务可用后重试。"
+          onRetry={() => void templatesQuery.refetch()}
+        />
+      ) : null}
 
       {templatesQuery.data ? (
-        <div className={styles.stats}>
+        <div className={styles.stats} data-review-reveal>
           <div className={styles.statCard} data-tone="primary">
             <span className={styles.statLabel}>模板</span>
-            <strong className={styles.statValue}>{templates.length}</strong>
+            <strong className={styles.statValue}>
+              <CountingNumber number={templates.length} />
+            </strong>
             <em className={styles.statNote}>/ {DOCUMENT_TYPES.length} 类</em>
           </div>
           <div className={styles.statCard} data-tone="info">
             <span className={styles.statLabel}>检查项</span>
-            <strong className={styles.statValue}>{totalItems}</strong>
+            <strong className={styles.statValue}>
+              <CountingNumber number={totalItems} />
+            </strong>
           </div>
           <div className={styles.statCard} data-tone="warning">
             <span className={styles.statLabel}>推荐做法配置</span>
-            <strong className={styles.statValue}>{Math.round(practicePercent)}%</strong>
+            <strong className={styles.statValue}>
+              <CountingNumber number={Math.round(practicePercent)} />%
+            </strong>
             <SegmentedProgress value={practicePercent} tone="warning" label="推荐做法覆盖率" />
           </div>
           <div className={styles.statCard} data-tone="chart">
             <span className={styles.statLabel}>文档类型覆盖</span>
             <strong className={styles.statValue}>
-              {coveredTypes}/{DOCUMENT_TYPES.length}
+              <CountingNumber number={coveredTypes} />/{DOCUMENT_TYPES.length}
             </strong>
             <SegmentedProgress
               value={(coveredTypes / DOCUMENT_TYPES.length) * 100}
@@ -196,7 +214,7 @@ export function ReviewChecklistConfigPage() {
         </div>
       ) : null}
 
-      <div className={styles.tableWrap}>
+      <div className={styles.tableWrap} data-review-reveal>
         <Table>
           <TableHeader>
             <TableRow>
@@ -287,6 +305,22 @@ export function ReviewChecklistConfigPage() {
                 </Fade>
               );
             })}
+            {templatesQuery.data && templates.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={9} className="px-3 py-10">
+                  <EmptyHint
+                    action={
+                      <Button type="button" size="sm" onClick={openCreate}>
+                        <Plus data-icon="inline-start" />
+                        新建审查单
+                      </Button>
+                    }
+                  >
+                    还没有审查单模板，创建第一份后即可在 DC 工作台使用。
+                  </EmptyHint>
+                </TableCell>
+              </TableRow>
+            ) : null}
           </TableBody>
         </Table>
       </div>

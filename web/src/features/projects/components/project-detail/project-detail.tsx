@@ -10,6 +10,7 @@ import {
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export function ProjectDetail({ project }: { project: Project }) {
   const statusMutation = useMutation({
     mutationFn: (status: string) => projectsApi.updateStatus(project.id, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "项目状态更新失败"),
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<DetailTabValue>("overview");

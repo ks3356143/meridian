@@ -1,4 +1,5 @@
 import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
+import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -90,10 +91,12 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
       </div>
 
       {serverError ? (
-        <Alert variant="destructive">
-          <AlertTitle>登录失败</AlertTitle>
-          <AlertDescription>{serverError}</AlertDescription>
-        </Alert>
+        <Fade asChild initialOpacity={0.7}>
+          <Alert variant="destructive">
+            <AlertTitle>登录失败</AlertTitle>
+            <AlertDescription>{serverError}</AlertDescription>
+          </Alert>
+        </Fade>
       ) : null}
 
       <FieldGroup className="gap-5">

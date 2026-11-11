@@ -335,7 +335,8 @@ export function ProjectWorkspaceLayout({
 
         <Fade
           asChild
-          initialOpacity={0.88}
+          key={location.pathname}
+          initialOpacity={0.55}
           transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
         >
           <main
