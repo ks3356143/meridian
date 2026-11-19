@@ -52,11 +52,8 @@ type caseContext struct {
 }
 
 func (s *Service) List(ctx context.Context, caseID, userID string) ([]NoteView, error) {
-	itemCase, err := s.loadCaseContext(ctx, caseID)
-	if err != nil {
-		return nil, err
-	}
-	if err := ensureProjectMember(s.db.WithContext(ctx), itemCase.ProjectID, userID); err != nil {
+	// 用例存在性校验仍保留：缺失时按 404 返回，而不是静默空列表。
+	if _, err := s.loadCaseContext(ctx, caseID); err != nil {
 		return nil, err
 	}
 	views, err := listViews(s.db.WithContext(ctx), caseID)
@@ -72,9 +69,6 @@ func (s *Service) List(ctx context.Context, caseID, userID string) ([]NoteView, 
 func (s *Service) Create(ctx context.Context, input CreateInput) (NoteView, error) {
 	itemCase, err := s.loadCaseContext(ctx, input.CaseID)
 	if err != nil {
-		return NoteView{}, err
-	}
-	if err := ensureProjectMember(s.db.WithContext(ctx), itemCase.ProjectID, input.CreatedBy); err != nil {
 		return NoteView{}, err
 	}
 	noteText, err := normalizeNoteText(input.NoteText)
@@ -120,9 +114,6 @@ func (s *Service) Update(ctx context.Context, noteID string, input UpdateInput) 
 	if note.CreatedBy != input.UpdatedBy {
 		return NoteView{}, ErrForbidden
 	}
-	if err := ensureProjectMember(s.db.WithContext(ctx), note.ProjectID, input.UpdatedBy); err != nil {
-		return NoteView{}, err
-	}
 	updates := map[string]any{"updated_at": time.Now().UTC()}
 	if input.NoteText != nil {
 		noteText, err := normalizeNoteText(*input.NoteText)
@@ -156,9 +147,6 @@ func (s *Service) Delete(ctx context.Context, noteID, userID string) error {
 	}
 	if note.CreatedBy != userID {
 		return ErrForbidden
-	}
-	if err := ensureProjectMember(s.db.WithContext(ctx), note.ProjectID, userID); err != nil {
-		return err
 	}
 	if err := s.db.WithContext(ctx).Where("id = ?", noteID).Delete(&Note{}).Error; err != nil {
 		return fmt.Errorf("删除问题草稿失败: %w", err)
@@ -208,24 +196,6 @@ func (s *Service) loadCaseContext(ctx context.Context, caseID string) (caseConte
 		return caseContext{}, ErrCaseNotFound
 	}
 	return itemCase, nil
-}
-
-func ensureProjectMember(db *gorm.DB, projectID, userID string) error {
-	if strings.TrimSpace(userID) == "" {
-		return ErrForbidden
-	}
-	var count int64
-	if err := db.Table("projects AS project").
-		Where(`project.id = ? AND (project.owner_id = ? OR EXISTS (
-            SELECT 1 FROM project_members member
-            WHERE member.project_id = project.id AND member.user_id = ?
-        ))`, projectID, userID, userID).Count(&count).Error; err != nil {
-		return fmt.Errorf("校验项目成员失败: %w", err)
-	}
-	if count == 0 {
-		return ErrForbidden
-	}
-	return nil
 }
 
 func normalizeNoteText(raw string) (string, error) {

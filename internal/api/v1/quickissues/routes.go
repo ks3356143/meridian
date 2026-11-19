@@ -23,7 +23,7 @@ func Register(api huma.API, service *quickissuesservice.Service) {
 		Method:      http.MethodGet,
 		Path:        "/api/v1/test-cases/{id}/quick-issues",
 		Summary:     "读取用例快捷问题草稿",
-		Description: "项目成员可查看当前用例的快捷问题草稿；非创建人只读。",
+		Description: "登录用户可查看当前用例的快捷问题草稿；非创建人只读。",
 		Tags:        []string{"测试项与执行"},
 	}, func(ctx context.Context, input *CaseInput) (*NoteListOutput, error) {
 		notes, err := handler.service.List(ctx, input.ID, currentUserID(ctx))

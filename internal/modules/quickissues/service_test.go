@@ -36,7 +36,7 @@ func TestQuickIssueNotesPermissionsValidationAndStepLifecycle(t *testing.T) {
 
 	memberNotes, err := service.List(ctx, "case-1", "user-2")
 	if err != nil {
-		t.Fatalf("项目成员读取失败: %v", err)
+		t.Fatalf("其他用户读取失败: %v", err)
 	}
 	if len(memberNotes) != 1 || memberNotes[0].CanEdit {
 		t.Fatalf("其他成员应只读可见: %+v", memberNotes)
@@ -45,7 +45,7 @@ func TestQuickIssueNotesPermissionsValidationAndStepLifecycle(t *testing.T) {
 		CaseID: "case-1", NoteText: "另一位成员记录的问题", CreatedBy: "user-2",
 	})
 	if err != nil {
-		t.Fatalf("项目成员创建问题失败: %v", err)
+		t.Fatalf("其他用户创建问题失败: %v", err)
 	}
 	ownerNotes, err := service.List(ctx, "case-1", "user-1")
 	if err != nil {
@@ -93,8 +93,14 @@ func TestQuickIssueNotesPermissionsValidationAndStepLifecycle(t *testing.T) {
 	if err := service.Delete(ctx, created.ID, "user-2"); !errors.Is(err, ErrForbidden) {
 		t.Fatalf("非创建人删除应拒绝，实际 %v", err)
 	}
-	if _, err := service.List(ctx, "case-1", "user-3"); !errors.Is(err, ErrForbidden) {
-		t.Fatalf("非项目成员读取应拒绝，实际 %v", err)
+	outsiderNotes, err := service.List(ctx, "case-1", "user-3")
+	if err != nil {
+		t.Fatalf("非成员账号读取失败: %v", err)
+	}
+	for _, note := range outsiderNotes {
+		if note.CanEdit {
+			t.Fatalf("非创建人应只读可见: %+v", note)
+		}
 	}
 	if err := service.Delete(ctx, otherCreated.ID, "user-2"); err != nil {
 		t.Fatalf("创建人删除自己的草稿失败: %v", err)
@@ -133,8 +139,6 @@ func newQuickIssueTestService(t *testing.T) (*Service, *gorm.DB) {
 	mustExecQuickIssue(t, db, `INSERT INTO projects (id, code, name, nature, platform, software_type, classification, security_level, organization, owner_id, status, created_at, updated_at) VALUES
         ('project-1','R99001','问题草稿项目','鉴定测评','CPU/非嵌','新研','内部','C','测试单位','user-1','编制大纲中',datetime('now'),datetime('now')),
         ('project-2','R99002','其他项目','鉴定测评','CPU/非嵌','新研','内部','C','测试单位','user-3','编制大纲中',datetime('now'),datetime('now'))`)
-	mustExecQuickIssue(t, db, `INSERT INTO project_members (id, project_id, user_id, is_owner, created_at, updated_at) VALUES
-        ('member-1','project-1','user-2',0,datetime('now'),datetime('now'))`)
 	mustExecQuickIssue(t, db, `INSERT INTO test_rounds (id, project_id, round_number, name, round_type, status, created_at, updated_at) VALUES
         ('round-1','project-1',1,'第 1 轮','initial','draft',datetime('now'),datetime('now'))`)
 	mustExecQuickIssue(t, db, `INSERT INTO test_items (id, project_id, round_id, type_code, identifier, suffix, name, sort_order, description, adequacy, pass_criteria, implicit_requirement, lineage_key, created_at, updated_at) VALUES
