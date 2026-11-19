@@ -18,11 +18,7 @@
 
 ## 外部引擎分工（OfficeCLI）
 
-- 选型结论、边界和前置验证见《技术路线》的「外部文档引擎（OfficeCLI）」。
-- 交给 OfficeCLI 的三件事：**模板合并**（`merge` / `dump` + `batch`）、**OpenXML schema 校验**（`validate`）、**生成后页面预览**（`view --render html` / `view screenshot`）。
-- 仍然由 Go 负责：文档内容模型、数据装配、JSON 内容块 → OOXML 的映射、入库与状态流转。
-- 预览产物由后端渲染并缓存为静态资源，前端只消费产物；`view html` 不进入生成链路，「不采用通用 HTML 转 OOXML」的结论不变。
-- OfficeCLI 不可用时退回 Go 原生渲染路径，生成与预检功能不得整体不可用。
+- 选型结论、三件事分工、边界（不进生成链路、不常驻、可降级）与仍然由 Go 负责的部分，统一见《技术路线》的「外部文档引擎（OfficeCLI）」，本文不重复。
 ## 不采用
 
 不采用通用 HTML 转 OOXML 作为主方案。HTML 可用于页面预览，但不是 Word 生成的中间格式。

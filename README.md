@@ -42,6 +42,7 @@ npm run dev
 - 项目全景：[docs/项目记忆/项目全景.md](docs/项目记忆/项目全景.md)（定位、模块边界、数据模型、完成度与待确认口径）。
 - 需求全景：[docs/项目记忆/需求全景.md](docs/项目记忆/需求全景.md)（按模块的需求结论、边界与已确认口径）。
 - 可复用坑位：[docs/项目记忆.md](docs/项目记忆.md)（后端、前端、视觉交互、工具与跨会话）。
+- 前端说明：[web/README.md](web/README.md)；迁移说明：[migrations/README.md](migrations/README.md)。
 
 ## 验证
 
@@ -69,7 +70,4 @@ pwsh scripts/check-md-links.ps1
 
 ## 文档入口
 
-- 需求与工程约定：[srs/README.md](srs/README.md)
-- 可复用坑位：[docs/项目记忆.md](docs/项目记忆.md)
-- 前端说明：[web/README.md](web/README.md)
-- 迁移说明：[migrations/README.md](migrations/README.md)
+见上文「文档」一节。

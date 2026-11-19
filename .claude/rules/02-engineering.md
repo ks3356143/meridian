@@ -4,7 +4,7 @@
 
 - 后端：Go + Huma v2 + GORM + SQLite。
 - SQLite 驱动：`github.com/glebarez/sqlite`，坚持 pure Go，不引入 CGO。
-- 认证授权：bcrypt + JWT + Casbin RBAC。
+- 认证授权：bcrypt + JWT；无全局角色（Casbin 已移除，口径见 [srs/06](../../srs/06-认证授权.md)）。
 - 数据主键：UUIDv7 字符串，由 Go 应用统一生成。
 - 数据库结构：显式 SQL migration，禁止长期依赖 AutoMigrate。
 - 前端：Vite + React 19 + React Router 8 SPA Data Mode + Tailwind CSS 4 + shadcn/ui/Radix + 炫酷组件库。
