@@ -637,6 +637,13 @@ func (s *Service) DeleteTestItem(ctx context.Context, testItemID string) error {
 			}
 			return fmt.Errorf("查询测试项失败: %w", err)
 		}
+		// 先取关联需求：级联删 link 后要把它们的任务状态从 completed 收回来。
+		var requirementIDs []string
+		if err := tx.Model(&RequirementLink{}).
+			Where("test_item_id = ?", testItemID).
+			Pluck("requirement_id", &requirementIDs).Error; err != nil {
+			return fmt.Errorf("查询测试项关联需求失败: %w", err)
+		}
 		if err := deleteTestItemTreeBlocksTx(tx, item.ID); err != nil {
 			return err
 		}
@@ -647,7 +654,7 @@ func (s *Service) DeleteTestItem(ctx context.Context, testItemID string) error {
 		if result.RowsAffected == 0 {
 			return ErrNotFound
 		}
-		return nil
+		return syncRequirementTaskStatusTx(tx, requirementIDs)
 	})
 }
 

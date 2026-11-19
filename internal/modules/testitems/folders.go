@@ -142,7 +142,7 @@ func (s *Service) UpdateFolder(ctx context.Context, folderID string, name string
 	return updated, nil
 }
 
-// DeleteFolder 删除文件夹：其下测试项移到同类型根目录（folder_id 置空），不删除测试项。
+// DeleteFolder 删除文件夹：其下测试项与子文件夹全部移到同类型根目录（folder_id / parent_id 置空），不删除数据。
 func (s *Service) DeleteFolder(ctx context.Context, folderID string) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var folder Folder
@@ -154,6 +154,13 @@ func (s *Service) DeleteFolder(ctx context.Context, folderID string) error {
 			"updated_at": time.Now(),
 		}).Error; err != nil {
 			return fmt.Errorf("移出文件夹内测试项失败: %w", err)
+		}
+		// 子文件夹的 parent_id 没有外键级联：不置空会悬空、在树上不可达。
+		if err := tx.Model(&Folder{}).Where("parent_id = ?", folderID).Updates(map[string]any{
+			"parent_id":  nil,
+			"updated_at": time.Now(),
+		}).Error; err != nil {
+			return fmt.Errorf("移出子文件夹失败: %w", err)
 		}
 		if err := tx.Where("id = ?", folderID).Delete(&Folder{}).Error; err != nil {
 			return fmt.Errorf("删除文件夹失败: %w", err)

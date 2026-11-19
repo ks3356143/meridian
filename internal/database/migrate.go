@@ -39,6 +39,10 @@ func migrateTo(db *gorm.DB, source embed.FS, maxVersion string) error {
 		if len(parts) != 2 {
 			return fmt.Errorf("迁移文件命名不合法: %s", entry.Name())
 		}
+		// 版本号统一 4 位零填充：防止 "999"/"10000" 这类命名在字符串排序下错序执行。
+		if version := parts[0]; len(version) != 4 || strings.Trim(version, "0123456789") != "" {
+			return fmt.Errorf("迁移文件版本号必须是 4 位数字: %s", entry.Name())
+		}
 
 		content, readErr := fs.ReadFile(source, entry.Name())
 		if readErr != nil {

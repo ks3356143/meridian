@@ -128,14 +128,38 @@ func (s *Service) LinkRequirement(ctx context.Context, projectID string, testIte
 
 // UnlinkRequirement 解除需求与测试项的关联。
 func (s *Service) UnlinkRequirement(ctx context.Context, testItemID string, requirementID string) error {
-	result := s.db.WithContext(ctx).
-		Where("test_item_id = ? AND requirement_id = ?", testItemID, requirementID).
-		Delete(&RequirementLink{})
-	if result.Error != nil {
-		return fmt.Errorf("解除关联失败: %w", result.Error)
-	}
-	if result.RowsAffected == 0 {
-		return ErrNotFound
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		result := tx.Where("test_item_id = ? AND requirement_id = ?", testItemID, requirementID).
+			Delete(&RequirementLink{})
+		if result.Error != nil {
+			return fmt.Errorf("解除关联失败: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return syncRequirementTaskStatusTx(tx, []string{requirementID})
+	})
+}
+
+// syncRequirementTaskStatusTx 在关联增删后校正需求的测试项任务状态：
+// 仍有关联 → completed；关联清零 → pending（可关联的需求必有正文，回到待创建口径）。
+func syncRequirementTaskStatusTx(tx *gorm.DB, requirementIDs []string) error {
+	for _, requirementID := range requirementIDs {
+		var links int64
+		if err := tx.Model(&RequirementLink{}).
+			Where("requirement_id = ?", requirementID).
+			Count(&links).Error; err != nil {
+			return fmt.Errorf("查询需求剩余关联失败: %w", err)
+		}
+		status := "completed"
+		if links == 0 {
+			status = "pending"
+		}
+		if err := tx.Table("software_requirements").
+			Where("id = ?", requirementID).
+			Update("test_item_task_status", status).Error; err != nil {
+			return fmt.Errorf("更新需求测试项任务状态失败: %w", err)
+		}
 	}
 	return nil
 }

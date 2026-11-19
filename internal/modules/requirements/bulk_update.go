@@ -183,9 +183,11 @@ func ensureBulkUpdateUniqueness(ctx context.Context, db *gorm.DB, updates []bulk
 		return nil
 	}
 
+	// 标识的部分唯一索引不分状态（排除/被替代的行同样占位），冲突池必须全量取；
+	// 名称冲突口径不变，仍只统计候选与正式需求。
 	var pool []Requirement
 	if err := db.WithContext(ctx).
-		Where("source_version_id IN ? AND status IN ?", sourceIDs, []string{StatusCandidate, StatusOfficial}).
+		Where("source_version_id IN ?", sourceIDs).
 		Find(&pool).Error; err != nil {
 		return fmt.Errorf("查询需求冲突检查失败: %w", err)
 	}
@@ -196,7 +198,9 @@ func ensureBulkUpdateUniqueness(ctx context.Context, db *gorm.DB, updates []bulk
 		return sourceVersionID + "\x00" + value
 	}
 	for _, requirement := range pool {
-		nameCounts[requirementKey(requirement.SourceVersionID, requirement.Name)]++
+		if requirement.Status == StatusCandidate || requirement.Status == StatusOfficial {
+			nameCounts[requirementKey(requirement.SourceVersionID, requirement.Name)]++
+		}
 		if requirement.ExternalIdentifier != "" {
 			codeCounts[requirementKey(requirement.SourceVersionID, requirement.ExternalIdentifier)]++
 		}

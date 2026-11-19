@@ -213,9 +213,10 @@ export function useReceivedAssetsWorkbench(project: Project) {
     confirmMutationRef.current = confirmMutation;
   }, [confirmMutation]);
 
+  // 以合并了行内补丁的 assets 为过滤基准：搜索应命中用户刚改但尚未落库的名称。
   const visibleAssets = useMemo(
-    () => filterWorkObjects(workObjectsQuery.data ?? [], queueFilter, normalizedSearchQuery),
-    [normalizedSearchQuery, queueFilter, workObjectsQuery.data],
+    () => filterWorkObjects(assets, queueFilter, normalizedSearchQuery),
+    [assets, normalizedSearchQuery, queueFilter],
   );
 
   const summary = useMemo(() => {
@@ -374,13 +375,20 @@ export function useReceivedAssetsWorkbench(project: Project) {
       return;
     }
 
-    try {
-      await Promise.all(targets.map((asset) => confirmMutationRef.current.mutateAsync(asset.id)));
-      setSelectedIds((previous) => previous.filter((assetId) => !ids.includes(assetId)));
-      toast.success(`已确认 ${targets.length} 个工作对象`);
-    } catch {
-      toast.error("确认工作对象失败");
+    const results = await Promise.allSettled(
+      targets.map((asset) => confirmMutationRef.current.mutateAsync(asset.id)),
+    );
+    const failedIDs = targets
+      .filter((_, index) => results[index].status === "rejected")
+      .map((asset) => asset.id);
+    const succeeded = targets.length - failedIDs.length;
+    if (succeeded > 0) toast.success(`已确认 ${succeeded} 个工作对象`);
+    if (failedIDs.length > 0) {
+      toast.error(`${failedIDs.length} 个工作对象确认失败，已保留勾选可直接重试`);
+      setSelectedIds((previous) => previous.filter((assetId) => failedIDs.includes(assetId)));
+      return;
     }
+    setSelectedIds((previous) => previous.filter((assetId) => !ids.includes(assetId)));
   }, []);
 
   const applyDefaults = useCallback(async () => {
@@ -412,10 +420,10 @@ export function useReceivedAssetsWorkbench(project: Project) {
   }, []);
 
   const openLifecycle = useCallback((id: string, action: WorkObjectLifecycleAction) => {
-    setPendingLifecycle({
-      action,
-      asset: assetsRef.current.find((asset) => asset.id === id) ?? assetsRef.current[0],
-    });
+    // 撤回/作废是不可逆操作：目标缺失就不打开弹窗，禁止回落到第一行。
+    const asset = assetsRef.current.find((item) => item.id === id);
+    if (!asset) return;
+    setPendingLifecycle({ action, asset });
   }, []);
 
   const withdrawAsset = useCallback((id: string) => openLifecycle(id, "withdraw"), [openLifecycle]);

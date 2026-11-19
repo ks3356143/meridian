@@ -45,7 +45,11 @@ func ConvertBody(body []officecli.Node, options ImportOptions) ImportResult {
 					converter.flushList(&pendingNumID, &pendingList)
 					pendingNumID = converted.list.numID
 				}
-				pendingList = append(pendingList, listEntry{level: converted.list.level, item: converted.item})
+				pendingList = append(pendingList, listEntry{
+					level:  converted.list.level,
+					item:   converted.item,
+					images: converted.images,
+				})
 			} else {
 				converter.flushList(&pendingNumID, &pendingList)
 				if converted.block != nil {
@@ -83,8 +87,9 @@ type listMarker struct {
 }
 
 type listEntry struct {
-	level int
-	item  Node
+	level  int
+	item   Node
+	images []Node
 }
 
 type listTree struct {
@@ -117,6 +122,10 @@ func (c *converter) flushList(numID *string, entries *[]listEntry) {
 		return
 	}
 	c.blocks = append(c.blocks, buildOrderedList(*entries))
+	// 列表段落内嵌的图片随列表块一起输出：不追加会静默丢图（与非列表分支同口径）。
+	for _, entry := range *entries {
+		c.blocks = append(c.blocks, entry.images...)
+	}
 	*entries = nil
 	*numID = ""
 }

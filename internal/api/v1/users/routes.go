@@ -81,7 +81,11 @@ func (h *Handler) create(ctx context.Context, input *CreateUserInput) (*CreateUs
 		if errors.Is(err, users.ErrUsernameTaken) {
 			return nil, huma.Error409Conflict("用户名已存在")
 		}
-		return nil, huma.Error400BadRequest(err.Error())
+		var validationErr *users.ValidationError
+		if errors.As(err, &validationErr) {
+			return nil, huma.Error400BadRequest(validationErr.Message)
+		}
+		return nil, huma.Error500InternalServerError("创建用户失败")
 	}
 	return &CreateUserOutput{Body: toResponse(user)}, nil
 }
@@ -98,7 +102,11 @@ func (h *Handler) update(ctx context.Context, input *UpdateUserInput) (*UpdateUs
 		if errors.Is(err, users.ErrAdminPasswordFixed) {
 			return nil, huma.Error400BadRequest("系统管理员密码固定，不允许修改")
 		}
-		return nil, huma.Error400BadRequest(err.Error())
+		var validationErr *users.ValidationError
+		if errors.As(err, &validationErr) {
+			return nil, huma.Error400BadRequest(validationErr.Message)
+		}
+		return nil, huma.Error500InternalServerError("更新用户失败")
 	}
 	return &UpdateUserOutput{Body: toResponse(user)}, nil
 }

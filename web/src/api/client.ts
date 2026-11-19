@@ -48,6 +48,20 @@ function fallbackMessage(status: number) {
   }
 }
 
+let unauthorizedNotifiedAt = 0;
+
+// 401 只清一次会话并广播一次：并行查询同时过期时不弹 toast 风暴；
+// QueryProvider 监听该事件清空查询缓存，重新登录后不得吃到旧缓存。
+function handleUnauthorized(detail: string | null) {
+  useAuthStore.getState().clear();
+  window.dispatchEvent(new Event("chenmeridian:unauthorized"));
+  if (detail === null) return;
+  if (Date.now() - unauthorizedNotifiedAt > 3000) {
+    unauthorizedNotifiedAt = Date.now();
+    toast.error(detail);
+  }
+}
+
 export async function request<T>(
   method: string,
   path: string,
@@ -95,10 +109,9 @@ export async function request<T>(
       problem.title ||
       fallbackMessage(response.status);
 
-    if (response.status === 401 && !options.skipErrorToast) {
-      useAuthStore.getState().clear();
-    }
-    if (!options.skipErrorToast) {
+    if (response.status === 401) {
+      if (!options.skipErrorToast) handleUnauthorized(detail);
+    } else if (!options.skipErrorToast) {
       toast.error(detail);
     }
     throw new ApiError(response.status, problem.title || fallbackMessage(response.status), detail);
@@ -161,10 +174,11 @@ export async function uploadRequest<T>(
         fallbackMessage(xhr.status);
 
       if (xhr.status === 401) {
-        useAuthStore.getState().clear();
+        handleUnauthorized(detail);
+      } else {
+        toast.error(detail);
       }
       const error = new ApiError(xhr.status, problem.title || fallbackMessage(xhr.status), detail);
-      toast.error(detail);
       reject(error);
     };
     xhr.onerror = () => {
@@ -192,7 +206,7 @@ export async function requestBlob(path: string, signal?: AbortSignal): Promise<B
     }
     const detail = problem.detail || problem.title || fallbackMessage(response.status);
     if (response.status === 401) {
-      useAuthStore.getState().clear();
+      handleUnauthorized(null);
     }
     throw new ApiError(response.status, problem.title || fallbackMessage(response.status), detail);
   }

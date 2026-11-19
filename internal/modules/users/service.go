@@ -24,10 +24,16 @@ var (
 	ErrUsernameTaken      = errors.New("用户名已存在")
 	ErrLastUser           = errors.New("不能删除最后一个用户")
 	ErrSelfDelete         = errors.New("不能删除当前登录用户")
-	ErrUserInUse          = errors.New("该用户已被项目引用，请先从项目中移除")
 	ErrAdminDelete        = errors.New("系统管理员账号不允许删除")
 	ErrAdminPasswordFixed = errors.New("系统管理员密码固定，不允许修改")
 )
+
+// ValidationError 表示用户输入不合法；API 层对它返回 400 与原始中文提示。
+type ValidationError struct {
+	Message string
+}
+
+func (e *ValidationError) Error() string { return e.Message }
 
 type Service struct {
 	repository *Repository
@@ -140,22 +146,23 @@ func (s *Service) Create(ctx context.Context, input CreateInput) (User, error) {
 	input.Username = strings.TrimSpace(input.Username)
 	input.DisplayName = strings.TrimSpace(input.DisplayName)
 	if input.Username == "" {
-		return User{}, fmt.Errorf("用户名不能为空")
+		return User{}, &ValidationError{Message: "用户名不能为空"}
 	}
 	if input.DisplayName == "" {
-		return User{}, fmt.Errorf("显示名称不能为空")
+		return User{}, &ValidationError{Message: "显示名称不能为空"}
 	}
 	if len(input.Password) < 8 {
-		return User{}, fmt.Errorf("密码至少需要 8 位")
+		return User{}, &ValidationError{Message: "密码至少需要 8 位"}
 	}
-	if len(input.Password) > 128 {
-		return User{}, fmt.Errorf("密码最多 128 位")
+	if len(input.Password) > 72 {
+		// bcrypt 硬上限 72 字节：按字节校验，汉字每字占 3 字节。
+		return User{}, &ValidationError{Message: "密码最多 72 字节（一个汉字占 3 字节）"}
 	}
 	if len(input.Username) > 64 {
-		return User{}, fmt.Errorf("用户名最多 64 个字符")
+		return User{}, &ValidationError{Message: "用户名最多 64 个字符"}
 	}
 	if len(input.DisplayName) > 64 {
-		return User{}, fmt.Errorf("显示名称最多 64 个字符")
+		return User{}, &ValidationError{Message: "显示名称最多 64 个字符"}
 	}
 
 	_, err := s.repository.FindByUsername(ctx, input.Username)
@@ -208,17 +215,18 @@ func (s *Service) Update(ctx context.Context, userID string, input UpdateInput) 
 
 	input.DisplayName = strings.TrimSpace(input.DisplayName)
 	if input.DisplayName != "" {
+		if len(input.DisplayName) > 64 {
+			return User{}, &ValidationError{Message: "显示名称最多 64 个字符"}
+		}
 		user.DisplayName = input.DisplayName
 	}
 	if input.Password != "" {
 		if len(input.Password) < 8 {
-			return User{}, fmt.Errorf("密码至少需要 8 位")
+			return User{}, &ValidationError{Message: "密码至少需要 8 位"}
 		}
-		if len(input.Password) > 128 {
-			return User{}, fmt.Errorf("密码最多 128 位")
-		}
-		if len(input.DisplayName) > 64 {
-			return User{}, fmt.Errorf("显示名称最多 64 个字符")
+		if len(input.Password) > 72 {
+			// bcrypt 硬上限 72 字节：按字节校验，汉字每字占 3 字节。
+			return User{}, &ValidationError{Message: "密码最多 72 字节（一个汉字占 3 字节）"}
 		}
 		passwordHash, hashErr := HashPassword(input.Password)
 		if hashErr != nil {

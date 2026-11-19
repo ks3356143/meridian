@@ -59,7 +59,11 @@ func (h *Handler) login(ctx context.Context, input *LoginInput) (*LoginOutput, e
 func (h *Handler) currentUser(ctx context.Context, input *struct{}) (*CurrentUserOutput, error) {
 	user, err := h.service.CurrentUser(ctx)
 	if err != nil {
-		return nil, huma.Error401Unauthorized("登录状态无效")
+		// 令牌无效/用户不存在才判 401；数据库故障不能让前端误清有效令牌。
+		if errors.Is(err, users.ErrUserNotFound) {
+			return nil, huma.Error401Unauthorized("登录状态无效")
+		}
+		return nil, huma.Error500InternalServerError("查询用户失败")
 	}
 	return &CurrentUserOutput{Body: toUserResponse(user)}, nil
 }

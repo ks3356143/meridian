@@ -153,13 +153,25 @@ func (s *Service) copyStaticWorkbenchTx(tx *gorm.DB, sourceItem TestItem, newIte
 	}
 
 	if sourceItem.TypeCode == "DC" {
-		state.Documents = copyStaticDocuments(state.Documents)
+		copiedDocs, copyErr := copyStaticDocuments(state.Documents)
+		if copyErr != nil {
+			return copyErr
+		}
+		state.Documents = copiedDocs
 		for sheetIndex := range state.ReviewSheets {
 			sheet := &state.ReviewSheets[sheetIndex]
-			sheet.ID, _ = id.New()
+			sheetID, idErr := id.New()
+			if idErr != nil {
+				return fmt.Errorf("生成审查单 ID 失败: %w", idErr)
+			}
+			sheet.ID = sheetID
 			for checkIndex := range sheet.Checks {
 				check := &sheet.Checks[checkIndex]
-				check.ID, _ = id.New()
+				checkID, checkIDErr := id.New()
+				if checkIDErr != nil {
+					return fmt.Errorf("生成检查项 ID 失败: %w", checkIDErr)
+				}
+				check.ID = checkID
 				// 默认不带历史；向导勾选后只把上轮“不通过”的记录作为历史参考。
 				if importHistory && check.Result == "failed" {
 					check.CarriedFromPrevious = true
@@ -197,17 +209,17 @@ func (s *Service) copyStaticWorkbenchTx(tx *gorm.DB, sourceItem TestItem, newIte
 	return nil
 }
 
-func copyStaticDocuments(documents []StaticDocument) []StaticDocument {
+func copyStaticDocuments(documents []StaticDocument) ([]StaticDocument, error) {
 	copied := make([]StaticDocument, 0, len(documents))
 	for _, doc := range documents {
 		docID, err := id.New()
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("生成受审文档 ID 失败: %w", err)
 		}
 		doc.ID = docID
 		copied = append(copied, doc)
 	}
-	return copied
+	return copied, nil
 }
 
 // previousFailedChecks 统计上一轮 DC 不通过项数量，用于壳用例复审话术。

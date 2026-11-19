@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -45,6 +46,7 @@ func durationEnvOr(key string, fallback time.Duration) time.Duration {
 	}
 	parsed, err := time.ParseDuration(value)
 	if err != nil || parsed <= 0 {
+		log.Printf("CHENMERIDIAN_TOKEN_TTL=%q 不是有效的正时长，已回退默认值", value)
 		return fallback
 	}
 	return parsed

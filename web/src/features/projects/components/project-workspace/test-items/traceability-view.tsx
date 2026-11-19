@@ -143,7 +143,7 @@ export function TraceabilityView({
           缺口：未关联需求 {trace.summary.unlinkedRequirements} 条 · 未关联测试项{" "}
           {trace.summary.unlinkedItems} 个 · 隐含需求项 {trace.summary.implicitItems} 个
         </span>
-        <span>大纲章节号尚未建模；问题单模块尚未实现。</span>
+        <span>大纲章节号尚未建模；追溯视图的问题单列暂未接入。</span>
       </section>
 
       <section className={styles.toolbar} aria-label="追溯矩阵筛选">
@@ -327,11 +327,11 @@ function renderGroup(
         <td className={styles.issueCell} aria-label="问题单">
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className={styles.tooltipTrigger} aria-label="问题单模块尚未实现，暂不可用">
+              <span className={styles.tooltipTrigger} aria-label="问题单列暂未接入">
                 未接入
               </span>
             </TooltipTrigger>
-            <TooltipContent>问题单模块尚未实现</TooltipContent>
+            <TooltipContent>问题单见工作区「问题单」页签；本列接入属待确认范围</TooltipContent>
           </Tooltip>
         </td>
       </tr>

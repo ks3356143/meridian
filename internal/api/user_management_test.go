@@ -115,3 +115,43 @@ func TestAdminProtectionAndCurrentUser(t *testing.T) {
 		t.Fatalf("固定管理员登录状态码应为 200，实际为 %d，响应: %s", loginRecorder.Code, loginRecorder.Body.String())
 	}
 }
+
+func TestUserValidationLimits(t *testing.T) {
+	handler := newTestHandler(t)
+	adminToken, adminID := loginTestUser(t, handler, "admin", "admin123")
+
+	// 密码按字节 ≤72（bcrypt 硬上限）：75 字节中文密码必须得到中文 400，而不是哈希阶段的英文 500。
+	createBody, _ := json.Marshal(map[string]string{
+		"username":    "longpass",
+		"displayName": "长密码用户",
+		"password":    strings.Repeat("测", 25),
+	})
+	createRecorder := httptest.NewRecorder()
+	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/users", bytes.NewReader(createBody))
+	createRequest.Header.Set("Content-Type", "application/json")
+	createRequest.Header.Set("Authorization", "Bearer "+adminToken)
+	handler.ServeHTTP(createRecorder, createRequest)
+	if createRecorder.Code != http.StatusBadRequest {
+		t.Fatalf("超长密码应返回 400，实际为 %d，响应: %s", createRecorder.Code, createRecorder.Body.String())
+	}
+	if !strings.Contains(createRecorder.Body.String(), "密码最多 72 字节") {
+		t.Fatalf("超长密码应返回中文字节口径提示，响应: %s", createRecorder.Body.String())
+	}
+
+	// 显示名称长度校验在无密码分支同样生效（原实现把该校验写进了密码分支且对象错位）。
+	updateBody, _ := json.Marshal(map[string]string{
+		"displayName": strings.Repeat("名", 65),
+		"password":    "",
+	})
+	updateRecorder := httptest.NewRecorder()
+	updateRequest := httptest.NewRequest(http.MethodPut, "/api/v1/users/"+adminID, bytes.NewReader(updateBody))
+	updateRequest.Header.Set("Content-Type", "application/json")
+	updateRequest.Header.Set("Authorization", "Bearer "+adminToken)
+	handler.ServeHTTP(updateRecorder, updateRequest)
+	if updateRecorder.Code != http.StatusBadRequest {
+		t.Fatalf("超长显示名称应返回 400，实际为 %d，响应: %s", updateRecorder.Code, updateRecorder.Body.String())
+	}
+	if !strings.Contains(updateRecorder.Body.String(), "显示名称最多 64 个字符") {
+		t.Fatalf("超长显示名称应返回固定中文提示，响应: %s", updateRecorder.Body.String())
+	}
+}

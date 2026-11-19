@@ -29,7 +29,8 @@ function applyItemPatch(item: TestItemRecord, payload: UpdateTestItemPayload): T
   if (payload.name !== undefined) next.name = payload.name;
   if (payload.suffix !== undefined) {
     next.suffix = payload.suffix;
-    next.identifier = `XQ_${item.typeCode}_${payload.suffix}`;
+    // typeCode 与 suffix 同改时用新类型码拼标识，避免乐观阶段显示旧类型。
+    next.identifier = `XQ_${next.typeCode}_${payload.suffix}`;
   }
   if (payload.priority !== undefined) next.priority = payload.priority;
   if (payload.folderId !== undefined) next.folderId = payload.folderId;
@@ -227,6 +228,8 @@ export function useTestItemsWorkbench(project: Project, roundId: string) {
     mutationFn: ({ testItemId, id }: { testItemId: string; id: string }) =>
       testItemsApi.deleteSubItem(id).then(() => ({ testItemId, id })),
     onMutate: async ({ testItemId, id }) => {
+      // 先取消在途 refetch，避免乐观移除后被旧响应“复活”。
+      await queryClient.cancelQueries({ queryKey: detailKey(testItemId) });
       const previous = queryClient.getQueryData<TestItemDetail>(detailKey(testItemId));
       patchSubItems(testItemId, (list) => list.filter((sub) => sub.id !== id));
       return { previous };

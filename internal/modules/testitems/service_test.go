@@ -837,6 +837,60 @@ func TestChangeTestItemType(t *testing.T) {
 	}
 }
 
+func TestDeleteFolderMovesChildrenToRoot(t *testing.T) {
+	service, projectID := newTestService(t)
+	ctx := context.Background()
+
+	parent, err := service.CreateFolder(ctx, CreateFolderInput{ProjectID: projectID, TypeCode: "SU", Name: "父组"})
+	if err != nil {
+		t.Fatalf("创建父文件夹失败: %v", err)
+	}
+	child, err := service.CreateFolder(ctx, CreateFolderInput{
+		ProjectID: projectID, TypeCode: "SU", ParentID: &parent.ID, Name: "子组",
+	})
+	if err != nil {
+		t.Fatalf("创建子文件夹失败: %v", err)
+	}
+	item, err := service.CreateTestItem(ctx, CreateTestItemInput{ProjectID: projectID, TypeCode: "SU", Name: "子项"})
+	if err != nil {
+		t.Fatalf("创建测试项失败: %v", err)
+	}
+	if _, err := service.UpdateTestItem(ctx, item.ID, UpdateTestItemInput{FolderID: &child.ID}); err != nil {
+		t.Fatalf("移入子文件夹失败: %v", err)
+	}
+
+	if err := service.DeleteFolder(ctx, parent.ID); err != nil {
+		t.Fatalf("删除父文件夹失败: %v", err)
+	}
+
+	folders, err := service.ListFoldersByRound(ctx, projectID, "")
+	if err != nil {
+		t.Fatalf("查询文件夹失败: %v", err)
+	}
+	childAtRoot := false
+	for _, folder := range folders {
+		if folder.ID != child.ID {
+			continue
+		}
+		if folder.ParentID != nil {
+			t.Fatalf("删除父文件夹后子文件夹应移到根目录，实际 parent=%+v", *folder.ParentID)
+		}
+		childAtRoot = true
+	}
+	if !childAtRoot {
+		t.Fatalf("删除父文件夹后子文件夹应仍可查询到")
+	}
+	items, err := service.ListTestItems(ctx, projectID)
+	if err != nil {
+		t.Fatalf("查询测试项失败: %v", err)
+	}
+	for _, it := range items {
+		if it.ID == item.ID && (it.FolderID == nil || *it.FolderID != child.ID) {
+			t.Fatalf("深层测试项应随子文件夹一起保留、仍可定位，实际 folder=%v", it.FolderID)
+		}
+	}
+}
+
 func TestMoveItemAcrossFolderAndRoot(t *testing.T) {
 	service, projectID := newTestService(t)
 	ctx := context.Background()

@@ -280,7 +280,13 @@ func (s *Service) GetStaticWorkbench(ctx context.Context, testItemID string) (St
 			UpdatedAt:  now,
 		}
 		if createErr := s.db.WithContext(ctx).Create(&row).Error; createErr != nil {
-			return StaticWorkbench{}, fmt.Errorf("初始化静态工作台失败: %w", createErr)
+			// 双开窗口同时首开可能撞唯一约束：重读一次，读到即复用，读不到才报错。
+			var existingRow staticWorkbenchRow
+			if retryErr := s.db.WithContext(ctx).Where("test_item_id = ?", testItemID).First(&existingRow).Error; retryErr == nil {
+				row = existingRow
+			} else {
+				return StaticWorkbench{}, fmt.Errorf("初始化静态工作台失败: %w", createErr)
+			}
 		}
 	} else if err != nil {
 		return StaticWorkbench{}, fmt.Errorf("查询静态工作台失败: %w", err)
@@ -581,8 +587,4 @@ func NewReviewTarget(language, templateCode string) (StaticReviewTarget, error) 
 	return StaticReviewTarget{
 		ID: targetID, Language: language, SheetCode: templateCode, Name: sheet.Name, Checks: sheet.Checks,
 	}, nil
-}
-
-func staticKindLabel(kind string) string {
-	return strings.ToUpper(strings.TrimSpace(kind))
 }
