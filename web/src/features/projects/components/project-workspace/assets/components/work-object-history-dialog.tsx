@@ -23,18 +23,20 @@ const actionLabels = {
 } as const;
 
 export function WorkObjectHistoryDialog({
+  open,
   asset,
   events,
   loading,
   onOpenChange,
 }: {
+  open: boolean;
   asset: ReceivedWorkObject;
   events: WorkObjectLifecycleEvent[];
   loading: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

@@ -32,6 +32,7 @@ export type WorkObjectCorrectionValues = {
 };
 
 export function WorkObjectCorrectionDialog({
+  open,
   asset,
   values,
   submitting,
@@ -39,6 +40,7 @@ export function WorkObjectCorrectionDialog({
   onChange,
   onSubmit,
 }: {
+  open: boolean;
   asset: ReceivedWorkObject;
   values: WorkObjectCorrectionValues;
   submitting: boolean;
@@ -51,7 +53,7 @@ export function WorkObjectCorrectionDialog({
     values.objectName.trim() && values.version.trim() && values.source.trim() && reason.trim();
 
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>登记纠错</DialogTitle>

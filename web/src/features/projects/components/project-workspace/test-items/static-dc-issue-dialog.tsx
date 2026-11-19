@@ -23,6 +23,7 @@ import { issuesApi } from "@/features/test-items/api";
 import type { Issue, StaticReviewCheck, StaticReviewSheet } from "@/features/test-items/types";
 
 export function IssueCreateDialog({
+  open,
   projectCode,
   testItemId,
   sheet,
@@ -30,6 +31,7 @@ export function IssueCreateDialog({
   onClose,
   onCreated,
 }: {
+  open: boolean;
   projectCode: string;
   testItemId: string;
   sheet: StaticReviewSheet;
@@ -68,7 +70,7 @@ export function IssueCreateDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>立问题单</DialogTitle>

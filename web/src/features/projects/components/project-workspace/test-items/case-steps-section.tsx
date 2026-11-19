@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useState, type ReactNode } from "react";
+import { useLastPresent } from "@/hooks/use-last-present";
 import {
   ArrowDown,
   ArrowUp,
@@ -285,6 +286,7 @@ function CaseStepsSectionInner({
     moveStepMutation,
   } = useCaseSteps(caseId, onCaseChanged);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; seq: number } | null>(null);
+  const renderedDelete = useLastPresent(pendingDelete);
   // 跨用例复制步骤的剪贴板（localStorage 持久，切用例 / 刷新 / 跨标签页保留）。
   const [clipboard, setClipboard] = useState<StepClipboard | null>(() => readStepClipboard());
   const canDeleteStep = steps.length > 1;
@@ -465,11 +467,14 @@ function CaseStepsSectionInner({
         </div>
       ) : null}
 
-      {pendingDelete ? (
-        <AlertDialog open onOpenChange={(open) => (open ? undefined : setPendingDelete(null))}>
+      {renderedDelete ? (
+        <AlertDialog
+          open={pendingDelete !== null}
+          onOpenChange={(open) => (open ? undefined : setPendingDelete(null))}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>删除第 {pendingDelete.seq} 步？</AlertDialogTitle>
+              <AlertDialogTitle>删除第 {renderedDelete.seq} 步？</AlertDialogTitle>
               <AlertDialogDescription>
                 删除后剩余步骤会重新编号；用例至少保留 1 个步骤。
               </AlertDialogDescription>
@@ -478,7 +483,7 @@ function CaseStepsSectionInner({
               <AlertDialogCancel>取消</AlertDialogCancel>
               <AlertDialogAction
                 className={styles.dangerAction}
-                onClick={() => deleteStepMutation.mutate(pendingDelete.id)}
+                onClick={() => deleteStepMutation.mutate(renderedDelete.id)}
               >
                 删除
               </AlertDialogAction>

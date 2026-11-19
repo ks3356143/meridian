@@ -16,12 +16,14 @@ import type { ReceivedWorkObject } from "../received-asset-model";
 export type WorkObjectLifecycleAction = "withdraw" | "revoke";
 
 export function WorkObjectReasonDialog({
+  open,
   action,
   asset,
   submitting,
   onOpenChange,
   onSubmit,
 }: {
+  open: boolean;
   action: WorkObjectLifecycleAction;
   asset: ReceivedWorkObject;
   submitting: boolean;
@@ -32,7 +34,7 @@ export function WorkObjectReasonDialog({
   const isWithdraw = action === "withdraw";
 
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>{isWithdraw ? "撤回确认" : "作废工作对象版本"}</DialogTitle>

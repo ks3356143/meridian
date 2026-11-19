@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { type ComponentProps, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { useLastPresent } from "@/hooks/use-last-present";
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/shared/date-picker";
 import { SpotlightSurface } from "@/components/shared/spotlight-surface";
@@ -55,6 +56,12 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
   const navigate = useNavigate();
   const workbench = useReceivedAssetsWorkbench(project);
   const pendingCorrection = workbench.pendingCorrection;
+  // 弹窗退出动画要求 open 翻 false 后组件仍挂载：各弹窗用最后一份非空数据渲染淡出期内容。
+  const renderedLifecycle = useLastPresent(workbench.pendingLifecycle);
+  const renderedCorrection = useLastPresent(pendingCorrection);
+  const renderedHistoryID = useLastPresent(workbench.historyID || null);
+  const renderedUpload = useLastPresent(workbench.uploadLoading);
+  const renderedPendingDelete = useLastPresent(workbench.pendingDelete);
   const containerRef = useRef<HTMLElement>(null);
   const [renderStage, setRenderStage] = useState<0 | 1 | 2>(0);
   const emptyCopy = workbench.isSearchActive
@@ -476,15 +483,13 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
             </Fade>
           </div>
 
-          {workbench.manualOpen ? (
-            <ManualWorkObjectDialog
-              open={workbench.manualOpen}
-              submitting={workbench.isCreatingManual}
-              defaults={workbench.defaults}
-              onOpenChange={workbench.setManualOpen}
-              onSubmit={workbench.submitManual}
-            />
-          ) : null}
+          <ManualWorkObjectDialog
+            open={workbench.manualOpen}
+            submitting={workbench.isCreatingManual}
+            defaults={workbench.defaults}
+            onOpenChange={workbench.setManualOpen}
+            onSubmit={workbench.submitManual}
+          />
 
           <AlertDialog
             open={workbench.pendingDelete !== null}
@@ -496,8 +501,8 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
               <AlertDialogHeader>
                 <AlertDialogTitle>确认删除待确认登记？</AlertDialogTitle>
                 <AlertDialogDescription>
-                  将删除 {workbench.pendingDelete?.objectName || "未命名对象"}{" "}
-                  {workbench.pendingDelete?.version ?? ""}
+                  将删除 {renderedPendingDelete?.objectName || "未命名对象"}{" "}
+                  {renderedPendingDelete?.version ?? ""}
                   的数据库记录，并同步删除对应接收文件。此操作不可撤销；已确认的工作对象版本不会出现本入口。
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -507,7 +512,7 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={(event) => {
                     event.preventDefault();
-                    if (workbench.pendingDelete) workbench.submitDelete(workbench.pendingDelete.id);
+                    if (renderedPendingDelete) workbench.submitDelete(renderedPendingDelete.id);
                   }}
                 >
                   {workbench.isDeleting ? "删除中…" : "确认删除"}
@@ -516,12 +521,13 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
             </AlertDialogContent>
           </AlertDialog>
 
-          {workbench.pendingLifecycle ? (
+          {renderedLifecycle ? (
             <WorkObjectReasonDialog
-              action={workbench.pendingLifecycle.action}
-              asset={workbench.pendingLifecycle.asset}
+              open={workbench.pendingLifecycle !== null}
+              action={renderedLifecycle.action}
+              asset={renderedLifecycle.asset}
               submitting={
-                workbench.pendingLifecycle.action === "withdraw"
+                renderedLifecycle.action === "withdraw"
                   ? workbench.isWithdrawing
                   : workbench.isRevoking
               }
@@ -532,10 +538,11 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
             />
           ) : null}
 
-          {pendingCorrection ? (
+          {renderedCorrection ? (
             <WorkObjectCorrectionDialog
-              asset={pendingCorrection.asset}
-              values={pendingCorrection}
+              open={pendingCorrection !== null}
+              asset={renderedCorrection.asset}
+              values={renderedCorrection}
               submitting={workbench.isCorrecting}
               onOpenChange={(open) => {
                 if (!open) workbench.setPendingCorrection(null);
@@ -549,10 +556,11 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
             />
           ) : null}
 
-          {workbench.historyID ? (
+          {renderedHistoryID ? (
             <WorkObjectHistoryDialog
+              open={Boolean(workbench.historyID)}
               asset={
-                workbench.assets.find((asset) => asset.id === workbench.historyID) ??
+                workbench.assets.find((asset) => asset.id === renderedHistoryID) ??
                 workbench.assets[0]
               }
               events={workbench.lifecycleQuery.data ?? []}
@@ -563,9 +571,10 @@ export function ReceivedAssetsWorkbench({ project }: { project: Project }) {
             />
           ) : null}
 
-          {workbench.uploadLoading ? (
+          {renderedUpload ? (
             <UploadProgressOverlay
-              state={workbench.uploadLoading}
+              open={workbench.uploadLoading !== null}
+              state={renderedUpload}
               onClose={workbench.closeUploadProgress}
             />
           ) : null}

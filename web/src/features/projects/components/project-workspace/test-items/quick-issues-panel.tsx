@@ -35,6 +35,7 @@ import { quickIssuesApi } from "@/features/quick-issues/api";
 import type { QuickIssueNote } from "@/features/quick-issues/types";
 import type { RequirementBlockNode } from "@/features/requirements/types";
 import { requirementsApi } from "@/features/requirements/api";
+import { useLastPresent } from "@/hooks/use-last-present";
 import { RequirementBlocks } from "../requirements/body/requirement-body";
 import styles from "./quick-issues-panel.module.css";
 
@@ -60,6 +61,9 @@ export function QuickIssuesPanel({
 }) {
   const queryClient = useQueryClient();
   const [pendingDelete, setPendingDelete] = useState<QuickIssueNote | null>(null);
+  // 弹窗退出动画要求 open 翻 false 后组件仍挂载渲染：保留最后一份非空数据供淡出期使用。
+  const renderedRequest = useLastPresent(request);
+  const renderedDelete = useLastPresent(pendingDelete);
   const notesQuery = useQuery({
     queryKey: ["test-cases", caseId, "quick-issues"],
     queryFn: () => quickIssuesApi.list(caseId),
@@ -169,13 +173,13 @@ export function QuickIssuesPanel({
         )}
       </section>
 
-      {request ? (
+      {renderedRequest ? (
         <QuickIssueDialog
-          key={`${request.nonce}-${request.note?.id ?? request.stepId ?? "case"}`}
-          open
+          key={`${renderedRequest.nonce}-${renderedRequest.note?.id ?? renderedRequest.stepId ?? "case"}`}
+          open={request !== null}
           caseId={caseId}
           projectCode={projectCode}
-          request={request}
+          request={renderedRequest}
           onOpenChange={(open) => {
             if (!open) onRequest(null);
           }}
@@ -195,13 +199,16 @@ export function QuickIssuesPanel({
         />
       ) : null}
 
-      {pendingDelete ? (
-        <AlertDialog open onOpenChange={(open) => (open ? undefined : setPendingDelete(null))}>
+      {renderedDelete ? (
+        <AlertDialog
+          open={pendingDelete !== null}
+          onOpenChange={(open) => (open ? undefined : setPendingDelete(null))}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>删除这条问题草稿？</AlertDialogTitle>
               <AlertDialogDescription>
-                将删除“{truncate(pendingDelete.noteText, 60)}”。这不是正式问题单，删除后不可恢复。
+                将删除“{truncate(renderedDelete.noteText, 60)}”。这不是正式问题单，删除后不可恢复。
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -209,7 +216,7 @@ export function QuickIssuesPanel({
               <AlertDialogAction
                 className={styles.dangerAction}
                 disabled={deleteMutation.isPending}
-                onClick={() => deleteMutation.mutate(pendingDelete.id)}
+                onClick={() => deleteMutation.mutate(renderedDelete.id)}
               >
                 删除
               </AlertDialogAction>

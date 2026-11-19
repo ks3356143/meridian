@@ -37,9 +37,11 @@ const statusDescription: Record<UploadLoadingPhase, string> = {
 };
 
 export function UploadProgressOverlay({
+  open,
   state,
   onClose,
 }: {
+  open: boolean;
   state: UploadLoadingState;
   onClose: () => void;
 }) {
@@ -52,7 +54,7 @@ export function UploadProgressOverlay({
   const percent = Math.min(100, Math.max(0, Math.round(state.progress)));
 
   return (
-    <Dialog open>
+    <Dialog open={open}>
       <DialogContent
         showCloseButton={false}
         className="upload-progress-dialog"

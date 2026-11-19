@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requirementsApi } from "@/features/requirements/api";
+import { useLastPresent } from "@/hooks/use-last-present";
 import type {
   StaticReviewCheck,
   StaticReviewSheet,
@@ -63,6 +64,7 @@ export function DcWorkbench({ testItemId, projectCode, state, catalog, update }:
     sheet: StaticReviewSheet;
     check: StaticReviewCheck;
   } | null>(null);
+  const renderedIssueTarget = useLastPresent(issueTarget);
 
   const allChecks = state.reviewSheets.flatMap((sheet) => sheet.checks);
   const stats = checkStats(allChecks);
@@ -332,12 +334,14 @@ export function DcWorkbench({ testItemId, projectCode, state, catalog, update }:
         <DcSheetsTab ctx={sheetsCtx} />
       </Tabs>
 
-      {issueTarget ? (
+      {renderedIssueTarget ? (
         <IssueCreateDialog
+          key={`${renderedIssueTarget.sheet.id}-${renderedIssueTarget.check.id}`}
+          open={issueTarget !== null}
           projectCode={projectCode}
           testItemId={testItemId}
-          sheet={issueTarget.sheet}
-          check={issueTarget.check}
+          sheet={renderedIssueTarget.sheet}
+          check={renderedIssueTarget.check}
           onClose={() => setIssueTarget(null)}
           onCreated={() => {
             void queryClient.invalidateQueries({ queryKey: ["issues", projectCode] });

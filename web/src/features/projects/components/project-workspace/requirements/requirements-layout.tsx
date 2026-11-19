@@ -100,6 +100,9 @@ export function RequirementsLayout({ project }: { project: Project }) {
   useSubtleReveal(surfaceRef, "[data-requirements-reveal]", !workbenchQuery.isPending);
   const [createOpen, setCreateOpen] = useState(false);
   const [createSeed, setCreateSeed] = useState<RequirementCreateSeed | null>(null);
+  // 关闭淡出期间保持打开时的 seed 与 key，避免表单被重置闪变；打开期间跟随当前值。
+  const [createDialogSeed, setCreateDialogSeed] = useState<RequirementCreateSeed | null>(null);
+  if (createOpen) setCreateDialogSeed(createSeed);
   const [deletedOpen, setDeletedOpen] = useState(false);
   const [auditRequirement, setAuditRequirement] = useState<RequirementRecord | null>(null);
   const [batchMode, setBatchMode] = useState(false);
@@ -612,13 +615,13 @@ export function RequirementsLayout({ project }: { project: Project }) {
   function renderCreateDialog() {
     return (
       <RequirementCreateDialog
-        key={createSeed?.key ?? "blank"}
+        key={createDialogSeed?.key ?? "blank"}
         open={createOpen}
         projectId={project.id}
         sources={sources}
         requirements={activeChapterRequirements}
-        initialValues={createSeed?.values ?? null}
-        chapterSeedRequirement={createSeed ? null : selectedRequirement}
+        initialValues={createDialogSeed?.values ?? null}
+        chapterSeedRequirement={createDialogSeed ? null : selectedRequirement}
         submitting={createMutation.isPending}
         onOpenChange={(open) => {
           setCreateOpen(open);

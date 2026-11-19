@@ -40,6 +40,7 @@ import {
 import styles from "./requirement-candidate-edit-dialog.module.css";
 
 type RequirementCandidateEditDialogProps = {
+  open: boolean;
   requirement: RequirementRecord | null;
   submitting: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,6 +51,7 @@ type RequirementCandidateEditDialogProps = {
 };
 
 export function RequirementCandidateEditDialog({
+  open,
   requirement,
   submitting,
   onOpenChange,
@@ -68,7 +70,7 @@ export function RequirementCandidateEditDialog({
     requirement && contentQuery.data?.id === requirement.id ? contentQuery.data : undefined;
 
   return (
-    <Dialog open={requirement !== null} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={styles.dialog}>
         <DialogHeader>
           <DialogTitle>修改待确认需求</DialogTitle>

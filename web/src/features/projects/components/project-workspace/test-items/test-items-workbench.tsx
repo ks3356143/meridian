@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useLastPresent } from "@/hooks/use-last-present";
 import { useResetScrollOnTabChange } from "@/hooks/use-reset-scroll-on-tab-change";
 import { useSubtleReveal } from "@/hooks/use-subtle-reveal";
 import { EntranceFade } from "@/components/shared/entrance-fade";
@@ -149,6 +150,7 @@ export function TestItemsWorkbench({
   const [requirementsOpen, setRequirementsOpen] = useState(false);
   const [staticDeleteOpen, setStaticDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const renderedDelete = useLastPresent(pendingDelete);
   const [changeTypeOpen, setChangeTypeOpen] = useState(false);
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [stepFocus, setStepFocus] = useState<{ stepId: string; nonce: number } | null>(null);
@@ -1254,22 +1256,25 @@ export function TestItemsWorkbench({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {pendingDelete ? (
-        <AlertDialog open onOpenChange={(open) => (open ? undefined : setPendingDelete(null))}>
+      {renderedDelete ? (
+        <AlertDialog
+          open={pendingDelete !== null}
+          onOpenChange={(open) => (open ? undefined : setPendingDelete(null))}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {pendingDelete.kind === "item"
-                  ? `删除测试项「${pendingDelete.label}」？`
-                  : pendingDelete.kind === "folder"
-                    ? `删除文件夹「${pendingDelete.label}」？`
-                    : `删除用例「${pendingDelete.label}」？`}
+                {renderedDelete.kind === "item"
+                  ? `删除测试项「${renderedDelete.label}」？`
+                  : renderedDelete.kind === "folder"
+                    ? `删除文件夹「${renderedDelete.label}」？`
+                    : `删除用例「${renderedDelete.label}」？`}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                {pendingDelete.kind === "item"
+                {renderedDelete.kind === "item"
                   ? "将级联删除该测试项的子项、用例与步骤，需求关联同时解除；此操作不可撤销。"
-                  : pendingDelete.kind === "folder"
-                    ? `文件夹内 ${pendingDelete.count} 个测试项会移到同类型根目录（不删除测试项）；此操作不可撤销。`
+                  : renderedDelete.kind === "folder"
+                    ? `文件夹内 ${renderedDelete.count} 个测试项会移到同类型根目录（不删除测试项）；此操作不可撤销。`
                     : "删除后同测试项剩余用例的序号与标识会重新生成；此操作不可撤销。"}
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -1278,14 +1283,14 @@ export function TestItemsWorkbench({
               <AlertDialogAction
                 className={styles.dangerAction}
                 onClick={() => {
-                  if (pendingDelete.kind === "item") {
-                    void deleteItemMutation.mutateAsync(pendingDelete.id);
-                  } else if (pendingDelete.kind === "folder") {
-                    void deleteFolderMutation.mutateAsync(pendingDelete.id);
+                  if (renderedDelete.kind === "item") {
+                    void deleteItemMutation.mutateAsync(renderedDelete.id);
+                  } else if (renderedDelete.kind === "folder") {
+                    void deleteFolderMutation.mutateAsync(renderedDelete.id);
                   } else {
                     void deleteCaseMutation.mutateAsync({
-                      testItemId: pendingDelete.testItemId,
-                      id: pendingDelete.id,
+                      testItemId: renderedDelete.testItemId,
+                      id: renderedDelete.id,
                     });
                   }
                 }}

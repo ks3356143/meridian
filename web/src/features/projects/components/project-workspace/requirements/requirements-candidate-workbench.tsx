@@ -50,6 +50,7 @@ import type {
   RequirementSource,
   SaveRequirementPayload,
 } from "@/features/requirements/types";
+import { useLastPresent } from "@/hooks/use-last-present";
 import { useRequirementSearch } from "./use-requirement-search";
 import { requirementSourceLabel } from "./requirement-form";
 import styles from "./requirements-candidate-workbench.module.css";
@@ -113,6 +114,7 @@ function RequirementsCandidateWorkbenchImpl({
   } | null>(null);
   const [excludeReason, setExcludeReason] = useState("");
   const [editingRequirement, setEditingRequirement] = useState<RequirementRecord | null>(null);
+  const renderedEditing = useLastPresent(editingRequirement);
   const deferredQuery = useDeferredValue(query);
   const search = useRequirementSearch(projectId, deferredQuery);
   const [parseSourceId, setParseSourceId] = useState("");
@@ -576,11 +578,12 @@ function RequirementsCandidateWorkbenchImpl({
         </DialogContent>
       </Dialog>
 
-      {editingRequirement ? (
+      {renderedEditing ? (
         <Suspense fallback={null}>
           <LazyRequirementCandidateEditDialog
-            key={editingRequirement.id}
-            requirement={editingRequirement}
+            key={renderedEditing.id}
+            open={editingRequirement !== null}
+            requirement={renderedEditing}
             submitting={updatePending}
             onOpenChange={(open) => {
               if (!open) setEditingRequirement(null);
