@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { LogIn, RefreshCw, ShieldAlert } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/stores/auth-store";
 import { RouteStatusScreen } from "./route-status-screen";
 
 export function AuthRequiredScreen() {
@@ -8,6 +10,11 @@ export function AuthRequiredScreen() {
   const navigate = useNavigate();
   const targetPath = `${location.pathname}${location.search}${location.hash}`;
   const loginPath = `/login?redirect=${encodeURIComponent(targetPath)}`;
+
+  // 过期令牌会残留在持久化存储里，登录页把它当作已登录弹回受保护路由；进此屏即视为会话终结。
+  useEffect(() => {
+    useAuthStore.getState().clear();
+  }, []);
 
   return (
     <RouteStatusScreen
